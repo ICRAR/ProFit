@@ -1,0 +1,3 @@
+useDynLib(ProFit)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
