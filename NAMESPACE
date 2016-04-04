@@ -1,3 +1,4 @@
 useDynLib(ProFit)
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
+import("magicaxis")

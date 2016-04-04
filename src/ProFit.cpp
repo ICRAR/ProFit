@@ -15,22 +15,39 @@ using namespace Rcpp;
 
 
 // [[Rcpp::export]]
-double profitSumPix(double xcen, double ycen, double re, double nser, double angrad, double axrat, double bn, NumericVector xlim, NumericVector ylim, int N){
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod;  double xbin=(xlim(1)-xlim(0))/N;
+double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim,
+                    double re, double nser, double angrad, double axrat, double bn, int N,
+                    int recur=0, int depth=5, double acc=1e-1){
+  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod;
+  double xbin=(xlim(1)-xlim(0))/N;
   double ybin=(ylim(1)-ylim(0))/N;
-  double sumpixel=0;
+  double sumpixel=0, addval, oldaddval;
+  int upscale=20;
   NumericVector xlim2(2),ylim2(2);
   x=xlim(0);
   for(int i2 = 0; i2 < N; i2++) {
+    recur=0;
     y=ylim(0);
     for(int j2 = 0; j2 < N; j2++) {
       rad=sqrt(pow(x+xbin/2-xcen,2)+pow(y+ybin/2-ycen,2));
-      angmod=atan2(x-xcen,y-ycen)-angrad;
+      angmod=atan2(x+xbin/2-xcen,y+ybin/2-ycen)-angrad;
       xmod=rad*sin(angmod);
       ymod=rad*cos(angmod);
       xmod=xmod/axrat;
       radmod=sqrt(pow(xmod,2)+pow(ymod,2));
-      sumpixel+=exp(-bn*(pow(radmod/re,1/nser)-1));
+      addval=exp(-bn*(pow(radmod/re,1/nser)-1));
+      if(j2>0 & recur<3){
+        if(addval/oldaddval>1+acc | addval/oldaddval<1/(1+acc)){
+          recur++;
+          xlim2(0)=x;
+          xlim2(1)=x+xbin;
+          ylim2(0)=y;
+          ylim2(1)=y+ybin;
+          addval=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,bn,upscale,recur,depth,acc);
+        }
+      }
+      sumpixel+=addval;
+      oldaddval=addval;
       y=y+ybin;
     }
     x=x+xbin;
@@ -48,7 +65,7 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
   double lumtot = pow(re,2)*2*PI*nser*((exp(bn))/pow(bn,2*nser))*R::gammafn(2*nser)*axrat;
   double Ie=pow(10,(-0.4*(mag-magzero)))/lumtot;
   NumericMatrix mat(N(0), N(1));
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,binin;
+  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod;
   double xbin=(xlim(1)-xlim(0))/N(0);
   double ybin=(ylim(1)-ylim(0))/N(1);
   NumericVector xlim2(2),ylim2(2);
@@ -72,35 +89,37 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
       }
       else{
         if(radmod<xbin){
-          upscale=ceil(5*pow(nser,2));
+          upscale=ceil(8*nser*xbin/radmod);
         }
         else if(radmod<0.1*re){
-          upscale=ceil(5*pow(nser,2));
+          upscale=ceil(8*nser*xbin/radmod);
         }
         else if(radmod<0.25*re){
-          upscale=ceil(5*nser);
+          upscale=ceil(4*nser*xbin/radmod);
         }
         else if(radmod<0.5*re){
-          upscale=ceil(2*nser);
+          upscale=ceil(2*nser*xbin/radmod);
         }
         else if(radmod<re){
-          upscale=ceil(nser);
+          upscale=ceil(nser*xbin/radmod);
         }
         else if(radmod<=2*re){
-          upscale=ceil(nser/2);
+          upscale=ceil(nser/2*xbin/radmod);
         }
-        binin=upscale*2;
-        xlim2(0)=x+xbin/binin;
-        xlim2(1)=x+xbin-xbin/binin;
-        ylim2(0)=y+ybin/binin;
-        ylim2(1)=y+ybin-ybin/binin;
-        mat(i,j)=profitSumPix(xcen,ycen,re,nser,angrad,axrat,bn,xlim2,ylim2,upscale)*xbin*ybin*Ie;
+        if(upscale<4){
+          upscale=4;
+        }
+        xlim2(0)=x;
+        xlim2(1)=x+xbin;
+        ylim2(0)=y;
+        ylim2(1)=y+ybin;
+        mat(i,j)=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,bn,upscale,0)*xbin*ybin*Ie;
       }
       y=y+ybin;
     }
     x=x+xbin;
   }
-return mat;
+return(mat);
 }
 
 // [[Rcpp::export]]
@@ -114,7 +133,7 @@ NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf){
     double* output_row_col_j ;
     double image_row_col = 0.0 ;
     double* psf_j ;
-
+    
     for (int row = 0; row < x_s; row++) {
       for (int col = 0; col < y_s; col++) {
         image_row_col = image(row,col) ;
