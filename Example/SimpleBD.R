@@ -25,7 +25,7 @@ fin=gal
 galconv=profitConvolvePSF(gal,psf)
 
 psf2=readFITS('~/Work/R/GALFITR/data/VSTKIDS_r_psf.fits')$imDat
-fin3=ConvolvePSF(fin,psf2)
+fin3=profitBruteConv(fin,psf2)
 
 image(log10(galconv2),asp=1,useRaster = T,col=grey.colors(1e3))
 contour(log10(galconv2),drawlabels = F,add=T)

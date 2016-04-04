@@ -1,5 +1,10 @@
-ExtractTar=function(CATAID,BDinit,doimage=TRUE,algo.func='LA',magzero=30){
-  init=BDinit[BDinit[,'CATAID']==CATAID,]
+library(FITSio)
+library(LaplacesDemon)
+library(magicaxis)
+BDinit=read.csv('~/GAMA2/BDinit.csv')
+
+ExtractTar=function(CATAID=265769,Cat=BDinit,doimage=TRUE,algo.func='LA',magzero=30){
+  init=Cat[Cat[,'CATAID']==CATAID,]
   untar(paste('/Volumes/EXTERNAL/BDdata/tarballs/G',CATAID,'.tar.gz',sep=''),files=paste('G',CATAID,'/r/',c('fitim.fits','M01_mskim.fits','psfim.fits','segim.fits'),sep=''),exdir=paste('/Volumes/EXTERNAL/BDdata/tarballs/',sep=''))
   input=readFITS(paste('/Volumes/EXTERNAL/BDdata/tarballs/G',CATAID,'/r/fitim.fits',sep=''))$imDat
   mask= readFITS(paste('/Volumes/EXTERNAL/BDdata/tarballs/G',CATAID,'/r/M01_mskim.fits',sep=''))$imDat
@@ -10,6 +15,8 @@ ExtractTar=function(CATAID,BDinit,doimage=TRUE,algo.func='LA',magzero=30){
   sigma=matrix(1,inputdim[1],inputdim[2])
   region=segim==1
 
+  psf[psf<0]=0
+  
   params = list(
   	sersic = list(
   	  xcen   = c(init['X_IMAGE_r']-0.5,init['X_IMAGE_r']-0.5),
@@ -30,8 +37,8 @@ ExtractTar=function(CATAID,BDinit,doimage=TRUE,algo.func='LA',magzero=30){
   return=list(input=input*(1-mask),mask=mask,psf=psf,segim=segim,sigma=sigma,init=as.numeric(init[4:10]),algo.func=algo.func,mon.names='',parm.names=c('magB','magD','reB','reD','nB','paD','arD'),N=length(as.numeric(input)),params=params,region=region)
 }
 
-domodel=function(CATAID,BDinit,samples=2e3,beep=FALSE,alpha.star=0.44,method='LD',algo='default',LAfirst=TRUE){
-  Data=ExtractTar(CATAID,BDinit=BDinit,doimage=TRUE,algo.func=method)
+domodel=function(CATAID=265769,Cat=BDinit,samples=2e3,beep=FALSE,alpha.star=0.44,method='LD',algo='default',LAfirst=TRUE){
+  Data=ExtractTar(CATAID=CATAID,Cat=Cat,doimage=TRUE,algo.func=method)
   temptime=system.time(profitLikeModel(as.numeric(Data$init),Data=Data,image = F))
   print(paste('Per LL time:',round(temptime[3],3),'seconds'))
   print(paste('Total expected time:',round(temptime[3]*samples/60/alpha.star,2),'minutes'))
