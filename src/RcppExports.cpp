@@ -6,22 +6,25 @@
 using namespace Rcpp;
 
 // profitSumPix
-double profitSumPix(double xcen, double ycen, double re, double nser, double angrad, double axrat, double bn, NumericVector xlim, NumericVector ylim, int N);
-RcppExport SEXP ProFit_profitSumPix(SEXP xcenSEXP, SEXP ycenSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angradSEXP, SEXP axratSEXP, SEXP bnSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP NSEXP) {
+double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim, double re, double nser, double angrad, double axrat, double bn, int N, int recur, int depth, double acc);
+RcppExport SEXP ProFit_profitSumPix(SEXP xcenSEXP, SEXP ycenSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angradSEXP, SEXP axratSEXP, SEXP bnSEXP, SEXP NSEXP, SEXP recurSEXP, SEXP depthSEXP, SEXP accSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< double >::type xcen(xcenSEXP);
     Rcpp::traits::input_parameter< double >::type ycen(ycenSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type xlim(xlimSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type ylim(ylimSEXP);
     Rcpp::traits::input_parameter< double >::type re(reSEXP);
     Rcpp::traits::input_parameter< double >::type nser(nserSEXP);
     Rcpp::traits::input_parameter< double >::type angrad(angradSEXP);
     Rcpp::traits::input_parameter< double >::type axrat(axratSEXP);
     Rcpp::traits::input_parameter< double >::type bn(bnSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type xlim(xlimSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type ylim(ylimSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    __result = Rcpp::wrap(profitSumPix(xcen, ycen, re, nser, angrad, axrat, bn, xlim, ylim, N));
+    Rcpp::traits::input_parameter< int >::type recur(recurSEXP);
+    Rcpp::traits::input_parameter< int >::type depth(depthSEXP);
+    Rcpp::traits::input_parameter< double >::type acc(accSEXP);
+    __result = Rcpp::wrap(profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, bn, N, recur, depth, acc));
     return __result;
 END_RCPP
 }
