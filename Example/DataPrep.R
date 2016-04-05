@@ -17,8 +17,7 @@ model=list(
     nser= c(1.9602, 1.0000),
     ang= c(0.0000, 9.5087000), #theta/deg: 0= |, 45= \, 90= -, 135= /, 180= |
     axrat= c(1.0000, 0.406) #min/maj: 1= o, 0= |
-  ),
-  magzero=0
+  )
 )
 
 # The pure model (no PSF):
@@ -105,7 +104,7 @@ intervals=list(
 
 #Setup the data structure we need for optimisation:
 
-DataG279148=profitSetupData(input=input,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,algo.func = 'LA', verbose=TRUE)
+DataG279148=profitSetupData(input=input,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,magzero=0, algo.func = 'LA', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
 

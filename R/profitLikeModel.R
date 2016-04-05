@@ -24,7 +24,7 @@ profitLikeModel=function(parm,Data,image=FALSE){
     paramsnew=relist(paramsnew,Data$params)
     
     if(image){
-      tempmodel=profitMakeModel(modellist=paramsnew, magzero = paramsnew$magzero, psf=Data$psf, dim=Data$inputdim)$z
+      tempmodel=profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim)$z
       layout(cbind(1,2,3,4))
       modelmedian=median(tempmodel)
       tempmap=magmap(tempmodel/modelmedian,stretch='asinh',lo=0.02,hi=0.98)$datalim
@@ -44,6 +44,6 @@ profitLikeModel=function(parm,Data,image=FALSE){
     LP=as.numeric(LL+priorsum)
     if(Data$verbose){print(c(parm,LP))}
     if(Data$algo.func=='optim'){out=LP}
-    if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=2*LL,Monitor=1,yhat=1,parm=parm)}
+    if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=-2*LL,Monitor=1,yhat=1,parm=parm)}
     return=out
 }
