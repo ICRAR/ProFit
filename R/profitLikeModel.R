@@ -1,5 +1,6 @@
 profitLikeModel=function(parm,Data,image=FALSE){
     fitIDs=which(unlist(Data$tofit))
+    parm=parm[1:length(fitIDs)]
     paramsinit=unlist(Data$params)
     paramsnew=paramsinit
     paramsnew[fitIDs]=parm
