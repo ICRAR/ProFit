@@ -1,36 +1,26 @@
 profitLikeModel=function(parm,Data,image=FALSE){
-    if(parm[1]<0){parm[1]=0}
-    if(parm[2]<0){parm[2]=0}
-    if(parm[3]< -1){parm[3]= -1}
-    if(parm[4]< -1){parm[4]= -1}
-    if(parm[3]>2){parm[3]=2}
-    if(parm[4]>2){parm[4]=2}
-    if(parm[3]>parm[4]){parm[3]=parm[4]}
-    if(parm[5]< -0.3){parm[5]= -0.3}
-    if(parm[5]>1.3){parm[5]=1.3}
-    parm[6]=parm[6]%%180
-    if(parm[7]< -1.3){parm[7]=-1.3}
-    if(parm[7]>0){parm[7]=0}
-     prior=dnorm(parm[1],Data$init[1],5,log=T)+
-           dnorm(parm[2],Data$init[2],5,log=T)+
-           dnorm(parm[3],Data$init[3],1,log=T)+
-           dnorm(parm[4],Data$init[4],1,log=T)+
-           dnorm(parm[5],Data$init[5],1,log=T)+
-           dnorm(parm[6],Data$init[6],20,log=T)+
-           dnorm(parm[7],Data$init[7],0.5,log=T)
-    params=list(sersic=list(
-      xcen=Data$params$sersic$xcen,
-      ycen=Data$params$sersic$ycen,
-      mag=c(parm[1],parm[2]),
-      re=c(10^parm[3],10^parm[4]),
-      nser=c(10^parm[5],1),
-      ang=c(0,parm[6]),
-      axrat=c(1,10^parm[7])
-      ),
-      magzero=Data$params$magzero
-    )
+    fitIDs=which(unlist(Data$tofit))
+    paramsinit=unlist(Data$params)
+    paramsnew=paramsinit
+    paramsnew[fitIDs]=parm
+    
+    for(i in fitIDs){
+      paramsnew[i]=unlist(Data$intervals)[[i]](paramsnew[i])
+    }
+    parm=paramsnew[fitIDs]
+    
+    priorsum=0
+    for(i in fitIDs){
+      priorsum=priorsum+log(unlist(Data$priors)[[i]](paramsinit[i]-paramsnew[i]))
+    }
+    
+    tounlogIDs=which(unlist(Data$tolog) & unlist(Data$tofit))
+    paramsnew[tounlogIDs]=10^paramsnew[tounlogIDs]
+    
+    paramsnew=relist(paramsnew,Data$params)
+    
     if(image){
-      tempmodel=profitMakeModel(modellist=params, magzero = params$magzero, psf=Data$psf, dim=c(dim(Data$input)[1],dim(Data$input)[2]))$z
+      tempmodel=profitMakeModel(modellist=paramsnew, magzero = paramsnew$magzero, psf=Data$psf, dim=Data$inputdim)$z
       layout(cbind(1,2,3,4))
       modelmedian=median(tempmodel)
       tempmap=magmap(tempmodel/modelmedian,stretch='asinh',lo=0.02,hi=0.98)$datalim
@@ -45,8 +35,9 @@ profitLikeModel=function(parm,Data,image=FALSE){
       hist(diff[!is.na(diff)],main='',breaks=100)
       abline(v=0,lty=2,col='red')
     }
-    LL=profitLL(Data=Data, params=params)
-    LP=LL+prior
+    
+    LL=as.numeric(profitLL(Data=Data, params=paramsnew))
+    LP=as.numeric(LL+priorsum)
     if(Data$verbose){print(c(parm,LP))}
     if(Data$algo.func=='optim'){out=LP}
     if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=2*LL,Monitor=1,yhat=1,parm=parm)}

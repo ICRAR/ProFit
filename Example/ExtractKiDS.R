@@ -123,3 +123,13 @@ MakeResidOrig=function(CATAID=265769,Cat=SSinitKiDS){
 }
 
 for(CATAID in SSinitKiDS[1:40,1]){MakeResidOrig(CATAID=CATAID, Cat=SSinitKiDS)}
+
+CheckTime=function(CATAID=265769){
+  print(paste('Current Galaxy: G',CATAID,sep=''))
+  load(file=paste('/Users/aaron/GAMA2/KiDStest/G',CATAID,'fit.rda',sep=''))
+  print(get(paste('G',CATAID,'fit',sep=''))$Fit$LA$Minutes)
+  print(get(paste('G',CATAID,'fit',sep=''))$Fit$LD$Minutes)
+  rm(list=paste('G',CATAID,'fit',sep=''))
+}
+
+for(CATAID in SSinitKiDS[1:40,1]){CheckTime(CATAID=CATAID)}
