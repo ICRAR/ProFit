@@ -9,6 +9,9 @@ profitLikeModel=function(parm,Data,image=FALSE){
     }
     parm=paramsnew[fitIDs]
     
+    inheritIDs=which(is.na(unlist(Data$tofit)))
+    paramsnew[inheritIDs]=paramsnew[inheritIDs-1]
+    
     priorsum=0
     for(i in fitIDs){
       priorsum=priorsum+log(unlist(Data$priors)[[i]](paramsinit[i]-paramsnew[i]))

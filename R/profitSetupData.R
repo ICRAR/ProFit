@@ -8,7 +8,7 @@ profitSetupData=function(input,mask,sigma,segim,psf,model,tofit,tolog,priors,int
   
   init = unlist(model)
   init[unlist(tolog)]=log10(init[unlist(tolog)])
-  init=init[unlist(tofit)]
+  init=init[which(unlist(tofit))]
   
   parm.names=names(init)
   #parm.names = unlist(strsplit(names(init),'sersic.'))[c(F,T)]

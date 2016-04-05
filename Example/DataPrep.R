@@ -45,6 +45,19 @@ tofit=list(
   magzero=F
 )
 
+tofit=list(
+  sersic=list(
+    xcen= c(T,NA), #We fit for xcen and tie the two togther
+    ycen= c(T,NA), #We fit for ycen and tie the two togther
+    mag= c(T,T),
+    re= c(T,T),
+    nser= c(T,F), #The second sersic is our disk- we will fix this for our first fit
+    ang= c(F,T), #The bulge will be fixed to have axrat=1, so no need to fir for the orientation
+    axrat= c(F,T) #The bulge has axrat=1 for our first fit
+  ),
+  magzero=F
+)
+
 # What parameters should be fitted in log space:
 
 tolog=list(
@@ -57,7 +70,7 @@ tolog=list(
     ang= c(F,F),
     axrat= c(T,T) #axrat is best fit in log space
   ),
-  magazero=F
+  magzero=F
 )
 
 # The priors. If the parameters are to be sampeld in log space (above) then the priors will refer to dex not linear standard deviations. Priors should be specified in their unlogged state- the logging is done internally.
@@ -84,7 +97,7 @@ intervals=list(
     mag=list(function(x){interval(x,10,30,reflect=F)},function(x){interval(x,10,30,reflect=F)}),
     re=list(function(x){interval(x,-1,2,reflect=F)},function(x){interval(x,-1,2,reflect=F)}), # i.e. 1 dex in re is the SD
     nser=list(function(x){interval(x,-0.3,1.3,reflect=F)},function(x){interval(x,-0.3,1.3,reflect=F)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){interval(x,0,180,reflect=F)},function(x){interval(x,0,180,reflect=F)}),
+    ang=list(function(x){interval(x,-180,360,reflect=F)},function(x){interval(x,-180,360,reflect=F)}),
     axrat=list(function(x){interval(x,-2,0,reflect=F)},function(x){interval(x,-2,0,reflect=F)}) # i.e. 1 dex in axrat is the SD
   ),
   magzero=list(function(x){interval(x,-Inf,Inf,reflect=F)})
@@ -149,3 +162,4 @@ profitLikeModel(LDfit$Summary2[,1],DataG279148,image=T)
 
 profitLikeModel(LDfit$Summary1[,1],DataG279148,image=T)
 
+superlist=list(Data=DataG279148, LAfit=LAfit, LDfit=LDfit)
