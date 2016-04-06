@@ -104,7 +104,7 @@ MakeResid=function(CATAID=265769,Cat=SSinitKiDS){
   dev.off()
   png(paste('/Users/aaron/GAMA2/KiDStest/G',CATAID,'resid.png',sep=''),width=20,height=5,units='in',res=100)
   par(mar=c(2.1,2.1,1.1,1.1))
-  try(profitLikeModel(Expec[,1],get(paste('G',CATAID,'fit',sep=''))$Data,image=TRUE),T)
+  try(profitLikeModelOld(Expec[,1],get(paste('G',CATAID,'fit',sep=''))$Data,image=TRUE),T)
   dev.off()
   rm(list=paste('G',CATAID,'fit',sep=''))
 }

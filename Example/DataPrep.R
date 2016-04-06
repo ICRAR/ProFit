@@ -40,8 +40,7 @@ tofit=list(
     nser= c(T,F), #The second sersic is our disk- we will fix this for our first fit
     ang= c(F,T), #The bulge will be fixed to have axrat=1, so no need to fir for the orientation
     axrat= c(F,T) #The bulge has axrat=1 for our first fit
-  ),
-  magzero=F
+  )
 )
 
 tofit=list(
@@ -53,8 +52,7 @@ tofit=list(
     nser= c(T,F), #The second sersic is our disk- we will fix this for our first fit
     ang= c(F,T), #The bulge will be fixed to have axrat=1, so no need to fir for the orientation
     axrat= c(F,T) #The bulge has axrat=1 for our first fit
-  ),
-  magzero=F
+  )
 )
 
 # What parameters should be fitted in log space:
@@ -68,8 +66,7 @@ tolog=list(
     nser= c(T,T), #nser is best fit in log space
     ang= c(F,F),
     axrat= c(T,T) #axrat is best fit in log space
-  ),
-  magzero=F
+  )
 )
 
 # The priors. If the parameters are to be sampeld in log space (above) then the priors will refer to dex not linear standard deviations. Priors should be specified in their unlogged state- the logging is done internally.
@@ -83,8 +80,7 @@ priors=list(
     nser=list(function(x){dnorm(x,0,1)},function(x){dnorm(x,0,1)}), # i.e. 1 dex in nser is the SD
     ang=list(function(x){dnorm(x,0,30)},function(x){dnorm(x,0,30)}), # very broad 30 deg ang SD
     axrat=list(function(x){dnorm(x,0,1)},function(x){dnorm(x,0,1)}) # i.e. 1 dex in axrat is the SD
-  ),
-  magzero=list(function(x){dnorm(x,0,5)})
+  )
 )
 
 #the hard intervals should also be specified in log space if relevant:
@@ -98,8 +94,7 @@ intervals=list(
     nser=list(function(x){interval(x,-0.3,1.3,reflect=F)},function(x){interval(x,-0.3,1.3,reflect=F)}), # i.e. 1 dex in nser is the SD
     ang=list(function(x){interval(x,-180,360,reflect=F)},function(x){interval(x,-180,360,reflect=F)}),
     axrat=list(function(x){interval(x,-2,0,reflect=F)},function(x){interval(x,-2,0,reflect=F)}) # i.e. 1 dex in axrat is the SD
-  ),
-  magzero=list(function(x){interval(x,-Inf,Inf,reflect=F)})
+  )
 )
 
 #Setup the data structure we need for optimisation:
@@ -133,7 +128,7 @@ profitLikeModel(LAfit$Summary1[,1],DataG279148,image=T)
 
 #Now we can try a LaplacesDemon fit:
 
-LDfit=LaplacesDemon(profitLikeModel,Initial.Values=LAfit$Summary1[,1],Data=DataG279148,Iterations=1e3,Algorithm='CHARM',Thinning=1,Specs=list(alpha.star=0.44))
+LDfit2=LaplacesDemon(profitLikeModel,Initial.Values=LAfit$Summary1[,1],Data=DataG279148,Iterations=1e3,Algorithm='CHARM',Thinning=1,Specs=list(alpha.star=0.44))
 
 #If it has converged well you will have a Summary2 structure using the ESS:
 

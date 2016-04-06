@@ -40,10 +40,28 @@ profitLikeModel=function(parm,Data,image=FALSE){
       abline(v=0,lty=2,col='red')
     }
     
-    LL=as.numeric(profitLL(Data=Data, params=paramsnew))
+    cutmod = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim)$z
+    
+    if(any(Data$region)){
+      cutim=Data$input[Data$region]
+      cutmod=cutmod[Data$region]
+      cutsig=Data$sigma[Data$region]
+    }else{
+      cutim=Data$input
+    }
+    
+    #dof/(dof-2)=var(data)
+    #dof*(var(data)-1)=2*var(data)
+    #dof=2*var(data)/(var(data)-1)
+    scaledata=(cutim-cutmod)/cutsig
+    vardata=var(scaledata)
+    dof=2*vardata/(vardata-1)
+    dof=interval(dof,0,Inf)
+    LL=sum(dt(scaledata,dof,log=TRUE))
+    
     LP=as.numeric(LL+priorsum)
     if(Data$verbose){print(c(parm,LP))}
-    if(Data$algo.func=='optim'){out=LP}
-    if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=-2*LL,Monitor=1,yhat=1,parm=parm)}
+    if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}
+    if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=-2*LL,Monitor=1,yhat=1,parm=parm,priorsum=priorsum,dof=dof)}
     return=out
 }
