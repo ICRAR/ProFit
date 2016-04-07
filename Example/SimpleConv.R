@@ -1,13 +1,13 @@
 params = list(
 	sersic = list(
-		xcen   = c(180, 60),
-		ycen   = c(90, 10),
+		xcen   = c(180.0001, 50),
+		ycen   = c(90, 50),
 		mag = c(15, 13),
-		re  = c(14, 5),
-		nser  = c(3, 10),
-		ang  = c(46, 80),
-		axrat  = c(0.4, 0.6),
-		box = c(0.5,-0.5)
+		re  = c(140, 50),
+		nser  = c(20, 0.1),
+		ang  = c(46, 45),
+		axrat  = c(0.5, 1),
+		box = c(1,-1)
 	),
 	psf = list(
 		xcen   = c(34,10,150),

@@ -67,7 +67,7 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
   double lumtot = pow(re,2)*2*PI*nser*((exp(bn))/pow(bn,2*nser))*R::gammafn(2*nser)*axrat/Rbox;
   double Ie=pow(10,(-0.4*(mag-magzero)))/lumtot;
   NumericMatrix mat(N(0), N(1));
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,locscale;
+  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,locscale,depth;
   double xbin=(xlim(1)-xlim(0))/N(0);
   double ybin=(ylim(1)-ylim(0))/N(1);
   NumericVector xlim2(2),ylim2(2);
@@ -87,7 +87,7 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
       xmod=xmod/axrat;
       //radmod=hypot(xmod,ymod);
       radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
-      if(radmod>2*re){
+      if(radmod>2*re | nser<0.5){
         mat(i,j)=exp(-bn*(pow(radmod/re,1/nser)-1))*xbin*ybin*Ie;
       }
       else{
@@ -97,24 +97,30 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
         }
         if(radmod<xbin){
           upscale=ceil(8*nser*locscale);
+          depth=3;
         }
         else if(radmod<0.1*re){
           upscale=ceil(8*nser*locscale);
+          depth=2;
         }
         else if(radmod<0.25*re){
           upscale=ceil(4*nser*locscale);
+          depth=2;
         }
         else if(radmod<0.5*re){
           upscale=ceil(2*nser*locscale);
+          depth=2;
         }
         else if(radmod<re){
           upscale=ceil(nser*locscale);
+          depth=1;
         }
         else if(radmod<=2*re){
           upscale=ceil((nser/2)*locscale);
+          depth=0;
         }
-        if(upscale>1000){
-          upscale=1000;
+        if(upscale>100){
+          upscale=100;
         }
         if(upscale<4){
           upscale=4;
@@ -123,7 +129,7 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
         xlim2(1)=x+xbin;
         ylim2(0)=y;
         ylim2(1)=y+ybin;
-        mat(i,j)=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,0)*xbin*ybin*Ie;
+        mat(i,j)=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,0,depth,0.1)*xbin*ybin*Ie;
       }
       y=y+ybin;
     }

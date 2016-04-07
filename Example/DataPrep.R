@@ -31,13 +31,13 @@ model=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(model,dim=dim(input)),magmap=T,stretch='asinh',stretchscale=1/median(abs(input)))
+magimage(profitMakeModel(model,dim=dim(input)))
 
 # The original image:
-magimage(input,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)))
+magimage(input)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(input)),psf=psf,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)))
+magimage(profitMakeModel(model,dim=dim(input)),psf=psf)
 
 # What should we be fitting:
 
@@ -105,7 +105,7 @@ intervals=list(
     ycen=list(function(x){interval(x,0,1e3,reflect=F)},function(x){interval(x,0,1e3,reflect=F)}),
     mag=list(function(x){interval(x,10,30,reflect=F)},function(x){interval(x,10,30,reflect=F)}),
     re=list(function(x){interval(x,0,2,reflect=F)},function(x){interval(x,0,2,reflect=F)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){interval(x,-0.5,1,reflect=F)},function(x){interval(x,-0.5,1,reflect=F)}), # i.e. 1 dex in nser is the SD
+    nser=list(function(x){interval(x,-1,1,reflect=F)},function(x){interval(x,-1,1,reflect=F)}), # i.e. 1 dex in nser is the SD
     ang=list(function(x){interval(x,-180,360,reflect=F)},function(x){interval(x,-180,360,reflect=F)}),
     axrat=list(function(x){interval(x,-1,0,reflect=F)},function(x){interval(x,-1,0,reflect=F)}), # i.e. 1 dex in axrat is the SD
     box=list(function(x){interval(x,-1,1,reflect=F)},function(x){interval(x,-1,1,reflect=F)})
@@ -150,7 +150,7 @@ LAfit$Summary1[,1]
 
 #Check it out:
 
-profitLikeModel(LAfit$Summary1[,1],DataG279148,image=T)
+profitLikeModel(LAfit$Summary1[,1],Data,image=T)
 
 #Next try CMA fitting:
 
