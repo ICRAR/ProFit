@@ -180,18 +180,14 @@ LDfit$Summary1
 
 #With any luck you have enough stationary samples to run:
 
-magtri(LDfit$Posterior2)
+BestLD=magtri(LDfit$Posterior2)
 
 #Otherwise try:
 
-magtri(LDfit$Posterior1,500)
+BestLD=magtri(LDfit$Posterior1,500)
 
-#Similarly we can try:
+#We can now check our final fit:
 
-profitLikeModel(LDfit$Summary2[,1],Data,image=T)
-
-#Or if that doesn't work:
-
-profitLikeModel(LDfit$Summary1[,1],Data,image=T)
+profitLikeModel(BestLD,Data,image=T)
 
 superlist=list(Data=DataG279148, LAfit=LAfit, LDfit=LDfit)

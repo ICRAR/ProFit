@@ -29,7 +29,7 @@ psf=psf/sum(psf)
 psfmod=matrix(0,400,400)
 psfmod[1:25,1:25]=psf
 
-temp=magimage(profitMakeModel(params, dim=c(200,200))$z, magmap=T, stretch='log')
+temp=magimage(profitMakeModel(params, dim=c(200,200))$z)
 contour(temp,add=T,col='red')
-temp=magimage(profitMakeModel(params, psf=psf, dim=c(200,200))$z, magmap=T, stretch='log')
+temp=magimage(profitMakeModel(params, psf=psf, dim=c(200,200))$z)
 contour(temp,add=T,col='red')
