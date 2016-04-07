@@ -6,7 +6,8 @@ params = list(
 		re  = c(14, 5),
 		nser  = c(3, 10),
 		ang  = c(46, 80),
-		axrat  = c(0.4, 0.6)
+		axrat  = c(0.4, 0.6),
+		box = c(0.5,-0.5)
 	),
 	psf = list(
 		xcen   = c(34,10,150),
@@ -28,5 +29,7 @@ psf=psf/sum(psf)
 psfmod=matrix(0,400,400)
 psfmod[1:25,1:25]=psf
 
-magimage(profitMakeModel(params, dim=c(200,200)), magmap=T, stretch='log')
-magimage(profitMakeModel(params, psf=psf, dim=c(200,200)), magmap=T, stretch='log')
+temp=magimage(profitMakeModel(params, dim=c(200,200))$z, magmap=T, stretch='log')
+contour(temp,add=T,col='red')
+temp=magimage(profitMakeModel(params, psf=psf, dim=c(200,200))$z, magmap=T, stretch='log')
+contour(temp,add=T,col='red')

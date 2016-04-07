@@ -1,22 +1,32 @@
 #Load ProFit example data for G279148
+data('ExampleInit')
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/data/',sep=''))
+ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
+print(ExampleIDs)
 
-input = readFITS('Data/fitim.fits')$imDat
-mask = readFITS('Data/M01_mskim.fits')$imDat
-sigma = readFITS('Data/sigma.fits')$imDat
-segim = readFITS('Data/segim.fits')$imDat
-psf = readFITS('Data/psfim.fits')$imDat
+useID=ExampleIDs[1]
+
+input = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'fitim.fits',sep=''))$imDat
+mask = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'mskim.fits',sep=''))$imDat
+sigma = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'sigma.fits',sep=''))$imDat
+segim = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'segim.fits',sep=''))$imDat
+psf = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'psfim.fits',sep=''))$imDat
 
 #Very rough model (not meant to look too good yet):
 
+useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
+useloc=which(ExampleInit$CATAID==useIDnum)
+
 model=list(
   sersic=list(
-    xcen= c(50.374, 50.374),
-    ycen= c(93.229, 93.229),
-    mag= c(17.70657, 17.70657),
-    re= c(4.252094, 8.504189),
-    nser= c(1.9602, 1.0000),
-    ang= c(0.0000, 9.5087000), #theta/deg: 0= |, 45= \, 90= -, 135= /, 180= |
-    axrat= c(1.0000, 0.406) #min/maj: 1= o, 0= |
+    xcen= c(ExampleInit$sersic.xcen1[useloc], ExampleInit$sersic.xcen1[useloc]),
+    ycen= c(ExampleInit$sersic.ycen1[useloc], ExampleInit$sersic.ycen1[useloc]),
+    mag= c(ExampleInit$sersic.mag1[useloc], ExampleInit$sersic.mag2[useloc]),
+    re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc]),
+    nser= c(ExampleInit$sersic.nser1[useloc], 1),
+    ang= c(0.0000, ExampleInit$sersic.ang2[useloc]), #theta/deg: 0= |, 45= \, 90= -, 135= /, 180= |
+    axrat= c(1.0000, ExampleInit$sersic.axrat2[useloc]), #min/maj: 1= o, 0= |
+    box=c(0, 0) #Initially no boxiness
   )
 )
 
@@ -39,7 +49,8 @@ tofit=list(
     re= c(T,T),
     nser= c(T,F), #The second sersic is our disk- we will fix this for our first fit
     ang= c(F,T), #The bulge will be fixed to have axrat=1, so no need to fir for the orientation
-    axrat= c(F,T) #The bulge has axrat=1 for our first fit
+    axrat= c(F,T), #The bulge has axrat=1 for our first fit
+    box= c(T,T)
   )
 )
 
@@ -49,9 +60,10 @@ tofit=list(
     ycen= c(T,NA), #We fit for ycen and tie the two togther
     mag= c(T,T),
     re= c(T,T),
-    nser= c(T,F), #The second sersic is our disk- we will fix this for our first fit
-    ang= c(F,T), #The bulge will be fixed to have axrat=1, so no need to fir for the orientation
-    axrat= c(F,T) #The bulge has axrat=1 for our first fit
+    nser= c(T,T), #Fit for both
+    ang= c(T,T), #The bulge will be fixed to have axrat=1, so no need to fir for the orientation
+    axrat= c(T,T), #The bulge has axrat=1 for our first fit
+    box= c(T,F)
   )
 )
 
@@ -65,7 +77,8 @@ tolog=list(
     re= c(T,T), #re is best fit in log space
     nser= c(T,T), #nser is best fit in log space
     ang= c(F,F),
-    axrat= c(T,T) #axrat is best fit in log space
+    axrat= c(T,T), #axrat is best fit in log space
+    box= c(F,F)
   )
 )
 
@@ -73,13 +86,14 @@ tolog=list(
 
 priors=list(
   sersic=list(
-    xcen=list(function(x){dnorm(x,0,2)},function(x){dnorm(x,0,2)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,2)},function(x){dnorm(x,0,2)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,5)},function(x){dnorm(x,0,5)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,1)},function(x){dnorm(x,0,1)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,1)},function(x){dnorm(x,0,1)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,30)},function(x){dnorm(x,0,30)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,1)},function(x){dnorm(x,0,1)}) # i.e. 1 dex in axrat is the SD
+    xcen=list(function(x){dnorm(x,0,2,log=T)},function(x){dnorm(x,0,2,log=T)}), # should have tight constraints on x and y
+    ycen=list(function(x){dnorm(x,0,2,log=T)},function(x){dnorm(x,0,2,log=T)}), # should have tight constraints on x and y
+    mag=list(function(x){dnorm(x,0,5,log=T)},function(x){dnorm(x,0,5,log=T)}), # 5 mag SD
+    re=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in re is the SD
+    nser=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in nser is the SD
+    ang=list(function(x){dnorm(x,0,30,log=T)},function(x){dnorm(x,0,30,log=T)}), # very broad 30 deg ang SD
+    axrat=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)})
   )
 )
 
@@ -90,53 +104,77 @@ intervals=list(
     xcen=list(function(x){interval(x,-Inf,Inf,reflect=F)},function(x){interval(x,-Inf,Inf,reflect=F)}),
     ycen=list(function(x){interval(x,-Inf,Inf,reflect=F)},function(x){interval(x,-Inf,Inf,reflect=F)}),
     mag=list(function(x){interval(x,10,30,reflect=F)},function(x){interval(x,10,30,reflect=F)}),
-    re=list(function(x){interval(x,-1,2,reflect=F)},function(x){interval(x,-1,2,reflect=F)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){interval(x,-0.3,1.3,reflect=F)},function(x){interval(x,-0.3,1.3,reflect=F)}), # i.e. 1 dex in nser is the SD
+    re=list(function(x){interval(x,0,2,reflect=F)},function(x){interval(x,0,2,reflect=F)}), # i.e. 1 dex in re is the SD
+    nser=list(function(x){interval(x,-1,1.3,reflect=F)},function(x){interval(x,-1,1.3,reflect=F)}), # i.e. 1 dex in nser is the SD
     ang=list(function(x){interval(x,-180,360,reflect=F)},function(x){interval(x,-180,360,reflect=F)}),
-    axrat=list(function(x){interval(x,-2,0,reflect=F)},function(x){interval(x,-2,0,reflect=F)}) # i.e. 1 dex in axrat is the SD
+    axrat=list(function(x){interval(x,-2,0,reflect=F)},function(x){interval(x,-2,0,reflect=F)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){interval(x,-1,1,reflect=F)},function(x){interval(x,-1,1,reflect=F)})
   )
 )
 
 #Setup the data structure we need for optimisation:
 
-DataG279148=profitSetupData(input=input,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,magzero=0, algo.func = 'LA', verbose=TRUE)
+Data=profitSetupData(input=input,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,magzero=0, algo.func = 'optim', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
 
-DataG279148$init
+Data$init
 
 #These are the parameters we wish to fit for, and we take the initial guesses from the model list we provided before.
 
 #We can test how things currently look (we get an output because we set verbose=TRUE earlier):
 
-profitLikeModel(DataG279148$init,DataG279148,image=T)
+profitLikeModel(Data$init,Data,image=T)
+
+#First try optim BFGS:
+
+optimfit=optim(Data$init,profitLikeModel,method='BFGS',Data=Data,control=list(fnscale=-1))
+
+#The best optim BFGS fit is given by:
+
+optimfit$par
+
+#Check it out:
+
+profitLikeModel(optimfit$par,Data,image=T)
 
 #Now we can try a LaplaceApproximation fit (should take about a minute):
 
-LAfit=LaplaceApproximation(profitLikeModel,parm=as.numeric(DataG279148$init),Data=DataG279148,Iterations=1e4,Method='BFGS',CovEst='Identity',sir=FALSE)
+LAfit=LaplaceApproximation(profitLikeModel,parm=as.numeric(Data$init),Data=Data,Iterations=1e4,Method='BFGS',CovEst='Identity',sir=FALSE)
 
-#The best BFGS fit is given by:
+#The best LA BFGS fit is given by:
 
 LAfit$Summary1[,1]
 
-#This should be very close to:
-
-#sersic.mag1   sersic.mag2    sersic.re1    sersic.re2  sersic.nser1   sersic.ang2 sersic.axrat2 
-# 18.5133063    17.2317178     1.0659332     1.1585635    -0.1417851     9.6003038    -0.5320378 
+#Check it out:
 
 profitLikeModel(LAfit$Summary1[,1],DataG279148,image=T)
 
+#Next try CMA fitting:
+
+Data$algo.func = "CMA"
+cma_sigma = c(2,2,1,1,0.3,0.3,0.3,0.3,15,0.2,0.3,0.3)
+names(cma_sigma)=Data$parm.names
+
+cmafit = profitCMAES(optimfit$par, profitLikeModel, Data=Data, control=list(maxit=500,diag.sigma=TRUE,diag.eigen=TRUE,diag.pop=TRUE,diag.value=TRUE, fnscale=-1,sigma=cma_sigma,maxwalltime=Inf, trace=TRUE, stopfitness= 0, stop.tolx=1e-3*cma_sigma))
+
+#Check it out:
+
+profitLikeModel(cmafit$par,Data,image=T)
+
+Data$algo.func = "LD"
+
 #Now we can try a LaplacesDemon fit:
 
-LDfit2=LaplacesDemon(profitLikeModel,Initial.Values=LAfit$Summary1[,1],Data=DataG279148,Iterations=1e3,Algorithm='CHARM',Thinning=1,Specs=list(alpha.star=0.44))
+LDfit=LaplacesDemon(profitLikeModel,Initial.Values=optimfit$par,Data=Data,Iterations=1e3,Algorithm='CHARM',Thinning=1,Specs=list(alpha.star=0.44))
 
 #If it has converged well you will have a Summary2 structure using the ESS:
 
-LDfit$Summary2[,1]
+LDfit$Summary2
 
 #If not you can still check Summary1:
 
-LDfit$Summary1[,1]
+LDfit$Summary1
 
 #The global fit is very close to the initial LA fit on this occassion.
 
@@ -146,14 +184,14 @@ magtri(LDfit$Posterior2)
 
 #Otherwise try:
 
-magtri(LDfit$Posterior1)
+magtri(LDfit$Posterior1,500)
 
 #Similarly we can try:
 
-profitLikeModel(LDfit$Summary2[,1],DataG279148,image=T)
+profitLikeModel(LDfit$Summary2[,1],Data,image=T)
 
 #Or if that doesn't work:
 
-profitLikeModel(LDfit$Summary1[,1],DataG279148,image=T)
+profitLikeModel(LDfit$Summary1[,1],Data,image=T)
 
 superlist=list(Data=DataG279148, LAfit=LAfit, LDfit=LDfit)

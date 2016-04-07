@@ -15,7 +15,7 @@ profitLikeModel=function(parm,Data,image=FALSE){
     
     priorsum=0
     for(i in fitIDs){
-      priorsum=priorsum+log(unlist(Data$priors)[[i]](paramsinit[i]-paramsnew[i]))
+      priorsum=priorsum+unlist(Data$priors)[[i]](paramsinit[i]-paramsnew[i])
     }
     
     tounlogIDs=which(unlist(Data$tolog) & unlist(Data$tofit))
@@ -62,6 +62,6 @@ profitLikeModel=function(parm,Data,image=FALSE){
     LP=as.numeric(LL+priorsum)
     if(Data$verbose){print(c(parm,LP))}
     if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}
-    if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=-2*LL,Monitor=1,yhat=1,parm=parm,priorsum=priorsum,dof=dof)}
+    if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=-2*LL,Monitor=1,yhat=1,parm=parm)}
     return=out
 }

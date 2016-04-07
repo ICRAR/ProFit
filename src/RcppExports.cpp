@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // profitSumPix
-double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim, double re, double nser, double angrad, double axrat, double bn, int N, int recur, int depth, double acc);
-RcppExport SEXP ProFit_profitSumPix(SEXP xcenSEXP, SEXP ycenSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angradSEXP, SEXP axratSEXP, SEXP bnSEXP, SEXP NSEXP, SEXP recurSEXP, SEXP depthSEXP, SEXP accSEXP) {
+double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim, double re, double nser, double angrad, double axrat, double box, double bn, int N, int recur, int depth, double acc);
+RcppExport SEXP ProFit_profitSumPix(SEXP xcenSEXP, SEXP ycenSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angradSEXP, SEXP axratSEXP, SEXP boxSEXP, SEXP bnSEXP, SEXP NSEXP, SEXP recurSEXP, SEXP depthSEXP, SEXP accSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -19,18 +19,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type nser(nserSEXP);
     Rcpp::traits::input_parameter< double >::type angrad(angradSEXP);
     Rcpp::traits::input_parameter< double >::type axrat(axratSEXP);
+    Rcpp::traits::input_parameter< double >::type box(boxSEXP);
     Rcpp::traits::input_parameter< double >::type bn(bnSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type recur(recurSEXP);
     Rcpp::traits::input_parameter< int >::type depth(depthSEXP);
     Rcpp::traits::input_parameter< double >::type acc(accSEXP);
-    __result = Rcpp::wrap(profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, bn, N, recur, depth, acc));
+    __result = Rcpp::wrap(profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, bn, N, recur, depth, acc));
     return __result;
 END_RCPP
 }
 // profitMakeSersic
-NumericMatrix profitMakeSersic(double xcen, double ycen, double mag, double re, double nser, double ang, double axrat, double magzero, NumericVector xlim, NumericVector ylim, IntegerVector N);
-RcppExport SEXP ProFit_profitMakeSersic(SEXP xcenSEXP, SEXP ycenSEXP, SEXP magSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angSEXP, SEXP axratSEXP, SEXP magzeroSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP NSEXP) {
+NumericMatrix profitMakeSersic(double xcen, double ycen, double mag, double re, double nser, double ang, double axrat, double box, double magzero, NumericVector xlim, NumericVector ylim, IntegerVector N);
+RcppExport SEXP ProFit_profitMakeSersic(SEXP xcenSEXP, SEXP ycenSEXP, SEXP magSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angSEXP, SEXP axratSEXP, SEXP boxSEXP, SEXP magzeroSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -41,11 +42,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type nser(nserSEXP);
     Rcpp::traits::input_parameter< double >::type ang(angSEXP);
     Rcpp::traits::input_parameter< double >::type axrat(axratSEXP);
+    Rcpp::traits::input_parameter< double >::type box(boxSEXP);
     Rcpp::traits::input_parameter< double >::type magzero(magzeroSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type xlim(xlimSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ylim(ylimSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type N(NSEXP);
-    __result = Rcpp::wrap(profitMakeSersic(xcen, ycen, mag, re, nser, ang, axrat, magzero, xlim, ylim, N));
+    __result = Rcpp::wrap(profitMakeSersic(xcen, ycen, mag, re, nser, ang, axrat, box, magzero, xlim, ylim, N));
     return __result;
 END_RCPP
 }
