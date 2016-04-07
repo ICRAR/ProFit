@@ -24,8 +24,8 @@ model=list(
     mag= c(ExampleInit$sersic.mag1[useloc], ExampleInit$sersic.mag2[useloc]),
     re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc]),
     nser= c(ExampleInit$sersic.nser1[useloc], 1),
-    ang= c(0.0000, ExampleInit$sersic.ang2[useloc]), #theta/deg: 0= |, 45= \, 90= -, 135= /, 180= |
-    axrat= c(1.0000, ExampleInit$sersic.axrat2[useloc]), #min/maj: 1= o, 0= |
+    ang= c(ExampleInit$sersic.ang2[useloc], ExampleInit$sersic.ang2[useloc]), #theta/deg: 0= |, 45= \, 90= -, 135= /, 180= |
+    axrat= c(ExampleInit$sersic.axrat2[useloc], ExampleInit$sersic.axrat2[useloc]), #min/maj: 1= o, 0= |
     box=c(0, 0) #Initially no boxiness
   )
 )
@@ -101,13 +101,13 @@ priors=list(
 
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,-Inf,Inf,reflect=F)},function(x){interval(x,-Inf,Inf,reflect=F)}),
-    ycen=list(function(x){interval(x,-Inf,Inf,reflect=F)},function(x){interval(x,-Inf,Inf,reflect=F)}),
+    xcen=list(function(x){interval(x,0,1e3,reflect=F)},function(x){interval(x,0,1e3,reflect=F)}),
+    ycen=list(function(x){interval(x,0,1e3,reflect=F)},function(x){interval(x,0,1e3,reflect=F)}),
     mag=list(function(x){interval(x,10,30,reflect=F)},function(x){interval(x,10,30,reflect=F)}),
     re=list(function(x){interval(x,0,2,reflect=F)},function(x){interval(x,0,2,reflect=F)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){interval(x,-1,1.3,reflect=F)},function(x){interval(x,-1,1.3,reflect=F)}), # i.e. 1 dex in nser is the SD
+    nser=list(function(x){interval(x,-0.5,1,reflect=F)},function(x){interval(x,-0.5,1,reflect=F)}), # i.e. 1 dex in nser is the SD
     ang=list(function(x){interval(x,-180,360,reflect=F)},function(x){interval(x,-180,360,reflect=F)}),
-    axrat=list(function(x){interval(x,-2,0,reflect=F)},function(x){interval(x,-2,0,reflect=F)}), # i.e. 1 dex in axrat is the SD
+    axrat=list(function(x){interval(x,-1,0,reflect=F)},function(x){interval(x,-1,0,reflect=F)}), # i.e. 1 dex in axrat is the SD
     box=list(function(x){interval(x,-1,1,reflect=F)},function(x){interval(x,-1,1,reflect=F)})
   )
 )
@@ -139,6 +139,8 @@ optimfit$par
 profitLikeModel(optimfit$par,Data,image=T)
 
 #Now we can try a LaplaceApproximation fit (should take about a minute):
+
+Data$algo.func = "LA"
 
 LAfit=LaplaceApproximation(profitLikeModel,parm=as.numeric(Data$init),Data=Data,Iterations=1e4,Method='BFGS',CovEst='Identity',sir=FALSE)
 
@@ -190,4 +192,4 @@ BestLD=magtri(LDfit$Posterior1,500)
 
 profitLikeModel(BestLD,Data,image=T)
 
-superlist=list(Data=DataG279148, LAfit=LAfit, LDfit=LDfit)
+superlist=list(Data=Data, optimfit=optimfit, LAfit=LAfit, cmafit=cmafit, LDfit=LDfit)
