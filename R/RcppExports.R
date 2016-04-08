@@ -5,8 +5,8 @@ profitSumPix <- function(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, b
     .Call('ProFit_profitSumPix', PACKAGE = 'ProFit', xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, bn, N, recur, depth, acc)
 }
 
-profitMakeSersic <- function(xcen = 0, ycen = 0, mag = 15, re = 1, nser = 1, ang = 0, axrat = 1, box = 0, magzero = 0, xlim = as.numeric( c(-100,100)), ylim = as.numeric( c(-100,100)), N = as.integer( c(200,200))) {
-    .Call('ProFit_profitMakeSersic', PACKAGE = 'ProFit', xcen, ycen, mag, re, nser, ang, axrat, box, magzero, xlim, ylim, N)
+profitMakeSersic <- function(xcen = 0, ycen = 0, mag = 15, re = 1, nser = 1, ang = 0, axrat = 1, box = 0, magzero = 0, rough = 0L, xlim = as.numeric( c(-100,100)), ylim = as.numeric( c(-100,100)), N = as.integer( c(200,200))) {
+    .Call('ProFit_profitMakeSersic', PACKAGE = 'ProFit', xcen, ycen, mag, re, nser, ang, axrat, box, magzero, rough, xlim, ylim, N)
 }
 
 profitBruteConv <- function(image, psf) {

@@ -1,7 +1,10 @@
-profitMakeModel=function(modellist,magzero=0,psf,dim=c(100,100), logim=FALSE){
+profitMakeModel=function(modellist,magzero=0,psf,dim=c(100,100), logim=FALSE, serscomp='all', psfcomp='all', rough=FALSE){
+  if(rough){rough=1}else{rough=0}
+  if(serscomp=='all'){serscomp=1:length(modellist$sersic$xcen)}
+  if(psfcomp=='all'){psfcomp=1:length(modellist$psf$xcen)}
   basemat=matrix(0,dim[1],dim[2])
   if(length(modellist$sersic)>0){
-    for(i in 1:length(modellist$sersic$xcen)){
+    for(i in serscomp){
       if(length(modellist$sersic$nser)>0){
         nser=as.numeric(modellist$sersic$nser[i])
       }else{
@@ -35,7 +38,8 @@ profitMakeModel=function(modellist,magzero=0,psf,dim=c(100,100), logim=FALSE){
         magzero=as.numeric(magzero),
         xlim=c(0,dim[1]),
         ylim=c(0,dim[2]),
-        N=dim)
+        N=dim,
+        rough=rough)
     }
   }
   
@@ -44,7 +48,7 @@ profitMakeModel=function(modellist,magzero=0,psf,dim=c(100,100), logim=FALSE){
     basemat=profitConvolvePSF(basemat,psf)
     
     if(length(modellist$psf)>0){
-      for(i in 1:length(modellist$psf$xcen)){
+      for(i in psfcomp){
         basemat=
         profitMakePSF(
           xcen=modellist$psf$xcen[i],

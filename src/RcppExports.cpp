@@ -30,8 +30,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // profitMakeSersic
-NumericMatrix profitMakeSersic(double xcen, double ycen, double mag, double re, double nser, double ang, double axrat, double box, double magzero, NumericVector xlim, NumericVector ylim, IntegerVector N);
-RcppExport SEXP ProFit_profitMakeSersic(SEXP xcenSEXP, SEXP ycenSEXP, SEXP magSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angSEXP, SEXP axratSEXP, SEXP boxSEXP, SEXP magzeroSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP NSEXP) {
+NumericMatrix profitMakeSersic(double xcen, double ycen, double mag, double re, double nser, double ang, double axrat, double box, double magzero, int rough, NumericVector xlim, NumericVector ylim, IntegerVector N);
+RcppExport SEXP ProFit_profitMakeSersic(SEXP xcenSEXP, SEXP ycenSEXP, SEXP magSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angSEXP, SEXP axratSEXP, SEXP boxSEXP, SEXP magzeroSEXP, SEXP roughSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -44,10 +44,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type axrat(axratSEXP);
     Rcpp::traits::input_parameter< double >::type box(boxSEXP);
     Rcpp::traits::input_parameter< double >::type magzero(magzeroSEXP);
+    Rcpp::traits::input_parameter< int >::type rough(roughSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type xlim(xlimSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ylim(ylimSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type N(NSEXP);
-    __result = Rcpp::wrap(profitMakeSersic(xcen, ycen, mag, re, nser, ang, axrat, box, magzero, xlim, ylim, N));
+    __result = Rcpp::wrap(profitMakeSersic(xcen, ycen, mag, re, nser, ang, axrat, box, magzero, rough, xlim, ylim, N));
     return __result;
 END_RCPP
 }

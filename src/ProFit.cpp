@@ -37,8 +37,8 @@ double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector 
       //radmod=hypot(xmod,ymod);
       radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
       addval=exp(-bn*(pow(radmod/re,1/nser)-1));
-      if(j2>0 & recur<3){
-        if(addval/oldaddval>1+acc | addval/oldaddval<1/(1+acc)){
+      if(j2>0 && recur<3){
+        if(addval/oldaddval>1+acc || addval/oldaddval<1/(1+acc)){
           recur++;
           xlim2(0)=x;
           xlim2(1)=x+xbin;
@@ -58,7 +58,7 @@ return(sumpixel/pow(N,2));
 
 // [[Rcpp::export]]
 NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, double re=1, double nser=1,
-                        double ang=0, double axrat=1, double box=0, double magzero=0,
+                        double ang=0, double axrat=1, double box=0, double magzero=0, int rough=0,
                         NumericVector xlim=NumericVector::create(-100,100),
                         NumericVector ylim=NumericVector::create(-100,100),
                         IntegerVector N=IntegerVector::create(200,200)) {
@@ -87,7 +87,10 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
       xmod=xmod/axrat;
       //radmod=hypot(xmod,ymod);
       radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
-      if(radmod>2*re | nser<0.5){
+      //if(radmod<2*re){
+      //  Rcout<<radmod/(2*re)<<" "<<nser<<" "<<rough<<std::endl;
+      //}
+      if(radmod>2*re || (nser<0.5 || rough>0)){
         mat(i,j)=exp(-bn*(pow(radmod/re,1/nser)-1))*xbin*ybin*Ie;
       }
       else{
@@ -118,9 +121,6 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
         else if(radmod<=2*re){
           upscale=ceil((nser/2)*locscale);
           depth=0;
-        }
-        if(upscale>100){
-          upscale=100;
         }
         if(upscale<4){
           upscale=4;

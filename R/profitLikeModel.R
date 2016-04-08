@@ -1,4 +1,4 @@
-profitLikeModel=function(parm,Data,image=FALSE){
+profitLikeModel=function(parm,Data,image=FALSE, serscomp='all', psfcomp='all',rough=FALSE){
     fitIDs=which(unlist(Data$tofit))
     parm=parm[1:length(fitIDs)]
     paramsinit=unlist(Data$params)
@@ -24,27 +24,27 @@ profitLikeModel=function(parm,Data,image=FALSE){
     paramsnew=relist(paramsnew,Data$params)
     
     if(image){
-      tempmodel=profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim)$z
+      print(paramsnew)
+      tempmodel=profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim,serscomp=serscomp,psfcomp=psfcomp,rough=rough)$z
       layout(cbind(1,2,3,4))
-      modelmedian=median(tempmodel)
-      tempmap=magmap(tempmodel/modelmedian,stretch='asinh',stretchscale=1,lo=0.02,hi=0.98)$datalim
+      tempmap=magmap(Data$input,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=0.02,hi=0.98)$datalim
       tempmap=max(abs(tempmap))
-      magimage(Data$input/modelmedian,magmap=TRUE,stretch='asinh',stretchscale=1,lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
+      magimage(Data$input,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
       tempcon=magimage(1-Data$region,add=T,col=NA)#hsv(s=0,alpha=0.5)
       contour(tempcon,add=T,drawlabels = F,levels=1)
       legend('topleft',legend='Data')
-      magimage(tempmodel/modelmedian,magmap=TRUE,stretch='asinh',stretchscale=1,lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
+      magimage(tempmodel,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
       contour(tempcon,add=T,drawlabels = F,levels=1)
       legend('topleft',legend='Model')
-      magimage((Data$input-tempmodel)/modelmedian,magmap=TRUE,stretch='asinh',stretchscale=1,lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
+      magimage((Data$input-tempmodel),stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
       contour(tempcon,add=T,drawlabels = F,levels=1)
-      legend('topleft',legend='Data/Model')
+      legend('topleft',legend='Data-Model')
       diff=log10(Data$input/tempmodel*Data$region)
       hist(diff[!is.na(diff)],main='',breaks=100)
       abline(v=0,lty=2,col='red')
     }
     
-    cutmod = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim)$z
+    cutmod = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim,serscomp=serscomp,psfcomp=psfcomp,rough=rough)$z
     
     if(any(Data$region)){
       cutim=Data$input[Data$region]
