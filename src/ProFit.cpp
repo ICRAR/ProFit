@@ -1,142 +1,188 @@
-#include <Rcpp.h>
+#include <profit.h>
+#include <sersic.h>
+#include <sky.h>
+
 #include <math.h>
 
+#include <R.h>
+#include <Rinternals.h>
+
+double _qgamma_wrapper(double a, double b, double c) {
+	return Rf_qgamma(a, b, c, 1, 0);
+}
+
+SEXP _get_list_element(SEXP list, const char *name) {
+	SEXP element = R_NilValue;
+	SEXP names = getAttrib(list, R_NamesSymbol);
+	for(unsigned int i=0; i!=length(list); i++) {
+		if( !strcmp(name, CHAR(STRING_ELT(names, i))) ) {
+			element = VECTOR_ELT(list, i);
+			break;
+		}
+	}
+	return element;
+}
+
+profit_profile **_read_sky_profiles(SEXP sersic_list, unsigned int *count) {
+
+	unsigned int i;
+
+	SEXP bg = _get_list_element(sersic_list, "bg");
+	if( bg == R_NilValue ) {
+		*count = 0;
+		return NULL;
+	}
+
+	/* OK, we know now how many there are... */
+	*count = length(bg);
+	profit_profile **all = (profit_profile **)malloc(sizeof(profit_profile*) * *count);
+
+	/* Create that many profiles and then start reading the info if available */
+	for(i=0; i!=*count; i++) {
+		profit_profile *p = profit_get_profile("sky");
+		all[i] = p;
+		profit_sky_profile *sp = (profit_sky_profile *)p;
+
+		/* This one we already tested */
+		sp->bg = REAL(VECTOR_ELT(bg, i))[0];
+	}
+
+	return all;
+}
+
+profit_profile **_read_sersic_profiles(SEXP sersic_list, unsigned int *count) {
+
+	unsigned int i;
+
+	SEXP xcen = _get_list_element(sersic_list, "xcen");
+	if( xcen == R_NilValue ) {
+		*count = 0;
+		return NULL;
+	}
+
+	/* OK, we know now how many there are... */
+	*count = length(xcen);
+	profit_profile **all = (profit_profile **)malloc(sizeof(profit_profile*) * *count);
+
+	/* Create that many profiles and then start reading the info if available */
+	for(i=0; i!=*count; i++) {
+		profit_profile *p = profit_get_profile("sersic");
+		all[i] = p;
+		profit_sersic_profile *sp = (profit_sersic_profile *)p;
+
+		/* This one we already tested */
+		sp->xcen = REAL(VECTOR_ELT(xcen, i))[0];
+
+		SEXP ycen = _get_list_element(sersic_list, "ycen");
+		if( ycen != R_NilValue ) {
+			sp->ycen = REAL(VECTOR_ELT(ycen, i))[0];
+		}
+		SEXP mag = _get_list_element(sersic_list, "mag");
+		if( mag != R_NilValue ) {
+			sp->mag = REAL(VECTOR_ELT(mag, i))[0];
+		}
+		SEXP re = _get_list_element(sersic_list, "re");
+		if( re != R_NilValue ) {
+			sp->re = REAL(VECTOR_ELT(re, i))[0];
+		}
+		SEXP nser = _get_list_element(sersic_list, "nser");
+		if( nser != R_NilValue ) {
+			sp->nser = REAL(VECTOR_ELT(nser, i))[0];
+		}
+		SEXP ang = _get_list_element(sersic_list, "ang");
+		if( ang != R_NilValue ) {
+			sp->ang = REAL(VECTOR_ELT(ang, i))[0];
+		}
+		SEXP axrat = _get_list_element(sersic_list, "axrat");
+		if( axrat != R_NilValue ) {
+			sp->axrat = REAL(VECTOR_ELT(axrat, i))[0];
+		}
+		SEXP box = _get_list_element(sersic_list, "box");
+		if( box != R_NilValue ) {
+			sp->box = REAL(VECTOR_ELT(box, i))[0];
+		}
+
+		sp->_qgamma = &_qgamma_wrapper;
+		sp->_gammafn = &Rf_gammafn;
+		sp->_beta = &Rf_beta;
+	}
+
+	return all;
+}
+
+SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
+
+	unsigned size;
+	int *dim_l;
+	unsigned int n_sersic = 0, n_sky = 0, n_profiles;
+	unsigned int i, p;
+	profit_profile **sersic_profiles = NULL;
+	profit_profile **sky_profiles = NULL;
+	profit_profile **all_profiles = NULL;
+
+	/* Inspect which profiles we have specified and creates them */
+	SEXP sersic_list = _get_list_element(model_list, "sersic");
+	if( sersic_list != R_NilValue ) {
+		sersic_profiles = _read_sersic_profiles(sersic_list, &n_sersic);
+		n_profiles += n_sersic;
+	}
+	SEXP sky_list = _get_list_element(model_list, "sky");
+	if( sersic_list != R_NilValue ) {
+		sky_profiles = _read_sky_profiles(sky_list, &n_sky);
+		n_profiles += n_sky;
+	}
+
+	if( !n_profiles ) {
+		error("No profiles found in incoming model");
+		return R_NilValue;
+	}
+
+	/* Combine all profiles into a single list */
+	all_profiles = (profit_profile **)malloc(sizeof(profit_profile *) * n_profiles);
+	p = 0;
+	for(i=0; i!=n_sersic; i++, p++) {
+		all_profiles[p] = sersic_profiles[i];
+	}
+	for(i=0; i!=n_sky; i++, p++) {
+		all_profiles[p] = sky_profiles[i];
+	}
+	free(sersic_profiles);
+	free(sky_profiles);
+
+	/* Create the model */
+	profit_model *m = (profit_model *)malloc(sizeof(profit_model));
+	m->n_profiles = n_profiles;
+	m->profiles = all_profiles;
+	m->magzero = REAL(magzero)[0];
+	dim_l = INTEGER(dim);
+	m->width  = dim_l[0];
+	m->height = dim_l[1];
+	size = m->width * m->height;
+
+	/* Go, go, go! */
+	if( profit_make_model(m) ) {
+		Rprintf("Error while calculating model :(");
+		return R_NilValue;
+	}
+
+	/* Copy the image, clean up, and good bye */
+	SEXP image;
+  	PROTECT(image = allocVector(REALSXP, size));
+	memcpy(REAL(image), m->image, sizeof(double) * size);
+
+	free(m->image);
+	for(i=0; i!=m->n_profiles; i++) {
+		free(m->profiles[i]);
+	}
+	free(m->profiles);
+
+	UNPROTECT(1);
+	return image;
+}
+
+#include <Rcpp.h>
+
 using namespace Rcpp;
-
-// This is a simple example of exporting a C++ function to R. You can
-// source this function into an R session using the Rcpp::sourceCpp
-// function (or via the Source button on the editor toolbar). Learn
-// more about Rcpp at:
-//
-//   http://www.rcpp.org/
-//   http://adv-r.had.co.nz/Rcpp.html
-//   http://gallery.rcpp.org/
-//
-
-
-// [[Rcpp::export]]
-double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim,
-                    double re, double nser, double angrad, double axrat, double box,
-                    double bn, int N, int recur=0, int depth=5, double acc=1e-1){
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod;
-  double xbin=(xlim(1)-xlim(0))/N;
-  double ybin=(ylim(1)-ylim(0))/N;
-  double sumpixel=0, addval, oldaddval;
-  int upscale=20;
-  NumericVector xlim2(2),ylim2(2);
-  x=xlim(0);
-  for(int i2 = 0; i2 < N; i2++) {
-    recur=0;
-    y=ylim(0);
-    for(int j2 = 0; j2 < N; j2++) {
-      rad=hypot(x+xbin/2-xcen,y+ybin/2-ycen);
-      angmod=atan2(x+xbin/2-xcen,y+ybin/2-ycen)-angrad;
-      xmod=rad*sin(angmod);
-      ymod=rad*cos(angmod);
-      xmod=xmod/axrat;
-      //radmod=hypot(xmod,ymod);
-      radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
-      addval=exp(-bn*(pow(radmod/re,1/nser)-1));
-      if(j2>0 & recur<3){
-        if(addval/oldaddval>1+acc | addval/oldaddval<1/(1+acc)){
-          recur++;
-          xlim2(0)=x;
-          xlim2(1)=x+xbin;
-          ylim2(0)=y;
-          ylim2(1)=y+ybin;
-          addval=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,recur,depth,acc);
-        }
-      }
-      sumpixel+=addval;
-      oldaddval=addval;
-      y=y+ybin;
-    }
-    x=x+xbin;
-  }
-return(sumpixel/pow(N,2));
-}
-
-// [[Rcpp::export]]
-NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, double re=1, double nser=1,
-                        double ang=0, double axrat=1, double box=0, double magzero=0,
-                        NumericVector xlim=NumericVector::create(-100,100),
-                        NumericVector ylim=NumericVector::create(-100,100),
-                        IntegerVector N=IntegerVector::create(200,200)) {
-  double bn=R::qgamma(0.5, 2 * nser,1,1,0);
-  double Rbox=PI*(box+2)/(4*R::beta(1/(box+2),1+1/(box+2)));
-  double lumtot = pow(re,2)*2*PI*nser*((exp(bn))/pow(bn,2*nser))*R::gammafn(2*nser)*axrat/Rbox;
-  double Ie=pow(10,(-0.4*(mag-magzero)))/lumtot;
-  NumericMatrix mat(N(0), N(1));
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,locscale,depth;
-  double xbin=(xlim(1)-xlim(0))/N(0);
-  double ybin=(ylim(1)-ylim(0))/N(1);
-  NumericVector xlim2(2),ylim2(2);
-  int upscale;
-
-  double angrad=-ang*PI/180;
-
-  x=xlim(0);
-  for(int i = 0; i < N(0); i++) {
-    y=ylim(0);
-    for(int j = 0; j < N(1); j++) {
-      mat(i,j)=0;
-      rad=hypot(x+xbin/2-xcen,y+ybin/2-ycen);
-      angmod=atan2(x-xcen,y-ycen)-angrad;
-      xmod=rad*sin(angmod);
-      ymod=rad*cos(angmod);
-      xmod=xmod/axrat;
-      //radmod=hypot(xmod,ymod);
-      radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
-      if(radmod>2*re | nser<0.5){
-        mat(i,j)=exp(-bn*(pow(radmod/re,1/nser)-1))*xbin*ybin*Ie;
-      }
-      else{
-        locscale=xbin/radmod;
-        if(locscale>10){
-          locscale=10;
-        }
-        if(radmod<xbin){
-          upscale=ceil(8*nser*locscale);
-          depth=3;
-        }
-        else if(radmod<0.1*re){
-          upscale=ceil(8*nser*locscale);
-          depth=2;
-        }
-        else if(radmod<0.25*re){
-          upscale=ceil(4*nser*locscale);
-          depth=2;
-        }
-        else if(radmod<0.5*re){
-          upscale=ceil(2*nser*locscale);
-          depth=2;
-        }
-        else if(radmod<re){
-          upscale=ceil(nser*locscale);
-          depth=1;
-        }
-        else if(radmod<=2*re){
-          upscale=ceil((nser/2)*locscale);
-          depth=0;
-        }
-        if(upscale>100){
-          upscale=100;
-        }
-        if(upscale<4){
-          upscale=4;
-        }
-        xlim2(0)=x;
-        xlim2(1)=x+xbin;
-        ylim2(0)=y;
-        ylim2(1)=y+ybin;
-        mat(i,j)=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,0,depth,0.1)*xbin*ybin*Ie;
-      }
-      y=y+ybin;
-    }
-    x=x+xbin;
-  }
-return(mat);
-}
 
 // [[Rcpp::export]]
 NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf){
@@ -144,12 +190,12 @@ NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf){
     int y_s = image.ncol(), y_k = psf.ncol();
     int extrax= x_k % 2;
     int extray= y_k % 2;
-    
+
     NumericMatrix output(x_s + x_k - extrax, y_s + y_k - extray);
     double* output_row_col_j ;
     double image_row_col = 0.0 ;
     double* psf_j ;
-    
+
     for (int row = 0; row < x_s; row++) {
       for (int col = 0; col < y_s; col++) {
         image_row_col = image(row,col) ;
@@ -170,16 +216,3 @@ NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf){
     }
    return cutout;
 }
-
-// // [[Rcpp::export]]
-// double matchisq(NumericMatrix image, NumericMatrix model, NumericMatrix mask, NumericMatrix segmap){
-//   double chisq=0;
-//   int nrow = image.nrow();
-//   int ncol = image.ncol();
-//   for (int row = 0; row < nrow; row++) {
-//     for (int col = 0; col < ncol; col++) {
-//       chisq+=pow(image(row,col)-model(row,col),2)/std::abs(model(row,col));
-//     }
-//   }
-//   return chisq;
-// }
