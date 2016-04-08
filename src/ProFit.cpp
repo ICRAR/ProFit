@@ -5,22 +5,23 @@
 #include <math.h>
 
 #include <R.h>
+#include <Rmath.h>
 #include <Rinternals.h>
+
+extern "C" {
 
 double _qgamma_wrapper(double a, double b, double c) {
 	return Rf_qgamma(a, b, c, 1, 0);
 }
 
 SEXP _get_list_element(SEXP list, const char *name) {
-	SEXP element = R_NilValue;
 	SEXP names = getAttrib(list, R_NamesSymbol);
 	for(unsigned int i=0; i!=length(list); i++) {
 		if( !strcmp(name, CHAR(STRING_ELT(names, i))) ) {
-			element = VECTOR_ELT(list, i);
-			break;
+			return VECTOR_ELT(list, i);
 		}
 	}
-	return element;
+	return R_NilValue;
 }
 
 profit_profile **_read_sky_profiles(SEXP sersic_list, unsigned int *count) {
@@ -44,7 +45,7 @@ profit_profile **_read_sky_profiles(SEXP sersic_list, unsigned int *count) {
 		profit_sky_profile *sp = (profit_sky_profile *)p;
 
 		/* This one we already tested */
-		sp->bg = REAL(VECTOR_ELT(bg, i))[0];
+		sp->bg = REAL(bg)[i];
 	}
 
 	return all;
@@ -71,35 +72,35 @@ profit_profile **_read_sersic_profiles(SEXP sersic_list, unsigned int *count) {
 		profit_sersic_profile *sp = (profit_sersic_profile *)p;
 
 		/* This one we already tested */
-		sp->xcen = REAL(VECTOR_ELT(xcen, i))[0];
+		sp->xcen = REAL(xcen)[i];
 
 		SEXP ycen = _get_list_element(sersic_list, "ycen");
 		if( ycen != R_NilValue ) {
-			sp->ycen = REAL(VECTOR_ELT(ycen, i))[0];
+			sp->ycen = REAL(ycen)[i];
 		}
 		SEXP mag = _get_list_element(sersic_list, "mag");
 		if( mag != R_NilValue ) {
-			sp->mag = REAL(VECTOR_ELT(mag, i))[0];
+			sp->mag = REAL(mag)[i];
 		}
 		SEXP re = _get_list_element(sersic_list, "re");
 		if( re != R_NilValue ) {
-			sp->re = REAL(VECTOR_ELT(re, i))[0];
+			sp->re = REAL(re)[i];
 		}
 		SEXP nser = _get_list_element(sersic_list, "nser");
 		if( nser != R_NilValue ) {
-			sp->nser = REAL(VECTOR_ELT(nser, i))[0];
+			sp->nser = REAL(nser)[i];
 		}
 		SEXP ang = _get_list_element(sersic_list, "ang");
 		if( ang != R_NilValue ) {
-			sp->ang = REAL(VECTOR_ELT(ang, i))[0];
+			sp->ang = REAL(ang)[i];
 		}
 		SEXP axrat = _get_list_element(sersic_list, "axrat");
 		if( axrat != R_NilValue ) {
-			sp->axrat = REAL(VECTOR_ELT(axrat, i))[0];
+			sp->axrat = REAL(axrat)[i];
 		}
 		SEXP box = _get_list_element(sersic_list, "box");
 		if( box != R_NilValue ) {
-			sp->box = REAL(VECTOR_ELT(box, i))[0];
+			sp->box = REAL(box)[i];
 		}
 
 		sp->_qgamma = &_qgamma_wrapper;
@@ -114,7 +115,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 
 	unsigned size;
 	int *dim_l;
-	unsigned int n_sersic = 0, n_sky = 0, n_profiles;
+	unsigned int n_sersic = 0, n_sky = 0, n_profiles = 0;
 	unsigned int i, p;
 	profit_profile **sersic_profiles = NULL;
 	profit_profile **sky_profiles = NULL;
@@ -160,14 +161,15 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	size = m->width * m->height;
 
 	/* Go, go, go! */
+	GetRNGstate();
 	if( profit_make_model(m) ) {
 		Rprintf("Error while calculating model :(");
 		return R_NilValue;
 	}
+	PutRNGstate();
 
 	/* Copy the image, clean up, and good bye */
-	SEXP image;
-  	PROTECT(image = allocVector(REALSXP, size));
+	SEXP image = PROTECT(allocVector(REALSXP, size));
 	memcpy(REAL(image), m->image, sizeof(double) * size);
 
 	free(m->image);
@@ -178,6 +180,8 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 
 	UNPROTECT(1);
 	return image;
+}
+
 }
 
 #include <Rcpp.h>
