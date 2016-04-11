@@ -25,23 +25,31 @@ profitLikeModel=function(parm,Data,image=FALSE, serscomp='all', psfcomp='all',ro
     
     if(image){
       print(paramsnew)
+      par(mar=c(0,0,0,0),oma=c(4.1,4.1,1.1,1.1))
+      colpalette=colorRampPalette(rev(brewer.pal(11, 'RdYlBu')))(1e3)
       tempmodel=profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim,serscomp=serscomp,psfcomp=psfcomp,rough=rough)$z
       layout(cbind(1,2,3,4))
-      tempmap=magmap(Data$input,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=0.02,hi=0.98)$datalim
+      tempmap=magmap(Data$input,lo=0,hi=1)$datalim
       tempmap=max(abs(tempmap))
-      magimage(Data$input,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
+      
+      magimage(Data$input,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=colpalette,xlab='x/pix',ylab='y/pix')
       tempcon=magimage(1-Data$region,add=T,col=NA)#hsv(s=0,alpha=0.5)
-      contour(tempcon,add=T,drawlabels = F,levels=1)
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
       legend('topleft',legend='Data')
-      magimage(tempmodel,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
-      contour(tempcon,add=T,drawlabels = F,levels=1)
+      
+      magimage(tempmodel,stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=colpalette,xlab='x/pix')
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
       legend('topleft',legend='Model')
-      magimage((Data$input-tempmodel),stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=rev(rainbow(1e3,end=2/3)))
-      contour(tempcon,add=T,drawlabels = F,levels=1)
+      
+      magimage((Data$input-tempmodel),stretchscale=1/median(abs(Data$input[Data$input>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=colpalette,xlab='x/pix')
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
       legend('topleft',legend='Data-Model')
-      diff=log10(Data$input/tempmodel*Data$region)
-      hist(diff[!is.na(diff)],main='',breaks=100)
+      
+      diff=(Data$input[Data$region]-tempmodel[Data$region])/Data$sigma[Data$region]
+      hist(diff[!is.na(diff)],main='',breaks=100,axes=FALSE)
+      magaxis(1,xlab='Sigma offset / Cnts')
       abline(v=0,lty=2,col='red')
+      legend('topleft',legend='(Data-Model)/Sigma')
     }
     
     cutmod = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$inputdim,serscomp=serscomp,psfcomp=psfcomp,rough=rough)$z

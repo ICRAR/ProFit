@@ -4,7 +4,7 @@ ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/data/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
 
-useID=ExampleIDs[6]
+useID=ExampleIDs[10]
 
 input = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'fitim.fits',sep=''))$imDat
 mask = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'mskim.fits',sep=''))$imDat
@@ -136,7 +136,7 @@ profitLikeModel(optimfit$par,Data,image=T,serscomp='all')
 
 Data$algo.func = "LA"
 
-LAfit=LaplaceApproximation(profitLikeModel,parm=as.numeric(Data$init),Data=Data,Iterations=1e4,Method='BFGS',CovEst='Identity',sir=FALSE)
+LAfit=LaplaceApproximation(profitLikeModel,parm=optimfit$par,Data=Data,Iterations=1e4,Method='BFGS',CovEst='Identity',sir=FALSE)
 
 #The best LA BFGS fit is given by:
 
@@ -150,7 +150,7 @@ profitLikeModel(LAfit$Summary1[,1],Data,image=T)
 
 Data$algo.func = "CMA"
 
-cmafit = profitCMAES(optimfit$par, profitLikeModel, Data=Data, rough=T, lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))], control=list(maxit=500,diag.sigma=TRUE,diag.eigen=TRUE,diag.pop=TRUE,diag.value=TRUE, fnscale=-1,sigma=sigmas[which(unlist(tofit))],maxwalltime=Inf, trace=TRUE, stopfitness= 0, stop.tolx=1e-3*cma_sigma))
+cmafit = profitCMAES(optimfit$par, profitLikeModel, Data=Data, rough=TRUE, lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))], control=list(maxit=500,diag.sigma=TRUE,diag.eigen=TRUE,diag.pop=TRUE,diag.value=TRUE, fnscale=-1,sigma=sigmas[which(unlist(tofit))],maxwalltime=Inf, trace=TRUE, stopfitness= 0, stop.tolx=1e-3*cma_sigma))
 
 #Check it out:
 
@@ -164,7 +164,7 @@ Data$algo.func = "LD"
 
 #Now we can try a LaplacesDemon fit:
 
-LDfit=LaplacesDemon(profitLikeModel,Initial.Values=optimfit$par,Data=Data,Iterations=2e3,Algorithm='CHARM',Thinning=1,Specs=list(alpha.star=0.44))
+LDfit=LaplacesDemon(profitLikeModel,Initial.Values=LAfit$Summary1[,1],Data=Data,Iterations=1e4,Algorithm='CHARM',Thinning=1,Specs=list(alpha.star=0.44))
 
 #If it has converged well you will have a Summary2 structure using the ESS:
 
