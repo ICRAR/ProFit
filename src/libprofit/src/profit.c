@@ -34,7 +34,7 @@
 
 struct _profit_profile_index {
 	char *name;
-	profit_profile *(* create)();
+	profit_profile *(* create)(void);
 };
 
 static

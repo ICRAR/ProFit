@@ -94,8 +94,8 @@ int _sersic_at_xy(profit_sersic_profile *sp,
 	unsigned int upscale = 4;
 
 	/*
-	   No need for further refinement, return sersic profile
-	*/
+	 * No need for further refinement, return sersic profile
+	 */
 	if( radmod > 2*re ){
 		*result = exp( -sp->bn * (pow(radmod/re, 1/nser) - 1) );
 		*result *= xbin*ybin*sp->Ie;
@@ -139,7 +139,7 @@ int _sersic_at_xy(profit_sersic_profile *sp,
 	*result = profit_sumpix(sp->xcen, sp->ycen, x, x+xbin, y, y+ybin,
 	                        re, nser, angrad, sp->axrat, box, sp->bn,
 	                        upscale, 0, 1e-1);
-	*result *= xbin*ybin*sp->Ie;
+	*result *= xbin * ybin * sp->Ie;
 	return 0;
 
 }
@@ -173,6 +173,10 @@ int profit_init_sersic(profit_profile *profile, profit_model *model) {
 	double magzero = model->magzero;
 	double bn;
 
+	if( sersic_p->_qgamma == NULL || sersic_p->_gammafn == NULL || sersic_p->_beta == NULL ) {
+		return 1;
+	}
+
 	/*
 	 * Calculate the total luminosity needed by the sersic profile
 	 * and save it back on the sersic profile
@@ -192,8 +196,16 @@ profit_profile *profit_create_sersic() {
 	p->profile.make_profile = &profit_make_sersic;
 
 	/* Sane defaults */
+	p->xcen = 0;
+	p->ycen = 0;
+	p->mag = 15;
+	p->re = 1;
+	p->nser = 5;
 	p->box = 0;
 	p->ang   = 0.0;
 	p->axrat = 1.;
+	p->_qgamma = NULL;
+	p->_gammafn = NULL;
+	p->_beta = NULL;
 	return (profit_profile *)p;
 }

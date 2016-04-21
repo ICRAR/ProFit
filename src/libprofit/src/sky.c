@@ -49,5 +49,6 @@ profit_profile *profit_create_sky() {
 	profit_sky_profile *p = (profit_sky_profile *)malloc(sizeof(profit_sky_profile));
 	p->profile.init_profile = &profit_init_sky;
 	p->profile.make_profile = &profit_make_sky;
+	p->bg = 0.;
 	return (profit_profile *)p;
 }

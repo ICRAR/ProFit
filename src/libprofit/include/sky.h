@@ -41,7 +41,7 @@ typedef struct _profit_sky_profile {
 
 int profit_init_sky(profit_profile *profile, profit_model *model);
 void profit_make_sky(profit_profile *profile, profit_model *model, double *image);
-profit_profile *profit_create_sky();
+profit_profile *profit_create_sky(void);
 
 #ifdef __cplusplus
 }

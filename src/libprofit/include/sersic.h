@@ -58,7 +58,7 @@ int profit_init_sersic(profit_profile *profile, profit_model *model);
 
 void profit_make_sersic(profit_profile *profile, profit_model *model, double *image);
 
-profit_profile *profit_create_sersic();
+profit_profile *profit_create_sersic(void);
 
 #ifdef __cplusplus
 }
