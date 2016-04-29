@@ -2,7 +2,7 @@
  * Header file with main libprofit structures and functions
  *
  * ICRAR - International Centre for Radio Astronomy Research
- * (c) UWA - The University of Western Australia, 2014
+ * (c) UWA - The University of Western Australia, 2016
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
