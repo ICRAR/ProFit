@@ -49,7 +49,7 @@ double profit_sumpix(double xcen, double ycen, double xlim0, double xlim1, doubl
 			xmod=rad*sin(angmod);
 			ymod=rad*cos(angmod);
 			xmod=xmod/axrat;
-			radmod=pow(pow(fabs(xmod),2+box)+pow(fabs(ymod),2+box),1/(2+box));
+			radmod=pow(pow(fabs(xmod),box)+pow(fabs(ymod),box),1/(box));
 			addval=exp(-bn*(pow(radmod/re,1/nser)-1));
 			if( j > 0 && recur < 3 ){
 				if( (addval/prevaddval > (1+acc)) || (addval/prevaddval < 1/(1+acc)) ){
@@ -76,29 +76,31 @@ int _sersic_at_xy(profit_sersic_profile *sp,
 	double angrad = -sp->ang * M_PI/180;
 	double re   = sp->re;
 	double nser = sp->nser;
-	double box  = sp->box;
+	double box  = sp->box + 2;
 	double xbin = model->xbin;
 	double ybin = model->ybin;
 	/* unsigned int depth = 0; */
 
 	/*
-	 * Transform the X/Y position so it accounts for translation from the
-	 * profile center, rotation and ellipse scaling in the X axis
+	 * Transform the X/Y position into sersic profile coordinates,
+	 * accounting for translation from the profile center, rotation and ellipse
+	 * scaling in the X axis
 	 */
 	double rad = sqrt( pow(x+xbin/2-sp->xcen,2) + pow(y+ybin/2-sp->ycen,2) );
 	double angmod = atan2(x-sp->xcen, y-sp->ycen) - angrad;
 	double xmod = rad * sin(angmod) / sp->axrat;
 	double ymod = rad * cos(angmod);
-	double radmod = pow( pow(fabs(xmod),2+box)+pow(fabs(ymod),2+box), 1/(2+box));
+	double radmod = pow( pow(fabs(xmod),box) + pow(fabs(ymod),box), 1/(box));
 
 	unsigned int upscale = 4;
 
 	/*
 	 * No need for further refinement, return sersic profile
 	 */
-	if( radmod > 2*re ){
+	if( radmod > 2 * re ){
 		*result = exp( -sp->bn * (pow(radmod/re, 1/nser) - 1) );
 		*result *= xbin*ybin*sp->Ie;
+		//printf("%g %g %g\n", xbin, ybin, *result);
 		return 0;
 	}
 
@@ -186,6 +188,8 @@ int profit_init_sersic(profit_profile *profile, profit_model *model) {
 	double gamma = sersic_p->_gammafn(2*nser);
 	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
 	sersic_p->Ie = pow(10, -0.4*(mag-magzero))/lumtot;
+
+	printf("%g %g %g %g %g %g %g %g\n", bn, Rbox, gamma, re, nser, axrat, lumtot, sersic_p->Ie);
 
 	return 0;
 }

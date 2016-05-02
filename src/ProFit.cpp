@@ -80,6 +80,7 @@ profit_profile **_read_sersic_profiles(SEXP sersic_list, unsigned int *count) {
 		_read_real(sersic_list, "xcen",  i, &(sp->xcen));
 		_read_real(sersic_list, "ycen",  i, &(sp->ycen));
 		_read_real(sersic_list, "mag",   i, &(sp->mag));
+		_read_real(sersic_list, "re",    i, &(sp->re));
 		_read_real(sersic_list, "nser",  i, &(sp->nser));
 		_read_real(sersic_list, "ang",   i, &(sp->ang));
 		_read_real(sersic_list, "axrat", i, &(sp->axrat));
@@ -121,15 +122,9 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 
 	/* Combine all profiles into a single list */
 	all_profiles = (profit_profile **)malloc(sizeof(profit_profile *) * n_profiles);
-	p = 0;
-	for(i=0; i!=n_sersic; i++, p++) {
-		all_profiles[p] = sersic_profiles[i];
-		profit_sersic_profile *s = (profit_sersic_profile *)sersic_profiles[i];
-	}
-	for(i=0; i!=n_sky; i++, p++) {
-		all_profiles[p] = sky_profiles[i];
-		profit_sky_profile *s = (profit_sky_profile *)sky_profiles[i];
-	}
+	profit_profile **dst = all_profiles;
+	memcpy(dst,             sersic_profiles, sizeof(profit_profile *) * n_sersic);
+	memcpy(dst += n_sersic, sky_profiles,    sizeof(profit_profile *) * n_sky);
 	free(sersic_profiles);
 	free(sky_profiles);
 
