@@ -9,4 +9,4 @@ Description: Get data / Define model / ??? / ProFit!
 License: GPL-3+
 Imports: Rcpp (>= 0.11.6)
 LinkingTo: Rcpp
-Depends: magicaxis, FITSio, LaplacesDemon
+Depends: magicaxis, FITSio, LaplacesDemon, RColorBrewer

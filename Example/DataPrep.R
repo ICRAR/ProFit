@@ -1,12 +1,12 @@
-#Load ProFit example data for G279148
+#Load ProFit example data
 data('ExampleInit')
 ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/data/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
 
-useID=ExampleIDs[10]
+useID=ExampleIDs[2]
 
-input = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'fitim.fits',sep=''))$imDat
+image = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'fitim.fits',sep=''))$imDat
 mask = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'mskim.fits',sep=''))$imDat
 sigma = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'sigma.fits',sep=''))$imDat
 segim = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'segim.fits',sep=''))$imDat
@@ -31,13 +31,13 @@ model=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(model,dim=dim(input)))
+magimage(profitMakeModel(model,dim=dim(image)))
 
 # The original image:
-magimage(input)
+magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(input)),psf=psf)
+magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
 
 # What should we be fitting:
 
@@ -69,7 +69,7 @@ tolog=list(
   )
 )
 
-# The priors. If the parameters are to be sampeld in log space (above) then the priors will refer to dex not linear standard deviations. Priors should be specified in their unlogged state- the logging is done internally.
+# The priors. If the parameters are to be sampled in log space (above) then the priors will refer to dex not linear standard deviations. Priors should be specified in their unlogged state- the logging is done internally.
 
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
 
@@ -106,7 +106,7 @@ intervals=list(
 
 #Setup the data structure we need for optimisation:
 
-Data=profitSetupData(input=input,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,magzero=0, algo.func = 'optim', verbose=TRUE)
+Data=profitSetupData(image=image,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,magzero=0, algo.func = 'optim', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
 

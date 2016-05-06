@@ -17,7 +17,7 @@ Date: \tab 2016-03-16\cr
 License: \tab GPL-3+\cr
 Imports: \tab Rcpp (>= 0.11.6)\cr
 LinkingTo: \tab Rcpp\cr
-Depends: \tab magicaxis\cr
+Depends: \tab magicaxis, FITSio, LaplacesDemon, RColorBrewer\cr
 }
 }
 
