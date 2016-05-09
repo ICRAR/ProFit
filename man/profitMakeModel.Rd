@@ -109,7 +109,7 @@ Aaron Robotham
 \code{\link{profitMakeSersic}}, \code{\link{profitMakePSF}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
-params = list(
+model = list(
 	sersic = list(
 		xcen   = c(180, 60),
 		ycen   = c(90, 10),
@@ -132,12 +132,12 @@ params = list(
 
 # Without a PSF provided only the extended sources are shown, with no convolution:
 
-magimage(profitMakeModel(params, dim=c(200,200)))
+magimage(profitMakeModel(model=model, dim=c(200,200)))
 
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(params, psf=profitGenPSF(), dim=c(200,200)))
+magimage(profitMakeModel(model=model, psf=profitGenPSF(), dim=c(200,200)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

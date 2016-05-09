@@ -41,7 +41,7 @@ Scalar; xxial ratio of the Sersic profile defined as minor-axis/major-axis, i.e.
 Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{bn}{
-Scalar; bn for the Sersic profile. This can be easily computed using bn=qgamma(0.5, 2 * nser,1,1,0).
+Scalar; bn for the Sersic profile. This can be easily computed using bn=qgamma(0.5, 2 * nser,1).
 }
   \item{Nsamp}{
 The upsampling to use for the current pixel. larger N means a more accurate pixel integration.

@@ -33,11 +33,28 @@ Aaron Robotham
 \code{\link{profitBruteConv}}, \code{\link{profitMakePSF}}, \code{\link{profitMakeModel}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+model = list(
+	sersic = list(
+		xcen   = c(180, 60),
+		ycen   = c(90, 10),
+		mag = c(15, 13),
+		re  = c(14, 5),
+		nser  = c(3, 10),
+		ang  = c(46, 80),
+		axrat  = c(0.4, 0.6),
+		box = c(0.5,-0.5)
+	)
+)
 
-#Add example!!!!
+model.image=profitMakeModel(model=model, dim=c(200,200))$z
+
+# Without convolution:
+
+magimage(model.image)
+
+# With convolution:
+
+magimage(profitConvolvePSF(image=model.image, psf=profitGenPSF()))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

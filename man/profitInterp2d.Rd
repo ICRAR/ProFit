@@ -40,11 +40,14 @@ Aaron Robotham
 \code{\link{profitConvolvePSF}}, \code{\link{profitMakePSF}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-#Add example!!!!
+PSFeven=profitGenPSF(npix=24)
+magimage(PSFeven)
+xrange=floor(-dim(PSFeven)[1]/2):ceiling(dim(PSFeven)[1]/2)
+yrange=floor(-dim(PSFeven)[2]/2):ceiling(dim(PSFeven)[2]/2)
+regrid=expand.grid(xrange,yrange)
+PSFodd=matrix(profitInterp2d(x=regrid[,1], y=regrid[,2], image=PSFeven)[,3],
+length(xrange),length(yrange))
+magimage(PSFodd)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

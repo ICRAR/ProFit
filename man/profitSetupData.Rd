@@ -272,7 +272,7 @@ tofit=list(
     nser= c(T,T), #Fit for both
     ang= c(T,T), #Fit for both
     axrat= c(T,T), #Fit for both
-    box= c(T,F) #We only llow the bugle to be boxy
+    box= c(T,F) #We only allow the bulge to be boxy
   )
 )
 
@@ -361,7 +361,7 @@ Data$init
 # We can test how things currently look (we get an output because we set verbose=TRUE
 # earlier):
 
-profitLikeModel(Data$init,Data,image=T)
+profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -33,7 +33,7 @@ Maintainer: \packageMaintainer{ProFit}
 \keyword{profile}
 
 \examples{
-params = list(
+model = list(
 	sersic = list(
 		xcen   = c(180, 60),
 		ycen   = c(90, 10),
@@ -56,16 +56,16 @@ params = list(
 
 # Without a PSF provided only the extended sources are shown, with no convolution:
 
-magimage(profitMakeModel(params, dim=c(200,200)))
+magimage(profitMakeModel(model=model, dim=c(200,200)))
 
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(params, psf=profitGenPSF(), dim=c(200,200)))
+magimage(profitMakeModel(model=model, psf=profitGenPSF(), dim=c(200,200)))
 
 ############### Full fit example ##############
 
-dontrun{
+\dontrun{
 
 # Load ProFit example data
 
@@ -119,14 +119,14 @@ magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
 
 tofit=list(
   sersic=list(
-    xcen= c(T,NA), #We fit for xcen and tie the two togther
-    ycen= c(T,NA), #We fit for ycen and tie the two togther
-    mag= c(T,T),
-    re= c(T,T),
-    nser= c(T,F), #Fit for both
-    ang= c(T,T), #Fit for both
-    axrat= c(F,T), #Fit for both
-    box= c(T,F) #We only llow the bugle to be boxy
+    xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
+    ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
+    mag= c(TRUE,TRUE),
+    re= c(TRUE,TRUE),
+    nser= c(TRUE,FALSE), #Fit for both
+    ang= c(TRUE,TRUE), #Fit for both
+    axrat= c(FALSE,TRUE), #Fit for both
+    box= c(TRUE,FALSE) #We only allow the bulge to be boxy
   )
 )
 
@@ -134,14 +134,14 @@ tofit=list(
 
 tolog=list(
   sersic=list(
-    xcen= c(F,F),
-    ycen= c(F,F),
-    mag= c(F,F),
-    re= c(T,T), #re is best fit in log space
-    nser= c(T,T), #nser is best fit in log space
-    ang= c(F,F),
-    axrat= c(T,T), #axrat is best fit in log space
-    box= c(F,F)
+    xcen= c(FALSE,FALSE),
+    ycen= c(FALSE,FALSE),
+    mag= c(FALSE,FALSE),
+    re= c(TRUE,TRUE), #re is best fit in log space
+    nser= c(TRUE,TRUE), #nser is best fit in log space
+    ang= c(FALSE,FALSE),
+    axrat= c(TRUE,TRUE), #axrat is best fit in log space
+    box= c(FALSE,FALSE)
   )
 )
 
@@ -215,7 +215,7 @@ Data$init
 # We can test how things currently look (we get an output because we set verbose=TRUE
 # earlier):
 
-profitLikeModel(Data$init,Data,image=T)
+profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
 
 #First try optim BFGS:
 

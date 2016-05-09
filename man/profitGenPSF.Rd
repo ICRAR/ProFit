@@ -36,26 +36,12 @@ Aaron Robotham
 \code{\link{profitMakePSF}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+#Various FWHM:
 
-## The function is currently defined as
-function (FWHM = 3, sigma, npix = 25) 
-{
-    if (missing(sigma)) {
-        sigma = FWHM/(2 * sqrt(2 * log(2)))
-    }
-    x0 = y0 = npix/2 + 0.5
-    y = matrix(1:npix, npix, npix)
-    x = t(y)
-    psfanal = exp(-(((x - x0)^2/(2 * sigma^2)) + ((y - y0)^2/(2 * 
-        sigma^2))))
-    psfanal = psfanal/sum(psf)
-    return(psfanal)
-  }
+magimage(profitGenPSF(FWHM=1), stretch='lin')
+magimage(profitGenPSF(FWHM=3), stretch='lin')
+magimage(profitGenPSF(FWHM=5), stretch='lin')
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ PSF }
