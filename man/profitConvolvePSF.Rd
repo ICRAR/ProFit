@@ -5,7 +5,7 @@
 High level brute force image convolution
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+A high level interface to fast brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. This high level routine interfaces with the lower level \code{\link{profitBruteConv}}, with the advantage that it re-interpolates the provided PSF such that it has odd dimensions and therefore does not cause a systematic shift in the image during convolution.
 }
 \usage{
 profitConvolvePSF(image, psf)
@@ -23,7 +23,7 @@ The point spread function (PSF) image matrix that ProFit will use to convolve th
 In the regime where one image is significantly (a factor of a few) smaller than the other image, this tends to be faster than FFT based convolution due to the lack of image padding and other overheads. PSf images tend to be only dozens of pixels and images 100s, so brute force convolution is the standard approach used in ProFit. This function offers a convenient high level interface to \code{link{profitBruteConv}}, which can only accept odd size dimensions for the PSF.
 }
 \value{
-Convolved image matrix the same size as the input \option{image} matrix.
+Matrix; convolved image matrix the same size as the input \option{image} matrix.
 }
 \author{
 Aaron Robotham

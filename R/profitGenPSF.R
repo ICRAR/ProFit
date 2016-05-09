@@ -4,6 +4,6 @@ profitGenPSF=function(FWHM=3,sigma,npix=25){
   y=matrix(1:npix,npix,npix)
   x=t(y)
   psfanal=exp(-(((x - x0)^2/(2 * sigma^2)) + ((y - y0)^2/(2 * sigma^2))))
-  psfanal=psfanal/sum(psf)
+  psfanal=psfanal/sum(psfanal)
   return(psfanal)
 }

@@ -6,7 +6,7 @@ Date: 2016-03-16
 Author: Aaron Robotham
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Get data / Define model / ??? / ProFit!
-License: GPL-3+
+License: file LICENSE
 Imports: Rcpp (>= 0.11.6)
 LinkingTo: Rcpp
 Depends: magicaxis, FITSio, LaplacesDemon, RColorBrewer

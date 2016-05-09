@@ -8,7 +8,8 @@ Calculate the log likelihood of a model given the input data
 This is the work-horse log-likelihood that we can use to assess the current fit. This function becomes the input for generic R fitting codes like \code{\link{optim}} (or any that user wants to use).
 }
 \usage{
-profitLikeModel(parm, Data, image = FALSE, serscomp = "all", psfcomp = "all", rough = FALSE)
+profitLikeModel(parm, Data, image = FALSE, serscomp = "all", psfcomp = "all",
+rough = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,14 +29,16 @@ Which component of the Sersic list should be used to evaluate the log-lieklihood
 Which component of the PSF list should be used to evaluate the log-lieklihood, and to generate the image outputs. This is useful if you want to visually see appearance of e.g. PSF components 1 and 2 separately. The default "all" will show the total model with all components added.
 }
   \item{rough}{
-logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values. It is often useful to use rough=TRUE when you are a long way from a viable solution and you are searching for a reasonable global minimum. Once near the glocal minimum then rough should be set to FALSE and more precise evalutions of the fit should be made. Broadly rough fits are often pretty good and similar to the much more expensive accurate fits, but user beware / caveat emptor.
+Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values. It is often useful to use rough=TRUE when you are a long way from a viable solution and you are searching for a reasonable global minimum. Once near the glocal minimum then rough should be set to FALSE and more precise evalutions of the fit should be made. Broadly rough fits are often pretty good and similar to the much more expensive accurate fits, but user beware / caveat emptor.
 }
 }
 \details{
 Whils this function is designed to produce the required outputs for different optimisation schemes (optim, LaplaceApproximation, LaplacesDemon and CMA have been used successfully) the side effect of producing the model image is quite useful for protyping.
 }
 \value{
-\code{profitLikeModel} uses the value of Data$algo.func to determine the type of output generated (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a singel value. If set to "LA" or "LD" then a more complex structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algortithms available within R.
+Option dependent output, either a Scalar or a List.
+
+\code{profitLikeModel} uses the value of Data$algo.func to determine the type of output generated (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a single scalar value. If set to "LA" or "LD" then a more complex list structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algortithms available within R.
 }
 
 \author{

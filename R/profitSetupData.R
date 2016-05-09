@@ -9,15 +9,13 @@ profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,int
   
   psf[psf<0] = 0
   
-  params = model
-  
   init = unlist(model)
   init[unlist(tolog)]=log10(init[unlist(tolog)])
   init=init[which(unlist(tofit))]
   
   parm.names=names(init)
   
-  profit.data=list(init=init,params=params,image=image*(1-mask),mask=mask,sigma=sigma,segim=segim,psf=psf,algo.func=algo.func,mon.names='',parm.names=parm.names,N=length(which(region)),region=region,tofit=tofit,tolog=tolog,priors=priors,intervals=intervals,magzero=magzero,imagedim=imagedim,verbose=verbose)
+  profit.data=list(init=init,image=image*(1-mask),mask=mask,sigma=sigma,segim=segim,psf=psf,model=model,algo.func=algo.func,mon.names='',parm.names=parm.names,N=length(which(region)),region=region,tofit=tofit,tolog=tolog,priors=priors,intervals=intervals,magzero=magzero,imagedim=imagedim,verbose=verbose)
   class(profit.data)="profit.data"
   return=profit.data
 }

@@ -5,96 +5,76 @@
 Low level routine to accurately integrate a single pixel.
 }
 \description{
-This function accesses the Rcpp routine to accurately integrate a single image pixel given a 2D Sersic model. It uses a recursive approach to integrate sub-regions of the pixel more accurately where required. Typically this function will not uses by the user directly, and instead is called by \code{\link{profitMakeSersic}}.
+This low level function accesses the Rcpp routine to accurately integrate a single image pixel given a 2D Sersic model. It is not designed for direct use by users of ProFit, and instead is called by \code{\link{profitMakeSersic}}. It uses a recursive approach to integrate sub-regions of the pixel more accurately where required.
 }
 \usage{
-profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, bn, N, recur = 0L, depth = 5L, acc = 0.1)
+profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, bn, Nsamp, recur = 0L,
+depth = 5L, acc = 0.1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{xcen}{
-%%     ~~Describe \code{xcen} here~~
+Scalar; x centre of the 2D Sersic profile (can be fractional pixel positions).
 }
   \item{ycen}{
-%%     ~~Describe \code{ycen} here~~
+Scalar; y centre of the 2D Sersic profile (can be fractional pixel positions).
 }
   \item{xlim}{
-%%     ~~Describe \code{xlim} here~~
+The x pixel range of the image pixel to be integrated.
 }
   \item{ylim}{
-%%     ~~Describe \code{ylim} here~~
+The y pixel range of the image pixel to be integrated.
 }
   \item{re}{
-%%     ~~Describe \code{re} here~~
+Scalar; effective radius of the Sersic profile.
 }
   \item{nser}{
-%%     ~~Describe \code{nser} here~~
+Scalar; Sersic index of the Sersic profile.
 }
   \item{angrad}{
-%%     ~~Describe \code{angrad} here~~
+Scalar; the orientation of the major axis of the Sersic profile in radians. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang %% 180.
 }
   \item{axrat}{
-%%     ~~Describe \code{axrat} here~~
+Scalar; xxial ratio of the Sersic profile defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.
 }
   \item{box}{
-%%     ~~Describe \code{box} here~~
+Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{bn}{
-%%     ~~Describe \code{bn} here~~
+Scalar; bn for the Sersic profile. This can be easily computed using bn=qgamma(0.5, 2 * nser,1,1,0).
 }
-  \item{N}{
-%%     ~~Describe \code{N} here~~
+  \item{Nsamp}{
+The upsampling to use for the current pixel. larger N means a more accurate pixel integration.
 }
   \item{recur}{
-%%     ~~Describe \code{recur} here~~
+The current recursion depth (0 means no recursion has occurred).
 }
   \item{depth}{
-%%     ~~Describe \code{depth} here~~
+The allowed maximum depth of integration recursion. Larger (i.e. 5) means more accurate integration, but increased computation time.
 }
   \item{acc}{
-%%     ~~Describe \code{acc} here~~
+The allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time.
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+This function might be of use to check the accuracy of Sersic integrations for particular pixels, but in general it is not expected that users will use it directly.
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
+Scalar; the integrated flux value of the current pixel.
 }
 \author{
-%%  ~~who you are~~
+Aaron Robotham, Dan Taranu
 }
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{profitMakeSersic}}
 }
 \examples{
 ##---- Should be DIRECTLY executable !! ----
 ##-- ==>  Define data, use random,
 ##--	or do  help(data=index)  for the standard data sets.
 
-## The function is currently defined as
-function (xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, 
-    bn, N, recur = 0L, depth = 5L, acc = 0.1) 
-{
-    .Call("ProFit_profitSumPix", PACKAGE = "ProFit", xcen, ycen, 
-        xlim, ylim, re, nser, angrad, axrat, box, bn, N, recur, 
-        depth, acc)
-  }
+#Add example!!!!
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Sersic }

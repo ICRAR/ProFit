@@ -8,7 +8,8 @@ Galaxy model image
 Create an image of a galaxy model wit of without convolution with the PSF. This is achieved by providing a model list that contains the main parameters that define the model.
 }
 \usage{
-profitMakeModel(model, magzero = 0, psf, dim = c(100, 100), serscomp = "all", psfcomp = "all", rough = FALSE)
+profitMakeModel(model, magzero = 0, psf, dim = c(100, 100), serscomp = "all",
+psfcomp = "all", rough = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -41,14 +42,14 @@ A legal model list has the structure of list(sersic, psf, sky). At least one of 
 The parameters that must be specified for \option{sersic} (see \code{\link{profitMakeSersic}} for details) are:
 
 \describe{
-  \item{xcen}{Vector of x centres of the 2D Sersic profiles (can be fractional pixel positions).}
-  \item{ycen}{Vectors of y centres of the 2D Sersic profiles (can be fractional pixel positions).}
-  \item{mag}{Vectors of total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
-  \item{re}{Vectors of effective radii of the 2D Sersic profiles}
-  \item{nser}{Vectors of the Sersic indicies of the 2D Sersic profiles}
-  \item{ang}{Vectors of the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
-  \item{axrat}{Axial ratio defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
-  \item{box}{The boxiness of the profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+  \item{xcen}{Vector; x centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{re}{Vector; effective radii of the 2D Sersic profiles}
+  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
 The parameters that must be specified for \option{psf} (see \code{\link{profitMakePSF}} for details) are: 
@@ -93,7 +94,11 @@ By ProFit convention the bottom-left part of the bottom-left pixel when plotting
 To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartessian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument referes to row number, but images by convention are accessed in a Cartessian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
-A model image matrix of size \option{dim}. This is in a list structure: list(x=0:dim[1], y=0:dim[2], z=model.image).
+List; structure containing the specified model:
+
+\item{x}{Vector with elements 0:dim[1]}
+\item{y}{Vector with elements 0:dim[2]}
+\item{z}{Matrix; contains the flux values of the specified model image. Dimensions \option{dim}}
 }
 
 \author{
@@ -104,18 +109,16 @@ Aaron Robotham
 \code{\link{profitMakeSersic}}, \code{\link{profitMakePSF}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
-# Using the example model from above:
-
 params = list(
 	sersic = list(
-		xcen   = c(180.0001, 50),
-		ycen   = c(90, 50),
+		xcen   = c(180, 60),
+		ycen   = c(90, 10),
 		mag = c(15, 13),
-		re  = c(140, 50),
-		nser  = c(10, 4),
-		ang  = c(60, 135),
-		axrat  = c(0.5, 0.3),
-		box = c(0.2,-0.2)
+		re  = c(14, 5),
+		nser  = c(3, 10),
+		ang  = c(46, 80),
+		axrat  = c(0.4, 0.6),
+		box = c(0.5,-0.5)
 	),
 	psf = list(
 		xcen   = c(34,10,150),
@@ -127,17 +130,16 @@ params = list(
 	)
 )
 
-# Without convolving the model image with a PSF:
+# Without a PSF provided only the extended sources are shown, with no convolution:
 
-temp=magimage(profitMakeModel(params, dim=c(200,200))$z)
-contour(temp,add=T,col='red')
+magimage(profitMakeModel(params, dim=c(200,200)))
 
-# Convolving teh model image with an analytic PSF:
+# With a PSF provided the PSFs are displayed and the extended sources are convolved with
+# the PSF:
 
-temp=magimage(profitMakeModel(params, psf=profitGenPSF(), dim=c(200,200))$z)
-contour(temp,add=T,col='red')
+magimage(profitMakeModel(params, psf=profitGenPSF(), dim=c(200,200)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Model }
+\keyword{ Sersic }% __ONLY ONE__ keyword per line

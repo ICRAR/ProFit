@@ -8,7 +8,8 @@ Utility function to get the user inputs in the format required for model optimis
 This function does all the book-keeping required to convert the user data into the form required by ProFit.
 }
 \usage{
-profitSetupData(image, mask, sigma, segim, psf, model, tofit, tolog, priors, intervals, magzero = 0, algo.func = "LA", verbose = FALSE)
+profitSetupData(image, mask, sigma, segim, psf, model, tofit, tolog, priors, intervals,
+magzero = 0, algo.func = "LA", verbose = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,7 +41,7 @@ Logical list, using exactly the same list structure as \option{model}. This flag
 Function list, using a similar list structure to \option{model}. Instead of a vector of values the user should provide a list of prior functions. If priors are not desired then this can be made as simple as function(x){0}. Any density function available within R is an appropriate input to use, but the evaluation is made using current-init, i.e. it is centred around init. Prior functions are only required if the parameter is being fit, but in practice the list structure needs to have the same shape, so at the least filler or dummy prior functions must be provided for missing parameters unless the model is not being used for fitting at all (e.g. you are not fitting any PSFs or the sky). If tolog is true, then the prior functions will be evaluated in log-space, i.e. SD=1 means 1 dex offset. See Details.
 }
   \item{intervals}{
-Function list, using a similar list structure to \option{model}. These functions should specify what action to take when the paramater goes beyond sensible search limits. Using the \code\link{interval} function is sensible because it covers two obvious scenarios: the value should be set to the limit, or it should be reflected back over the limit. If the parameter is being fitted in log-space then the limits should also be defined in log-space, i.e. for re limit=2 means 100 (10^2). See Details.
+Function list, using a similar list structure to \option{model}. These functions should specify what action to take when the paramater goes beyond sensible search limits. Using the \code{\link{interval}} function is sensible because it covers two obvious scenarios: the value should be set to the limit, or it should be reflected back over the limit. If the parameter is being fitted in log-space then the limits should also be defined in log-space, i.e. for re limit=2 means 100 (10^2). See Details.
 }
   \item{magzero}{
 The magntiude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
@@ -58,28 +59,28 @@ A legal model list has the structure of list(sersic, psf, sky). At least one of 
 The parameters that must be specified for \option{sersic} (see \code{\link{profitMakeSersic}} for details) are:
 
 \describe{
-  \item{xcen}{Vector of x centres of the 2D Sersic profiles (can be fractional pixel positions).}
-  \item{ycen}{Vectors of y centres of the 2D Sersic profiles (can be fractional pixel positions).}
-  \item{mag}{Vectors of total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
-  \item{re}{Vectors of effective radii of the 2D Sersic profiles}
-  \item{nser}{Vectors of the Sersic indicies of the 2D Sersic profiles}
-  \item{ang}{Vectors of the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
-  \item{axrat}{Axial ratio defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
-  \item{box}{The boxiness of the profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+  \item{xcen}{Vector; x centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{re}{Vector; effective radii of the 2D Sersic profiles}
+  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
 The parameters that must be specified for \option{psf} (see \code{\link{profitMakePSF}} for details) are: 
 
 \describe{
-  \item{xcen}{Vector of x centres of the PSFs (can be fractional pixel positions).}
-  \item{ycen}{Vectors of y centres of the PSFs (can be fractional pixel positions).}
-  \item{mag}{Vectors of total magnitudes of the PSFs. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{xcen}{Vector; x centres of the PSFs (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the PSFs (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the PSFs. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
 }
 
 The parameter that must be specified for \option{sky} is:
 
 \describe{
-  \item{by}{Value per pixel for the background. This should be the value as measured in the original image, i.e. there is no need to worry about the effect of \option{magzero}.}
+  \item{by}{Scalar; value per pixel for the background. This should be the value as measured in the original image, i.e. there is no need to worry about the effect of \option{magzero}.}
 }
   
 An example of a legal model structure is:
@@ -186,35 +187,46 @@ By ProFit convention the bottom-left part of the bottom-left pixel when plotting
 To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartessian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument referes to row number, but images by convention are accessed in a Cartessian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
+List; complex structure containing:
+
+\item{init}{The initial parameters to use for fitting. These are parameters where \option{tofit}=TRUE, and are extracted from \option{model}.}
+\item{params}{The specified \option{model} list.}
+\item{image}{The specified \option{image} matrix.}
+\item{mask}{The specified \option{mask} matrix.}
+\item{sigma}{The specified \option{sigma} matrix.}
+\item{segim}{The specified \option{segim} matrix.}
+\item{psf}{The specified \option{psf} matrix.}
+\item{algo.func}{The specified \option{algo.func} flag.}
+\item{mask}{The specified \option{mask} matrix.}
+\item{mon.names}{Empty character. Required for completeness since required by LA/LD (can be ignored).}
+\item{N}{The number of pixels that will be used in fitting, i.e. the number of image pixels within the segmentation map, which is the same as sum(region).}
+\item{region}{Logical matrix specifying which pixels are inside the fitting region.}
+\item{tofit}{The specified \option{tofit} list.}
+\item{tolog}{The specified \option{tolog} list.}
+\item{priors}{The specified \option{priors} list.}
+\item{intervals}{The specified \option{intervals} list.}
+\item{magzero}{The specified \option{magzero} scalar.}
+\item{imagedim}{The dimensions of the \option{image} matrix.}
+\item{verbose}{The specified \option{verbose} logical.}
 }
 \author{
-%%  ~~who you are~~
-}
-\note{
-%%  ~~further notes~~
+Aaron Robotham
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{profitMakeModel}}
 }
 \examples{
-#Load ProFit example data
+# Load ProFit example data
+
 data('ExampleInit')
 ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/data/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
 
-useID=ExampleIDs[2]
+useID=ExampleIDs[1]
 
 image = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'fitim.fits',sep=''))$imDat
 mask = readFITS(paste(.libPaths()[1],'/ProFit/data/',useID,'mskim.fits',sep=''))$imDat
@@ -234,9 +246,9 @@ model=list(
     mag= c(ExampleInit$sersic.mag1[useloc], ExampleInit$sersic.mag2[useloc]),
     re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc]),
     nser= c(ExampleInit$sersic.nser1[useloc], 1),  #Disk is initially nser=1
-    ang= c(ExampleInit$sersic.ang2[useloc], ExampleInit$sersic.ang2[useloc]), #theta/deg: 0= |, 45= \, 90= -, 135= /, 180= |
-    axrat= c(ExampleInit$sersic.axrat2[useloc], ExampleInit$sersic.axrat2[useloc]), #min/maj: 1= o, 0= |
-    box=c(0, 0) #Initially no boxiness
+    ang= c(ExampleInit$sersic.ang2[useloc], ExampleInit$sersic.ang2[useloc]),
+    axrat= c(ExampleInit$sersic.axrat2[useloc], ExampleInit$sersic.axrat2[useloc]),
+    box=c(0, 0)
   )
 )
 
@@ -279,20 +291,30 @@ tolog=list(
   )
 )
 
-# The priors. If the parameters are to be sampled in log space (above) then the priors will refer to dex not linear standard deviations. Priors should be specified in their unlogged state- the logging is done internally.
+# The priors. If the parameters are to be sampled in log space (above) then the priors
+# will refer to dex not linear standard deviations. Priors should be specified in their
+# unlogged state- the logging is done internally.
 
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
 
 priors=list(
   sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=T)},function(x){dnorm(x,0,sigmas[2],log=T)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=T)},function(x){dnorm(x,0,sigmas[4],log=T)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=T)},function(x){dnorm(x,0,sigmas[6],log=T)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=T)},function(x){dnorm(x,0,sigmas[8],log=T)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=T)},function(x){dnorm(x,0,sigmas[10],log=T)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=T)},function(x){dnorm(x,0,sigmas[12],log=T)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=T)},function(x){dnorm(x,0,sigmas[14],log=T)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=T)},function(x){dnorm(x,0,sigmas[16],log=T)})
+    xcen=list(function(x){dnorm(x,0,sigmas[1],log=T)},function(x){dnorm(x,0,sigmas[2],
+    log=T)}), # should have tight constraints on x and y
+    ycen=list(function(x){dnorm(x,0,sigmas[3],log=T)},function(x){dnorm(x,0,sigmas[4],
+    log=T)}), # should have tight constraints on x and y
+    mag=list(function(x){dnorm(x,0,sigmas[5],log=T)},function(x){dnorm(x,0,sigmas[6],
+    log=T)}), # 5 mag SD
+    re=list(function(x){dnorm(x,0,sigmas[7],log=T)},function(x){dnorm(x,0,sigmas[8],
+    log=T)}), # i.e. 1 dex in re is the SD
+    nser=list(function(x){dnorm(x,0,sigmas[9],log=T)},function(x){dnorm(x,0,sigmas[10],
+    log=T)}), # i.e. 1 dex in nser is the SD
+    ang=list(function(x){dnorm(x,0,sigmas[11],log=T)},function(x){dnorm(x,0,sigmas[12],
+    log=T)}), # very broad 30 deg ang SD
+    axrat=list(function(x){dnorm(x,0,sigmas[13],log=T)},function(x){dnorm(x,0,sigmas[14],
+    log=T)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){dnorm(x,0,sigmas[15],log=T)},function(x){dnorm(x,0,sigmas[16],
+    log=T)})
   )
 )
 
@@ -303,28 +325,41 @@ uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
 
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=F)},function(x){interval(x,lowers[2],uppers[2],reflect=F)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=F)},function(x){interval(x,lowers[4],uppers[4],reflect=F)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=F)},function(x){interval(x,lowers[6],uppers[6],reflect=F)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=F)},function(x){interval(x,lowers[8],uppers[8],reflect=F)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=F)},function(x){interval(x,lowers[10],uppers[10],reflect=F)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=F)},function(x){interval(x,lowers[12],uppers[12],reflect=F)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=F)},function(x){interval(x,lowers[14],uppers[14],reflect=F)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=F)},function(x){interval(x,lowers[16],uppers[16],reflect=F)})
+    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=F)},
+    function(x){interval(x,lowers[2],uppers[2],reflect=F)}),
+    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=F)},
+    function(x){interval(x,lowers[4],uppers[4],reflect=F)}),
+    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=F)},
+    function(x){interval(x,lowers[6],uppers[6],reflect=F)}),
+    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=F)},
+    function(x){interval(x,lowers[8],uppers[8],reflect=F)}),
+    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=F)},
+    function(x){interval(x,lowers[10],uppers[10],reflect=F)}),
+    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=F)},
+    function(x){interval(x,lowers[12],uppers[12],reflect=F)}),
+    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=F)},
+    function(x){interval(x,lowers[14],uppers[14],reflect=F)}),
+    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=F)},
+    function(x){interval(x,lowers[16],uppers[16],reflect=F)})
   )
 )
 
-#Setup the data structure we need for optimisation:
+# Setup the data structure we need for optimisation:
 
-Data=profitSetupData(image=image,mask=mask,sigma=sigma,segim = segim,psf = psf,model = model,tofit = tofit, tolog=tolog, priors = priors, intervals=intervals,magzero=0, algo.func = 'optim', verbose=TRUE)
+Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+magzero=0, algo.func='optim', verbose=TRUE)
 
-# This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
+# This produces a fairly complex R object, but with all the bits we need for fitting,
+# e.g. (notice the tolog parameteres are now logged):
 
 Data$init
 
-#These are the parameters we wish to fit for, and we take the initial guesses from the model list we provided before.
+# These are the parameters we wish to fit for, and we take the initial guesses from the
+# model list we provided before.
 
-#We can test how things currently look (we get an output because we set verbose=TRUE earlier):
+# We can test how things currently look (we get an output because we set verbose=TRUE
+# earlier):
 
 profitLikeModel(Data$init,Data,image=T)
 }

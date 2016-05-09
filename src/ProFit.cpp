@@ -17,43 +17,76 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim,
                     double re, double nser, double angrad, double axrat, double box,
-                    double bn, int N, int recur=0, int depth=5, double acc=1e-1){
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod;
-  double xbin=(xlim(1)-xlim(0))/N;
-  double ybin=(ylim(1)-ylim(0))/N;
-  double sumpixel=0, addval, oldaddval;
+                    double bn, int Nsamp, int recur=0L, int depth=5L, double acc=0.1){
+  double rad,x,y,xmid,ymid,xmod,ymod,radmod,angmod;
+  double xbin=(xlim(1)-xlim(0))/double(Nsamp);
+  double ybin=(ylim(1)-ylim(0))/double(Nsamp);
+  double dx = xbin/2.0, dy = ybin/2.0;
+  double sumpixel=0, addval=0, oldaddval=0, olderaddval = 0;
   int upscale=20;
   NumericVector xlim2(2),ylim2(2);
-  x=xlim(0);
-  for(int i2 = 0; i2 < N; i2++) {
+  
+  x = xlim(0);
+  
+  const bool XREV = (xlim(0) + (xlim(1) - xlim(0)/2.0)) > xcen;
+  if(XREV)
+  {
+    x = xlim(1); dx = -dx; xbin = -xbin;
+  }
+  const bool YREV = (ylim(0) + (ylim(1) - ylim(0)/2.0)) > ycen;
+  if(YREV) 
+  {
+    dy = -dy; ybin = -ybin;
+  }
+  const double YINIT = YREV ? ylim(1) : ylim(0); 
+  
+  for(int i2 = 0; i2 < Nsamp; i2++) {
+    xmid = x + dx - xcen;
     recur=0;
-    y=ylim(0);
-    for(int j2 = 0; j2 < N; j2++) {
-      rad=hypot(x+xbin/2-xcen,y+ybin/2-ycen);
-      angmod=atan2(x+xbin/2-xcen,y+ybin/2-ycen)-angrad;
+    y=YINIT;
+    if(XREV)
+    {
+      xlim2(1)=x;
+      xlim2(0)=x+xbin;
+    } else {
+      xlim2(0)=x;
+      xlim2(1)=x+xbin;
+    }
+    for(int j2 = 0; j2 < Nsamp; j2++) {
+      ymid = y + dy - ycen;
+      rad=hypot(xmid, ymid);
+      angmod=atan2(xmid, ymid)-angrad;
       xmod=rad*sin(angmod);
       ymod=rad*cos(angmod);
       xmod=xmod/axrat;
       //radmod=hypot(xmod,ymod);
-      radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
-      addval=exp(-bn*(pow(radmod/re,1/nser)-1));
+      radmod=pow(pow(std::abs(xmod),2.+box)+pow(std::abs(ymod),2.+box),1./(2.+box));
+      addval=exp(-bn*(pow(radmod/re,1./nser)-1.));
       if(j2>0 && recur<3){
-        if(addval/oldaddval>1+acc || addval/oldaddval<1/(1+acc)){
+        if(std::abs(addval/oldaddval - 1.0)> acc){
           recur++;
-          xlim2(0)=x;
-          xlim2(1)=x+xbin;
-          ylim2(0)=y;
-          ylim2(1)=y+ybin;
+          if(YREV)
+          {
+            ylim2(1)=y;
+            ylim2(0)=y+ybin;
+          } else {
+            ylim2(0)=y;
+            ylim2(1)=y+ybin; 
+          }
           addval=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,recur,depth,acc);
         }
       }
       sumpixel+=addval;
       oldaddval=addval;
-      y=y+ybin;
+      if(j2 == 0) olderaddval = oldaddval;
+      y += ybin;
     }
-    x=x+xbin;
+    // Reset oldaddval to the value of the first pixel in the row
+    // when jumping to the next row
+    oldaddval = olderaddval;
+    x += xbin;
   }
-return(sumpixel/pow(N,2));
+  return(sumpixel/double(Nsamp*Nsamp));
 }
 
 // [[Rcpp::export]]
@@ -61,24 +94,24 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
                         double ang=0, double axrat=1, double box=0, double magzero=0, int rough=0,
                         NumericVector xlim=NumericVector::create(-100,100),
                         NumericVector ylim=NumericVector::create(-100,100),
-                        IntegerVector N=IntegerVector::create(200,200)) {
+                        IntegerVector dim=IntegerVector::create(200,200)) {
   double bn=R::qgamma(0.5, 2 * nser,1,1,0);
   double Rbox=PI*(box+2)/(4*R::beta(1/(box+2),1+1/(box+2)));
   double lumtot = pow(re,2)*2*PI*nser*((exp(bn))/pow(bn,2*nser))*R::gammafn(2*nser)*axrat/Rbox;
   double Ie=pow(10,(-0.4*(mag-magzero)))/lumtot;
-  NumericMatrix mat(N(0), N(1));
+  NumericMatrix mat(dim(0), dim(1));
   double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,locscale,depth;
-  double xbin=(xlim(1)-xlim(0))/N(0);
-  double ybin=(ylim(1)-ylim(0))/N(1);
+  double xbin=(xlim(1)-xlim(0))/dim(0);
+  double ybin=(ylim(1)-ylim(0))/dim(1);
   NumericVector xlim2(2),ylim2(2);
   int upscale;
 
   double angrad=-ang*PI/180;
 
   x=xlim(0);
-  for(int i = 0; i < N(0); i++) {
+  for(int i = 0; i < dim(0); i++) {
     y=ylim(0);
-    for(int j = 0; j < N(1); j++) {
+    for(int j = 0; j < dim(1); j++) {
       mat(i,j)=0;
       rad=hypot(x+xbin/2-xcen,y+ybin/2-ycen);
       angmod=atan2(x-xcen,y-ycen)-angrad;

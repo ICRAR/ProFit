@@ -38,7 +38,7 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
         magzero=as.numeric(magzero),
         xlim=c(0,dim[1]),
         ylim=c(0,dim[2]),
-        N=dim,
+        dim=dim,
         rough=rough)
     }
   }
