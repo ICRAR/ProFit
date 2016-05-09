@@ -41,7 +41,7 @@ Scalar; xxial ratio of the Sersic profile defined as minor-axis/major-axis, i.e.
 Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{bn}{
-Scalar; bn for the Sersic profile. This can be easily computed using bn=qgamma(0.5, 2 * nser,1).
+Scalar; bn for the Sersic profile. This can be easily computed using bn=qgamma(0.5, 2 * nser).
 }
   \item{Nsamp}{
 The upsampling to use for the current pixel. larger N means a more accurate pixel integration.
@@ -69,11 +69,23 @@ Aaron Robotham, Dan Taranu
 \code{\link{profitMakeSersic}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+# Evaluating the first pixel of a high nser profile is hard.
+# Most of the accuracy comes from increasing Nsamp. The target value here is 15.36773:
 
-#Add example!!!!
+profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
+axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=10, recur=0, depth=0, acc=0.1)
+
+profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
+axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=100, recur=0, depth=0, acc=0.1)
+
+profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
+axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=1000, recur=0, depth=0, acc=0.1)
+
+# But the final refinement can be got from increasing the allowed recursion depth:
+
+profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
+axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=1000, recur=0, depth=5, acc=0.1)
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -62,7 +62,7 @@ double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector 
       //radmod=hypot(xmod,ymod);
       radmod=pow(pow(std::abs(xmod),2.+box)+pow(std::abs(ymod),2.+box),1./(2.+box));
       addval=exp(-bn*(pow(radmod/re,1./nser)-1.));
-      if(j2>0 && recur<3){
+      if(j2>0 && recur<depth){
         if(std::abs(addval/oldaddval - 1.0)> acc){
           recur++;
           if(YREV)

@@ -76,7 +76,7 @@ Aaron Robotham
 ##-- ==>  Define data, use random,
 ##--	or do  help(data=index)  for the standard data sets.
 
-magimage(profitMakeSersic(ang=45, axrat=0.3))
+magimage(profitMakeSersic(xcen=0, ycen=0, re=5, nser=4, ang=45, axrat=0.3))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
