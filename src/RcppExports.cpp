@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // profitSumPix
-double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim, double re, double nser, double angrad, double axrat, double box, double bn, int Nsamp, int recur, int depth, double acc);
-RcppExport SEXP ProFit_profitSumPix(SEXP xcenSEXP, SEXP ycenSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angradSEXP, SEXP axratSEXP, SEXP boxSEXP, SEXP bnSEXP, SEXP NsampSEXP, SEXP recurSEXP, SEXP depthSEXP, SEXP accSEXP) {
+double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim, double re, double nser, double angrad, double axrat, double box, double bn, int Nsamp, int recur, int depth, double acc, double s, double c);
+RcppExport SEXP ProFit_profitSumPix(SEXP xcenSEXP, SEXP ycenSEXP, SEXP xlimSEXP, SEXP ylimSEXP, SEXP reSEXP, SEXP nserSEXP, SEXP angradSEXP, SEXP axratSEXP, SEXP boxSEXP, SEXP bnSEXP, SEXP NsampSEXP, SEXP recurSEXP, SEXP depthSEXP, SEXP accSEXP, SEXP sSEXP, SEXP cSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -25,7 +25,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type recur(recurSEXP);
     Rcpp::traits::input_parameter< int >::type depth(depthSEXP);
     Rcpp::traits::input_parameter< double >::type acc(accSEXP);
-    __result = Rcpp::wrap(profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, bn, Nsamp, recur, depth, acc));
+    Rcpp::traits::input_parameter< double >::type s(sSEXP);
+    Rcpp::traits::input_parameter< double >::type c(cSEXP);
+    __result = Rcpp::wrap(profitSumPix(xcen, ycen, xlim, ylim, re, nser, angrad, axrat, box, bn, Nsamp, recur, depth, acc, s, c));
     return __result;
 END_RCPP
 }

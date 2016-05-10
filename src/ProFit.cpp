@@ -17,13 +17,15 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector ylim,
                     double re, double nser, double angrad, double axrat, double box,
-                    double bn, int Nsamp, int recur=0L, int depth=5L, double acc=0.1){
-  double rad,x,y,xmid,ymid,xmod,ymod,radmod,angmod;
+                    double bn, int Nsamp, int recur=0L, int depth=5L, double acc=0.1,
+                    double s=0, double c=1){
+  double rad,x,y,xmid,ymid,xmod,ymod,radmod,angmod,xmidnew,ymidnew;
   double xbin=(xlim(1)-xlim(0))/double(Nsamp);
   double ybin=(ylim(1)-ylim(0))/double(Nsamp);
   double dx = xbin/2.0, dy = ybin/2.0;
   double sumpixel=0, addval=0, oldaddval=0, olderaddval = 0;
   int upscale=20;
+  
   NumericVector xlim2(2),ylim2(2);
   
   x = xlim(0);
@@ -54,13 +56,15 @@ double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector 
     }
     for(int j2 = 0; j2 < Nsamp; j2++) {
       ymid = y + dy - ycen;
-      rad=hypot(xmid, ymid);
-      angmod=atan2(xmid, ymid)-angrad;
-      xmod=rad*sin(angmod);
-      ymod=rad*cos(angmod);
+      xmod = xmid * c - ymid * s;
+      ymod = xmid * s + ymid * c;
       xmod=xmod/axrat;
-      //radmod=hypot(xmod,ymod);
-      radmod=pow(pow(std::abs(xmod),2.+box)+pow(std::abs(ymod),2.+box),1./(2.+box));
+      if(box==0){
+        radmod=sqrt(xmod*xmod+ymod*ymod);
+      }
+      else{
+        radmod=pow(pow(std::abs(xmod),2.+box)+pow(std::abs(ymod),2.+box),1./(2.+box));
+      }
       addval=exp(-bn*(pow(radmod/re,1./nser)-1.));
       if(j2>0 && recur<depth){
         if(std::abs(addval/oldaddval - 1.0)> acc){
@@ -73,7 +77,7 @@ double profitSumPix(double xcen, double ycen, NumericVector xlim, NumericVector 
             ylim2(0)=y;
             ylim2(1)=y+ybin; 
           }
-          addval=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,recur,depth,acc);
+          addval=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,recur,depth,acc,s,c);
         }
       }
       sumpixel+=addval;
@@ -100,29 +104,32 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
   double lumtot = pow(re,2)*2*PI*nser*((exp(bn))/pow(bn,2*nser))*R::gammafn(2*nser)*axrat/Rbox;
   double Ie=pow(10,(-0.4*(mag-magzero)))/lumtot;
   NumericMatrix mat(dim(0), dim(1));
-  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,locscale,depth;
+  double rad,x,y,x2,y2,xmod,ymod,radmod,angmod,locscale,depth,xmid,ymid;
   double xbin=(xlim(1)-xlim(0))/dim(0);
   double ybin=(ylim(1)-ylim(0))/dim(1);
   NumericVector xlim2(2),ylim2(2);
   int upscale;
-
+  
   double angrad=-ang*PI/180;
+  double s = sin(angrad);
+  double c = cos(angrad);
 
   x=xlim(0);
   for(int i = 0; i < dim(0); i++) {
+    xmid=x+xbin/2-xcen;
     y=ylim(0);
     for(int j = 0; j < dim(1); j++) {
+      ymid=y+ybin/2-ycen;
       mat(i,j)=0;
-      rad=hypot(x+xbin/2-xcen,y+ybin/2-ycen);
-      angmod=atan2(x-xcen,y-ycen)-angrad;
-      xmod=rad*sin(angmod);
-      ymod=rad*cos(angmod);
+      xmod = xmid * c - ymid * s;
+      ymod = xmid * s + ymid * c;
       xmod=xmod/axrat;
-      //radmod=hypot(xmod,ymod);
-      radmod=pow(pow(std::abs(xmod),2+box)+pow(std::abs(ymod),2+box),1/(2+box));
-      //if(radmod<2*re){
-      //  Rcout<<radmod/(2*re)<<" "<<nser<<" "<<rough<<std::endl;
-      //}
+      if(box==0){
+        radmod=sqrt(xmod*xmod+ymod*ymod);
+      }
+      else{
+        radmod=pow(pow(std::abs(xmod),2.+box)+pow(std::abs(ymod),2.+box),1./(2.+box));
+      }
       if(radmod>2*re || (nser<0.5 || rough>0)){
         mat(i,j)=exp(-bn*(pow(radmod/re,1/nser)-1))*xbin*ybin*Ie;
       }
@@ -162,7 +169,7 @@ NumericMatrix profitMakeSersic(double xcen=0, double ycen=0, double mag=15, doub
         xlim2(1)=x+xbin;
         ylim2(0)=y;
         ylim2(1)=y+ybin;
-        mat(i,j)=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,0,depth,0.1)*xbin*ybin*Ie;
+        mat(i,j)=profitSumPix(xcen,ycen,xlim2,ylim2,re,nser,angrad,axrat,box,bn,upscale,0,depth,0.1,s,c)*xbin*ybin*Ie;
       }
       y=y+ybin;
     }
