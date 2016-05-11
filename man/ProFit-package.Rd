@@ -272,7 +272,7 @@ Data$algo.func = "LD"
 
 #Now we can try a LaplacesDemon fit:
 
-LDfit=LaplacesDemon(profitLikeModel, Initial.Values=LAfit$Summary1[,1], Data=Data,
+LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
 Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
 
 #If it has converged well you will have a Summary2 structure using the ESS:

@@ -1,4 +1,4 @@
-profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE){
+profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, upscale=9, maxdepth=2, reswitch=2, acc=0.1){
   if(rough){rough=1}else{rough=0}
   if(serscomp=='all'){serscomp=1:length(model$sersic$xcen)}
   if(psfcomp=='all'){psfcomp=1:length(model$psf$xcen)}
@@ -27,19 +27,23 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       }
       basemat=basemat+
       profitMakeSersic(
-        xcen=as.numeric(model$sersic$xcen[i]),
-        ycen=as.numeric(model$sersic$ycen[i]),
-        mag=as.numeric(model$sersic$mag[i]),
-        re=as.numeric(model$sersic$re[i]),
-        nser=nser,
-        ang=ang,
-        axrat=axrat,
-        box=box,
-        magzero=as.numeric(magzero),
-        xlim=c(0,dim[1]),
-        ylim=c(0,dim[2]),
-        dim=dim,
-        rough=rough)
+        XCEN=as.numeric(model$sersic$xcen[i]),
+        YCEN=as.numeric(model$sersic$ycen[i]),
+        MAG=as.numeric(model$sersic$mag[i]),
+        RE=as.numeric(model$sersic$re[i]),
+        NSER=nser,
+        ANG=ang,
+        AXRAT=axrat,
+        BOX=box,
+        MAGZERO=as.numeric(magzero),
+        ROUGH=rough,
+        XLIM=c(0,dim[1]),
+        YLIM=c(0,dim[2]),
+        DIM=dim,
+        UPSCALE=upscale,
+        MAXDEPTH=maxdepth,
+        RESWITCH=max(min(c(reswitch*as.numeric(model$sersic$re[i]),20)),10)/as.numeric(model$sersic$re[i]),
+        ACC=acc)
     }
   }
   

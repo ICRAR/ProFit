@@ -9,7 +9,7 @@ Create an image of a galaxy model wit of without convolution with the PSF. This 
 }
 \usage{
 profitMakeModel(model, magzero = 0, psf, dim = c(100, 100), serscomp = "all",
-psfcomp = "all", rough = FALSE)
+psfcomp = "all", rough = FALSE, upscale = 9, maxdepth = 2, reswitch = 2, acc = 0.1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,6 +33,18 @@ Which component of the PSF list should be used to create the model image. This i
 }
   \item{rough}{
 logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
+}
+  \item{upscale}{
+The upsampling to use for refined pixels. larger upscale means a more accurate pixel integration. The default (3) works reasonably for a wide range of profiles.
+}
+  \item{maxdepth}{
+The allowed maximum depth of integration recursion. Larger (e.g. 5) means more accurate integration, but increased computation time. The default (2) works reasonably for a wide range of profiles.
+}
+  \item{reswitch}{
+The axial ratio and boxiness corrected radius with respect to \option{re} inside of which pixels should be refined using \code{\link{profitSumPix}} and the \option{upscale} and \option{maxdepth} options become relevant.  The default (2, i.e. 2*Re) works reasonably for a wide range of profiles.
+}
+  \item{acc}{
+Desired minimum per pixel accuracy within the upscaling region defined by \option{RESWITCH}. \option{ACC} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. 
 }
 }
 \details{
