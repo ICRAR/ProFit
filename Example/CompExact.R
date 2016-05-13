@@ -2,11 +2,13 @@ library(R2Cuba)
 library(magicaxis)
 library(GALFITR)
 
-nser=10
-re=5
+#for(nser in c(0.5,1,2,3,4,6,8,10,20)){
+#for(re in c(1,2,4,8,16,50,100)){
+nser=3.5
+re=3
 upscale=9
 maxdepth=2
-reswitch=4
+reswitch=2
 acc=0.1
 rough=F
 
@@ -30,11 +32,26 @@ axrat=1
 ang=0
 
 temp={}
-for(i in 1:200){
+for(i in 1:50){
 temp=c(temp,cuhre(2, 1, sersicxy, mag=15, nser=nser, re=re, ar=1, bn=qgamma(0.5, 2*nser), Ie=scalesersic(15, re, nser, 1, qgamma(0.5, 2 * nser)), rel.tol= 1e-2, abs.tol= 0, lower=c(0,i-1), upper=c(1,i), flags= list(verbose=0))$value)
 }
 
-tempProFit=profitMakeSersic(XCEN=0, YCEN=0, MAG=15, XLIM=c(-200,200),YLIM=c(-200,200),RE = re,NSER = nser,ANG = 0,AXRAT = 1,DIM = c(400,400),UPSCALE=upscale, MAXDEPTH=maxdepth, RESWITCH=reswitch, ACC=acc, ROUGH=rough)
+model = list(
+	sersic = list(
+		xcen   = 200,
+		ycen   = 200,
+		mag = 15,
+		re  = re,
+		nser  = nser,
+		ang  = 0,
+		axrat  = 1,
+		box =0
+)
+)
+
+tempProFit=profitMakeModel(model=model,dim=c(400,400))
+
+#tempProFit=profitMakeSersic(XCEN=0, YCEN=0, MAG=15, XLIM=c(-200,200),YLIM=c(-200,200),RE = re,NSER = nser,ANG = 0,AXRAT = 1,DIM = c(400,400),UPSCALE=upscale, MAXDEPTH=maxdepth, RESWITCH=reswitch, ACC=acc, ROUGH=rough)
 
 params = list(
 	sersic = list(
@@ -66,9 +83,18 @@ psf[13,13]=1
 
 tempGalFit=galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=params)
 
-magplot(temp/tempProFit[201,201:400],type='l',xlim=c(0,100),ylim=c(1,1.1))
-lines(temp/tempGalFit$model[201,201:400],col='red')
+timeprofit=system.time(profitMakeModel(model=model,dim=c(400,400)))[1]
+timegalfit=system.time(galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=params))[1]
+
+#png(paste("~/Documents/ProFitTests/Nser",nser,"Re",re,".png",sep=""),units="in",width=6,height=5,res=200)
+#par(mar=c(3.1,3.1,1.1,1.1))
+magplot(temp/tempProFit$z[201,201:250],type='l',xlim=c(0,50),ylim=c(0.98,1.02),xlab='Offset from Centre / pix',ylab='Exact/Approx')
+lines(temp/tempGalFit$model[201,201:250],col='red')
 abline(h=1)
 abline(v=re,lty=2)
-abline(v=reswitch,lty=3)
-legend('topright', legend=c(system.time(profitMakeSersic(XCEN=0, YCEN=0, MAG=15, XLIM=c(-200,200),YLIM=c(-200,200),RE = re,NSER = nser,ANG = 0,AXRAT = 1,DIM = c(400,400),UPSCALE=upscale, MAXDEPTH=maxdepth, RESWITCH=reswitch, ACC=acc, ROUGH=rough))[1],system.time(galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=params))[1]), col=c('black','red'),lty=1)
+abline(v=reswitch*re,lty=3)
+legend('topleft',legend=c(paste("Nser:",nser),paste("Re:",re)))
+legend('topright', legend=c(paste("ProFit:",round(timeprofit,5),"sec"),paste("GALFIT:",round(timegalfit,5),"sec"),paste("ProFit mean diff:",round(mean(temp/tempProFit$z[201,201:250])-1,6)),paste("GALFIT mean diff:",round(mean(temp/tempGalFit$model[201,201:250])-1,6))), col=c('black','red'),lty=1)
+#dev.off()
+#}
+#}
