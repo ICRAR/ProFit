@@ -148,6 +148,15 @@ void profit_make_model(profit_model *model);
 profit_profile *profit_get_profile(const char *name);
 
 /**
+ * Returns the first error string found either on the model itself or in any of
+ * it profiles. This method should be called on the model right after invoking
+ * profit_make_model to make sure that no errors were found during the process.
+ * If NULL is returned it means that no errors were found and that the image
+ * stored in the model is valid.
+ */
+char *profit_get_error(profit_model *model);
+
+/**
  * Frees all the resources used by given model, after which it cannot be used
  * anymore.
  */

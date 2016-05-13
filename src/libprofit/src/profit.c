@@ -138,21 +138,32 @@ void profit_make_model(profit_model *model) {
 
 }
 
+char *profit_get_error(profit_model *m) {
+
+	unsigned int i;
+
+	if( m->error ) {
+		return m->error;
+	}
+	for(i=0; i!=m->n_profiles; i++) {
+		if( m->profiles[i]->error ) {
+			return m->profiles[i]->error;
+		}
+	}
+	return NULL;
+}
+
 void profit_cleanup(profit_model *m) {
 
 	unsigned int i;
 	profit_profile *p;
 
-	if( m->error ) {
-		free(m->error);
-	}
 	for(i=0; i!=m->n_profiles; i++) {
 		p = m->profiles[i];
-		if( p->error ) {
-			free(p->error);
-		}
+		free(p->error);
 		free(p);
 	}
+	free(m->error);
 	free(m->profiles);
 	free(m->image);
 	free(m);

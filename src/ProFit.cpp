@@ -1,5 +1,7 @@
 #include <math.h>
 
+/* Use the cannonical Rf_* names */
+#define R_NO_REMAP
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
@@ -16,8 +18,8 @@ double _qgamma_wrapper(double a, double b, double c) {
 }
 
 SEXP _get_list_element(SEXP list, const char *name) {
-	SEXP names = getAttrib(list, R_NamesSymbol);
-	for(unsigned int i=0; i!=length(list); i++) {
+	SEXP names = Rf_getAttrib(list, R_NamesSymbol);
+	for(unsigned int i=0; i!=Rf_length(list); i++) {
 		if( !strcmp(name, CHAR(STRING_ELT(names, i))) ) {
 			return VECTOR_ELT(list, i);
 		}
@@ -43,7 +45,7 @@ profit_profile **_read_sky_profiles(SEXP sky_list, unsigned int *count) {
 	}
 
 	/* OK, we know now how many there are... */
-	*count = length(bg);
+	*count = Rf_length(bg);
 	profit_profile **all = (profit_profile **)malloc(sizeof(profit_profile*) * *count);
 
 	/* Create that many profiles and then start reading the info if available */
@@ -69,7 +71,7 @@ profit_profile **_read_sersic_profiles(SEXP sersic_list, unsigned int *count) {
 	}
 
 	/* OK, we know now how many there are... */
-	*count = length(xcen);
+	*count = Rf_length(xcen);
 	profit_profile **all = (profit_profile **)malloc(sizeof(profit_profile*) * *count);
 
 	/* Create that many profiles and then start reading the info if available */
@@ -100,6 +102,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	double *dim_l;
 	unsigned int n_sersic = 0, n_sky = 0, n_profiles = 0;
 	unsigned int i, p;
+	char *error;
 	profit_profile **sersic_profiles = NULL;
 	profit_profile **sky_profiles = NULL;
 	profit_profile **all_profiles = NULL;
@@ -117,7 +120,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	}
 
 	if( !n_profiles ) {
-		error("No profiles found in incoming model");
+		Rf_error("No profiles found in incoming model");
 		return R_NilValue;
 	}
 
@@ -133,7 +136,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	profit_model *m = (profit_model *)malloc(sizeof(profit_model));
 	m->n_profiles = n_profiles;
 	m->profiles = all_profiles;
-	m->magzero = asReal(magzero);
+	m->magzero = Rf_asReal(magzero);
 	dim_l = REAL(dim);
 	m->width  = m->res_x = (unsigned int)dim_l[0];
 	m->height = m->res_y = (unsigned int)dim_l[1];
@@ -141,15 +144,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 
 	/* Go, go, go! */
 	profit_make_model(m);
-	char *error = m->error;
-	if( !error ) {
-		for(i=0; i!=m->n_profiles; i++) {
-			if( m->profiles[i]->error ) {
-				error = m->profiles[i]->error;
-				break;
-			}
-		}
-	}
+	error = profit_get_error(m);
 	if( error ) {
 		Rprintf("Error while calculating model: %s", error);
 		profit_cleanup(m);
@@ -157,7 +152,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	}
 
 	/* Copy the image, clean up, and good bye */
-	SEXP image = PROTECT(allocVector(REALSXP, size));
+	SEXP image = PROTECT(Rf_allocVector(REALSXP, size));
 	memcpy(REAL(image), m->image, sizeof(double) * size);
 
 	profit_cleanup(m);
