@@ -26,6 +26,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "sersic.h"
 
@@ -82,9 +83,8 @@ int _sersic_at_xy(profit_sersic_profile *sp,
 	/* unsigned int depth = 0; */
 
 	/*
-	 * Transform the X/Y position into sersic profile coordinates,
-	 * accounting for translation from the profile center, rotation and ellipse
-	 * scaling in the X axis
+	 * Transform the X/Y position so it accounts for translation from the
+	 * profile center, rotation and ellipse scaling in the X axis
 	 */
 	double rad = sqrt( pow(x+xbin/2-sp->xcen,2) + pow(y+ybin/2-sp->ycen,2) );
 	double angmod = atan2(x-sp->xcen, y-sp->ycen) - angrad;
@@ -97,10 +97,9 @@ int _sersic_at_xy(profit_sersic_profile *sp,
 	/*
 	 * No need for further refinement, return sersic profile
 	 */
-	if( radmod > 2 * re ){
+	if( sp->rough || radmod > 2*re ){
 		*result = exp( -sp->bn * (pow(radmod/re, 1/nser) - 1) );
 		*result *= xbin*ybin*sp->Ie;
-		//printf("%g %g %g\n", xbin, ybin, *result);
 		return 0;
 	}
 
@@ -164,7 +163,7 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 
 }
 
-int profit_init_sersic(profit_profile *profile, profit_model *model) {
+void profit_init_sersic(profit_profile *profile, profit_model *model) {
 
 	profit_sersic_profile *sersic_p = (profit_sersic_profile *)profile;
 	double nser = sersic_p->nser;
@@ -175,8 +174,17 @@ int profit_init_sersic(profit_profile *profile, profit_model *model) {
 	double magzero = model->magzero;
 	double bn;
 
-	if( sersic_p->_qgamma == NULL || sersic_p->_gammafn == NULL || sersic_p->_beta == NULL ) {
-		return 1;
+	if( !sersic_p->_qgamma ) {
+		profile->error = strdup("Missing qgamma function on sersic profile");
+		return;
+	}
+	if( !sersic_p->_gammafn ) {
+		profile->error = strdup("Missing gamma function on sersic profile");
+		return;
+	}
+	if( !sersic_p->_beta ) {
+		profile->error = strdup("Missing beta function on sersic profile");
+		return;
 	}
 
 	/*
@@ -189,9 +197,7 @@ int profit_init_sersic(profit_profile *profile, profit_model *model) {
 	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
 	sersic_p->Ie = pow(10, -0.4*(mag-magzero))/lumtot;
 
-	printf("%g %g %g %g %g %g %g %g\n", bn, Rbox, gamma, re, nser, axrat, lumtot, sersic_p->Ie);
-
-	return 0;
+	return;
 }
 
 profit_profile *profit_create_sersic() {
@@ -208,6 +214,7 @@ profit_profile *profit_create_sersic() {
 	p->box = 0;
 	p->ang   = 0.0;
 	p->axrat = 1.;
+	p->rough = 0;
 	p->_qgamma = NULL;
 	p->_gammafn = NULL;
 	p->_beta = NULL;

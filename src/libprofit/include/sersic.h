@@ -43,6 +43,7 @@ typedef struct _profit_sersic_profile {
 	double ang;
 	double axrat;
 	double box;
+	short rough;
 
 	/* Gamma function and distribution to use */
 	double (*_qgamma)(double, double, double);
@@ -54,7 +55,7 @@ typedef struct _profit_sersic_profile {
 	double Ie;
 } profit_sersic_profile;
 
-int profit_init_sersic(profit_profile *profile, profit_model *model);
+void profit_init_sersic(profit_profile *profile, profit_model *model);
 
 void profit_make_sersic(profit_profile *profile, profit_model *model, double *image);
 

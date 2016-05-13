@@ -34,10 +34,41 @@ extern "C"
 
 struct _profit_model;
 
+/**
+ * The base profile structure
+ *
+ * Specific profile structures *must* declare a profit_profile structure as its
+ * first element, so the resulting memory can be addressed both as a generic
+ * profit_profile or as the specific profile structure.
+ */
 typedef struct _profit_profile {
-	char *name;
-	int (* init_profile)(struct _profit_profile *profile, struct _profit_model *model);
+
+	/**
+	 * The name of this profile
+	 */
+	const char *name;
+
+	/**
+	 * A pointer to the function that performs the initial calculations needed
+	 * by the profile, which are not dependent on individual positions. This
+	 * function can signal an error.
+	 */
+	void (* init_profile)(struct _profit_profile *profile, struct _profit_model *model);
+
+	/**
+	 * The main function of the profile, which is in charge of filling the given
+	 * image array with the corresponding values for each pixel's intensity.
+	 */
 	void (* make_profile)(struct _profit_profile *profile, struct _profit_model *model, double *image);
+
+	/**
+	 * An error string indicating that an error related to this profile was
+	 * detected. The error string can be set either during the profile
+	 * initialization or during the image creation process. Users should check
+	 * that there is no error in any of the profiles after making a model.
+	 */
+	char *error;
+
 } profit_profile;
 
 /**
@@ -95,6 +126,12 @@ typedef struct _profit_model {
 	 */
 	profit_profile **profiles;
 
+	/**
+	 * An error string indicating that there is something wrong with the model.
+	 * Users should check that there is no error after making a model.
+	 */
+	char *error;
+
 } profit_model;
 
 /**
@@ -102,7 +139,7 @@ typedef struct _profit_model {
  * contained in model (see the definition of the structure for more details).
  * The result of the computation is stored in the image field.
  */
-int profit_make_model(profit_model *model);
+void profit_make_model(profit_model *model);
 
 /**
  * Gets a new profile structure for the given name. If a profile with the given
@@ -111,9 +148,10 @@ int profit_make_model(profit_model *model);
 profit_profile *profit_get_profile(const char *name);
 
 /**
- * Returns a new model with all n profiles given as arguments bound to it.
+ * Frees all the resources used by given model, after which it cannot be used
+ * anymore.
  */
-profit_model *profit_get_model(unsigned int n, ...);
+void profit_cleanup(profit_model *model);
 
 #ifdef __cplusplus
 }

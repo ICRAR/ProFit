@@ -25,6 +25,7 @@
  */
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,7 +53,10 @@ profit_profile* profit_get_profile(const char const * name) {
 			break;
 		}
 		if( !strcmp(name, p->name) ) {
-			return p->create();
+			profit_profile *profile = p->create();
+			profile->error = NULL;
+			profile->name = name;
+			return profile;
 		}
 		p++;
 	}
@@ -60,40 +64,45 @@ profit_profile* profit_get_profile(const char const * name) {
 	return NULL;
 }
 
-profit_model *profit_get_model(unsigned int n, ...) {
-
-	unsigned int i;
-	va_list profiles;
-	profit_profile *p;
-	profit_model *model = (profit_model *)malloc(sizeof(profit_model));
-
-	/* Bind the profiles to the model */
-	model->n_profiles = n;
-	model->profiles = (profit_profile **)malloc(sizeof(profit_profile *) * n);
-	va_start(profiles, n);
-	for(i=0; i!=n; i++) {
-		p = va_arg(profiles, profit_profile *);
-		model->profiles[i] = p;
-	}
-	va_end(profiles);
-
-	return model;
-}
-
-int profit_make_model(profit_model *model) {
+void profit_make_model(profit_model *model) {
 
 	unsigned int i, j, p;
+
+	if( !model->width ) {
+		model->error = strdup("Model's width is 0");
+		return;
+	}
+	else if( !model->height ) {
+		model->error = strdup("Model's height is 0");
+		return;
+	}
+	else if( !model->res_x ) {
+		model->error = strdup("Model's res_x is 0");
+		return;
+	}
+	else if( !model->res_y ) {
+		model->error = strdup("Model's res_y is 0");
+		return;
+	}
 
 	model->xbin = model->width/(double)model->res_x;
 	model->ybin = model->height/(double)model->res_y;
 	model->image = (double *)malloc(sizeof(double) * model->width * model->height);
+	if( !model->image ) {
+		char *msg = "Cannot allocate memory for image with w=%u, h=%u";
+		model->error = (char *)malloc( strlen(msg) - 4 + 20 ); /* 32bits unsigned max is 4294967295 (10 digits) */
+		sprintf(model->error, msg, model->width, model->height);
+		return;
+	}
 
-	/* Initialize all profiles. Each profile can optionally return an error
-	 * code, in which case we don't proceed any further */
-	for(unsigned int p=0; p < model->n_profiles; p++) {
+	/* Initialize all profiles. Each profile can fail during initialization
+	 * in which case we don't proceed any further */
+	for(p=0; p < model->n_profiles; p++) {
 		profit_profile *profile = model->profiles[p];
-		if( profile->init_profile(profile, model) ) {
-			return 1;
+		profile->init_profile(profile, model);
+		if( profile->error ) {
+			/* TODO: proper clean up */
+			return;
 		}
 	}
 
@@ -126,5 +135,25 @@ int profit_make_model(profit_model *model) {
 		free(profile_images[p]);
 	}
 	free(profile_images);
-	return 0;
+
+}
+
+void profit_cleanup(profit_model *m) {
+
+	unsigned int i;
+	profit_profile *p;
+
+	if( m->error ) {
+		free(m->error);
+	}
+	for(i=0; i!=m->n_profiles; i++) {
+		p = m->profiles[i];
+		if( p->error ) {
+			free(p->error);
+		}
+		free(p);
+	}
+	free(m->profiles);
+	free(m->image);
+	free(m);
 }

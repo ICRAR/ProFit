@@ -28,9 +28,9 @@
 
 #include "sky.h"
 
-int profit_init_sky(profit_profile *profile, profit_model *model) {
+void profit_init_sky(profit_profile *profile, profit_model *model) {
 	/* no-op for the time being, probably check value in range, etc */
-	return 0;
+	return;
 }
 
 void profit_make_sky(profit_profile *profile, profit_model *model, double *image) {
