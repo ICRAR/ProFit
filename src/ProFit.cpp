@@ -1,12 +1,13 @@
-#include <profit.h>
-#include <sersic.h>
-#include <sky.h>
-
 #include <math.h>
 
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
+
+#include <profit.h>
+#include <sersic.h>
+#include <sky.h>
+
 
 extern "C" {
 
@@ -139,8 +140,19 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	size = m->width * m->height;
 
 	/* Go, go, go! */
-	if( profit_make_model(m) ) {
-		Rprintf("Error while calculating model :(");
+	profit_make_model(m);
+	char *error = m->error;
+	if( !error ) {
+		for(i=0; i!=m->n_profiles; i++) {
+			if( m->profiles[i]->error ) {
+				error = m->profiles[i]->error;
+				break;
+			}
+		}
+	}
+	if( error ) {
+		Rprintf("Error while calculating model: %s", error);
+		profit_cleanup(m);
 		return R_NilValue;
 	}
 
@@ -148,11 +160,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 	SEXP image = PROTECT(allocVector(REALSXP, size));
 	memcpy(REAL(image), m->image, sizeof(double) * size);
 
-	for(i=0; i!=m->n_profiles; i++) {
-		free(m->profiles[i]);
-	}
-	free(m->profiles);
-	free(m->image);
+	profit_cleanup(m);
 
 	UNPROTECT(1);
 	return image;
