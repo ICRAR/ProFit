@@ -1,4 +1,4 @@
-profitLL = function(Data,params,denom='sigma'){
+profitLLOld = function(Data,params,denom='sigma'){
 cutmod = profitMakeModel(modellist=params, magzero = Data$magzero, psf=Data$psf, dim=c(dim(Data$input)[1],dim(Data$input)[2]))$z
 if(any(Data$region)){
   cutim=Data$input[Data$region]
