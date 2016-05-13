@@ -134,6 +134,7 @@ SEXP R_profit_make_model(SEXP model_list, SEXP magzero, SEXP dim) {
 
 	/* Create the model */
 	profit_model *m = (profit_model *)malloc(sizeof(profit_model));
+	m->error = NULL;
 	m->n_profiles = n_profiles;
 	m->profiles = all_profiles;
 	m->magzero = Rf_asReal(magzero);

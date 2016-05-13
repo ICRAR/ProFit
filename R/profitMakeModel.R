@@ -6,14 +6,14 @@ profitMakeModel=function(modellist,magzero=0,psf,dim=c(100,100), logim=FALSE, se
 
 	# Trim out the profiles we won't fit
 	original_modellist = modellist
-	if( modellist$sersic ) {
+	if( length(modellist$sersic) > 0 ) {
 		for( name in names(modellist$sersic) ) {
-			m$sersic[name] = modellist$sersic[name][serscomp]
+			modellist$sersic[[name]] = original_modellist$sersic[[name]][serscomp]
 		}
 	}
-	if( modellist$psf ) {
+	if( length(modellist$psf) > 0 ) {
 		for( name in names(modellist$sersic) ) {
-			m$psf[name] = modellist$psf[psfcomp]
+			modellist$psf[[name]] = original_modellist$psf[[psfcomp]]
 		}
 	}
 
