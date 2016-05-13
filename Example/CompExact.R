@@ -4,8 +4,8 @@ library(GALFITR)
 
 #for(nser in c(0.5,1,2,3,4,6,8,10,20)){
 #for(re in c(1,2,4,8,16,50,100)){
-nser=3.5
-re=3
+nser=0.5
+re=4
 upscale=9
 maxdepth=2
 reswitch=2
@@ -49,7 +49,7 @@ model = list(
 )
 )
 
-tempProFit=profitMakeModel(model=model,dim=c(400,400))
+tempProFit=profitMakeModel(model=model,dim=c(400,400),acc = acc)
 
 #tempProFit=profitMakeSersic(XCEN=0, YCEN=0, MAG=15, XLIM=c(-200,200),YLIM=c(-200,200),RE = re,NSER = nser,ANG = 0,AXRAT = 1,DIM = c(400,400),UPSCALE=upscale, MAXDEPTH=maxdepth, RESWITCH=reswitch, ACC=acc, ROUGH=rough)
 
@@ -83,7 +83,7 @@ psf[13,13]=1
 
 tempGalFit=galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=params)
 
-timeprofit=system.time(profitMakeModel(model=model,dim=c(400,400)))[1]
+timeprofit=system.time(profitMakeModel(model=model,dim=c(400,400),acc = acc))[1]
 timegalfit=system.time(galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=params))[1]
 
 #png(paste("~/Documents/ProFitTests/Nser",nser,"Re",re,".png",sep=""),units="in",width=6,height=5,res=200)

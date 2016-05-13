@@ -29,7 +29,7 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
                     const int MAXDEPTH=2, const double ACC=0.1) {
   const bool RECURSE = (RECURLEVEL < MAXDEPTH) && (UPSCALE > 1);
 
-  double x,y,xmid,ymid,xmod,ymod,radmod,angmod;
+  double x,y,xmid,ymid,xmod,ymod,radmod,angmod,testvaly;
   double sumpixel=0, addval=0, oldaddval=1, olderaddval = 0;
   NumericVector xlim2(2),ylim2(2);
   
@@ -51,17 +51,19 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
   const int YI1 = 1 - YI0;
 
   // TODO: Separate this into another inline method
-  if(UPSCALE > 1)
-  {
-    xmid = x + DX - XCEN;
-    ymid = y + DY - YCEN - YBIN;
-    xmod = xmid * INVREX + ymid * INVREY;
-    ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
-    oldaddval = profitEvalSersic(xmod, ymod, BN, BOX, INVNSER);
-  }
+  //if(UPSCALE > 1)
+  //{
+  //  xmid = x + DX - XCEN;
+  //  ymid = y + DY - YCEN - YBIN;
+  //  xmod = xmid * INVREX + ymid * INVREY;
+  //  ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
+  // oldaddval = profitEvalSersic(xmod, ymod, BN, BOX, INVNSER);
+  //}
   
   int i,j;
   x = XINIT;
+  
+  int uprescount=0;
   
   for(i = 0; i < UPSCALE; ++i) {
     xmid = x + DX - XCEN;
@@ -79,22 +81,39 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
       addval = profitEvalSersic(xmod, ymod, BN, BOX, INVNSER);
       //std::cout << "(" << xmid << "," << ymid << ") -> (" << xmod << "," << ymod << "): " << 
       //  addval << " for (" << BN << "," << INVNSER << "," << BOX << "), RECURSE=" << RECURSE << std::endl;
-      if(RECURSE && (std::abs(addval/oldaddval - 1.0) > ACC)) {
-        ylim2(YI0) = y;
-        ylim2(YI1) = y + YBIN;
-        addval=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER, BOX, BN,
+      //if(RECURSE && (std::abs(addval/oldaddval - 1.0)*INVREY > ACC)) {
+      if(RECURSE){
+        //testvalx = profitEvalSersic(xmod+XBIN*INVREX, ymod, BN, BOX, INVNSER);
+//         if(std::abs(testvalx/addval - 1.0) > ACC){
+//           ylim2(YI0) = y;
+//           ylim2(YI1) = y + YBIN;
+//           uprescount++;
+//           addval=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER, BOX, BN,
+//           UPSCALE, RECURLEVEL+1,MAXDEPTH,ACC);
+//         }else{
+          //Rcpp::Rcout << ymod+YBIN*INVREY*YSIGN << " " << ymod << std::endl;
+          testvaly = profitEvalSersic(xmod, std::abs(ymod)+std::abs(YBIN*INVREY), BN, BOX, INVNSER);
+          if(std::abs(testvaly/addval - 1.0) > ACC){
+            //Rcpp::Rcout << testvaly/addval<< " " << ACC << std::endl;
+            ylim2(YI0) = y;
+            ylim2(YI1) = y + YBIN;
+            uprescount++;
+            addval=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER, BOX, BN,
           UPSCALE, RECURLEVEL+1,MAXDEPTH,ACC);
+          }
+        //}
       }
       sumpixel+=addval;
-      oldaddval=addval;
-      if(j == 0) olderaddval = oldaddval;
+      // oldaddval=addval;
+      // if(j == 0) olderaddval = oldaddval;
       y += YBIN;
     }
     // Reset oldaddval to the value of the first pixel in the row
     // when jumping to the next row
-    oldaddval = olderaddval;
+    // oldaddval = olderaddval;
     x += XBIN;
   }
+  //if(uprescount>0){Rcpp::Rcout <<  RECURLEVEL << " " << uprescount << std::endl;}
   return(sumpixel/double(UPSCALE*UPSCALE));
 }
 
@@ -132,8 +151,6 @@ NumericMatrix profitMakeSersic(const double XCEN=0, const double YCEN=0, const d
 
   int i=0,j=0;
   x=XLIM(0);
-  const double MAXNSERUP = std::min(NSER,8.0);
-
   for(i = 0; i < DIM(0); i++) {
     xmid = x+xbin/2. - XCEN;
     y=YLIM(0);
@@ -143,45 +160,15 @@ NumericMatrix profitMakeSersic(const double XCEN=0, const double YCEN=0, const d
       xmod = xmid * INVREX + ymid * INVREY;
       ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
       rdivre = sqrt(xmod*xmod + ymod*ymod);
-
       if(rdivre>RESWITCH || (NSER<0.5 || ROUGH)){
-        //Rcpp::Rcout << i << " " << j << " " << rdivre << " " << RESWITCH << std::endl;
         mat(i,j)=profitEvalSersic(xmod, ymod, BN, BOX, INVNSER)*xbin*ybin*Ie;
       }
        else{
-         //Rcpp::Rcout << i << " " << j << " " << rdivre << " " << RESWITCH << std::endl;
-//         if(rdivre<0.1){
-//           upscale=ceil(6*MAXNSERUP);
-//           depth=2;
-//         }
-//         else if(rdivre<0.25){
-//           upscale=ceil(5*MAXNSERUP);
-//           depth=2;
-//         }
-//         else if(rdivre<0.5){
-//           upscale=ceil(4*MAXNSERUP);
-//           depth=2;
-//         }
-//         else if(rdivre<1){
-//           upscale=ceil(2*MAXNSERUP);
-//           depth=1;
-//         }
-//         else if(rdivre<=2){
-//           upscale=ceil(MAXNSERUP);
-//           depth=0;
-//         }
-//         if(upscale<4){
-//           upscale=4;
-//         } else if(upscale > 16)
-//         {
-//           upscale = 16;
-//         }
-        
         xlim2(0)=x;
         xlim2(1)=x+xbin;
         ylim2(0)=y;
         ylim2(1)=y+ybin;
-      //Rcpp::Rcout << upscale << std::endl;
+        //Rcpp:Rcout << i << " " << j << " " << ACC << std::endl;
         mat(i,j)=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER,
           BOX,BN,UPSCALE,0,MAXDEPTH,ACC)*xbin*ybin*Ie;
       }
