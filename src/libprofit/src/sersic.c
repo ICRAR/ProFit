@@ -204,7 +204,7 @@ profit_profile *profit_create_sersic() {
 	p->ycen = 0;
 	p->mag = 15;
 	p->re = 1;
-	p->nser = 5;
+	p->nser = 1;
 	p->box = 0;
 	p->ang   = 0.0;
 	p->axrat = 1.;
