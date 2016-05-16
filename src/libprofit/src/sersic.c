@@ -214,7 +214,7 @@ profit_profile *profit_create_sersic() {
 	p->box = 0;
 	p->ang   = 0.0;
 	p->axrat = 1.;
-	p->rough = 0;
+	p->rough = false;
 	p->_qgamma = NULL;
 	p->_gammafn = NULL;
 	p->_beta = NULL;

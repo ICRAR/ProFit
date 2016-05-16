@@ -1,5 +1,5 @@
 /**
- * Header file for sersic profile implementation
+ * Header file for the image convolution implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -23,48 +23,31 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _SERSIC_H_
-#define _SERSIC_H_
+#ifndef _CONVOLUTION_H_
+#define _CONVOLUTION_H_
+
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#include <stdbool.h>
-
-#include "profit.h"
-
-typedef struct _profit_sersic_profile {
-	profit_profile profile;
-	double xcen;
-	double ycen;
-	double mag;
-	double re;
-	double nser;
-	double ang;
-	double axrat;
-	double box;
-	bool rough;
-
-	/* Gamma function and distribution to use */
-	double (*_qgamma)(double, double, double);
-	double (*_gammafn)(double);
-	double (*_beta)(double, double);
-
-	/* These are calculated from the previous */
-	double bn;
-	double Ie;
-} profit_sersic_profile;
-
-void profit_init_sersic(profit_profile *profile, profit_model *model);
-
-void profit_make_sersic(profit_profile *profile, profit_model *model, double *image);
-
-profit_profile *profit_create_sersic(void);
+/**
+ * Convolves image src with the kernel krn.
+ *
+ * Both the source image and the kernel need to specify their width and height.
+ * Depending on the value of the replace parameter, the same src image will be
+ * used to store the convolution result (if replace != 0), or a new vector will
+ * be allocated and filled instead.
+ */
+double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
+                        double *krn, unsigned int krn_width, unsigned int krn_height,
+                        bool replace);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _SERSIC_H_ */
+#endif /* _CONVOLUTION_H_ */
+

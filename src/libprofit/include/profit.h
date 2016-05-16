@@ -27,6 +27,8 @@
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -47,6 +49,11 @@ typedef struct _profit_profile {
 	 * The name of this profile
 	 */
 	const char *name;
+
+	/**
+	 * Whether the resulting image of this profile should be convolved or not.
+	 */
+	bool convolve;
 
 	/**
 	 * A pointer to the function that performs the initial calculations needed
@@ -106,6 +113,21 @@ typedef struct _profit_model {
 	double ybin;
 
 	double magzero;
+
+	/**
+	 * The point spread function (psf) to use when convolving images
+	 */
+	double *psf;
+
+	/**
+	 * The psf's width
+	 */
+	unsigned int psf_width;
+
+	/**
+	 * The psf's height
+	 */
+	unsigned int psf_height;
 
 	/**
 	 * The image created by libprofit.
