@@ -9,7 +9,8 @@ Create an image of a galaxy model wit of without convolution with the PSF. This 
 }
 \usage{
 profitMakeModel(model, magzero = 0, psf, dim = c(100, 100), serscomp = "all",
-psfcomp = "all", rough = FALSE, upscale = 9, maxdepth = 2, reswitch = 2, acc = 0.1)
+psfcomp = "all", rough = FALSE, upscale = 9, maxdepth = 2, reswitch = 2, acc = 0.1,
+calcregion, docalcregion=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -45,6 +46,12 @@ The axial ratio and boxiness corrected radius with respect to \option{re} inside
 }
   \item{acc}{
 Desired minimum per pixel accuracy within the upscaling region defined by \option{RESWITCH}. \option{ACC} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. 
+}
+  \item{calcregion}{
+Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
+}
+  \item{docalcregion}{
+Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
 }
 }
 \details{

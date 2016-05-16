@@ -9,7 +9,7 @@ This is the work-horse log-likelihood that we can use to assess the current fit.
 }
 \usage{
 profitLikeModel(parm, Data, image = FALSE, serscomp = "all", psfcomp = "all",
-rough = FALSE)
+rough = FALSE, docalcregion=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,6 +30,9 @@ Which component of the PSF list should be used to evaluate the log-lieklihood, a
 }
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values. It is often useful to use rough=TRUE when you are a long way from a viable solution and you are searching for a reasonable global minimum. Once near the glocal minimum then rough should be set to FALSE and more precise evalutions of the fit should be made. Broadly rough fits are often pretty good and similar to the much more expensive accurate fits, but user beware / caveat emptor.
+}
+  \item{docalcregion}{
+Logical; should the \option{Data$calcregion} logical matrix be used to define a subset of pixels to be convolved.
 }
 }
 \details{
@@ -101,14 +104,14 @@ magimage(profitMakeModel(model=model, dim=dim(image)), psf=psf)
 
 tofit=list(
   sersic=list(
-    xcen= c(T,NA), #We fit for xcen and tie the two togther
-    ycen= c(T,NA), #We fit for ycen and tie the two togther
-    mag= c(T,T),
-    re= c(T,T),
-    nser= c(T,F), #Fit for both
-    ang= c(T,T), #Fit for both
-    axrat= c(F,T), #Fit for both
-    box= c(T,F) #We only llow the bugle to be boxy
+    xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
+    ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
+    mag= c(TRUE,TRUE),
+    re= c(TRUE,TRUE),
+    nser= c(TRUE,FALSE), #Fit for both
+    ang= c(TRUE,TRUE), #Fit for both
+    axrat= c(FALSE,TRUE), #Fit for both
+    box= c(TRUE,FALSE) #We only allow the bulge to be boxy
   )
 )
 
@@ -116,14 +119,14 @@ tofit=list(
 
 tolog=list(
   sersic=list(
-    xcen= c(F,F),
-    ycen= c(F,F),
-    mag= c(F,F),
-    re= c(T,T), #re is best fit in log space
-    nser= c(T,T), #nser is best fit in log space
-    ang= c(F,F),
-    axrat= c(T,T), #axrat is best fit in log space
-    box= c(F,F)
+    xcen= c(FALSE,FALSE),
+    ycen= c(FALSE,FALSE),
+    mag= c(FALSE,FALSE),
+    re= c(TRUE,TRUE), #re is best fit in log space
+    nser= c(TRUE,TRUE), #nser is best fit in log space
+    ang= c(FALSE,FALSE),
+    axrat= c(TRUE,TRUE), #axrat is best fit in log space
+    box= c(FALSE,FALSE)
   )
 )
 
@@ -135,22 +138,22 @@ sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
 
 priors=list(
   sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=T)},function(x){dnorm(x,0,sigmas[2],
-    log=T)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=T)},function(x){dnorm(x,0,sigmas[4],
-    log=T)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=T)},function(x){dnorm(x,0,sigmas[6],
-    log=T)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=T)},function(x){dnorm(x,0,sigmas[8],
-    log=T)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=T)},function(x){dnorm(x,0,sigmas[10],
-    log=T)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=T)},function(x){dnorm(x,0,sigmas[12],
-    log=T)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=T)},function(x){dnorm(x,0,sigmas[14],
-    log=T)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=T)},function(x){dnorm(x,0,sigmas[16],
-    log=T)})
+    xcen=list(function(x){dnorm(x,0,sigmas[1],log=TRUE)},function(x){dnorm(x,0,sigmas[2],
+    log=TRUE)}), # should have tight constraints on x and y
+    ycen=list(function(x){dnorm(x,0,sigmas[3],log=TRUE)},function(x){dnorm(x,0,sigmas[4],
+    log=TRUE)}), # should have tight constraints on x and y
+    mag=list(function(x){dnorm(x,0,sigmas[5],log=TRUE)},function(x){dnorm(x,0,sigmas[6],
+    log=TRUE)}), # 5 mag SD
+    re=list(function(x){dnorm(x,0,sigmas[7],log=TRUE)},function(x){dnorm(x,0,sigmas[8],
+    log=TRUE)}), # i.e. 1 dex in re is the SD
+    nser=list(function(x){dnorm(x,0,sigmas[9],log=TRUE)},function(x){dnorm(x,0,sigmas[10],
+    log=TRUE)}), # i.e. 1 dex in nser is the SD
+    ang=list(function(x){dnorm(x,0,sigmas[11],log=TRUE)},function(x){dnorm(x,0,sigmas[12],
+    log=TRUE)}), # very broad 30 deg ang SD
+    axrat=list(function(x){dnorm(x,0,sigmas[13],log=TRUE)},function(x){dnorm(x,0,sigmas[14],
+    log=TRUE)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){dnorm(x,0,sigmas[15],log=TRUE)},function(x){dnorm(x,0,sigmas[16],
+    log=TRUE)})
   )
 )
 
@@ -161,22 +164,22 @@ uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
 
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=F)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=F)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=F)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=F)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=F)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=F)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=F)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=F)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=F)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=F)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=F)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=F)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=F)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=F)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=F)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=F)})
+    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=FALSE)},
+    function(x){interval(x,lowers[2],uppers[2],reflect=FALSE)}),
+    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=FALSE)},
+    function(x){interval(x,lowers[4],uppers[4],reflect=FALSE)}),
+    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=FALSE)},
+    function(x){interval(x,lowers[6],uppers[6],reflect=FALSE)}),
+    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=FALSE)},
+    function(x){interval(x,lowers[8],uppers[8],reflect=FALSE)}),
+    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=FALSE)},
+    function(x){interval(x,lowers[10],uppers[10],reflect=FALSE)}),
+    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=FALSE)},
+    function(x){interval(x,lowers[12],uppers[12],reflect=FALSE)}),
+    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=FALSE)},
+    function(x){interval(x,lowers[14],uppers[14],reflect=FALSE)}),
+    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=FALSE)},
+    function(x){interval(x,lowers[16],uppers[16],reflect=FALSE)})
   )
 )
 

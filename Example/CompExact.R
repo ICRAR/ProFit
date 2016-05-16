@@ -2,10 +2,11 @@ library(R2Cuba)
 library(magicaxis)
 library(GALFITR)
 
-#for(nser in c(0.5,1,2,3,4,6,8,10,20)){
-#for(re in c(1,2,4,8,16,50,100)){
 nser=0.5
 re=4
+
+for(nser in c(0.5,1,2,3,4,6,8,10,20)){
+for(re in c(1,2,4,8,16,50,100)){
 upscale=9
 maxdepth=2
 reswitch=2
@@ -86,8 +87,8 @@ tempGalFit=galfit(input=input, sigma=input, mask=input, psf=psf, config=config, 
 timeprofit=system.time(profitMakeModel(model=model,dim=c(400,400),acc = acc))[1]
 timegalfit=system.time(galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=params))[1]
 
-#png(paste("~/Documents/ProFitTests/Nser",nser,"Re",re,".png",sep=""),units="in",width=6,height=5,res=200)
-#par(mar=c(3.1,3.1,1.1,1.1))
+png(paste("~/Documents/ProFitTests/Nser",nser,"Re",re,".png",sep=""),units="in",width=6,height=5,res=200)
+par(mar=c(3.1,3.1,1.1,1.1))
 magplot(temp/tempProFit$z[201,201:250],type='l',xlim=c(0,50),ylim=c(0.98,1.02),xlab='Offset from Centre / pix',ylab='Exact/Approx')
 lines(temp/tempGalFit$model[201,201:250],col='red')
 abline(h=1)
@@ -95,6 +96,6 @@ abline(v=re,lty=2)
 abline(v=reswitch*re,lty=3)
 legend('topleft',legend=c(paste("Nser:",nser),paste("Re:",re)))
 legend('topright', legend=c(paste("ProFit:",round(timeprofit,5),"sec"),paste("GALFIT:",round(timegalfit,5),"sec"),paste("ProFit mean diff:",round(mean(temp/tempProFit$z[201,201:250])-1,6)),paste("GALFIT mean diff:",round(mean(temp/tempGalFit$model[201,201:250])-1,6))), col=c('black','red'),lty=1)
-#dev.off()
-#}
-#}
+dev.off()
+}
+}

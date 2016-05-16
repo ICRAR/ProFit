@@ -8,7 +8,7 @@ High level brute force image convolution
 A high level interface to fast brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. This high level routine interfaces with the lower level \code{\link{profitBruteConv}}, with the advantage that it re-interpolates the provided PSF such that it has odd dimensions and therefore does not cause a systematic shift in the image during convolution.
 }
 \usage{
-profitConvolvePSF(image, psf)
+profitConvolvePSF(image, psf, calcregion, docalcregion=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,6 +17,12 @@ The image matrix to be convolved by the point spread function (PSF).
 }
   \item{psf}{
 The point spread function (PSF) image matrix that ProFit will use to convolve the image. This can have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. The PSF will be automatically rescaled so it sums to 1 before convolution to ensure flux conservation in the model.
+}
+  \item{calcregion}{
+Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
+}
+  \item{docalcregion}{
+Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
 }
 }
 \details{

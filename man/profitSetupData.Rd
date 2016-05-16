@@ -156,14 +156,14 @@ ProFit will only look for prior functions for parameters being fitted, so below 
 
 priors=list(\cr
   sersic=list(\cr
-    xcen=list(function(x){dnorm(x,0,2,log=T)},function(x){dnorm(x,0,2,log=T)}), # should have tight constraints on x\cr
-    ycen=list(function(x){dnorm(x,0,2,log=T)},function(x){dnorm(x,0,2,log=T)}), # should have tight constraints on y\cr
-    mag=list(function(x){dnorm(x,0,5,log=T)},function(x){dnorm(x,0,5,log=T)}), # 5 mag SD\cr
-    re=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in re is the SD\cr
-    nser=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in nser is the SD\cr
-    ang=list(function(x){dnorm(x,0,30,log=T)},function(x){dnorm(x,0,30,log=T)}), # very broad 30 deg ang SD\cr
-    axrat=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in axrat is the SD\cr
-    box=list(function(x){dnorm(x,0,1,log=T)},function(x){dnorm(x,0,1,log=T)}) # 1 boxiness SD\cr
+    xcen=list(function(x){dnorm(x,0,2,log=TRUE)},function(x){dnorm(x,0,2,log=TRUE)}), # should have tight constraints on x\cr
+    ycen=list(function(x){dnorm(x,0,2,log=TRUE)},function(x){dnorm(x,0,2,log=TRUE)}), # should have tight constraints on y\cr
+    mag=list(function(x){dnorm(x,0,5,log=TRUE)},function(x){dnorm(x,0,5,log=TRUE)}), # 5 mag SD\cr
+    re=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}), # i.e. 1 dex in re is the SD\cr
+    nser=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}), # i.e. 1 dex in nser is the SD\cr
+    ang=list(function(x){dnorm(x,0,30,log=TRUE)},function(x){dnorm(x,0,30,log=TRUE)}), # very broad 30 deg ang SD\cr
+    axrat=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}), # i.e. 1 dex in axrat is the SD\cr
+    box=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}) # 1 boxiness SD\cr
   )\cr
 )\cr
 
@@ -171,14 +171,14 @@ ProFit will only look for interval functions for parameters being fitted, so bel
 
 intervals=list(\cr
   sersic=list(\cr
-    xcen=list(function(x){interval(x,0,200,reflect=F)},function(x){interval(x,0,200,reflect=F)}),\cr
-    ycen=list(function(x){interval(x,0,200,reflect=F)},function(x){interval(x,0,200,reflect=F)}),\cr
-    mag=list(function(x){interval(x,0,40,reflect=F)},function(x){interval(x,0,40,reflect=F)}),\cr
-    re=list(function(x){interval(x,-1,2,reflect=F)},function(x){interval(x,-1,2,reflect=F)}),\cr
-    nser=list(function(x){interval(x,-1,2,reflect=F)},function(x){interval(x,-1,2,reflect=F)}),\cr
-    ang=list(function(x){interval(x,-180,360,reflect=F)},function(x){interval(x,-180,360,reflect=F)}),\cr
-    axrat=list(function(x){interval(x,-2,0,reflect=F)},function(x){interval(x,-2,0,reflect=F)}),\cr
-    box=list(function(x){interval(x,-1,1,reflect=F)},function(x){interval(x,-1,1,reflect=F)})\cr
+    xcen=list(function(x){interval(x,0,200,reflect=FALSE)},function(x){interval(x,0,200,reflect=FALSE)}),\cr
+    ycen=list(function(x){interval(x,0,200,reflect=FALSE)},function(x){interval(x,0,200,reflect=FALSE)}),\cr
+    mag=list(function(x){interval(x,0,40,reflect=FALSE)},function(x){interval(x,0,40,reflect=FALSE)}),\cr
+    re=list(function(x){interval(x,-1,2,reflect=FALSE)},function(x){interval(x,-1,2,reflect=FALSE)}),\cr
+    nser=list(function(x){interval(x,-1,2,reflect=FALSE)},function(x){interval(x,-1,2,reflect=FALSE)}),\cr
+    ang=list(function(x){interval(x,-180,360,reflect=FALSE)},function(x){interval(x,-180,360,reflect=FALSE)}),\cr
+    axrat=list(function(x){interval(x,-2,0,reflect=FALSE)},function(x){interval(x,-2,0,reflect=FALSE)}),\cr
+    box=list(function(x){interval(x,-1,1,reflect=FALSE)},function(x){interval(x,-1,1,reflect=FALSE)})\cr
   )\cr
 )\cr
 
@@ -201,6 +201,7 @@ List; complex structure containing:
 \item{mon.names}{Empty character. Required for completeness since required by LA/LD (can be ignored).}
 \item{N}{The number of pixels that will be used in fitting, i.e. the number of image pixels within the segmentation map, which is the same as sum(region).}
 \item{region}{Logical matrix specifying which pixels are inside the fitting region.}
+\item{calcregion}{Logical matrix specifying which pixels should have their model values calculated and be convolved by the \option{psf}.}
 \item{tofit}{The specified \option{tofit} list.}
 \item{tolog}{The specified \option{tolog} list.}
 \item{priors}{The specified \option{priors} list.}
@@ -213,10 +214,13 @@ List; complex structure containing:
 Aaron Robotham
 }
 
+\section{Notes}{
+One of the list outputs of \code{profitSetupData} is the calcregion logical matrix. This tells the model generation and convolution codes whether a particular pixel needs to be considered for fitting purposes. It is computed by convolving the logical region matrix (which itself is the elements of \option{segim} containing the galaxy to be fitted) with the \option{psf}. Values of the convolved matrix output from \code{\link{profitConvolvePSF}} above 0 are necessary for accurate likelihood evaluation later, and have their pixel value set to TRUE (or 1). This generally has the visual effect of expanding out the region matrix with a square tophat kernel the same size as the \option{psf} matrix.
+}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitMakeModel}}
+\code{\link{profitMakeModel}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
 # Load ProFit example data
@@ -265,14 +269,14 @@ magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
 
 tofit=list(
   sersic=list(
-    xcen= c(T,NA), #We fit for xcen and tie the two togther
-    ycen= c(T,NA), #We fit for ycen and tie the two togther
-    mag= c(T,T),
-    re= c(T,T),
-    nser= c(T,T), #Fit for both
-    ang= c(T,T), #Fit for both
-    axrat= c(T,T), #Fit for both
-    box= c(T,F) #We only allow the bulge to be boxy
+    xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
+    ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
+    mag= c(TRUE,TRUE),
+    re= c(TRUE,TRUE),
+    nser= c(TRUE,FALSE), #Fit for both
+    ang= c(TRUE,TRUE), #Fit for both
+    axrat= c(FALSE,TRUE), #Fit for both
+    box= c(TRUE,FALSE) #We only allow the bulge to be boxy
   )
 )
 
@@ -280,14 +284,14 @@ tofit=list(
 
 tolog=list(
   sersic=list(
-    xcen= c(F,F),
-    ycen= c(F,F),
-    mag= c(F,F),
-    re= c(T,T), #re is best fit in log space
-    nser= c(T,T), #nser is best fit in log space
-    ang= c(F,F),
-    axrat= c(T,T), #axrat is best fit in log space
-    box= c(F,F)
+    xcen= c(FALSE,FALSE),
+    ycen= c(FALSE,FALSE),
+    mag= c(FALSE,FALSE),
+    re= c(TRUE,TRUE), #re is best fit in log space
+    nser= c(TRUE,TRUE), #nser is best fit in log space
+    ang= c(FALSE,FALSE),
+    axrat= c(TRUE,TRUE), #axrat is best fit in log space
+    box= c(FALSE,FALSE)
   )
 )
 
@@ -299,22 +303,22 @@ sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
 
 priors=list(
   sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=T)},function(x){dnorm(x,0,sigmas[2],
-    log=T)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=T)},function(x){dnorm(x,0,sigmas[4],
-    log=T)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=T)},function(x){dnorm(x,0,sigmas[6],
-    log=T)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=T)},function(x){dnorm(x,0,sigmas[8],
-    log=T)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=T)},function(x){dnorm(x,0,sigmas[10],
-    log=T)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=T)},function(x){dnorm(x,0,sigmas[12],
-    log=T)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=T)},function(x){dnorm(x,0,sigmas[14],
-    log=T)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=T)},function(x){dnorm(x,0,sigmas[16],
-    log=T)})
+    xcen=list(function(x){dnorm(x,0,sigmas[1],log=TRUE)},function(x){dnorm(x,0,sigmas[2],
+    log=TRUE)}), # should have tight constraints on x and y
+    ycen=list(function(x){dnorm(x,0,sigmas[3],log=TRUE)},function(x){dnorm(x,0,sigmas[4],
+    log=TRUE)}), # should have tight constraints on x and y
+    mag=list(function(x){dnorm(x,0,sigmas[5],log=TRUE)},function(x){dnorm(x,0,sigmas[6],
+    log=TRUE)}), # 5 mag SD
+    re=list(function(x){dnorm(x,0,sigmas[7],log=TRUE)},function(x){dnorm(x,0,sigmas[8],
+    log=TRUE)}), # i.e. 1 dex in re is the SD
+    nser=list(function(x){dnorm(x,0,sigmas[9],log=TRUE)},function(x){dnorm(x,0,sigmas[10],
+    log=TRUE)}), # i.e. 1 dex in nser is the SD
+    ang=list(function(x){dnorm(x,0,sigmas[11],log=TRUE)},function(x){dnorm(x,0,sigmas[12],
+    log=TRUE)}), # very broad 30 deg ang SD
+    axrat=list(function(x){dnorm(x,0,sigmas[13],log=TRUE)},function(x){dnorm(x,0,sigmas[14],
+    log=TRUE)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){dnorm(x,0,sigmas[15],log=TRUE)},function(x){dnorm(x,0,sigmas[16],
+    log=TRUE)})
   )
 )
 
@@ -325,22 +329,22 @@ uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
 
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=F)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=F)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=F)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=F)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=F)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=F)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=F)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=F)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=F)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=F)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=F)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=F)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=F)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=F)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=F)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=F)})
+    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=FALSE)},
+    function(x){interval(x,lowers[2],uppers[2],reflect=FALSE)}),
+    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=FALSE)},
+    function(x){interval(x,lowers[4],uppers[4],reflect=FALSE)}),
+    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=FALSE)},
+    function(x){interval(x,lowers[6],uppers[6],reflect=FALSE)}),
+    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=FALSE)},
+    function(x){interval(x,lowers[8],uppers[8],reflect=FALSE)}),
+    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=FALSE)},
+    function(x){interval(x,lowers[10],uppers[10],reflect=FALSE)}),
+    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=FALSE)},
+    function(x){interval(x,lowers[12],uppers[12],reflect=FALSE)}),
+    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=FALSE)},
+    function(x){interval(x,lowers[14],uppers[14],reflect=FALSE)}),
+    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=FALSE)},
+    function(x){interval(x,lowers[16],uppers[16],reflect=FALSE)})
   )
 )
 
@@ -365,5 +369,4 @@ profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ data }

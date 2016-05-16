@@ -153,22 +153,22 @@ sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
 
 priors=list(
   sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=T)},function(x){dnorm(x,0,sigmas[2],
-    log=T)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=T)},function(x){dnorm(x,0,sigmas[4],
-    log=T)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=T)},function(x){dnorm(x,0,sigmas[6],
-    log=T)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=T)},function(x){dnorm(x,0,sigmas[8],
-    log=T)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=T)},function(x){dnorm(x,0,sigmas[10],
-    log=T)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=T)},function(x){dnorm(x,0,sigmas[12],
-    log=T)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=T)},function(x){dnorm(x,0,sigmas[14],
-    log=T)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=T)},function(x){dnorm(x,0,sigmas[16],
-    log=T)})
+    xcen=list(function(x){dnorm(x,0,sigmas[1],log=TRUE)},function(x){dnorm(x,0,sigmas[2],
+    log=TRUE)}), # should have tight constraints on x and y
+    ycen=list(function(x){dnorm(x,0,sigmas[3],log=TRUE)},function(x){dnorm(x,0,sigmas[4],
+    log=TRUE)}), # should have tight constraints on x and y
+    mag=list(function(x){dnorm(x,0,sigmas[5],log=TRUE)},function(x){dnorm(x,0,sigmas[6],
+    log=TRUE)}), # 5 mag SD
+    re=list(function(x){dnorm(x,0,sigmas[7],log=TRUE)},function(x){dnorm(x,0,sigmas[8],
+    log=TRUE)}), # i.e. 1 dex in re is the SD
+    nser=list(function(x){dnorm(x,0,sigmas[9],log=TRUE)},function(x){dnorm(x,0,sigmas[10],
+    log=TRUE)}), # i.e. 1 dex in nser is the SD
+    ang=list(function(x){dnorm(x,0,sigmas[11],log=TRUE)},function(x){dnorm(x,0,sigmas[12],
+    log=TRUE)}), # very broad 30 deg ang SD
+    axrat=list(function(x){dnorm(x,0,sigmas[13],log=TRUE)},function(x){dnorm(x,0,sigmas[14],
+    log=TRUE)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){dnorm(x,0,sigmas[15],log=TRUE)},function(x){dnorm(x,0,sigmas[16],
+    log=TRUE)})
   )
 )
 
@@ -179,22 +179,22 @@ uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
 
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=F)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=F)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=F)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=F)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=F)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=F)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=F)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=F)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=F)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=F)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=F)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=F)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=F)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=F)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=F)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=F)})
+    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=FALSE)},
+    function(x){interval(x,lowers[2],uppers[2],reflect=FALSE)}),
+    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=FALSE)},
+    function(x){interval(x,lowers[4],uppers[4],reflect=FALSE)}),
+    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=FALSE)},
+    function(x){interval(x,lowers[6],uppers[6],reflect=FALSE)}),
+    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=FALSE)},
+    function(x){interval(x,lowers[8],uppers[8],reflect=FALSE)}),
+    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=FALSE)},
+    function(x){interval(x,lowers[10],uppers[10],reflect=FALSE)}),
+    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=FALSE)},
+    function(x){interval(x,lowers[12],uppers[12],reflect=FALSE)}),
+    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=FALSE)},
+    function(x){interval(x,lowers[14],uppers[14],reflect=FALSE)}),
+    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=FALSE)},
+    function(x){interval(x,lowers[16],uppers[16],reflect=FALSE)})
   )
 )
 
@@ -229,9 +229,9 @@ optimfit$par
 
 #Check it out:
 
-profitLikeModel(optimfit$par,Data,image=T,serscomp=1)
-profitLikeModel(optimfit$par,Data,image=T,serscomp=2)
-profitLikeModel(optimfit$par,Data,image=T,serscomp='all')
+profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=1)
+profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=2)
+profitLikeModel(optimfit$par,Data,image=TRUE,serscomp='all')
 
 #Now we can try a LaplaceApproximation fit (should take a few minutes):
 
@@ -246,31 +246,13 @@ LAfit$Summary1[,1]
 
 #Check it out:
 
-profitLikeModel(LAfit$Summary1[,1],Data,image=T,serscomp=1)
-profitLikeModel(LAfit$Summary1[,1],Data,image=T,serscomp=2)
-profitLikeModel(LAfit$Summary1[,1],Data,image=T,serscomp='all')
-
-#Next try CMA fitting:
-
-Data$algo.func = "CMA"
-
-cmafit = profitCMAES(optimfit$par, profitLikeModel, Data=Data, rough=TRUE,
-lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
-control=list(maxit=500, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE, diag.value=TRUE,
-fnscale=-1, sigma=sigmas[which(unlist(tofit))], maxwalltime=Inf, trace=TRUE,
-stopfitness= 0, stop.tolx=1e-3*cma_sigma))
-
-#Check it out:
-
-cmafit$par
-
-profitLikeModel(cmafit$par,Data,image=T,serscomp=1)
-profitLikeModel(cmafit$par,Data,image=T,serscomp=2)
-profitLikeModel(cmafit$par,Data,image=T,serscomp='all')
-
-Data$algo.func = "LD"
+profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=1)
+profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=2)
+profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp='all')
 
 #Now we can try a LaplacesDemon fit:
+
+Data$algo.func = "LD"
 
 LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
 Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
@@ -295,9 +277,9 @@ BestLD=magtri(LDfit$Posterior1,500)
 
 #We can now check our final fit:
 
-profitLikeModel(BestLD,Data,image=T,serscomp=1)
-profitLikeModel(BestLD,Data,image=T,serscomp=2)
-profitLikeModel(BestLD,Data,image=T,serscomp='all')
+profitLikeModel(BestLD,Data,image=TRUE,serscomp=1)
+profitLikeModel(BestLD,Data,image=TRUE,serscomp=2)
+profitLikeModel(BestLD,Data,image=TRUE,serscomp='all')
 
 }
 

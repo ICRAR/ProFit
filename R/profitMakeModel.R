@@ -1,5 +1,12 @@
-profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, upscale=9, maxdepth=2, reswitch=2, acc=0.1){
-  if(rough){rough=1}else{rough=0}
+profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, upscale=9, maxdepth=2, reswitch=2, acc=0.1, calcregion, docalcregion=FALSE){
+  if(missing(calcregion)){
+    if(docalcregion){
+      calcregion=matrix(1,dim[1],dim[2])
+    }else{
+      calcregion=matrix(1,1,1)
+    }
+  }
+  if(all(dim(calcregion)==dim)==FALSE & docalcregion){stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2]," and they must be ",dim[1],":",dim[2],"!",sep=""))}
   if(serscomp=='all'){serscomp=1:length(model$sersic$xcen)}
   if(psfcomp=='all'){psfcomp=1:length(model$psf$xcen)}
   basemat=matrix(0,dim[1],dim[2])
@@ -43,7 +50,9 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
         UPSCALE=upscale,
         MAXDEPTH=maxdepth,
         RESWITCH=max(min(c(reswitch*as.numeric(model$sersic$re[i]),20)),10)/as.numeric(model$sersic$re[i]),
-        ACC=acc)
+        ACC=acc,
+        CALCREGION=calcregion,
+        DOCALCREGION=docalcregion)
     }
   }
   

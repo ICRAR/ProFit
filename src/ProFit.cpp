@@ -63,7 +63,7 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
   int i,j;
   x = XINIT;
   
-  int uprescount=0;
+  //int uprescount=0;
   
   for(i = 0; i < UPSCALE; ++i) {
     xmid = x + DX - XCEN;
@@ -97,7 +97,7 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
             //Rcpp::Rcout << testvaly/addval<< " " << ACC << std::endl;
             ylim2(YI0) = y;
             ylim2(YI1) = y + YBIN;
-            uprescount++;
+            //uprescount++;
             addval=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER, BOX, BN,
           UPSCALE, RECURLEVEL+1,MAXDEPTH,ACC);
           }
@@ -117,31 +117,30 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
   return(sumpixel/double(UPSCALE*UPSCALE));
 }
 
-
 // [[Rcpp::export]]
-NumericMatrix profitMakeSersic(const double XCEN=0, const double YCEN=0, const double MAG=15, 
+NumericMatrix profitMakeSersic(const IntegerMatrix CALCREGION, const double XCEN=0,
+                        const double YCEN=0, const double MAG=15, 
                         const double RE=1, const double NSER=1, const double ANG=0, 
                         const double AXRAT=1, const double BOX=0, 
                         const double MAGZERO=0, const bool ROUGH=false,
                         const NumericVector & XLIM = NumericVector::create(-100,100),
                         const NumericVector & YLIM = NumericVector::create(-100,100),
-                        const IntegerVector & DIM=IntegerVector::create(200,200),
+                        const IntegerVector & DIM = IntegerVector::create(200,200),
                         const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=1,
-                        const double ACC=0.1) {
-  const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);
+                        const double ACC=0.1, const bool DOCALCREGION=false) {
+  const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double Rbox=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
   const double lumtot = pow(RE,2)*2*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)*AXRAT/Rbox;
   const double Ie=pow(10,(-0.4*(MAG-MAGZERO)))/lumtot;
   const double INVRE = 1./RE;
   const double INVNSER = 1./NSER;
-  
   NumericMatrix mat(DIM(0), DIM(1));
   double x,y,xmid,ymid,xmod,ymod,rdivre,angmod,locscale,depth;
   double xbin=(XLIM(1)-XLIM(0))/DIM(0);
   double ybin=(YLIM(1)-YLIM(0))/DIM(1);
   NumericVector xlim2(2),ylim2(2);
   int upscale;
-
+  
   angmod = std::fmod(ANG+90.,360.);
   if(angmod > 180.) angmod -= 180.;
   const double PX = cos(angmod*M_PI/180.);
@@ -156,21 +155,23 @@ NumericMatrix profitMakeSersic(const double XCEN=0, const double YCEN=0, const d
     y=YLIM(0);
     for(j = 0; j < DIM(1); j++) {
       mat(i,j)=0;
-      ymid = y+ybin/2.-YCEN;
-      xmod = xmid * INVREX + ymid * INVREY;
-      ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
-      rdivre = sqrt(xmod*xmod + ymod*ymod);
-      if(rdivre>RESWITCH || (NSER<0.5 || ROUGH)){
-        mat(i,j)=profitEvalSersic(xmod, ymod, BN, BOX, INVNSER)*xbin*ybin*Ie;
-      }
-       else{
-        xlim2(0)=x;
-        xlim2(1)=x+xbin;
-        ylim2(0)=y;
-        ylim2(1)=y+ybin;
-        //Rcpp:Rcout << i << " " << j << " " << ACC << std::endl;
-        mat(i,j)=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER,
-          BOX,BN,UPSCALE,0,MAXDEPTH,ACC)*xbin*ybin*Ie;
+      if(DOCALCREGION==FALSE || CALCREGION(i,j)==1){
+        ymid = y+ybin/2.-YCEN;
+        xmod = xmid * INVREX + ymid * INVREY;
+        ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
+        rdivre = sqrt(xmod*xmod + ymod*ymod);
+        if(rdivre>RESWITCH || (NSER<0.5 || ROUGH)){
+          mat(i,j)=profitEvalSersic(xmod, ymod, BN, BOX, INVNSER)*xbin*ybin*Ie;
+        }
+         else{
+          xlim2(0)=x;
+          xlim2(1)=x+xbin;
+          ylim2(0)=y;
+          ylim2(1)=y+ybin;
+          //Rcpp:Rcout << i << " " << j << " " << ACC << std::endl;
+          mat(i,j)=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER,
+            BOX,BN,UPSCALE,0,MAXDEPTH,ACC)*xbin*ybin*Ie;
+        }
       }
       y=y+ybin;
     }
@@ -181,7 +182,8 @@ NumericMatrix profitMakeSersic(const double XCEN=0, const double YCEN=0, const d
 
 
 // [[Rcpp::export]]
-NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf){
+NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf,
+                              const IntegerMatrix CALCREGION, const bool DOCALCREGION=false){
     int x_s = image.nrow(), x_k = psf.nrow();
     int y_s = image.ncol(), y_k = psf.ncol();
     int extrax= x_k % 2;
@@ -194,13 +196,17 @@ NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf){
     
     for (int row = 0; row < x_s; row++) {
       for (int col = 0; col < y_s; col++) {
-        image_row_col = image(row,col) ;
-        for (int j = 0; j < y_k; j++) {
-          output_row_col_j = & output(row,col+j) ;
-          psf_j = &psf(0,j) ;
-          for (int i = 0; i < x_k; i++) {
-           output_row_col_j[i] += image_row_col*psf_j[i] ;
+        if(DOCALCREGION==FALSE || CALCREGION(row,col)==1){
+        image_row_col = image(row,col);
+            for (int j = 0; j < y_k; j++) {
+              output_row_col_j = & output(row,col+j) ;
+              psf_j = &psf(0,j) ;
+              for (int i = 0; i < x_k; i++) {
+                output_row_col_j[i] += image_row_col*psf_j[i] ;
+              }
           }
+        }else{
+          output(row,col)=0;
         }
       }
     }

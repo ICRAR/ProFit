@@ -70,22 +70,26 @@ Aaron Robotham, Dan Taranu
 }
 \examples{
 # Evaluating the first pixel of a high nser profile is hard.
-# Most of the accuracy comes from increasing Nsamp. The target value here is 15.36773:
+# To get more accurate you can change UPSCALE, MAXDEPTH and ACC. This can take some
+#tuning to get the best ratio of accuracy versus time.
+
+# The target value here is 16.25038:
 
 profitSumPix(XCEN=0, YCEN=0, XLIM=c(0,1), YLIM=c(0,1), INVREX=0.1, INVREY=0.2,
-INVAXRAT=2, INVNSER=0.25, BOX=0, BN=qgamma(0.5,2*4), NSAMP=20, RECURLEVEL = 0L,
+INVAXRAT=2, INVNSER=0.25, BOX=0, BN=qgamma(0.5,2*4), UPSCALE=9, RECURLEVEL = 0L,
+MAXDEPTH = 2L, ACC = 0.001)
+
+profitSumPix(XCEN=0, YCEN=0, XLIM=c(0,1), YLIM=c(0,1), INVREX=0.1, INVREY=0.2,
+INVAXRAT=2, INVNSER=0.25, BOX=0, BN=qgamma(0.5,2*4), UPSCALE=20, RECURLEVEL = 0L,
+MAXDEPTH = 0L, ACC = 0.01)
+
+profitSumPix(XCEN=0, YCEN=0, XLIM=c(0,1), YLIM=c(0,1), INVREX=0.1, INVREY=0.2,
+INVAXRAT=2, INVNSER=0.25, BOX=0, BN=qgamma(0.5,2*4), UPSCALE=20, RECURLEVEL = 0L,
+MAXDEPTH = 2L, ACC = 0.1)
+
+profitSumPix(XCEN=0, YCEN=0, XLIM=c(0,1), YLIM=c(0,1), INVREX=0.1, INVREY=0.2,
+INVAXRAT=2, INVNSER=0.25, BOX=0, BN=qgamma(0.5,2*4), UPSCALE=9, RECURLEVEL = 0L,
 MAXDEPTH = 3L, ACC = 0.001)
-
-profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
-axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=100, recur=0, depth=0, acc=0.1)
-
-profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
-axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=1000, recur=0, depth=0, acc=0.1)
-
-# But the final refinement can be got from increasing the allowed recursion depth:
-
-profitSumPix(xcen=0, ycen=0, xlim=c(0,1), ylim=c(0,1), re=5, nser=4, angrad=45*pi/180,
-axrat=0.3, box=0, bn=qgamma(0.5,2*4), Nsamp=1000, recur=0, depth=5, acc=0.1)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
