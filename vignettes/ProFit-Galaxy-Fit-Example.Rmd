@@ -1,5 +1,5 @@
 ---
-title: "ProFit Galaxy Fitting Example"
+title: "ProFit: Galaxy Fitting Example"
 author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -9,20 +9,28 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Prepare the test data
+## Prepare the test data
 
-First we load the libraries we need:
+It is worth checking you haev the latest version of `ProFit`:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('asgr/ProFit')
+```
+
+Next we load the libraries we need:
 
 ```{r}
+library(knitr)
 library(ProFit)
 library(FITSio)
 ```
 
 Next we load a table of data describing GAMA galaxies:
 
-```{r, echo=FALSE, results='asis'}
+```{r}
 data('ExampleInit', package="ProFit")
-knitr::kable(head(ExampleInit, 10))
+kable(head(ExampleInit, 10))
 ```
 
 Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
@@ -198,7 +206,7 @@ We can test how things currently look (we get an output because we set verbose=T
 profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
 ```
 
-# Do some fitting
+## Do some fitting
 
 First try `optim` BFGS:
 

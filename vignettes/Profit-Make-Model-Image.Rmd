@@ -1,6 +1,6 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "ProFit: Making a Complex Model Image"
+author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -9,9 +9,16 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# A Simple Model Structure
+## A Simple Model Structure
 
-First we load the libraries we need:
+It is worth checking you haev the latest version of `ProFit`:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('asgr/ProFit')
+```
+
+Next we load the libraries we need:
 
 ```{r}
 library(ProFit)
@@ -38,9 +45,9 @@ magimage(ExampleImage0)
 
 Whilst sometimes useful to use directly, `profitMakeSersic` is limited in useability because you can only create one Sersic model at a time. To make more complex image structures we should use `profitMakeModel` instead.
 
-# A More Complex Model Structure
+## A Multi-Component Structure
 
-First we need to setup a legal model structure. Basically this is a list of lists. Whils this seems more fiddly than before, it allows us to make very complex structures and images very easily (i.e. it scales with complexity very well).
+First we need to setup a legal model structure. Basically this is a list of lists. Whilst this seems more fiddly than before, it allows us to make very complex structures and images very easily (i.e. it scales with complexity very well).
 
 The top level list can be called whatever you like, but calling it **model** or similar probably makes sense. This should contain at least one of the following list structures: **sersic** / **psf** / **sky**. You can run `profitMakeModel` with none of these, but this would return an empty image matrix, so probably not a useful thing to do.
 
@@ -93,7 +100,27 @@ magimage(ExampleImagePSF1)
 
 That looks much more realistic. Adding in the convolution has slowed things down- the example above now takes ~60 microseconds.
 
-# Make a complex mock image
+Using this technique we can make a classic bulge+disk system easily where the two Sersic model components sit on top of each other:
+
+```{r, fig.width=5, fig.height=5}
+modelBD = list(
+	sersic = list(
+		xcen   = c(100, 100),
+		ycen   = c(100, 100),
+		mag = c(14, 12),
+		re  = c(2, 15),
+		nser  = c(4, 1),
+		ang  = c(0, 60),
+		axrat  = c(1, 0.3),
+		box = c(0,0)
+	)
+)
+magimage(profitMakeModel(model=modelBD, psf=profitGenPSF(), dim=c(200,200)))
+```
+
+The cuspy bulge is evident in the centre of the image, and you can see the dull glow of its large radii wings too (without a truncation high-Nser systems both have a cuspy core and Lorentzian wings that extend off to large radii).
+
+## Make a complex mock image
 
 We can use `profitMakeModel` to make more complex image structure very easily. The example model below will randomly produce 20 Sersic profiles, 10 PSFs and a sky background:
 
