@@ -3,4 +3,6 @@ PKG_CPPFLAGS = -Ilibprofit/include
 OBJECTS = libprofit/src/profit.o \
           libprofit/src/sersic.o \
           libprofit/src/sky.o \
+          libprofit/src/psf.o \
+          libprofit/src/convolve.o \
           ProFit.o
