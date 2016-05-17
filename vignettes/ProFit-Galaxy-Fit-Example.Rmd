@@ -233,8 +233,8 @@ profitLikeModel(optimfit$par,Data,image=TRUE,serscomp='all')
 Now we can try a `LaplaceApproximation` fit (should take a few minutes):
 
 ```{r, eval=FALSE}
+library(LaplacesDemon)
 Data$algo.func = "LA"
-
 LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e4,
 Method='BFGS', CovEst='Identity', sir=FALSE)
 ```
