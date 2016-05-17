@@ -1,6 +1,8 @@
 #include <Rcpp.h>
 #include <math.h>
 
+//Rcpp::Rcout << "example output" << std::endl;
+
 using namespace Rcpp;
 
 // This is a simple example of exporting a C++ function to R. You can
@@ -50,27 +52,13 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
   const int YI0 = YREV ? 1 : 0;
   const int YI1 = 1 - YI0;
 
-  // TODO: Separate this into another inline method
-  //if(UPSCALE > 1)
-  //{
-  //  xmid = x + DX - XCEN;
-  //  ymid = y + DY - YCEN - YBIN;
-  //  xmod = xmid * INVREX + ymid * INVREY;
-  //  ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
-  // oldaddval = profitEvalSersic(xmod, ymod, BN, BOX, INVNSER);
-  //}
-  
   int i,j;
   x = XINIT;
-  
-  //int uprescount=0;
-  
   for(i = 0; i < UPSCALE; ++i) {
     xmid = x + DX - XCEN;
     xlim2(XI0) = x;
     xlim2(XI1) = x + XBIN;
     y = YINIT;
-    
     for(j = 0; j < UPSCALE; ++j) {
       ymid = y + DY - YCEN;
       //rad=hypot(xmid, ymid);
@@ -79,41 +67,20 @@ double profitSumPix(double XCEN, double YCEN, const NumericVector & XLIM, const 
       xmod = xmid * INVREX + ymid * INVREY;
       ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
       addval = profitEvalSersic(xmod, ymod, BN, BOX, INVNSER);
-      //std::cout << "(" << xmid << "," << ymid << ") -> (" << xmod << "," << ymod << "): " << 
-      //  addval << " for (" << BN << "," << INVNSER << "," << BOX << "), RECURSE=" << RECURSE << std::endl;
-      //if(RECURSE && (std::abs(addval/oldaddval - 1.0)*INVREY > ACC)) {
       if(RECURSE){
-        //testvalx = profitEvalSersic(xmod+XBIN*INVREX, ymod, BN, BOX, INVNSER);
-//         if(std::abs(testvalx/addval - 1.0) > ACC){
-//           ylim2(YI0) = y;
-//           ylim2(YI1) = y + YBIN;
-//           uprescount++;
-//           addval=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER, BOX, BN,
-//           UPSCALE, RECURLEVEL+1,MAXDEPTH,ACC);
-//         }else{
-          //Rcpp::Rcout << ymod+YBIN*INVREY*YSIGN << " " << ymod << std::endl;
-          testvaly = profitEvalSersic(xmod, std::abs(ymod)+std::abs(YBIN*INVREY), BN, BOX, INVNSER);
+          testvaly = profitEvalSersic(xmod, std::abs(ymod)+std::abs(YBIN*INVREY*INVAXRAT), BN, BOX, INVNSER);
           if(std::abs(testvaly/addval - 1.0) > ACC){
-            //Rcpp::Rcout << testvaly/addval<< " " << ACC << std::endl;
             ylim2(YI0) = y;
             ylim2(YI1) = y + YBIN;
-            //uprescount++;
             addval=profitSumPix(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, INVNSER, BOX, BN,
           UPSCALE, RECURLEVEL+1,MAXDEPTH,ACC);
           }
-        //}
       }
       sumpixel+=addval;
-      // oldaddval=addval;
-      // if(j == 0) olderaddval = oldaddval;
       y += YBIN;
     }
-    // Reset oldaddval to the value of the first pixel in the row
-    // when jumping to the next row
-    // oldaddval = olderaddval;
     x += XBIN;
   }
-  //if(uprescount>0){Rcpp::Rcout <<  RECURLEVEL << " " << uprescount << std::endl;}
   return(sumpixel/double(UPSCALE*UPSCALE));
 }
 
