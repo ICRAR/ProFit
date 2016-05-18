@@ -28,141 +28,171 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * We use either GSL or Rmath to provide the low-level
+ * beta, gamma and qgamma_inv functions needed by the sersic profile.
+ * If neither is given, the user will have to feed the profiles with
+ * the appropriate function pointers after creating them.
+ */
+#if defined(HAVE_GSL)
+#include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sf_gamma.h>
+#elif defined(HAVE_R)
+#define R_NO_REMAP
+#include <Rmath.h>
+#endif
+
 #include "sersic.h"
 
-static
-double profit_sumpix(double xcen, double ycen, double xlim0, double xlim1, double ylim0, double ylim1,
-                     double re, double nser, double angrad, double axrat, double box,
-                     double bn, int N, int recur, double acc) {
+static inline
+double _sersic_for_xy_r(profit_sersic_profile *sp,
+                        double x, double y,
+                        double r, bool reuse_r) {
 
-	double rad,x,y,xmod,ymod,radmod,angmod;
-	double xbin=(xlim1-xlim0)/N;
-	double ybin=(ylim1-ylim0)/N;
-	double sumpixel=0, addval, prevaddval = 0;
-	int upscale=20;
-	x=xlim0;
-	for(int i = 0; i < N; i++) {
-		recur=0;
-		y=ylim0;
-		for(int j = 0; j < N; j++) {
-			rad=sqrt(pow(x+xbin/2-xcen,2)+pow(y+ybin/2-ycen,2));
-			angmod=atan2(x+xbin/2-xcen,y+ybin/2-ycen)-angrad;
-			xmod=rad*sin(angmod);
-			ymod=rad*cos(angmod);
-			xmod=xmod/axrat;
-			radmod=pow(pow(fabs(xmod),box)+pow(fabs(ymod),box),1/(box));
-			addval=exp(-bn*(pow(radmod/re,1/nser)-1));
-			if( j > 0 && recur < 3 ){
-				if( (addval/prevaddval > (1+acc)) || (addval/prevaddval < 1/(1+acc)) ){
-					recur++;
-					addval=profit_sumpix(xcen,ycen,x, x+xbin, y, y+ybin,re,nser,angrad,axrat,box,bn,upscale,recur,acc);
+	/*
+	 * The evaluation of the sersic profile at sersic coordinates (x,y).
+	 *
+	 * The sersic profile has this form:
+	 *
+	 * e^{-bn * (r_factor - 1)}
+	 * where r_factor = (r/Re)^{1/nser}
+	 *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
+	 *              b = box parameter
+	 *
+	 * Reducing:
+	 *  r_factor = (x/re)^{2+b} + (y/re)^{2+b})^{1/(nser*(2+b)}
+	 *
+	 */
+
+	double r_factor;
+	if( reuse_r && sp->box == 0. ){
+		r_factor = pow(r/sp->re, 1/sp->nser);
+	}
+	else {
+		double exponent = sp->box + 2;
+		double base = pow(fabs(x/sp->re), exponent) + pow(fabs(y/sp->re), exponent);
+		double divisor = sp->nser*exponent;
+
+		if( divisor == 0.5 ) {
+			r_factor = base*base;
+		} else if( divisor == 1. ) {
+			r_factor = base;
+		} else if( divisor == 2. ) {
+			r_factor = sqrt(base);
+		} else if( divisor == 3. ) {
+			r_factor = cbrt(base);
+		} else if( divisor == 4. ) {
+			r_factor = sqrt(sqrt((base)));
+		} else {
+			r_factor = pow(base, 1/divisor);
+		}
+	}
+
+	return exp(-sp->_bn * (r_factor - 1));
+}
+
+static inline
+void _image_to_sersic_coordinates(profit_sersic_profile *sp, double x, double y, double *x_ser, double *y_ser) {
+	x -= sp->xcen;
+	y -= sp->ycen;
+	*x_ser = x * sp->_cos_ang - y * sp->_sin_ang;
+	*y_ser = x * sp->_sin_ang + y * sp->_cos_ang;
+	*y_ser *= sp->axrat;
+}
+
+static
+double _sersic_sumpix(profit_sersic_profile *sp,
+                      double x0, double x1, double y0, double y1,
+                      unsigned int recur_level) {
+
+	double xbin = (x1-x0) / sp->resolution;
+	double ybin = (y1-y0) / sp->resolution;
+	double half_xbin = xbin/2.;
+	double half_ybin = ybin/2.;
+	double total = 0, subval, testval;
+	double x , y, x_ser, y_ser;
+	unsigned int i, j;
+
+	bool recurse = sp->resolution > 1 && recur_level < sp->max_recursions;
+
+	/* The middle X/Y value is used for each pixel */
+	x = x0;
+	for(i=0; i < sp->resolution; i++) {
+		x += half_xbin;
+		y = y0;
+		for(j=0; j < sp->resolution; j++) {
+			y += half_ybin;
+
+			_image_to_sersic_coordinates(sp, x, y, &x_ser, &y_ser);
+			subval = _sersic_for_xy_r(sp, x_ser, y_ser, 0, false);
+
+			if( recurse ) {
+				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->axrat), 0, false);
+				if( fabs(testval/subval - 1.0) > sp->acc ) {
+					subval = _sersic_sumpix(sp,
+					                        x - half_xbin, x + half_xbin,
+					                        y - half_ybin, y + half_ybin,
+					                        recur_level + 1);
 				}
 			}
-			sumpixel+=addval;
-			prevaddval=addval;
-			y=y+ybin;
+
+			total += subval;
+			y += half_ybin;
 		}
-		x=x+xbin;
+
+		x += half_xbin;
 	}
 
-	return(sumpixel/pow(N,2));
+	/* Average and return */
+	return total / (sp->resolution * sp->resolution);
 }
 
 static
-int _sersic_at_xy(profit_sersic_profile *sp,
-                  profit_model *model,
-                  unsigned int x, unsigned int y,
-                  double *result) {
-
-	double angrad = -sp->ang * M_PI/180;
-	double re   = sp->re;
-	double nser = sp->nser;
-	double box  = sp->box + 2;
-	double xbin = model->xbin;
-	double ybin = model->ybin;
-	/* unsigned int depth = 0; */
-
-	/*
-	 * Transform the X/Y position so it accounts for translation from the
-	 * profile center, rotation and ellipse scaling in the X axis
-	 */
-	double rad = sqrt( pow(x+xbin/2-sp->xcen,2) + pow(y+ybin/2-sp->ycen,2) );
-	double angmod = atan2(x-sp->xcen, y-sp->ycen) - angrad;
-	double xmod = rad * sin(angmod) / sp->axrat;
-	double ymod = rad * cos(angmod);
-	double radmod = pow( pow(fabs(xmod),box) + pow(fabs(ymod),box), 1/(box));
-
-	unsigned int upscale = 4;
-
-	/*
-	 * No need for further refinement, return sersic profile
-	 */
-	if( sp->rough || radmod > 2*re ){
-		*result = exp( -sp->bn * (pow(radmod/re, 1/nser) - 1) );
-		*result *= xbin*ybin*sp->Ie;
-		return 0;
-	}
-
-	/*
-	 * Adaptive scaling: perform subsampling and return sum of subsampling
-	 */
-	double locscale = xbin/radmod;
-	locscale = (locscale > 10 ) ? 10 : locscale;
-	if(radmod<xbin) {
-		upscale = ceil(8*nser*locscale);
-		/*depth=3;*/
-	}
-	else if( radmod < 0.1*re ){
-		upscale = ceil(8*nser*locscale);
-		/*depth=2;*/
-	}
-	else if( radmod < 0.25*re ){
-		upscale = ceil(4*nser*locscale);
-		/*depth=2;*/
-	}
-	else if( radmod < 0.5*re ){
-		upscale = ceil(2*nser*locscale);
-		/*depth=2;*/
-	}
-	else if( radmod < re ){
-		upscale = ceil(nser*locscale);
-		/*depth=1;*/
-	}
-	else if( radmod <= 2*re ){
-		upscale = ceil((nser/2)*locscale);
-		/*depth=0;*/
-	}
-
-	/* Min/max scale */
-	upscale = (upscale < 4) ? 4 : upscale;
-	upscale = (upscale > 100) ? 100 : upscale;
-
-	*result = profit_sumpix(sp->xcen, sp->ycen, x, x+xbin, y, y+ybin,
-	                        re, nser, angrad, sp->axrat, box, sp->bn,
-	                        upscale, 0, 1e-1);
-	*result *= xbin * ybin * sp->Ie;
-	return 0;
-
-}
-
 void profit_make_sersic(profit_profile *profile, profit_model *model, double *image) {
 
 	unsigned int i, j;
-	double x, y;
+	double x, y, pixel_val;
+	double x_ser, y_ser, r_ser;
+	double half_xbin = model->xbin/2.;
+	double half_ybin = model->ybin/2.;
+	double bin_area = model->xbin * model->ybin;
 	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
 
+	/* The middle X/Y value is used for each pixel */
+	x = 0;
 	for(i=0; i < model->width; i++) {
-		x = model->xbin * i;
+		x += half_xbin;
+		y = 0;
 		for(j=0; j < model->height; j++) {
-			y = model->ybin * j;
-			double pix_val;
-			_sersic_at_xy(sp, model, x, y, &pix_val);
-			image[j*model->width + i] = pix_val;
+			y += half_ybin;
+
+			_image_to_sersic_coordinates(sp, x, y, &x_ser, &y_ser);
+
+			/*
+			 * No need for further refinement, return sersic profile
+			 * TODO: the radius calculation doesn't take into account boxing
+			 */
+			r_ser = sqrt(x_ser*x_ser + y_ser*y_ser);
+			if( sp->rough || sp->nser < 0.5 || r_ser/sp->re > sp->re_switch ){
+				pixel_val = _sersic_for_xy_r(sp, x_ser, y_ser, r_ser, true);
+			}
+			else {
+				/* Subsample and integrate */
+				pixel_val =  _sersic_sumpix(sp,
+				                            x - model->xbin/2, x + model->xbin/2,
+				                            y - model->ybin/2, y + model->ybin/2,
+				                            0);
+			}
+
+			image[i + j*model->width] = bin_area * sp->_ie * pixel_val;
+			y += half_ybin;
 		}
+		x += half_xbin;
 	}
 
 }
 
+static
 void profit_init_sersic(profit_profile *profile, profit_model *model) {
 
 	profit_sersic_profile *sersic_p = (profit_sersic_profile *)profile;
@@ -172,7 +202,7 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	double mag = sersic_p->mag;
 	double box = sersic_p->box + 2;
 	double magzero = model->magzero;
-	double bn;
+	double bn, angrad;
 
 	if( !sersic_p->_qgamma ) {
 		profile->error = strdup("Missing qgamma function on sersic profile");
@@ -188,17 +218,40 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	}
 
 	/*
-	 * Calculate the total luminosity needed by the sersic profile
-	 * and save it back on the sersic profile
+	 * Calculate the total luminosity used by the sersic profile, used
+	 * later to calculate the exact contribution of each pixel.
+	 * We save bn back into the profile because it's needed later.
 	 */
-	sersic_p->bn = bn = sersic_p->_qgamma(0.5, 2*nser, 1);
+	sersic_p->_bn = bn = sersic_p->_qgamma(0.5, 2*nser, 1);
 	double Rbox = M_PI * box / (4*sersic_p->_beta(1/box, 1 + 1/box));
 	double gamma = sersic_p->_gammafn(2*nser);
 	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
-	sersic_p->Ie = pow(10, -0.4*(mag-magzero))/lumtot;
+	sersic_p->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
-	return;
+	/*
+	 * Get the rotation angle in radians and calculate the coefficients
+	 * that will fill the rotation matrix we'll use later to transform
+	 * from image coordinates into sersic coordinates.
+	 *
+	 * In galfit the angle started from the Y image axis.
+	 */
+	angrad = fmod(sersic_p->ang + 90, 360.) * M_PI / 180.;
+	sersic_p->_cos_ang = cos(angrad);
+	sersic_p->_sin_ang = sin(angrad);
+
+	/* Other way to get sin is doing: cos^2 + sin^2 = 1
+	 * sersic_p->_sin_ang = sqrt(1. - cos_ang * cos_ang) * (angrad < M_PI ? -1. : 1.);
+	 * The performance seems pretty similar (measured on a x64 Linux with gcc and clang)
+	 * and doing sin() is more readable.
+	 */
+
 }
+
+#if defined(HAVE_R)
+double _Rf_qgamma_wrapper(double a, double b, double c) {
+	return Rf_qgamma(a, b, c, 1, 0);
+}
+#endif
 
 profit_profile *profit_create_sersic() {
 	profit_sersic_profile *p = (profit_sersic_profile *)malloc(sizeof(profit_sersic_profile));
@@ -215,8 +268,28 @@ profit_profile *profit_create_sersic() {
 	p->ang   = 0.0;
 	p->axrat = 1.;
 	p->rough = false;
+
+	p->acc = 0.1;
+	p->re_switch = 1.;
+	p->resolution = 9;
+	p->max_recursions = 2;
+
+	/*
+	 * Point to the corresponding implementation, or leave as NULL if not
+	 * possible. In that case the user will have to provide their own functions.
+	 */
+#if defined(HAVE_GSL)
+	p->_beta = &gsl_sf_beta;
+	p->_gammafn = &gsl_sf_gamma;
+	p->_qgamma = &gsl_cdf_gamma_Qinv;
+#elif defined(HAVE_R)
+	p->_qgamma = &_Rf_qgamma_wrapper;
+	p->_gammafn = &Rf_gammafn;
+	p->_beta = &Rf_beta;
+#else
 	p->_qgamma = NULL;
 	p->_gammafn = NULL;
 	p->_beta = NULL;
+#endif
 	return (profit_profile *)p;
 }

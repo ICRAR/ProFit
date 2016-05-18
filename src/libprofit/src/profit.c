@@ -49,17 +49,24 @@ struct _profit_profile_index _all_profiles[] = {
 	{NULL, NULL} // Sentinel
 };
 
-profit_profile* profit_get_profile(const char * name) {
+profit_model *profit_create_model() {
+	profit_model *model = (profit_model *)calloc(1, sizeof(profit_model));
+	model->n_profiles = 0;
+	model->profiles = NULL;
+	return model;
+}
+
+profit_profile* profit_create_profile(const char * profile_name) {
 
 	struct _profit_profile_index *p = _all_profiles;
 	while(1) {
 		if( p->name == NULL ) {
 			break;
 		}
-		if( !strcmp(name, p->name) ) {
+		if( !strcmp(profile_name, p->name) ) {
 			profit_profile *profile = p->create();
 			profile->error = NULL;
-			profile->name = name;
+			profile->name = profile_name;
 			profile->convolve = false;
 			return profile;
 		}
@@ -69,7 +76,18 @@ profit_profile* profit_get_profile(const char * name) {
 	return NULL;
 }
 
-void profit_make_model(profit_model *model) {
+void profit_add_profile(profit_model *model, profit_profile *profile) {
+	if( !model->n_profiles ) {
+		model->profiles = (profit_profile **)malloc(sizeof(profit_profile **));
+	}
+	else {
+		model->profiles = realloc(model->profiles, (model->n_profiles + 1) * sizeof(profit_profile *));
+	}
+	model->profiles[model->n_profiles] = profile;
+	model->n_profiles++;
+}
+
+void profit_eval_model(profit_model *model) {
 
 	unsigned int i, j, p;
 

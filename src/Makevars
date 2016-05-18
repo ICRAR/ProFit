@@ -1,4 +1,4 @@
-PKG_CPPFLAGS = -Ilibprofit/include
+PKG_CPPFLAGS = -Ilibprofit/include  -DPROFIT_VERSION=$(shell cat libprofit/VERSION) -DHAVE_R
 
 OBJECTS = libprofit/src/profit.o \
           libprofit/src/sersic.o \

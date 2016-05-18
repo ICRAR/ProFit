@@ -25,6 +25,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "psf.h"
@@ -32,33 +33,152 @@
 static
 void profit_init_psf(profit_profile *profile, profit_model *model)  {
 	profit_psf_profile *psf = (profit_psf_profile *)profile;
+
+	if( !model->psf ) {
+		psf->profile.error = strdup("No psf present in the model, cannot produce a psf profile");
+		return;
+	}
 	psf->scale = pow(10, -0.4*(psf->mag - model->magzero));
+
 }
 
 static
 void profit_make_psf(profit_profile *profile, profit_model *model, double *image) {
 
-	unsigned int i, j, image_x, image_y;
+	/*
+	 * TODO: This method still doesn't take into account the image xbin/ybin
+	 */
+
+	unsigned int i, j, img_x, img_y;
+	int img_i_0, img_j_0;
 	profit_psf_profile *psf = (profit_psf_profile *)profile;
 
-	unsigned int xcen_pixel = (unsigned int)round(psf->xcen/model->xbin);
-	unsigned int ycen_pixel = (unsigned int)round(psf->ycen/model->ybin);
-	unsigned int i_0 = xcen_pixel - model->psf_width/2;
-	unsigned int j_0 = ycen_pixel - model->psf_height/2;
+	/*
+	 * The PSF is not simply put "as is" in the nearest position of the desired
+	 * center. Its values are interpolated instead to take into account the
+	 * sub-pixel distance needed to reach the center.
+	 *
+	 * We avoid this extra calculation only if the target position of the psf's
+	 * origin is located exactly on a pixel crossing, and if the psf's
+	 * dimensions are both even. This would ensure that each pixel of the PSF
+	 * corresponds exactly to one pixel on the target image, allowing us to have
+	 * a direct copy of values.
+	 */
+	double psf_origin_x = psf->xcen - model->psf_width/2.;
+	double psf_origin_y = psf->ycen - model->psf_height/2.;
+	if( (model->psf_width % 2 == 0 && model->psf_height % 2 == 0) && \
+       (floor(psf_origin_x) == psf_origin_x || ceil(psf_origin_x) == psf_origin_x) && \
+	    (floor(psf_origin_y) == psf_origin_y || ceil(psf_origin_y) == psf_origin_y) ) {
 
-	for(i=0; i < model->psf_width; i++) {
-		image_x = i + i_0;
-		if( image_x > model->width ) {
-			break;
-		}
-		for(j=0; j < model->psf_height ; j++) {
-			image_y = j + j_0;
-			if( image_y > model->height ) {
+		img_i_0 = (int)psf_origin_x;
+		img_j_0 = (int)psf_origin_y;
+
+		for(j=0; j!=model->psf_height; j++) {
+
+			/* Don't draw outside the boundaries of the full image */
+			if( (int)j+img_j_0 < 0 ) {
+				continue;
+			}
+			img_y = j + (unsigned int)img_j_0;
+			if( img_y >= model->height ) {
 				break;
 			}
-			image[image_y*model->width + image_x] = model->psf[i + j*model->psf_width] * psf->scale;
+
+			for(i=0; i!=model->psf_width; i++) {
+
+				/* Don't draw outside the boundaries of the full image */
+				if( (int)i+img_i_0 < 0 ) {
+					continue;
+				}
+				img_x = i + (unsigned int)img_i_0;
+				if( img_x >= model->width ) {
+					break;
+				}
+
+				image[img_x + img_y*model->width] = model->psf[i + j*model->psf_width] * psf->scale;
+			}
+		}
+
+		return;
+	}
+
+	/*
+	 * Each image pixel is now divided into four regions because of its
+	 * intersection with the PSF pixels:
+	 *
+	 *             |
+	 *    ---------|------
+	 *    |        |      |
+	 *    |   a3   |  a4  |  yd2
+	 *  ___________|________
+	 *    |        |      |
+	 *    |        |      |
+	 *    |   a1   |  a2  |  yd1
+	 *    |        |      |
+	 *    ---------|-------
+	 *        xd1  |  xd2
+	 *
+	 * We average the four areas to obtain the value of the pixel. The areas are
+	 * all the same on each image pixel so we calculate them once
+	 *
+	 * The dimensions of the target area are also just one more pixel bigger than
+	 * the dimensions of the psf.
+	 */
+	double xd1 = psf->xcen - floor(psf->xcen);
+	double xd2 = 1 - xd1;
+	double yd1 = psf->ycen - floor(psf->ycen);
+	double yd2 = 1 - yd1;
+	double a1 = xd1 * yd1;
+	double a2 = xd2 * yd2;
+	double a3 = xd1 * yd2;
+	double a4 = xd2 * yd2;
+
+	img_i_0 = (int)floor(psf->xcen - model->psf_width/2.);
+	img_j_0 = (int)floor(psf->ycen - model->psf_height/2.);
+	unsigned int img_w = model->psf_width + 1;
+	unsigned int img_h = model->psf_height + 1;
+
+	for(j=0; j!=img_h; j++) {
+
+		/* Don't draw outside the boundaries of the full image */
+		if( (int)j+img_j_0 < 0 ) {
+			continue;
+		}
+		img_y = j + (unsigned int)img_j_0;
+		if( img_y >= model->height ) {
+			break;
+		}
+
+		for(i=0; i!=img_w; i++) {
+
+			/* Don't draw outside the boundaries of the full image */
+			if( (int)i+img_i_0 < 0 ) {
+				continue;
+			}
+			img_x = i + (unsigned int)img_i_0;
+			if( img_x >= model->width ) {
+				break;
+			}
+
+			/* The borders of the target image area use less psf pixels */
+			double psf_val = 0;
+			if( i != 0 && j != 0 ) {
+				psf_val += model->psf[i-1 + (j-1)*model->psf_width] * a1;
+			}
+			if( i != 0 && j != (img_h - 1) ) {
+				psf_val += model->psf[i-1 + j*model->psf_width] * a3;
+			}
+			if( i != (img_w - 1) && j != 0 ) {
+				psf_val += model->psf[i + (j-1)*model->psf_width] * a2;
+			}
+			if( i != (img_w - 1) && j != (img_h - 1) ) {
+				psf_val += model->psf[i + j*model->psf_width] * a4;
+			}
+
+			image[img_x + img_y*model->width] = psf_val * psf->scale;
 		}
 	}
+
 }
 
 profit_profile *profit_create_psf() {

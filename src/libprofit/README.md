@@ -1,6 +1,6 @@
 # libprofit
 
-libprofit is a C library that produces images based on different luminosity profiles.
+libprofit is a low-level C library that produces images based on different luminosity profiles.
 
 The currently supported profiles (and their parameters) are:
 

@@ -28,11 +28,13 @@
 
 #include "sky.h"
 
+static
 void profit_init_sky(profit_profile *profile, profit_model *model) {
 	/* no-op for the time being, probably check value in range, etc */
 	return;
 }
 
+static
 void profit_make_sky(profit_profile *profile, profit_model *model, double *image) {
 	unsigned int i, j;
 	profit_sky_profile *sky_p = (profit_sky_profile *)profile;

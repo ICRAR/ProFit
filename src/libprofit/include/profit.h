@@ -157,30 +157,43 @@ typedef struct _profit_model {
 } profit_model;
 
 /**
- * Main entry point routine. It calculates an image using the parameters
- * contained in model (see the definition of the structure for more details).
- * The result of the computation is stored in the image field.
+ * Creates a new model to which profiles can be added, and that can
+ * be used to calculate an image.
  */
-void profit_make_model(profit_model *model);
+profit_model *profit_create_model(void);
 
 /**
- * Gets a new profile structure for the given name. If a profile with the given
- * name is not supported then NULL is returned.
+ * Creates a new profile for the given name.
+ * On success, the new profile is created and its reference is returned for
+ * further customization.
+ * On failure (i.e., if a profile with the given name is not supported) NULL is
+ * returned.
  */
-profit_profile *profit_get_profile(const char *name);
+profit_profile *profit_create_profile(const char *profile_name);
+
+/**
+ * Adds the given profile to the model.
+ */
+void profit_add_profile(profit_model *model, profit_profile *profile);
+
+/**
+ * Calculates an image using the information contained in the model.
+ * The result of the computation is stored in the image field.
+ */
+void profit_eval_model(profit_model *model);
 
 /**
  * Returns the first error string found either on the model itself or in any of
  * it profiles. This method should be called on the model right after invoking
- * profit_make_model to make sure that no errors were found during the process.
+ * profit_eval_model to make sure that no errors were found during the process.
  * If NULL is returned it means that no errors were found and that the image
  * stored in the model is valid.
  */
 char *profit_get_error(profit_model *model);
 
 /**
- * Frees all the resources used by given model, after which it cannot be used
- * anymore.
+ * Frees all the resources used by the given model, after which it cannot be
+ * used anymore.
  */
 void profit_cleanup(profit_model *model);
 
