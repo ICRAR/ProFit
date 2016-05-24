@@ -112,12 +112,12 @@ tofit=list(\cr
   sersic=list(\cr
     xcen= c(T,NA), #We fit for xcen and tie the two togther\cr
     ycen= c(T,NA), #We fit for ycen and tie the two togther\cr
-    mag= c(T,T),\cr
-    re= c(T,T),\cr
-    nser= c(T,T), #Fit for both\cr
-    ang= c(T,T), #Fit for both\cr
-    axrat= c(T,T), #Fit for both\cr
-    box= c(T,F) #We only allow the bugle to be boxy\cr
+    mag= c(T,T),\cr #Fit for both
+    re= c(T,T),\cr #Fit for both
+    nser= c(T,F), #Fit for bulge\cr
+    ang= c(F,T), #Fit for disk\cr
+    axrat= c(F,T), #Fit for disk\cr
+    box= c(F,F)\cr #Fit for neither
   ),\cr
   psf=list(\cr
     xcen = c(F,F,F),\cr
@@ -271,12 +271,12 @@ tofit=list(
   sersic=list(
     xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
     ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
-    mag= c(TRUE,TRUE),
-    re= c(TRUE,TRUE),
-    nser= c(TRUE,FALSE), #Fit for both
-    ang= c(TRUE,TRUE), #Fit for both
-    axrat= c(FALSE,TRUE), #Fit for both
-    box= c(TRUE,FALSE) #We only allow the bulge to be boxy
+    mag= c(TRUE,TRUE), #Fit for both
+    re= c(TRUE,TRUE), #Fit for both
+    nser= c(TRUE,FALSE), #Fit for bulge
+    ang= c(FALSE,TRUE), #Fit for disk
+    axrat= c(FALSE,TRUE), #Fit for disk
+    box= c(FALSE,FALSE) #Fit for neither
   )
 )
 

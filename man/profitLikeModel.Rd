@@ -106,12 +106,12 @@ tofit=list(
   sersic=list(
     xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
     ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
-    mag= c(TRUE,TRUE),
-    re= c(TRUE,TRUE),
-    nser= c(TRUE,FALSE), #Fit for both
-    ang= c(TRUE,TRUE), #Fit for both
-    axrat= c(FALSE,TRUE), #Fit for both
-    box= c(TRUE,FALSE) #We only allow the bulge to be boxy
+    mag= c(TRUE,TRUE), #Fit for both
+    re= c(TRUE,TRUE), #Fit for both
+    nser= c(TRUE,FALSE), #Fit for bulge
+    ang= c(FALSE,TRUE), #Fit for disk
+    axrat= c(FALSE,TRUE), #Fit for disk
+    box= c(FALSE,FALSE) #Fit for neither
   )
 )
 
