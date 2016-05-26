@@ -1,72 +1,57 @@
-\name{ProFit-package}
-\alias{ProFit-package}
-\alias{ProFit}
-\alias{profit}
-\docType{package}
+\name{profitLikeModel}
+\alias{profitLikeModel}
+%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-\packageTitle{ProFit}
+Calculate the log likelihood of a model given the input data
 }
 \description{
-\packageDescription{ProFit}
+This is the work-horse log-likelihood that we can use to assess the current fit. This function becomes the input for generic R fitting codes like \code{\link{optim}} (or any that user wants to use).
+}
+\usage{
+profitLikeModel(parm, Data, image = FALSE, serscomp = "all", psfcomp = "all",
+rough = FALSE, docalcregion=FALSE)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{parm}{
+A vector of values for the parameters being fit. These must be in the expected order for the provided model. See \code{\link{profitSetupData}} for details.
+}
+  \item{Data}{
+Data of class profit.data. In practice this can only be generated easily by the profitSetupData function, which re-formats fairly generic user inputs into the strict format required by ProFit. See \code{\link{profitSetupData}} for details.
+}
+  \item{image}{
+logical; should an image be made showing the Data, model, Data-model and a histogram of (Data-model)/sigma
+}
+  \item{serscomp}{
+Which component of the Sersic list should be used to evaluate the log-lieklihood and to generate the image outputs. This is useful if you want to visually see appearance of e.g. Sersic components 1 and 2 separately. The default "all" will show the total model with all components added.
+}
+  \item{psfcomp}{
+Which component of the PSF list should be used to evaluate the log-lieklihood, and to generate the image outputs. This is useful if you want to visually see appearance of e.g. PSF components 1 and 2 separately. The default "all" will show the total model with all components added.
+}
+  \item{rough}{
+Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values. It is often useful to use rough=TRUE when you are a long way from a viable solution and you are searching for a reasonable global minimum. Once near the glocal minimum then rough should be set to FALSE and more precise evalutions of the fit should be made. Broadly rough fits are often pretty good and similar to the much more expensive accurate fits, but user beware / caveat emptor.
+}
+  \item{docalcregion}{
+Logical; should the \option{Data$calcregion} logical matrix be used to define a subset of pixels to be convolved.
+}
 }
 \details{
-\tabular{ll}{
-Package: \tab ProFit\cr
-Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2016-03-16\cr
-License: \tab GPL-3+\cr
-Imports: \tab Rcpp (>= 0.11.6)\cr
-LinkingTo: \tab Rcpp\cr
-Depends: \tab magicaxis, FITSio, LaplacesDemon, RColorBrewer\cr
+Whils this function is designed to produce the required outputs for different optimisation schemes (optim, LaplaceApproximation, LaplacesDemon and CMA have been used successfully) the side effect of producing the model image is quite useful for protyping.
 }
+\value{
+Option dependent output, either a Scalar or a List.
+
+\code{profitLikeModel} uses the value of Data$algo.func to determine the type of output generated (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a single scalar value. If set to "LA" or "LD" then a more complex list structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algortithms available within R.
 }
 
 \author{
-\packageAuthor{ProFit}
-
-Maintainer: \packageMaintainer{ProFit}
+Aaron Robotham
 }
-\references{
-~~ Literature or other references for background information ~~
-}
-\keyword{profile}
 
+\seealso{
+\code{\link{profitSetupData}}, \code{\link{LaplaceApproximation}}, \code{\link{LaplacesDemon}}
+}
 \examples{
-model = list(
-	sersic = list(
-		xcen   = c(180, 60),
-		ycen   = c(90, 10),
-		mag = c(15, 13),
-		re  = c(14, 5),
-		nser  = c(3, 10),
-		ang  = c(46, 80),
-		axrat  = c(0.4, 0.6),
-		box = c(0.5,-0.5)
-	),
-	psf = list(
-		xcen   = c(34,10,150),
-		ycen   = c(74,120,130),
-		mag = c(10,13,16)
-	),
-	sky = list(
-		bg = 3e-12
-	)
-)
-
-# Without a PSF provided only the extended sources are shown, with no convolution:
-
-magimage(profitMakeModel(model=model, dim=c(200,200)))
-
-# With a PSF provided the PSFs are displayed and the extended sources are convolved with
-# the PSF:
-
-magimage(profitMakeModel(model=model, psf=profitGenPSF(), dim=c(200,200)))
-
-############### Full fit example ##############
-
-\dontrun{
-
 # Load ProFit example data
 
 data('ExampleInit')
@@ -107,13 +92,13 @@ model=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(model,dim=dim(image)))
+magimage(profitMakeModel(model=model, dim=dim(image)))
 
 # The original image:
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
+magimage(profitMakeModel(model=model, dim=dim(image)), psf=psf)
 
 # What should we be fitting:
 
@@ -216,71 +201,7 @@ Data$init
 # earlier):
 
 profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
-
-#First try optim BFGS:
-
-optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
-lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
-control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
-
-#The best optim BFGS fit is given by:
-
-optimfit$par
-
-#Check it out:
-
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=1)
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=2)
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp='all')
-
-#Now we can try a LaplaceApproximation fit (should take a few minutes):
-
-Data$algo.func = "LA"
-
-LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e4,
-Method='BFGS', CovEst='Identity', sir=FALSE)
-
-#The best LA BFGS fit is given by:
-
-LAfit$Summary1[,1]
-
-#Check it out:
-
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=1)
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=2)
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp='all')
-
-#Now we can try a LaplacesDemon fit:
-
-Data$algo.func = "LD"
-
-LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
-Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
-
-#If it has converged well you will have a Summary2 structure using the ESS:
-
-LDfit$Summary2
-
-#If not you can still check Summary1:
-
-LDfit$Summary1
-
-#The global fit is very close to the initial LA fit on this occassion.
-
-#With any luck you have enough stationary samples to run:
-
-BestLD=magtri(LDfit$Posterior2)
-
-#Otherwise try:
-
-BestLD=magtri(LDfit$Posterior1,500)
-
-#We can now check our final fit:
-
-profitLikeModel(BestLD,Data,image=TRUE,serscomp=1)
-profitLikeModel(BestLD,Data,image=TRUE,serscomp=2)
-profitLikeModel(BestLD,Data,image=TRUE,serscomp='all')
-
 }
-
-}
+% Add one or more standard keywords, see file 'KEYWORDS' in the
+% R documentation directory.
+\keyword{ likelihood }
