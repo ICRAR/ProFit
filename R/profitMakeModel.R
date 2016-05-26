@@ -1,4 +1,4 @@
-profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, upscale=9, maxdepth=2, reswitch=2, acc=0.1, calcregion, docalcregion=FALSE){
+profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, acc=0.1, calcregion, docalcregion=FALSE, magmu=FALSE){
   if(missing(calcregion)){
     if(docalcregion){
       calcregion=matrix(1,dim[1],dim[2])
@@ -11,6 +11,9 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
   if(psfcomp=='all'){psfcomp=1:length(model$psf$xcen)}
   basemat=matrix(0,dim[1],dim[2])
   if(length(model$sersic)>0){
+    if(length(magmu)<length(model$sersic)){
+      magmu=rep(magmu,length(model$sersic))
+    }
     for(i in serscomp){
       if(length(model$sersic$nser)>0){
         nser=as.numeric(model$sersic$nser[i])
@@ -32,24 +35,41 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       }else{
         box=0
       }
+      if(magmu[i]){
+        mag=profitMu2Mag(mag=as.numeric(model$sersic$mag[i]), re=as.numeric(model$sersic$re[i]), axrat=axrat)
+      }else{
+        mag=as.numeric(model$sersic$mag[i])
+      }
+      re=as.numeric(model$sersic$re[i])
+      #Find the point at which we capture 90% of the flux (sensible place for upscaling)
+      reswitch=profitFluxFrac(nser=nser,re=re,frac=0.99)
+      #Make sure upscaling doesn't go beyond 20 pixels:
+      reswitch=min(reswitch,20)
+      #Don't let it become less than 1 pixel (means we do no worse than GALFIT anywhere):
+      reswitch=max(reswitch,2)
+      #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
+      upscale=ceiling(9^2/reswitch)
+      upscale=min(upscale,9)
+      upscale=max(upscale,3)
+      reswitch=reswitch/re
       basemat=basemat+
       profitMakeSersic(
         XCEN=as.numeric(model$sersic$xcen[i]),
         YCEN=as.numeric(model$sersic$ycen[i]),
-        MAG=as.numeric(model$sersic$mag[i]),
+        MAG=mag,
         RE=as.numeric(model$sersic$re[i]),
         NSER=nser,
         ANG=ang,
         AXRAT=axrat,
         BOX=box,
-        MAGZERO=as.numeric(magzero),
+        MAGZERO=magzero,
         ROUGH=rough,
         XLIM=c(0,dim[1]),
         YLIM=c(0,dim[2]),
         DIM=dim,
         UPSCALE=upscale,
-        MAXDEPTH=maxdepth,
-        RESWITCH=max(min(c(reswitch*as.numeric(model$sersic$re[i]),20)),10)/as.numeric(model$sersic$re[i]),
+        MAXDEPTH=2,
+        RESWITCH=reswitch,
         ACC=acc,
         CALCREGION=calcregion,
         DOCALCREGION=docalcregion)

@@ -2,16 +2,14 @@ library(R2Cuba)
 library(magicaxis)
 library(GALFITR)
 
-nser=0.5
-re=4
-
-for(nser in c(0.5,1,2,3,4,6,8,10,20)){
-for(re in c(1,2,4,8,16,50,100)){
-upscale=9
-maxdepth=2
-reswitch=2
 acc=0.1
 rough=F
+
+nserseq=c(0.5,1,2,3,4,6,8,16)
+reseq=c(0.5,1,2,4,8,16,32,64,128,256)
+
+for(nser in nserseq){
+for(re in reseq){
 
 scalesersic=function(mag=15, re=1, nser=1, ar=1, bn= qgamma(0.5, 2 * nser)){
   lumtot = (re^2)*2*pi*nser*((exp(bn))/(bn^(2*nser)))*gamma(2*nser)*ar
@@ -93,7 +91,7 @@ magplot(temp/tempProFit$z[201,201:250],type='l',xlim=c(0,50),ylim=c(0.98,1.02),x
 lines(temp/tempGalFit$model[201,201:250],col='red')
 abline(h=1)
 abline(v=re,lty=2)
-abline(v=reswitch*re,lty=3)
+abline(v=profitFluxFrac(nser=nser, re=re),lty=3)
 legend('topleft',legend=c(paste("Nser:",nser),paste("Re:",re)))
 legend('topright', legend=c(paste("ProFit:",round(timeprofit,5),"sec"),paste("GALFIT:",round(timegalfit,5),"sec"),paste("ProFit mean diff:",round(mean(temp/tempProFit$z[201,201:250])-1,6)),paste("GALFIT mean diff:",round(mean(temp/tempGalFit$model[201,201:250])-1,6))), col=c('black','red'),lty=1)
 dev.off()
