@@ -8,6 +8,7 @@ profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all
 	profiles = list()
 	model_psf = NULL
 	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
+		profiles[['sersic']] = list()
 		for( name in names(modellist$sersic) ) {
 			profiles[['sersic']][[name]] = modellist$sersic[[name]][serscomp]
 		}
@@ -25,7 +26,7 @@ profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all
 			}
 		}
 		if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
-			profiles[['sersic']][['convolve']] = TRUE
+			profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
 		}
 	}
 
