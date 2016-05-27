@@ -5,26 +5,43 @@ profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all
 	if(psfcomp=='all'){psfcomp=1:length(modellist$psf$xcen)}
 
 	# Trim out the profiles we won't fit
-	# Also copy the given global values into each sersic profile
-	original_modellist = modellist
-	if( length(modellist$sersic) > 0 ) {
+	profiles = list()
+	model_psf = NULL
+	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 		for( name in names(modellist$sersic) ) {
-			modellist$sersic[[name]] = original_modellist$sersic[[name]][serscomp]
-			modellist$sersic[['resolution']] = upscale
-			modellist$sersic[['max_recursion']] = maxdepth
-			modellist$sersic[['rough']] = rough
-			modellist$sersic[['re_switch']] = reswitch
-			modellist$sersic[['acc']] = acc
+			profiles[['sersic']][[name]] = modellist$sersic[[name]][serscomp]
 		}
+		profiles[['sersic']][['resolution']] = rep(upscale, length(serscomp))
+		profiles[['sersic']][['max_recursions']] = rep(maxdepth, length(serscomp))
+		profiles[['sersic']][['rough']] = rep(as.integer(rough), length(serscomp))
+		profiles[['sersic']][['re_switch']] = rep(reswitch, length(serscomp))
+		profiles[['sersic']][['acc']] = rep(acc, length(serscomp))
 	}
-	if( length(modellist$psf) > 0 ) {
-		for( name in names(modellist$sersic) ) {
-			modellist$psf[[name]] = original_modellist$psf[[psfcomp]]
+	if( !missing(psf) ) {
+		model_psf = psf
+		if( length(modellist$psf) > 0 && length(psfcomp) > 0 ) {
+			for( name in names(modellist$psf) ) {
+				profiles[['psf']][[name]] = modellist$psf[[name]][psfcomp]
+			}
+		}
+		if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
+			profiles[['sersic']][['convolve']] = TRUE
 		}
 	}
 
-	model   = .Call("R_profit_make_model", modellist, magzero, dim)
-	basemat = matrix(model, ncol=dim[2], byrow=F)
+	model = list(
+		magzero = magzero,
+		width = dim[1],
+		height = dim[2],
+		profiles = profiles,
+		psf = model_psf
+	)
+	print(model)
+	image = .Call("R_profit_make_model", model)
+	if( is.null(image) ) {
+		return(NULL)
+	}
+	basemat = matrix(image, ncol=dim[2], byrow=F)
 
-	return = list(x=0:dim[1], y=0:dim[2], z=basemat)
+	return(list(x=0:dim[1], y=0:dim[2], z=basemat))
 }
