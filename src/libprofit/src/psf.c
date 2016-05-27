@@ -92,8 +92,7 @@ void profit_make_psf(profit_profile *profile, profit_model *model, double *image
 	 * TODO: This method still doesn't take into account the image xbin/ybin
 	 */
 
-	unsigned int i, j, img_x, img_y;
-	int img_i_0, img_j_0;
+	unsigned int i, j;
 	profit_psf_profile *psf = (profit_psf_profile *)profile;
 
 	/*
