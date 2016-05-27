@@ -12,8 +12,6 @@
 #include <psf.h>
 
 
-extern "C" {
-
 static
 SEXP _get_list_element(SEXP list, const char *name) {
 	SEXP names = Rf_getAttrib(list, R_NamesSymbol);
@@ -220,6 +218,4 @@ SEXP R_profit_make_model(SEXP model_list) {
 
 	UNPROTECT(1);
 	return image;
-}
-
 }
