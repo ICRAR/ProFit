@@ -7,8 +7,6 @@ Author: Aaron Robotham & Dan Taranu
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Get data / Define model / ??? / ProFit!
 License: file LICENSE
-Imports: Rcpp (>= 0.11.6)
-LinkingTo: Rcpp
 Depends: magicaxis, FITSio, LaplacesDemon, RColorBrewer
 Suggests: knitr
 VignetteBuilder: knitr

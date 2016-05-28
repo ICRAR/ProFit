@@ -6,11 +6,43 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
+#include <convolve.h>
 #include <profit.h>
 #include <sersic.h>
 #include <sky.h>
 #include <psf.h>
 
+static
+double *_read_image(SEXP r_image, unsigned int *im_width, unsigned int *im_height) {
+
+	unsigned int width = Rf_ncols(r_image);
+	unsigned int height = Rf_nrows(r_image);
+
+	double *image = (double *)malloc(sizeof(double) * width * height);
+	memcpy(image, REAL(r_image), sizeof(double) * width * height);
+	*im_width = width;
+	*im_height = height;
+	return image;
+}
+
+static
+bool *_read_mask(SEXP r_mask, unsigned int *m_width, unsigned int *m_height) {
+
+	unsigned int i, j;
+	unsigned int width = Rf_ncols(r_mask);
+	unsigned int height = Rf_nrows(r_mask);
+
+	bool *mask = (bool *)malloc(sizeof(double) * width * height);
+	int *r_raw_mask = LOGICAL(r_mask);
+	for(j=0; j!=height; j++) {
+		for(i=0; i!=width; i++) {
+			mask[i + j*width] = (bool)r_raw_mask[i + j*width];
+		}
+	}
+	*m_width = width;
+	*m_height = height;
+	return mask;
+}
 
 static
 SEXP _get_list_element(SEXP list, const char *name) {
@@ -145,6 +177,11 @@ void _read_psf_profiles(profit_model *model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "psf", "xcen", &list_to_psf);
 }
 
+
+/*
+ * Public exported functions follow now
+ * ----------------------------------------------------------------------------
+ */
 SEXP R_profit_make_model(SEXP model_list) {
 
 	ssize_t size;
@@ -218,4 +255,32 @@ SEXP R_profit_make_model(SEXP model_list) {
 
 	UNPROTECT(1);
 	return image;
+}
+
+SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
+
+	unsigned int img_w, img_h, psf_w, psf_h;
+
+	double *image = _read_image(r_image, &img_w, &img_h);
+	double *psf = _read_image(r_psf, &psf_w, &psf_h);
+
+	bool *calc_region = NULL;
+	if( Rf_asLogical(r_do_calc_region) ) {
+		unsigned int calc_w, calc_h;
+		bool *calc_region = _read_mask(r_calc_region, &calc_w, &calc_h);
+		if( calc_w != psf_w || calc_h != psf_h ) {
+			Rf_error("Calc region has different dimensions than the PSF");
+			return R_NilValue;
+		}
+	}
+
+	image = profit_convolve(image, img_w, img_h, psf, psf_w, psf_h, true);
+	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, img_w * img_h));
+	memcpy(REAL(ret_image), image, sizeof(double) * img_w * img_h);
+	free(image);
+	free(psf);
+
+	UNPROTECT(1);
+	return ret_image;
+
 }
