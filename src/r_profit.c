@@ -241,7 +241,7 @@ SEXP R_profit_make_model(SEXP model_list) {
 	profit_eval_model(m);
 	error = profit_get_error(m);
 	if( error ) {
-		Rprintf("Error while calculating model: %s\n", error);
+		Rf_error("Error while calculating model: %s\n", error);
 		profit_cleanup(m);
 		return R_NilValue;
 	}
