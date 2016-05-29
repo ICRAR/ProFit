@@ -1,3 +1,7 @@
+.profitFluxFrac=function(nser=1, re=1, frac=0.99){
+  re*(qgamma(frac,2*nser)/qgamma(0.5,2*nser))^nser
+}
+
 profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, acc=0.1, calcregion, docalcregion=FALSE, magmu=FALSE){
   if(missing(calcregion)){
     if(docalcregion){
@@ -11,8 +15,8 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
   if(psfcomp=='all'){psfcomp=1:length(model$psf$xcen)}
   basemat=matrix(0,dim[1],dim[2])
   if(length(model$sersic)>0){
-    if(length(magmu)<length(model$sersic)){
-      magmu=rep(magmu,length(model$sersic))
+    if(length(magmu)<length(model$sersic$xcen)){
+      magmu=rep(magmu,length(model$sersic$xcen))
     }
     for(i in serscomp){
       if(length(model$sersic$nser)>0){
@@ -36,13 +40,13 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
         box=0
       }
       if(magmu[i]){
-        mag=profitMu2Mag(mag=as.numeric(model$sersic$mag[i]), re=as.numeric(model$sersic$re[i]), axrat=axrat)
+        mag=profitMu2Mag(mu=as.numeric(model$sersic$mag[i]), re=as.numeric(model$sersic$re[i]), axrat=axrat)
       }else{
         mag=as.numeric(model$sersic$mag[i])
       }
       re=as.numeric(model$sersic$re[i])
       #Find the point at which we capture 90% of the flux (sensible place for upscaling)
-      reswitch=profitFluxFrac(nser=nser,re=re,frac=0.99)
+      reswitch=.profitFluxFrac(nser=nser,re=re,frac=0.99)
       #Make sure upscaling doesn't go beyond 20 pixels:
       reswitch=min(reswitch,20)
       #Don't let it become less than 1 pixel (means we do no worse than GALFIT anywhere):

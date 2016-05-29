@@ -370,7 +370,7 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
     const NumericVector & XLIM = NumericVector::create(-100,100),
     const NumericVector & YLIM = NumericVector::create(-100,100),
     const IntegerVector & DIM = IntegerVector::create(200,200),
-    const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=1,
+    const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=2,
     const double ACC=0.1, const bool DOCALCREGION=false)
 {
   if(BOX == 0) 
