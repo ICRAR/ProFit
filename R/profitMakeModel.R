@@ -46,7 +46,7 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       }
       re=as.numeric(model$sersic$re[i])
       #Find the point at which we capture 90% of the flux (sensible place for upscaling)
-      reswitch=.profitFluxFrac(nser=nser,re=re,frac=0.99)
+      reswitch=.profitFluxFrac(nser=nser,re=re,frac=1-nser^2/1e3)
       #Make sure upscaling doesn't go beyond 20 pixels:
       reswitch=min(reswitch,20)
       #Don't let it become less than 1 pixel (means we do no worse than GALFIT anywhere):

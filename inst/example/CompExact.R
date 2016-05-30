@@ -92,7 +92,7 @@ lines(temp/tempGalFit$model[201,201:250],col='red')
 abline(h=1)
 abline(v=re,lty=2)
 abline(v=profitFluxFrac(nser=nser, re=re),lty=3)
-legend('topleft',legend=c(paste("Nser:",nser),paste("Re:",re)))
+legend('bottomright',legend=c(paste("Nser:",nser),paste("Re:",re)))
 legend('topright', legend=c(paste("ProFit:",round(timeprofit,5),"sec"),paste("GALFIT:",round(timegalfit,5),"sec"),paste("ProFit mean diff:",round(mean(temp/tempProFit$z[201,201:250])-1,6)),paste("GALFIT mean diff:",round(mean(temp/tempGalFit$model[201,201:250])-1,6))), col=c('black','red'),lty=1)
 dev.off()
 }

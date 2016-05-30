@@ -330,7 +330,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
         xmod = xmid * INVREX + ymid * INVREY;
         ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
         rdivre = sqrt(xmod*xmod + ymod*ymod);
-        if(rdivre>RESWITCH || (NSER<0.5 || ROUGH)){
+        if(rdivre>RESWITCH || ROUGH){
           mat(i,j)=profitEvalSersic<hasbox,t>(xmod, ymod, BN, BOX, NSERFAC);
         }
          else{

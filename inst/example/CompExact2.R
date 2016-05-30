@@ -51,7 +51,7 @@ psf[3,3]=1
 #psf=  readFITS('~/Work/R/GALFITR/data/VSTKIDS_r_psf.fits')$imDat
 
 
-tempExact=profitExactImage(xcen = xcen, ycen=ycen,mag = mag, re = re, nser = nser, ang=ang,axrat=axrat,box = box,xlim=xlim,ylim = ylim,dim = dim)
+tempExact=profitCubaSersic(xcen = xcen, ycen=ycen,mag = mag, re = re, nser = nser, ang=ang,axrat=axrat,box = box,xlim=xlim,ylim = ylim,dim = dim)
 tempProFit=profitMakeModel(paramsProFit, dim=dim)$z
 tempGalFit=galfit(input=input, sigma=input, mask=input, psf=psf, config=config, params=paramsGalFit)$model
 
