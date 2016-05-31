@@ -1,0 +1,191 @@
+---
+title: "ProFit: Making a Complex Model Image"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## A Simple Model Structure
+
+It is worth checking you haev the latest version of `ProFit`:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('asgr/ProFit')
+```
+
+Next we load the libraries we need:
+
+```{r}
+library(ProFit)
+```
+
+It is possible to use the fast low level interface to the Rcpp `profitMaekSersic` function directly. The example below will generate a 200x200 image matrix, and will run in ~10 microseconds:
+
+```{r}
+ExampleImage0=profitMakeSersic(matrix(1,1,1), RE=4, NSER=4, ANG=30, AXRAT=0.5)
+str(ExampleImage0)
+```
+
+The structure is a pure image matrix. It is possible to use base `image` to view this matrix, but the defaults will make it look pretty dreadful, hard to comprehend, and will be slow to actually plot:
+
+```{r, fig.width=5, fig.height=5}
+image(ExampleImage0)
+```
+
+We can make a *much* better image of this model easily using `magimage`, which chooses useful scaling for astronomical images:
+
+```{r, fig.width=5, fig.height=5}
+magimage(ExampleImage0)
+```
+
+Whilst sometimes useful to use directly, `profitMakeSersic` is limited in useability because you can only create one Sersic model at a time. To make more complex image structures we should use `profitMakeModel` instead.
+
+## A Multi-Component Structure
+
+First we need to setup a legal model structure. Basically this is a list of lists. Whilst this seems more fiddly than before, it allows us to make very complex structures and images very easily (i.e. it scales with complexity very well).
+
+The top level list can be called whatever you like, but calling it **model** or similar probably makes sense. This should contain at least one of the following list structures: **sersic** / **psf** / **sky**. You can run `profitMakeModel` with none of these, but this would return an empty image matrix, so probably not a useful thing to do.
+
+Here is a legal model structure containing 2 Sersic components, 3 stars (PSFs) and a sky pedestal:
+
+```{r}
+model1 = list(
+	sersic = list(
+		xcen   = c(180, 60),
+		ycen   = c(90, 10),
+		mag = c(15, 13),
+		re  = c(14, 5),
+		nser  = c(3, 10),
+		ang  = c(46, 80),
+		axrat  = c(0.4, 0.6),
+		box = c(0.5,-0.5)
+	),
+	psf = list(
+		xcen   = c(34,10,150),
+		ycen   = c(74,120,130),
+		mag = c(10,13,16)
+	),
+	sky = list(
+		bg = 3e-12
+	)
+)
+```
+
+With this structure we can make a simple model using `profitMakeModel`:
+
+```{r}
+ExampleImage1=profitMakeModel(model=model1, dim=c(200,200))
+str(ExampleImage1)
+```
+
+Notice the structure is now more complex than when we used the lower level `profitMakeSersic` function. It also took a bit longer to run (~40 microseconds rather than ~10 microseonds for the simple `profitmakeSersic` image).
+
+Next we can make a greyscale image of our requested model structure:
+
+```{r, fig.width=5, fig.height=5}
+magimage(ExampleImage1)
+```
+
+Notice there are no stars and the models look very sharp- this is because we have not specified a PSF with which to convolve the image. We now use the provided `profitGenPSF` to make a default 2D Gaussian PSF for convolution:
+
+```{r, fig.width=5, fig.height=5}
+ExampleImagePSF1=profitMakeModel(model=model1, psf=profitGenPSF(), dim=c(200,200))
+magimage(ExampleImagePSF1)
+```
+
+That looks much more realistic. Adding in the convolution has slowed things down- the example above now takes ~60 microseconds.
+
+Using this technique we can make a classic bulge+disk system easily where the two Sersic model components sit on top of each other:
+
+```{r, fig.width=5, fig.height=5}
+modelBD = list(
+	sersic = list(
+		xcen   = c(100, 100),
+		ycen   = c(100, 100),
+		mag = c(14, 12),
+		re  = c(2, 15),
+		nser  = c(4, 1),
+		ang  = c(0, 60),
+		axrat  = c(1, 0.3),
+		box = c(0,0)
+	)
+)
+magimage(profitMakeModel(model=modelBD, psf=profitGenPSF(), dim=c(200,200)))
+```
+
+The cuspy bulge is evident in the centre of the image, and you can see the dull glow of its large radii wings too (without a truncation high-Nser systems both have a cuspy core and Lorentzian wings that extend off to large radii).
+
+## Make a complex mock image
+
+We can use `profitMakeModel` to make more complex image structure very easily. The example model below will randomly produce 20 Sersic profiles, 10 PSFs and a sky background:
+
+```{r}
+model2 = list(
+	sersic = list(
+		xcen   = runif(20,0,200),
+		ycen   = runif(20,0,200),
+		mag = runif(20,15,20),
+		re  = runif(20,1,100),
+		nser  = runif(20,0.5,8),
+		ang  = runif(20,0,180),
+		axrat  = runif(20,0.3,1),
+		box = runif(20,-0.3,0.3)
+	),
+	psf = list(
+		xcen   = runif(10,0,200),
+		ycen   = runif(10,0,200),
+		mag = runif(10,15,20)
+	),
+	sky = list(
+		bg = 3e-12
+	)
+)
+```
+
+As before we can run this through `profitMakeModel` and then plot the image. This should run in ~0.5 seconds, which means we are scaling well with our more complex model:
+
+```{r, fig.width=5, fig.height=5}
+ExampleImagePSF2=profitMakeModel(model=model2, psf=profitGenPSF(), dim=c(200,200))
+magimage(ExampleImagePSF2)
+```
+
+We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~5 seconds). However, this is much faster than the naive 0.5x1000^2^/200^2^=12.5 seconds that we might expect. This is because the lower level `profitMakeSersic` Rcpp routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
+
+```{r, fig.width=5, fig.height=5}
+model3 = list(
+	sersic = list(
+		xcen   = runif(20,0,1000),
+		ycen   = runif(20,0,1000),
+		mag = runif(20,15,20),
+		re  = runif(20,1,100),
+		nser  = runif(20,0.5,8),
+		ang  = runif(20,0,180),
+		axrat  = runif(20,0.3,1),
+		box = runif(20,-0.3,0.3)
+	),
+	psf = list(
+		xcen   = runif(10,0,1000),
+		ycen   = runif(10,0,1000),
+		mag = runif(10,15,20)
+	),
+	sky = list(
+		bg = 3e-12
+	)
+)
+ExampleImagePSF3=profitMakeModel(model=model3, psf=profitGenPSF(), dim=c(1000,1000))
+magimage(ExampleImagePSF3)
+```
+
+It is easy to add together model images using `profitAddMats', giving fleibility in how mock images are made:
+
+```{r, fig.width=5, fig.height=5}
+ExampleImageAdd=profitAddMats(ExampleImagePSF3$z, ExampleImagePSF2$z, c(300,400))
+magimage(ExampleImageAdd)
+```
+
+In this example it is evident that there is a lot of low surface brightness flux in `ExampleImagePSF2', so a much bigger image should be made to remove the flux discontinuity at the edges of the 200x200 sub-image.
