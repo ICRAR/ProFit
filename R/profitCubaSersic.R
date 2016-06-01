@@ -5,12 +5,13 @@
 }
 
 
-.profitSersic=function(r=1, mag=15, re=1, nser=1, axrat=1, bn= qgamma(0.5, 2 * nser), Ie=.profitSersicScale(mag, re, nser, axrat, bn)){
+.profitSersic=function(r=1, mag=15, re=1, nser=1, axrat=1, bn= qgamma(0.5, 2 * nser)){
+    Ie=.profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, bn=bn)
     intenr = Ie*exp(-bn*(((r/re)^(1/nser)) - 1))
     return(intenr)
 }
 
-.profitSersicXY=function(args=c(0,0), xcen=0, ycen=0, mag=15, re=1, nser=1, ang=0, axrat=1, box=0, bn= qgamma(0.5, 2 * nser), Ie=.profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, bn=qgamma(0.5, 2 * nser))){
+.profitSersicXY=function(args=c(0,0), xcen=0, ycen=0, mag=15, re=1, nser=1, ang=0, axrat=1, box=0, bn= qgamma(0.5, 2 * nser)){
   rad=sqrt((args[1]-xcen)^2+(args[2]-ycen)^2);
   angrad=-ang*pi/180
   angmod=atan2((args[1]-xcen),(args[2]-ycen))-angrad;
@@ -18,12 +19,12 @@
   ymod=rad*cos(angmod);
   xmod=xmod/axrat;
   radmod=(xmod^(2+box)+ymod^(2+box))^(1/(2+box))
-  output=.profitSersic(radmod,mag=mag, re=re, nser=nser, axrat=axrat, bn=bn, Ie=Ie)
+  output=.profitSersic(radmod,mag=mag, re=re, nser=nser, axrat=axrat, bn=bn)
   return(output)
 }
 
 .profitExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, mag=15, re=1, nser=1, ang=0, axrat=1, box=0, acc=1e-3){
-return(cuhre(2, 1, .profitSersicXY, xcen=xcen, ycen=ycen, mag=mag, nser=nser, re=re, ang=ang, axrat=axrat, bn=qgamma(0.5, 2*nser), Ie=.profitSersicScale(15, re, nser, axrat=axrat, qgamma(0.5, 2 * nser)), rel.tol= acc, abs.tol= 0, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
+return(cuhre(2, 1, .profitSersicXY, xcen=xcen, ycen=ycen, mag=mag, nser=nser, re=re, ang=ang, axrat=axrat, bn=qgamma(0.5, 2*nser), rel.tol= acc, abs.tol= 0, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
 }
 
 profitCubaSersic=function(xcen=0,ycen=0,mag=15,re=1, nser=1, ang=0, axrat=1, box=0, xlim=c(-10,10), ylim=c(-10,10), dim=c(20,20), acc=1e-3){

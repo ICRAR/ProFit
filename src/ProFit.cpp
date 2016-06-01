@@ -340,7 +340,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
           ylim2(1)=y+ybin;
           if(std::abs(XCEN-x-xbin/2)<=1.0 || std::abs(YCEN-y-ybin/2)<=1.0){
             mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
-            NSERFAC, BOX,BN,9,0,3,ACC);
+            NSERFAC, BOX,BN,3,0,20,ACC);
           }else{
           mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
             NSERFAC, BOX,BN,UPSCALE,0,MAXDEPTH,ACC);
