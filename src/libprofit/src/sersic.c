@@ -173,7 +173,7 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 			 * TODO: the radius calculation doesn't take into account boxing
 			 */
 			r_ser = sqrt(x_ser*x_ser + y_ser*y_ser);
-			if( sp->rough || sp->nser < 0.5 || r_ser/sp->re > sp->re_switch ){
+			if( sp->rough || r_ser/sp->re > sp->re_switch ){
 				pixel_val = _sersic_for_xy_r(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
@@ -190,6 +190,26 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 		x += half_xbin;
 	}
 
+}
+
+#include <stdio.h>
+void dump_profile(profit_sersic_profile *s) {
+	printf("Sersic profile details:\n");
+	printf("Shape paremeters:\n");
+	printf("  xcen = %f\n", s->xcen);
+	printf("  ycen = %f\n", s->ycen);
+	printf("   mag = %f\n", s->mag);
+	printf("    re = %f\n", s->re);
+	printf("  nser = %f\n", s->nser);
+	printf("   box = %f\n", s->box);
+	printf("   ang = %f\n", s->ang);
+	printf(" axrat = %f\n", s->axrat);
+	printf("Sub-pixel integration parameters:\n");
+	printf("          rough = %d\n", s->rough);
+	printf("            acc = %f\n", s->xcen);
+	printf("      re_switch = %f\n", s->re_switch);
+	printf("     resolution = %u\n", s->resolution);
+	printf(" max_recursions = %u\n", s->max_recursions);
 }
 
 static
@@ -229,6 +249,39 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	sersic_p->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
+	 * Optionally adjust the user-given re_switch (totally) and resolution
+	 * (partially) parameters to more sensible values that will result in faster
+	 * profile calculations.
+	 */
+	if( sersic_p->adjust ) {
+
+		double re_switch, flux_frac;
+		unsigned int resolution;
+
+		/*
+		 * Find the point at which we capture most of the flux (sensible place
+		 * for upscaling). We make sure upscaling doesn't go beyond 20 pixels,
+		 * but don't let it become less than 1 pixel (means we do no worse than
+		 * GALFIT anywhere)
+		 */
+		flux_frac = 1 - (nser*nser)/1e3;
+		re_switch = ceil( re * pow(sersic_p->_qgamma(flux_frac, 2*nser, 1) / bn, nser) );
+		re_switch = fmax(fmin(re_switch, 20.), 1);
+		re_switch /= re;
+
+		/*
+		 * Calculate a bound, adaptive upscale; if re is large then we don't need
+		 * so much upscaling
+		 */
+		resolution = (unsigned int)ceil(sersic_p->resolution * sersic_p->resolution / re_switch);
+		resolution = resolution > 9 ? 9 : resolution;
+		resolution = resolution < 3 ? 3 : resolution;
+
+		sersic_p->re_switch = re_switch;
+		sersic_p->resolution = resolution;
+	}
+
+	/*
 	 * Get the rotation angle in radians and calculate the coefficients
 	 * that will fill the rotation matrix we'll use later to transform
 	 * from image coordinates into sersic coordinates.
@@ -244,6 +297,8 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	 * The performance seems pretty similar (measured on a x64 Linux with gcc and clang)
 	 * and doing sin() is more readable.
 	 */
+
+	//dump_profile(sersic_p);
 
 }
 
@@ -273,6 +328,7 @@ profit_profile *profit_create_sersic() {
 	p->re_switch = 1.;
 	p->resolution = 9;
 	p->max_recursions = 2;
+	p->adjust = true;
 
 	/*
 	 * Point to the corresponding implementation, or leave as NULL if not

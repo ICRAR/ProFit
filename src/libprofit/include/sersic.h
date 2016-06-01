@@ -54,6 +54,7 @@ typedef struct _profit_sersic_profile {
 	double re_switch;
 	unsigned int resolution;
 	unsigned int max_recursions;
+	bool adjust;
 
 	/* Gamma function and distribution to use */
 	double (*_qgamma)(double, double, double);

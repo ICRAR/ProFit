@@ -101,6 +101,7 @@ void _read_real(SEXP list, const char *name, unsigned int idx, double *target) {
 static
 void list_to_sersic(SEXP sersic_list, profit_profile *p, unsigned int idx) {
 	profit_sersic_profile *sp = (profit_sersic_profile *)p;
+	sp->adjust = true;
 	_read_real(sersic_list, "xcen",  idx, &(sp->xcen));
 	_read_real(sersic_list, "ycen",  idx, &(sp->ycen));
 	_read_real(sersic_list, "mag",   idx, &(sp->mag));
