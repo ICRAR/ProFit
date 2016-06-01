@@ -1,4 +1,4 @@
-profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,intervals,magzero=0,algo.func='LA',verbose=FALSE){
+profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,intervals,magzero=0,algo.func='LA',verbose=FALSE,magmu=FALSE){
   imagedim = dim(image)
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
   region = segim==segimkeep
@@ -18,7 +18,7 @@ profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,int
   
   parm.names=names(init)
   
-  profit.data=list(init=init,image=image*(1-mask),mask=mask,sigma=sigma,segim=segim,psf=psf,model=model,algo.func=algo.func,mon.names='',parm.names=parm.names,N=length(which(region)),region=region,calcregion=calcregion,tofit=tofit,tolog=tolog,priors=priors,intervals=intervals,magzero=magzero,imagedim=imagedim,verbose=verbose)
+  profit.data=list(init=init,image=image*(1-mask),mask=mask,sigma=sigma,segim=segim,psf=psf,model=model,algo.func=algo.func,mon.names='',parm.names=parm.names,N=length(which(region)),region=region,calcregion=calcregion,tofit=tofit,tolog=tolog,priors=priors,intervals=intervals,magzero=magzero,imagedim=imagedim,verbose=verbose,magmu=magmu)
   class(profit.data)="profit.data"
   return=profit.data
 }

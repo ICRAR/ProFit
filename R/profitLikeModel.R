@@ -28,7 +28,7 @@ profitLikeModel=function(parm, Data, image=FALSE, serscomp='all', psfcomp='all',
       print(paramsnew)
       par(mar=c(0,0,0,0),oma=c(4.1,4.1,1.1,1.1))
       colpalette=colorRampPalette(rev(brewer.pal(11, 'RdYlBu')))(1e3)
-      tempmodel=profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim,serscomp=serscomp,psfcomp=psfcomp,rough=rough, calcregion=Data$calcregion, docalcregion=docalcregion)$z
+      tempmodel=profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, serscomp=serscomp, psfcomp=psfcomp, rough=rough, calcregion=Data$calcregion, docalcregion=docalcregion, magmu=Data$magmu)$z
       layout(cbind(1,2,3,4))
       tempmap=magmap(Data$image,lo=0,hi=1)$datalim
       tempmap=max(abs(tempmap))
@@ -54,9 +54,9 @@ profitLikeModel=function(parm, Data, image=FALSE, serscomp='all', psfcomp='all',
     }
     
     if(any(Data$calcregion)){
-      cutmod = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, serscomp=serscomp, psfcomp=psfcomp, rough=rough, calcregion=Data$calcregion, docalcregion=docalcregion)$z
+      cutmod = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, serscomp=serscomp, psfcomp=psfcomp, rough=rough, calcregion=Data$calcregion, docalcregion=docalcregion, magmu=Data$magmu)$z
     }else{
-      cutmod = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, serscomp=serscomp, psfcomp=psfcomp, rough=rough)$z
+      cutmod = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, serscomp=serscomp, psfcomp=psfcomp, rough=rough, magmu=Data$magmu)$z
     }
     
     if(any(Data$region)){

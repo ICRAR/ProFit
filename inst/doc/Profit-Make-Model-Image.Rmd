@@ -98,7 +98,7 @@ ExampleImagePSF1=profitMakeModel(model=model1, psf=profitGenPSF(), dim=c(200,200
 magimage(ExampleImagePSF1)
 ```
 
-That looks much more realistic. Adding in the convolution has slowed things down- the example above now takes ~20 microseconds.
+That looks much more realistic. Adding in the convolution has slowed things down- the example above now takes ~60 microseconds.
 
 Using this technique we can make a classic bulge+disk system easily where the two Sersic model components sit on top of each other:
 
