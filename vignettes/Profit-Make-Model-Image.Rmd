@@ -181,6 +181,12 @@ ExampleImagePSF3=profitMakeModel(model=model3, psf=profitGenPSF(), dim=c(1000,10
 magimage(ExampleImagePSF3)
 ```
 
+A faster image can be genreate if the remax flag is turned on. With remax=10 it only takes ~2.5 seconds to make the model image. This might be accurate enough for many simualtion purposes, and is a factor 2 faster.
+
+```{r, fig.width=5, fig.height=5}
+system.time(profitMakeModel(model=model3, psf=profitGenPSF(), dim=c(1000,1000), remax=10))
+```
+
 It is easy to add together model images using `profitAddMats', giving fleibility in how mock images are made:
 
 ```{r, fig.width=5, fig.height=5}

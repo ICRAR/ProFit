@@ -2,7 +2,11 @@
   re*(qgamma(frac,2*nser)/qgamma(0.5,2*nser))^nser
 }
 
-profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, acc=0.1, calcregion, docalcregion=FALSE, magmu=FALSE){
+.profitFluxR=function(nser=1, re=1, r=1){
+  pgamma(qgamma(0.5,2*nser)*(r/re)^(1/nser),2*nser)
+}
+
+profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, acc=0.1, calcregion, docalcregion=FALSE, magmu=FALSE, remax, rescaleflux=FALSE){
   if(missing(calcregion)){
     if(docalcregion){
       calcregion=matrix(1,dim[1],dim[2])
@@ -47,17 +51,20 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       re=as.numeric(model$sersic$re[i])
       #Find the point at which we capture 90% of the flux (sensible place for upscaling)
       reswitch=ceiling(.profitFluxFrac(nser=nser,re=re,frac=1-nser^2/1e3))
+      if(missing(remax)){remax=ceiling(.profitFluxFrac(nser=nser,re=re,frac=0.9999))}
       #Make sure upscaling doesn't go beyond 20 pixels:
       reswitch=min(reswitch,20)
-      #Don't let it become less than 1 pixel (means we do no worse than GALFIT anywhere):
+      #Don't let it become less than 2 pixels (means we do no worse than GALFIT anywhere):
       reswitch=max(reswitch,2)
       #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
-      upscale=ceiling(9^2/reswitch)
-      upscale=min(upscale,9)
-      upscale=max(upscale,3)
+      upscale=ceiling(100/reswitch)
+      upscale=upscale+upscale%%2
+      upscale=min(upscale,10)
+      upscale=max(upscale,4)
       reswitch=reswitch/re
+      if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
       basemat=basemat+
-      profitMakeSersic(
+      rescale*profitMakeSersic(
         XCEN=as.numeric(model$sersic$xcen[i]),
         YCEN=as.numeric(model$sersic$ycen[i]),
         MAG=mag,
@@ -76,7 +83,8 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
         RESWITCH=reswitch,
         ACC=acc,
         CALCREGION=calcregion,
-        DOCALCREGION=docalcregion)
+        DOCALCREGION=docalcregion,
+        REMAX=remax)
     }
   }
   
