@@ -268,7 +268,7 @@ magimage(profitMakeModel(model,dim=dim(image)))
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
+magimage(profitMakeModel(model,dim=dim(image),psf=psf))
 
 # What should we be fitting:
 
