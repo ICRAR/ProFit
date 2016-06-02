@@ -279,13 +279,13 @@ The global fit is very close to the initial LA fit on this occassion.
 With any luck you have enough stationary samples to run:
 
 ```{r, eval=FALSE}
-BestLD=magtri(LDfit$Posterior2)
+BestLD=magtri(LDfit$Posterior2, samples=500, samptype='ran')
 ```
 
 Otherwise try:
 
 ```{r, eval=FALSE}
-BestLD=magtri(LDfit$Posterior1,500)
+BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
 ```
 
 We can now check our final fit:
