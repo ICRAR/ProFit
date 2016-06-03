@@ -130,6 +130,116 @@ template<> inline double profitEvalSersic<false, four> (
   return exp(-BN*(sqrt(sqrt(rdivresq))-1.));
 }
 
+// [[Rcpp::export]]
+double cerf(double x)
+{
+  return erf(x);
+}
+
+/*
+
+Integral for an elliptical Gaussian:
+
+  xmod = xmid * INVREX + ymid * INVREY;
+  ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
+  return exp(-BN*(xmod*xmod + ymod * ymod -1));
+  -> integral of
+  exp(-BN*((x*INVREX + y*INVREY)^2 + (x*INVREY - y*INVREX)^2*INVAXRAT^2 -1));
+  constants: BN = b, INVREX=c, INVREY=d, INVAXRAT^2 = a
+  
+  exp(-b*((x*c + y*d)^2 + a*(x*d - y*c)^2) - 1)
+  
+  Integrate[Exp[-(b ((x c + y d)^2 + a (x d - y c)^2)) - 1], x]
+  = (Sqrt[Pi] Erf[(Sqrt[b] (c^2 x + a d^2 x - (-1 + a) c d y))/Sqrt[c^2 + a d^2]])/(2 Sqrt[b] Sqrt[c^2 + a d^2] E^((c^2 + a d^2 + a b c^4 y^2 + 2 a b c^2 d^2 y^2 + a b d^4 y^2)/(c^2 + a d^2)))
+  = Erf((sqrt(b)*(c^2*x + a*d^2*x - (-1 + a)*c*d*y))/sqrt(c^2 + a*d^2))*exp((c^2 + a*d^2 + a*b*c^4*y^2 + 2*a*b*c^2*d^2*y^2 + a*b*d^4*y^2)/(c^2 + a*d^2)) dy * const
+  = erf((sqb*(c2pad2tx - am1tcd*y))*isqc2pad2)*
+    exp(-(c2pad2 + abc4*y2 + 2*abc2d2*y2 + abd4*y^2)/(c2pad2)) dy * const
+  = erf((sqb*(c2pad2tx - am1tcd*y))*isqc2pad2)*
+    exp(-1 - y^2*(abc4 + 2*abc2d2 + abd4)/c2pad2) dy * const
+const = Sqrt[Pi]/(2 Sqrt[b] Sqrt[c^2 + a d^2])
+  = sqrt(pi)/(2*sqb)*isqc2pad2
+*/
+
+class Profit2DGaussianIntegrator{
+  private:
+    double a, b, c, d;
+    double sqb, ab, c2, d2, cd, ad2, y2fac, am1tcd, c2pad2, isqc2pad2;
+    short i;
+    double acc;
+    double intfac;
+    std::vector<double> rval;
+    
+    inline double yvalue(double y, double c2pad2tx1, double c2pad2tx2)
+    {
+      double zi = am1tcd*y;
+      return (erf(sqb*(c2pad2tx2 - zi)*isqc2pad2) - erf(sqb*(c2pad2tx1 - zi)*isqc2pad2))*
+          exp(-1.0 - y2fac*y*y);
+    }
+    
+    inline double yintegral(double y1, double y2, double dy2, 
+      double c2pad2tx1, double c2pad2tx2, double leftval=0,
+      double rightval = 0)
+    {
+      double ymid = y1+dy2;
+      if(leftval == 0)
+      {
+        leftval = yvalue(y1, c2pad2tx1, c2pad2tx2);
+      }
+      double cenval = yvalue(ymid, c2pad2tx1, c2pad2tx2);
+      if(rightval == 0)
+      {
+        rightval = yvalue(y2, c2pad2tx1, c2pad2tx2);
+      }
+      double z1 = 0.5*(leftval+cenval)*dy2;
+      if(z1 > acc) z1 = yintegral(y1,ymid,dy2/2.,c2pad2tx1,c2pad2tx2,
+        leftval,cenval);
+      double z2 = 0.5*(rightval+cenval)*dy2;
+      if(z2 > acc) z2 = yintegral(ymid,y2,dy2/2.,c2pad2tx1,c2pad2tx2,
+        cenval,rightval);
+      //std::cout << y1 << "-" << y2 << "," << ymid << ":" << (z1+z2) << " " << dy2 << " " << leftval << " " << cenval << " " << rightval << std::endl;
+      return(z1+z2);
+    }
+    
+  public:
+    const std::vector<double> & integralpdy(double x1, double x2, double y1, 
+      double y2, double iacc=1e-5, double leftval = 0, double rightval = 0)
+    {
+      acc = iacc*intfac;
+      double c2pad2tx1 = x1*c2pad2;
+      double c2pad2tx2 = x2*c2pad2;
+      if(leftval == 0)
+      {
+        leftval = yvalue(y1, c2pad2tx1, c2pad2tx2);
+        rval[1] = leftval;
+      }
+      if(rightval == 0)
+      {
+        rightval = yvalue(y2, c2pad2tx1, c2pad2tx2);
+        rval[2] = rightval;
+      }
+      rval[0] = yintegral(y1,y2,(y2-y1)/2.,c2pad2tx1,c2pad2tx2,leftval,rightval)*intfac;
+      return rval;
+    }
+    
+    // constants: BN = b, INVREX=c, INVREY=d, INVRAT = a
+    Profit2DGaussianIntegrator(const double BN, const double INVREX, const double INVREY,
+      const double INVAXRAT) : a(INVAXRAT*INVAXRAT),b(BN),c(INVREX),d(INVREY)
+    {
+      rval.resize(3);
+      sqb = sqrt(b);
+      ab = a*b;
+      c2 = c*c;
+      d2 = d*d;
+      cd = c*d;
+      ad2 = a*d2;
+      am1tcd = (-1 + a)*cd;
+      c2pad2 = c2+ad2;
+      isqc2pad2 = 1.0/sqrt(c2pad2);
+      y2fac = (ab*pow(c,4) + 2*ab*c2*d2 + ab*pow(d,4))/c2pad2;
+      intfac = sqrt(M_PI)*isqc2pad2/(2.*sqb);
+    }
+};
+
 /*
   Integrates the flux in a single pixel from a Sersic function, determining whether to recurse from
   an extra evaluation of the gradient along the minor axis (where it is maximized).
@@ -298,8 +408,8 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
     const double ACC=0.1, const bool DOCALCREGION=false) {
   const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
-  const double LUMTOT = pow(RE,2)*2*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)*AXRAT/RBOX;
-  const double Ie=pow(10,(-0.4*(MAG-MAGZERO)))/LUMTOT;
+  const double LUMTOT = pow(10,(-0.4*(MAG-MAGZERO)));
+  const double Ie=LUMTOT/(RE*RE*AXRAT*2.*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)/RBOX);
   const double INVRE = 1.0/RE;
     // Do not change this! Read the function definitions for justification
   const double NSERFAC = nserfac(NSER,BOX);
@@ -330,7 +440,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
         xmod = xmid * INVREX + ymid * INVREY;
         ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
         rdivre = sqrt(xmod*xmod + ymod*ymod);
-        if(rdivre>RESWITCH || (NSER<0.5 || ROUGH)){
+        if(rdivre>RESWITCH || ROUGH){
           mat(i,j)=profitEvalSersic<hasbox,t>(xmod, ymod, BN, BOX, NSERFAC);
         }
          else{
@@ -347,6 +457,68 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
       y=y+ybin;
     }
     x=x+xbin;
+  }
+  return(mat);
+}
+
+template<> NumericMatrix profitMakeBoxySersic<false,gauss>(
+    const IntegerMatrix CALCREGION,
+    const double XCEN, const double YCEN, const double MAG, 
+    const double RE, const double NSER, const double ANG,
+    const double AXRAT, const double BOX, 
+    const double MAGZERO, const bool ROUGH,
+    const NumericVector & XLIM, const NumericVector & YLIM,
+    const IntegerVector & DIM, const int UPSCALE, const int MAXDEPTH, 
+    const double RESWITCH, const double ACC, const bool DOCALCREGION) {
+  //const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
+  const double BN = 0.69314718055994528623;
+  const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
+  const double LUMTOT = pow(10,(-0.4*(MAG-MAGZERO)));
+  // TODO: Figure out why this empirical factor of 2*exp(1) is required to normalize properly
+  const double Ie=2.*exp(1.)*LUMTOT/(RE*RE*AXRAT*2.*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)/RBOX);
+  const double INVRE = 1.0/RE;
+
+  NumericMatrix mat(DIM(0), DIM(1));
+  double x,y,xhi,yhi,xmid,ymid,xmod,ymod,rdivre,angmod,locscale,depth;
+  double xbin=(XLIM(1)-XLIM(0))/DIM(0);
+  double ybin=(YLIM(1)-YLIM(0))/DIM(1);
+
+  angmod = std::fmod(ANG+90.,360.);
+  if(angmod > 180.) angmod -= 180.;
+  const double PX = cos(angmod*M_PI/180.);
+  const double INVREY = sin(angmod*M_PI/180.)*INVRE*pow(-1,angmod < PI);
+  const double INVREX = PX*INVRE;
+  const double INVAXRAT = 1.0/AXRAT;
+  Profit2DGaussianIntegrator gauss2(BN, INVREX, INVREY, INVAXRAT);
+  // Want each pixels' integral to stop recursing only when less than 1e-3
+  // But keep in mind we don't include the ie term, so the total over the
+  // image won't be lumtot but lumtot/ie
+  const double ACC2 = ACC*(LUMTOT/Ie);
+  
+  //std::cout << LUMTOT << " " << Ie << std::endl;
+
+  //std::vector<double> highvals(DIM(1),0);
+  double highval;
+  int i=0,j=0;
+  x=XLIM(0)-XCEN; xhi = x+xbin;
+  for(i = 0; i < DIM(0); i++) {
+    y=YLIM(0)-YCEN; yhi = y+ybin;
+    for(j = 0; j < DIM(1); j++) {
+      if(DOCALCREGION==FALSE || CALCREGION(i,j)==1){
+        const std::vector<double> & rval = gauss2.integralpdy(x,xhi,y,yhi,ACC2,highval);
+        highval = rval[2];
+        mat(i,j)=rval[0]*Ie;
+        //std::cout << rval[0]*Ie << " " << rval[1] << " " << rval[2] << std::endl;
+      } else {
+        mat(i,j)=0;
+        highval = 0;
+      }
+      y = yhi;
+      yhi += ybin;
+      highval = 0;
+    }
+    x = xhi;
+    xhi += xbin;
   }
   return(mat);
 }
@@ -372,8 +544,8 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
   if(BOX == 0) 
   {
     if(NSER == 0.5) return profitMakeBoxySersic<false,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
-    else if(NSER == 1) return profitMakeBoxySersic<false,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC*1e-4, DOCALCREGION);
+    if(NSER == 1) return profitMakeBoxySersic<false,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
       AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
     else if(NSER == 2) return profitMakeBoxySersic<false,two>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
       AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
@@ -398,50 +570,187 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
     AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
 }
 
+inline void profitBruteConvRowCol(const double & IMGVAL, const NumericMatrix & PSF,
+  NumericMatrix & output, const int & X_K, const int & Y_K, const int & ROW, const int & COL)
+{
+  double * output_row_col_j; 
+  int i; int j;
+  for (j = 0; j < Y_K; j++) {
+    double * output_row_col_j = & output(ROW,COL+j) ;
+    const double * psf_j = &PSF(0,j) ;
+    for (i = 0; i < X_K; i++) {
+      output_row_col_j[i] += IMGVAL*psf_j[i] ;
+    }
+  }
+}
+
 /*
   Brute force convolution of an image with a PSF.
   For the moment, it seems like convolving onto a padded image and then copying
   the result into a smaller (unpadded) result is faster than any kind of bounds
   checking (definitely faster than if statements and faster even than setting 
   appropriate limits for each loop).
-  
-  TODO: Benchmark switching inner/outer loops.
 */
 // [[Rcpp::export]]
-NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf,
+NumericMatrix profitBruteConv(const NumericMatrix & IMG, const NumericMatrix & PSF,
   const IntegerMatrix & CALCREGION, const bool DOCALCREGION=false){
-    int x_s = image.nrow(), x_k = psf.nrow();
-    int y_s = image.ncol(), y_k = psf.ncol();
-    int extrax= x_k % 2;
-    int extray= y_k % 2;
+  const int X_S = IMG.nrow(), X_K = PSF.nrow();
+  const int Y_S = IMG.ncol(), Y_K = PSF.ncol();
+  const int EXTRAX= X_K % 2;
+  const int EXTRAY= Y_K % 2;
     
-    NumericMatrix output(x_s + x_k - extrax, y_s + y_k - extray);
-    double* output_row_col_j ;
-    double image_row_col = 0.0 ;
-    double* psf_j ;
-    
-    for (int row = 0; row < x_s; row++) {
-      for (int col = 0; col < y_s; col++) {
-        if(!DOCALCREGION || CALCREGION(row,col)==1){
-        image_row_col = image(row,col);
-            for (int j = 0; j < y_k; j++) {
-              output_row_col_j = & output(row,col+j) ;
-              psf_j = &psf(0,j) ;
-              for (int i = 0; i < x_k; i++) {
-                output_row_col_j[i] += image_row_col*psf_j[i] ;
-              }
+  NumericMatrix output(X_S + X_K - EXTRAX, Y_S + Y_K - EXTRAY);
+  //double* output_row_col_j ;
+  //double image_row_col = 0.0 ;
+  
+  int col=0,row=0;
+  if(DOCALCREGION)
+  {
+    for (col = 0; col < Y_S; col++) {
+      const int * CALC_C = &CALCREGION(0,col);
+      const double * IMG_C = &IMG(0,col);
+      for (row = 0; row < X_S; row++) {
+        if(CALC_C[row]) profitBruteConvRowCol(IMG_C[row], PSF, output, X_K, Y_K, row, col);
+      }
+    }
+  } else {
+    for (col = 0; col < Y_S; col++) {
+      const double * IMG_C = &IMG(0,col);
+      for (row = 0; row < X_S; row++) {
+        //std::cout << col << " " << row << std::endl;
+        profitBruteConvRowCol(IMG_C[row], PSF, output, X_K, Y_K, row, col);
+      }
+    } 
+  }
+  NumericMatrix cutout(X_S, Y_S);
+  for (int row = 0; row < X_S; row++) {
+    for (int col = 0; col < Y_S; col++) {
+      cutout(row,col)=output(row+(X_K-EXTRAX)/2,col+(Y_K-EXTRAY)/2);
+    }
+  }
+  return cutout;
+}
+
+/*
+  Exactly the same as above, but a little more memory efficient since it 
+  doesn't do a cutout. Rarely any faster, unfortunately; it remains here
+  in case certain compilers prefer it for whatever reason.
+  
+  TODO: Maybe see if the indexing could be optimized further,
+    but it's probably not worth the effort.
+*/
+// [[Rcpp::export]]
+NumericMatrix profitBruteConv2(const NumericMatrix & IMG, const NumericMatrix & PSF,
+  const IntegerMatrix & CALCREGION, const bool DOCALCREGION=false)
+{
+  typedef unsigned int idx_t;
+  const idx_t X_S = IMG.nrow(), X_K = PSF.nrow();
+  const idx_t Y_S = IMG.ncol(), Y_K = PSF.ncol();
+  const idx_t PADX = X_K / 2, PADY = Y_K / 2;
+  
+  NumericMatrix output(X_S, Y_S);
+  
+  double * output_row_col_j;
+  double psfij=0;
+  idx_t col_pj=0, row_pi=0;
+  idx_t i = 0, j=0;
+  idx_t row = 0, col = 0;
+  idx_t rowmin = 0, rowmax = 0;
+  idx_t colmin = 0, colmax = 0;
+  
+  for (j = 0; j < Y_K; j++) {
+    const double * PSF_J = &PSF(0,j);
+    colmin =  0;
+    colmax = Y_S;
+    if(j < PADY)
+    {
+      colmin += (PADY-j);
+    } else {
+      colmax -= (j - PADY);
+    }
+    if(colmax > colmin)
+    {
+      for (i = 0; i < X_K; i++) {
+        psfij = PSF_J[i];
+        
+        rowmin = 0;
+        rowmax = X_S;
+        if(i < PADX)
+        {
+          rowmin += PADX - i;
+        } else {
+          rowmax -= i - PADX;
+        }
+  
+        if(rowmax > rowmin)
+        {
+          // Note that all of these offsets depend only on colmin,
+          // but they must be reset for every i and cannot only be 
+          // assigned before the i loop
+          for (col = colmin, col_pj = colmin + j - PADY; col < colmax; 
+            col++, col_pj++)
+          {
+            const double * IMG_J = &IMG(0,col);
+            const int * CALC_J = &CALCREGION(0,col);
+            output_row_col_j = &output(0,col_pj);
+            
+            for (row = rowmin, row_pi = rowmin + i - PADX; row < rowmax; 
+              row++, row_pi++) 
+            {
+              // TODO: Rethink this, it's way too inefficient - perhaps try as above
+              // if(!DOCALCREGION || CALCREGION(row,col)==1) 
+              output_row_col_j[row_pi] += IMG_J[row]*psfij;
+            }
           }
-        }else{
-          output(row,col)=0;
         }
       }
     }
-    NumericMatrix cutout(x_s, y_s);
-    for (int row = 0; row < x_s; row++) {
-      for (int col = 0; col < y_s; col++) {
-      cutout(row,col)=output(row+(x_k-extrax)/2,col+(y_k-extray)/2);
-      }
-    }
-   return cutout;
+  }
+  return output;
 }
 
+// Downsamples an image. Probably not optimally implemented, but does it matter?
+// [[Rcpp::export]]
+NumericMatrix profitDownsample(const NumericMatrix & IMG, const int DOWNSAMPLEFAC){
+  if(DOWNSAMPLEFAC == 1) return IMG;
+  if(!DOWNSAMPLEFAC > 1) return NumericMatrix(0,0);
+  const int X_S = IMG.nrow(), Y_S = IMG.ncol();
+  const int X_D = X_S / DOWNSAMPLEFAC, Y_D = Y_S / DOWNSAMPLEFAC;
+  NumericMatrix d(X_D,Y_D);
+  int row,col,rowd, cold;
+  for(col = 0; col < Y_S; ++col)
+  {
+    cold = col / DOWNSAMPLEFAC;
+    const double * image_row = &IMG(0,col);
+    double * ds_row = &d(0,cold);
+    for(row = 0; row < X_S; ++row)
+    {
+      rowd = row / DOWNSAMPLEFAC;
+      ds_row[rowd] += image_row[row];
+    }
+  }
+  return d;
+}
+
+// Upsamples an image without interpolation. Probably not optimally implemented, but does it matter?
+// [[Rcpp::export]]
+NumericMatrix profitUpsample(const NumericMatrix & IMG, const int UPSAMPLEFAC){
+  if(UPSAMPLEFAC == 1) return IMG;
+  if(!UPSAMPLEFAC > 1) return NumericMatrix(0,0);
+  const int X_S = IMG.nrow(), Y_S = IMG.ncol();
+  const int X_U = X_S * UPSAMPLEFAC, Y_U = Y_S * UPSAMPLEFAC;
+  NumericMatrix u(X_U,Y_U);
+  int row,col,rowu, colu;
+  for(colu = 0; colu < Y_U; ++colu)
+  {
+    col = colu / UPSAMPLEFAC;
+    const double * image_row = &IMG(0,col);
+    double * us_row = &u(0,colu);
+    for(rowu = 0; rowu < X_U; ++rowu)
+    {
+      row = rowu / UPSAMPLEFAC;
+      us_row[rowu] += image_row[row];
+    }
+  }
+  return u;
+}
