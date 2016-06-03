@@ -137,7 +137,7 @@ template<> inline double profitEvalSersic<false, four> (
 template<bool hasbox, nsertype t>
 double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector & XLIM, const NumericVector & YLIM,
                     const double INVREX, const double INVREY, const double INVAXRAT, const double INVNSER,
-                    const double BOX, const double BN, const int UPSCALE=10L, const int RECURLEVEL=0L,
+                    const double BOX, const double BN, const int UPSCALE=8L, const int RECURLEVEL=0L,
                     const int MAXDEPTH=2, const double ACC=0.1) {
   const bool RECURSE = (RECURLEVEL < MAXDEPTH) && (UPSCALE > 1);
 
@@ -209,9 +209,9 @@ double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector &
 template<bool hasbox, nsertype t>
 double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM, const NumericVector & YLIM,
                     const double INVREX, const double INVREY, const double INVAXRAT, const double NSERFAC,
-                    const double BOX, const double BN, const int NSAMP, const int RECURLEVEL=0, const int MAXDEPTH=3, 
+                    const double BOX, const double BN, const int UPSCALE, const int RECURLEVEL=0, const int MAXDEPTH=3, 
                     const double ACC=0.1) {
-  const bool RECURSE = (RECURLEVEL < MAXDEPTH) && (NSAMP > 1);
+  const bool RECURSE = (RECURLEVEL < MAXDEPTH) && (UPSCALE > 1);
 
   double x=0,y=0,xmid=0,ymid=0,xmod=0,ymod=0;
   double sumpixel=0, addval=0, oldaddval=1, olderaddval = 0;
@@ -220,7 +220,7 @@ double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM
   // Reverse the order of integration to maintain symmetry
   const bool XREV = (XLIM(0) + (XLIM(1) - XLIM(0)/2.0)) > XCEN;
   const short XSIGN = XREV ? -1 : 1;
-  const double XBIN = XSIGN*(XLIM(1)-XLIM(0))/double(NSAMP);
+  const double XBIN = XSIGN*(XLIM(1)-XLIM(0))/double(UPSCALE);
   const double DX = XBIN/2.0;
   const double XINIT = XREV ? XLIM(1) : XLIM(0);
   const int XI0 = XREV ? 1 : 0;
@@ -228,14 +228,14 @@ double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM
   
   const bool YREV = (YLIM(0) + (YLIM(1) - YLIM(0)/2.0)) > YCEN;
   const double YSIGN = YREV ? -1 : 1;
-  const double YBIN = YSIGN * (YLIM(1)-YLIM(0))/double(NSAMP);
+  const double YBIN = YSIGN * (YLIM(1)-YLIM(0))/double(UPSCALE);
   const double DY = YBIN/2.0;
   const double YINIT = YREV ? YLIM(1) : YLIM(0);
   const int YI0 = YREV ? 1 : 0;
   const int YI1 = 1 - YI0;
 
   // TODO: Separate this into another inline method
-  if(NSAMP > 1)
+  if(UPSCALE > 1)
   {
     xmid = x + DX - XCEN;
     ymid = y + DY - YCEN - YBIN;
@@ -247,13 +247,13 @@ double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM
   int i,j;
   x = XINIT;
   
-  for(i = 0; i < NSAMP; ++i) {
+  for(i = 0; i < UPSCALE; ++i) {
     xmid = x + DX - XCEN;
     xlim2(XI0) = x;
     xlim2(XI1) = x + XBIN;
     y = YINIT;
     
-    for(j = 0; j < NSAMP; ++j) {
+    for(j = 0; j < UPSCALE; ++j) {
       ymid = y + DY - YCEN;
       // Project (xmid, ymid) onto the projection vector of the major axis,
       // pre-normalized to 1/Re to avoid extraneous division
@@ -266,7 +266,7 @@ double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM
         ylim2(YI0) = y;
         ylim2(YI1) = y + YBIN;
         addval=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT, NSERFAC, BOX, BN,
-          NSAMP, RECURLEVEL+1,MAXDEPTH,ACC);
+          UPSCALE, RECURLEVEL+1,MAXDEPTH,ACC);
       }
       sumpixel+=addval;
       oldaddval=addval;
@@ -278,7 +278,7 @@ double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM
     oldaddval = olderaddval;
     x += XBIN;
   }
-  return(sumpixel/double(NSAMP*NSAMP));
+  return(sumpixel/double(UPSCALE*UPSCALE));
 }
 
 /*
@@ -294,7 +294,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
     const NumericVector & XLIM = NumericVector::create(-100,100),
     const NumericVector & YLIM = NumericVector::create(-100,100),
     const IntegerVector & DIM = IntegerVector::create(200,200),
-    const int UPSCALE=10L, const int MAXDEPTH=2L, const double RESWITCH=1,
+    const int UPSCALE=8L, const int MAXDEPTH=2L, const double RESWITCH=1,
     const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10) {
   // Precompute things we only need to do once.
   const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
@@ -342,9 +342,9 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
             xlim2(1)=x+xbin;
             ylim2(0)=y;
             ylim2(1)=y+ybin;
-            if(std::abs(XCEN-x-xbin/2)<1.0 & std::abs(YCEN-y-ybin/2)<1.0){
+            if(std::abs(xmid)<1.0 & std::abs(ymid)<1.0){
               mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
-              NSERFAC, BOX,BN,6,0,10,ACC);
+              NSERFAC, BOX,BN,8,0,10,ACC);
              }else{
                //Rcout << UPSCALE << std::endl;
             mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
@@ -376,7 +376,7 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
     const NumericVector & XLIM = NumericVector::create(-100,100),
     const NumericVector & YLIM = NumericVector::create(-100,100),
     const IntegerVector & DIM = IntegerVector::create(200,200),
-    const int UPSCALE=10L, const int MAXDEPTH=2L, const double RESWITCH=2,
+    const int UPSCALE=8L, const int MAXDEPTH=2L, const double RESWITCH=2,
     const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10)
 {
   //Rcout << UPSCALE << std::endl;
