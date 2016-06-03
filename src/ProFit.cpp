@@ -296,12 +296,13 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
     const IntegerVector & DIM = IntegerVector::create(200,200),
     const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=1,
     const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10) {
+  // Precompute things we only need to do once.
   const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
   const double LUMTOT = pow(RE,2)*2*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)*AXRAT/RBOX;
   const double Ie=pow(10,(-0.4*(MAG-MAGZERO)))/LUMTOT;
   const double INVRE = 1.0/RE;
-    // Do not change this! Read the function definitions for justification
+  // Do not change this! Read the function definitions for justification
   const double NSERFAC = nserfac(NSER,BOX);
   NumericMatrix mat(DIM(0), DIM(1));
   double x,y,xmid,ymid,xmod,ymod,rdivre,angmod,locscale,depth;
@@ -309,7 +310,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   double ybin=(YLIM(1)-YLIM(0))/DIM(1);
   NumericVector xlim2(2),ylim2(2);
   int upscale;
-
+  //Get things into GALFIT's angle format (to make comparison easier)
   angmod = std::fmod(ANG+90.,360.);
   if(angmod > 180.) angmod -= 180.;
   const double PX = cos(angmod*M_PI/180.);
@@ -317,6 +318,8 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   const double INVREX = PX*INVRE;
   const double INVAXRAT = 1.0/AXRAT;
   const double IEPIX = xbin*ybin*Ie;
+  // End of precompute block
+  
   // std::cout << RESWITCH << " " << UPSCALE << " " << MAXDEPTH << " " << ACC << std::endl;
   int i=0,j=0;
   x=XLIM(0);
@@ -330,23 +333,22 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
         xmod = xmid * INVREX + ymid * INVREY;
         ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
         rdivre = sqrt(xmod*xmod + ymod*ymod);
-        if(rdivre>REMAX){
-          mat(i,j)=0;
-        }
-        else if(rdivre>RESWITCH || ROUGH){
-          mat(i,j)=profitEvalSersic<hasbox,t>(xmod, ymod, BN, BOX, NSERFAC);
-        }
-        else{
-          xlim2(0)=x;
-          xlim2(1)=x+xbin;
-          ylim2(0)=y;
-          ylim2(1)=y+ybin;
-          if(std::abs(XCEN-x-xbin/2)*INVREX<1.0 || std::abs(YCEN-y-ybin/2)*INVREY<1.0){
+        if(rdivre<REMAX){
+          if(rdivre>RESWITCH || ROUGH){
+            mat(i,j)=profitEvalSersic<hasbox,t>(xmod, ymod, BN, BOX, NSERFAC);
+          }
+          else{
+            xlim2(0)=x;
+            xlim2(1)=x+xbin;
+            ylim2(0)=y;
+            ylim2(1)=y+ybin;
+            if(std::abs(XCEN-x-xbin/2)*INVREX<1.0 || std::abs(YCEN-y-ybin/2)*INVREY<1.0){
+              mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
+              NSERFAC, BOX,BN,4,0,20,ACC);
+             }else{
             mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
-            NSERFAC, BOX,BN,4,0,20,ACC);
-           }else{
-          mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
-            NSERFAC, BOX,BN,UPSCALE,0,MAXDEPTH,ACC);
+              NSERFAC, BOX,BN,UPSCALE,0,MAXDEPTH,ACC);
+            }
           }
         }
         mat(i,j)*=IEPIX;
