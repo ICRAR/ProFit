@@ -137,13 +137,13 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', psfcomp='a
     }
     else
     {
-      if(length(Data$calcregion) > 0 && all(is.finite(Data$calcregion))){
+      if(length(Data$calcregion) > 0 && all(is.finite(Data$calcregion)) && any(Data$calcregion)){
         model = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
           serscomp=serscomp, psfcomp=psfcomp, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
-          finesample=finesample, convolve=Data$convolve)
+          magmu=Data$magmu,finesample=finesample, convolve=Data$convolve)
       }else{
         model = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
-          serscomp=serscomp, psfcomp=psfcomp, rough=rough, finesample=finesample, convolve=Data$convolve)
+          serscomp=serscomp, psfcomp=psfcomp, rough=rough, magmu=Data$magmu, finesample=finesample, convolve=Data$convolve)
       }
     }
       

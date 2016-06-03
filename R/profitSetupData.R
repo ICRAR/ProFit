@@ -1,7 +1,5 @@
-# Important: If fine sampling, the PSF must be fine-sampled already
-
-profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,intervals,magzero=0,finesample=3L,algo.func='LA',verbose=FALSE,
-  benchmark=TRUE){
+profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,intervals,magzero=0,finesample=3L,algo.func='LA',
+  verbose=FALSE, magmu=FALSE, benchmark=TRUE){
   stopifnot(is.integer(finesample) && (finesample %% 2 == 1))
   imagedim = dim(image)
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
@@ -65,7 +63,7 @@ profitSetupData=function(image,mask,sigma,segim,psf,model,tofit,tolog,priors,int
   profit.data=list(init=init,image=image,mask=mask,sigma=sigma,segim=segim,psf=psf, model=model,algo.func=algo.func,
     mon.names=c("LL","LP","dof"),parm.names=parm.names,N=length(which(as.logical(region))),region=region,calcregion=calcregion,
     usecalcregion=usecalcregion, tofit=tofit,tolog=tolog,priors=priors,intervals=intervals,magzero=magzero,convolve=convolve,
-    finesample=finesample,imagedim=imagedim,verbose=verbose)
+    finesample=finesample,imagedim=imagedim,verbose=verbose,magmu=magmu)
   class(profit.data)="profit.data"
   return=profit.data
 }

@@ -1,8 +1,15 @@
+.profitFluxFrac=function(nser=1, re=1, frac=0.99){
+  re*(qgamma(frac,2*nser)/qgamma(0.5,2*nser))^nser
+}
+
+.profitFluxR=function(nser=1, re=1, r=1){
+  pgamma(qgamma(0.5,2*nser)*(r/re)^(1/nser),2*nser)
+}
+
 # Note: The PSF must already be fine sampled
 profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all', psfcomp='all', 
-  rough=FALSE, finesample=1L, returnfine=FALSE, returncrop=TRUE, upscale=9, maxdepth=2, reswitch=2, acc=0.1, 
-  calcregion, docalcregion=FALSE, convolve=list(method="Bruteconv"),
-  estdeconvcovar=FALSE, gain=NULL) {
+  rough=FALSE, acc=0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion, docalcregion=FALSE, 
+  magmu=FALSE, remax, rescaleflux=FALSE, convolve=list(method="Bruteconv"), estdeconvcovar=FALSE, gain=NULL) {
   stopifnot(is.integer(finesample) && finesample >= 1)
   if(missing(calcregion)){
     if(docalcregion){
@@ -28,6 +35,9 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
     " and they must be ",dimbase[1],":",dimbase[2],"!",sep=""))
   }
   if(length(model$sersic)>0){
+    if(length(magmu)<length(model$sersic$xcen)){
+      magmu=rep(magmu,length(model$sersic$xcen))
+    }
     for(i in serscomp){
       if(length(model$sersic$nser)>0){
         nser=as.numeric(model$sersic$nser[i])
@@ -49,27 +59,48 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       }else{
         box=0
       }
+      if(magmu[i]){
+        mag=profitMu2Mag(mu=as.numeric(model$sersic$mag[i]), re=as.numeric(model$sersic$re[i]), axrat=axrat)
+      }else{
+        mag=as.numeric(model$sersic$mag[i])
+      }
+      re=as.numeric(model$sersic$re[i])
+      #Find the point at which we capture 90% of the flux (sensible place for upscaling)
+      reswitch=ceiling(.profitFluxFrac(nser=nser,re=re,frac=1-nser^2/1e3))
+      if(missing(remax)){remax=ceiling(.profitFluxFrac(nser=nser,re=re,frac=0.9999))}
+      #Make sure upscaling doesn't go beyond 20 pixels:
+      reswitch=min(reswitch,20)
+      #Don't let it become less than 2 pixels (means we do no worse than GALFIT anywhere):
+      reswitch=max(reswitch,2)
+      #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
+      upscale=ceiling(100/reswitch)
+      upscale=upscale+upscale%%2
+      upscale=min(upscale,10)
+      upscale=max(upscale,4)
+      reswitch=reswitch/re
+      if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
       basemat=basemat+
-      profitMakeSersic(
+      rescale*profitMakeSersic(
         XCEN=(as.numeric(model$sersic$xcen[i])-imgcens[1])*finesample+imgcensfine[1]+psfpad[1],
         YCEN=(as.numeric(model$sersic$ycen[i])-imgcens[2])*finesample+imgcensfine[2]+psfpad[2],
-        MAG=as.numeric(model$sersic$mag[i]),
+        MAG=mag,
         RE=as.numeric(model$sersic$re[i])*finesample,
         NSER=nser,
         ANG=ang,
         AXRAT=axrat,
         BOX=box,
-        MAGZERO=as.numeric(magzero),
+        MAGZERO=magzero,
         ROUGH=rough,
         XLIM=c(0,dimbase[1]),
         YLIM=c(0,dimbase[2]),
         DIM=dimbase,
         UPSCALE=upscale,
-        MAXDEPTH=maxdepth,
-        RESWITCH=max(min(c(reswitch*as.numeric(model$sersic$re[i]),20)),10)/as.numeric(model$sersic$re[i]),
+        MAXDEPTH=2,
+        RESWITCH=reswitch,
         ACC=acc,
         CALCREGION=calcregion,
-        DOCALCREGION=docalcregion)
+        DOCALCREGION=docalcregion,
+        REMAX=remax)
     }
   }
   

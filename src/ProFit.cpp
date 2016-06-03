@@ -405,14 +405,14 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
     const NumericVector & YLIM = NumericVector::create(-100,100),
     const IntegerVector & DIM = IntegerVector::create(200,200),
     const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=1,
-    const double ACC=0.1, const bool DOCALCREGION=false) {
     const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10) {
+  // Precompute things we only need to do once.
   const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
   const double LUMTOT = pow(10,(-0.4*(MAG-MAGZERO)));
   const double Ie=LUMTOT/(RE*RE*AXRAT*2.*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)/RBOX);
   const double INVRE = 1.0/RE;
-    // Do not change this! Read the function definitions for justification
+  // Do not change this! Read the function definitions for justification
   const double NSERFAC = nserfac(NSER,BOX);
   NumericMatrix mat(DIM(0), DIM(1));
   double x,y,xmid,ymid,xmod,ymod,rdivre,angmod,locscale,depth;
@@ -420,7 +420,6 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   double ybin=(YLIM(1)-YLIM(0))/DIM(1);
   NumericVector xlim2(2),ylim2(2);
   int upscale;
-
   //Get things into GALFIT's angle format (to make comparison easier)
   angmod = std::fmod(ANG+90.,360.);
   if(angmod > 180.) angmod -= 180.;
@@ -429,8 +428,9 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   const double INVREX = PX*INVRE;
   const double INVAXRAT = 1.0/AXRAT;
   const double IEPIX = xbin*ybin*Ie;
-
   // End of precompute block
+  
+  // std::cout << RESWITCH << " " << UPSCALE << " " << MAXDEPTH << " " << ACC << std::endl;
   int i=0,j=0;
   x=XLIM(0);
   for(i = 0; i < DIM(0); i++) {
@@ -443,17 +443,23 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
         xmod = xmid * INVREX + ymid * INVREY;
         ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
         rdivre = sqrt(xmod*xmod + ymod*ymod);
-        if(rdivre>RESWITCH || ROUGH){
-          mat(i,j)=profitEvalSersic<hasbox,t>(xmod, ymod, BN, BOX, NSERFAC);
-        }
-         else{
-          xlim2(0)=x;
-          xlim2(1)=x+xbin;
-          ylim2(0)=y;
-          ylim2(1)=y+ybin;
-          //Rcpp:Rcout << i << " " << j << " " << ACC << std::endl;
-          mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
-            NSERFAC, BOX,BN,UPSCALE,0,MAXDEPTH,ACC);
+        if(rdivre<REMAX){
+          if(rdivre>RESWITCH || ROUGH){
+            mat(i,j)=profitEvalSersic<hasbox,t>(xmod, ymod, BN, BOX, NSERFAC);
+          }
+          else{
+            xlim2(0)=x;
+            xlim2(1)=x+xbin;
+            ylim2(0)=y;
+            ylim2(1)=y+ybin;
+            if(std::abs(XCEN-x-xbin/2)*INVREX<1.0 || std::abs(YCEN-y-ybin/2)*INVREY<1.0){
+              mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
+              NSERFAC, BOX,BN,4,0,20,ACC);
+             }else{
+            mat(i,j)=profitSumPixMinorAxisGrad<hasbox,t>(XCEN,YCEN,xlim2,ylim2,INVREX,INVREY,INVAXRAT,
+              NSERFAC, BOX,BN,UPSCALE,0,MAXDEPTH,ACC);
+            }
+          }
         }
         mat(i,j)*=IEPIX;
       }
@@ -465,14 +471,12 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
 }
 
 template<> NumericMatrix profitMakeBoxySersic<false,gauss>(
-    const IntegerMatrix CALCREGION,
-    const double XCEN, const double YCEN, const double MAG, 
-    const double RE, const double NSER, const double ANG,
-    const double AXRAT, const double BOX, 
-    const double MAGZERO, const bool ROUGH,
-    const NumericVector & XLIM, const NumericVector & YLIM,
-    const IntegerVector & DIM, const int UPSCALE, const int MAXDEPTH, 
-    const double RESWITCH, const double ACC, const bool DOCALCREGION) {
+    const IntegerMatrix CALCREGION, const double XCEN, const double YCEN, 
+    const double MAG, const double RE, const double NSER, const double ANG,
+    const double AXRAT, const double BOX, const double MAGZERO, const bool ROUGH,
+    const NumericVector & XLIM, const NumericVector & YLIM, const IntegerVector & DIM, 
+    const int UPSCALE, const int MAXDEPTH, const double RESWITCH, const double ACC, 
+    const bool DOCALCREGION, const double REMAX) {
   //const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double BN = 0.69314718055994528623;
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
@@ -498,9 +502,6 @@ template<> NumericMatrix profitMakeBoxySersic<false,gauss>(
   // image won't be lumtot but lumtot/ie
   const double ACC2 = ACC*(LUMTOT/Ie);
   
-  //std::cout << LUMTOT << " " << Ie << std::endl;
-
-  //std::vector<double> highvals(DIM(1),0);
   double highval;
   int i=0,j=0;
   x=XLIM(0)-XCEN; xhi = x+xbin;
@@ -511,7 +512,6 @@ template<> NumericMatrix profitMakeBoxySersic<false,gauss>(
         const std::vector<double> & rval = gauss2.integralpdy(x,xhi,y,yhi,ACC2,highval);
         highval = rval[2];
         mat(i,j)=rval[0]*Ie;
-        //std::cout << rval[0]*Ie << " " << rval[1] << " " << rval[2] << std::endl;
       } else {
         mat(i,j)=0;
         highval = 0;
@@ -541,36 +541,36 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
     const NumericVector & XLIM = NumericVector::create(-100,100),
     const NumericVector & YLIM = NumericVector::create(-100,100),
     const IntegerVector & DIM = IntegerVector::create(200,200),
-    const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=1,
-    const double ACC=0.1, const bool DOCALCREGION=false)
+    const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=2,
+    const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10)
 {
   if(BOX == 0) 
   {
     if(NSER == 0.5) return profitMakeBoxySersic<false,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC*1e-4, DOCALCREGION);
-    if(NSER == 1) return profitMakeBoxySersic<false,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC*1e-4, DOCALCREGION, REMAX);
+    else if(NSER == 1) return profitMakeBoxySersic<false,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
     else if(NSER == 2) return profitMakeBoxySersic<false,two>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
     else if(NSER == 3) return profitMakeBoxySersic<false,three>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
     else if(NSER == 4) return profitMakeBoxySersic<false,four>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
     return profitMakeBoxySersic<false,general>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+      AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   }
   if(NSER == 0.5) return profitMakeBoxySersic<true,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   else if(NSER == 1) return profitMakeBoxySersic<true,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   else if(NSER == 2) return profitMakeBoxySersic<true,two>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   else if(NSER == 3) return profitMakeBoxySersic<true,three>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   else if(NSER == 4) return profitMakeBoxySersic<true,four>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   return profitMakeBoxySersic<true,general>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
-    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION);
+    AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
 }
 
 inline void profitBruteConvRowCol(const double & IMGVAL, const NumericMatrix & PSF,

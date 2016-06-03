@@ -5,8 +5,8 @@ cerf <- function(x) {
     .Call('ProFit_cerf', PACKAGE = 'ProFit', x)
 }
 
-profitMakeSersic <- function(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0, AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric( c(-100,100)), YLIM = as.numeric( c(-100,100)), DIM = as.integer( c(200,200)), UPSCALE = 9L, MAXDEPTH = 2L, RESWITCH = 1, ACC = 0.1, DOCALCREGION = FALSE) {
-    .Call('ProFit_profitMakeSersic', PACKAGE = 'ProFit', CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION)
+profitMakeSersic <- function(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0, AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric( c(-100,100)), YLIM = as.numeric( c(-100,100)), DIM = as.integer( c(200,200)), UPSCALE = 9L, MAXDEPTH = 2L, RESWITCH = 2, ACC = 0.1, DOCALCREGION = FALSE, REMAX = 10) {
+    .Call('ProFit_profitMakeSersic', PACKAGE = 'ProFit', CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX)
 }
 
 profitBruteConv <- function(IMG, PSF, CALCREGION, DOCALCREGION = FALSE) {
