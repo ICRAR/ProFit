@@ -87,9 +87,8 @@ timegalfit=system.time(galfit(input=input, sigma=input, mask=input, psf=psf, con
 
 png(paste("~/Documents/ProFitTests/Nser",nser,"Re",re,".png",sep=""),units="in",width=6,height=5,res=200)
 par(mar=c(3.1,3.1,1.1,1.1))
-magplot(100*(temp-tempProFit$z[201,201:250])/temp,type='l',xlim=c(0,50),ylim=c(-2,2),xlab='Offset from Centre / pix',ylab='% Error')
+magplot(100*(temp-tempProFit$z[201,201:250])/temp,type='l',xlim=c(0,50),ylim=c(-2,2),xlab='Offset from Centre / pix',ylab='% Error',grid = T)
 lines(100*(temp-tempGalFit$model[201,201:250])/temp,col='red')
-abline(h=1)
 abline(v=re,lty=2)
 abline(v=profitFluxFrac(nser=nser, re=re),lty=3)
 legend('bottomright',legend=c(paste("Nser:",nser),paste("Re:",re)))

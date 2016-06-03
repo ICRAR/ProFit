@@ -57,9 +57,9 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       #Don't let it become less than 2 pixels (means we do no worse than GALFIT anywhere):
       reswitch=max(reswitch,2)
       #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
-      upscale=ceiling(100/reswitch)
+      upscale=ceiling(160/reswitch)
       upscale=upscale+upscale%%2
-      upscale=min(upscale,10)
+      upscale=min(upscale,16)
       upscale=max(upscale,4)
       reswitch=reswitch/re
       if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
