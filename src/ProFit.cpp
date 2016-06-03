@@ -406,6 +406,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
     const IntegerVector & DIM = IntegerVector::create(200,200),
     const int UPSCALE=9L, const int MAXDEPTH=2L, const double RESWITCH=1,
     const double ACC=0.1, const bool DOCALCREGION=false) {
+    const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10) {
   const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
   const double LUMTOT = pow(10,(-0.4*(MAG-MAGZERO)));
@@ -420,6 +421,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   NumericVector xlim2(2),ylim2(2);
   int upscale;
 
+  //Get things into GALFIT's angle format (to make comparison easier)
   angmod = std::fmod(ANG+90.,360.);
   if(angmod > 180.) angmod -= 180.;
   const double PX = cos(angmod*M_PI/180.);
@@ -428,6 +430,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   const double INVAXRAT = 1.0/AXRAT;
   const double IEPIX = xbin*ybin*Ie;
 
+  // End of precompute block
   int i=0,j=0;
   x=XLIM(0);
   for(i = 0; i < DIM(0); i++) {
