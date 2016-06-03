@@ -2,15 +2,15 @@
 \alias{profitMakeModel}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Galaxy model image
+High-Level 2D Sersic Model Image Creation
 }
 \description{
 Create an image of a galaxy model wit of without convolution with the PSF. This is achieved by providing a model list that contains the main parameters that define the model.
 }
 \usage{
 profitMakeModel(model, magzero = 0, psf, dim = c(100, 100), serscomp = "all",
-psfcomp = "all", rough = FALSE, upscale = 9, maxdepth = 2, reswitch = 2, acc = 0.1,
-calcregion, docalcregion=FALSE)
+psfcomp = "all", rough = FALSE, acc = 0.1, calcregion, docalcregion=FALSE, magmu=FALSE,
+remax, rescaleflux = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,16 +33,7 @@ Which component of the Sersic list should be used to create the model image. Thi
 Which component of the PSF list should be used to create the model image. This is useful if you want to visually see appearance of e.g. PSF components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakePSF}} for details.
 }
   \item{rough}{
-logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
-}
-  \item{upscale}{
-The upsampling to use for refined pixels. larger upscale means a more accurate pixel integration. The default (3) works reasonably for a wide range of profiles.
-}
-  \item{maxdepth}{
-The allowed maximum depth of integration recursion. Larger (e.g. 5) means more accurate integration, but increased computation time. The default (2) works reasonably for a wide range of profiles.
-}
-  \item{reswitch}{
-The axial ratio and boxiness corrected radius with respect to \option{re} inside of which pixels should be refined using \code{\link{profitSumPix}} and the \option{upscale} and \option{maxdepth} options become relevant.  The default (2, i.e. 2*Re) works reasonably for a wide range of profiles.
+Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
 }
   \item{acc}{
 Desired minimum per pixel accuracy within the upscaling region defined by \option{RESWITCH}. \option{ACC} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. 
@@ -52,6 +43,15 @@ Matrix; logical image matrix the same size as the input \option{image} matrix. I
 }
   \item{docalcregion}{
 Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
+}
+  \item{magmu}{
+Logical vector. If TRUE then the mag parameter in the input \option{model} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
+}
+  \item{remax}{
+If provided the profile is computed out to this many times Re, after this point the values in the image are set to zero. If missing the profile is calculated out to the radius at which 99.99\% of flux is contained within the elliptical isocontour.
+}
+  \item{rescaleflux}{
+Logical; where the profile has been truncated via \option{remax} this specifies whether the profile should be rescaled since the total integrated flux will be less than without truncation. In practice this means image values are increases by 1/0.9999 for the default case (where the profile is truncated at the point where 99.99\% of flux is contained).  
 }
 }
 \details{
