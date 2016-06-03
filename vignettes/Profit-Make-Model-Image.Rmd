@@ -98,7 +98,7 @@ ExampleImagePSF1=profitMakeModel(model=model1, psf=profitGenPSF(), dim=c(200,200
 magimage(ExampleImagePSF1)
 ```
 
-That looks much more realistic. Adding in the convolution has slowed things down- the example above now takes ~60 microseconds.
+That looks much more realistic. Adding in the convolution has slowed things down- the example above now takes ~20 microseconds.
 
 Using this technique we can make a classic bulge+disk system easily where the two Sersic model components sit on top of each other:
 
@@ -179,6 +179,12 @@ model3 = list(
 )
 ExampleImagePSF3=profitMakeModel(model=model3, psf=profitGenPSF(), dim=c(1000,1000))
 magimage(ExampleImagePSF3)
+```
+
+A faster image can be genreate if the remax flag is turned on. With remax=10 it only takes ~2.5 seconds to make the model image. This might be accurate enough for many simualtion purposes, and is a factor 2 faster.
+
+```{r, fig.width=5, fig.height=5}
+system.time(profitMakeModel(model=model3, psf=profitGenPSF(), dim=c(1000,1000), remax=10))
 ```
 
 It is easy to add together model images using `profitAddMats', giving fleibility in how mock images are made:
