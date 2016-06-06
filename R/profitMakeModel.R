@@ -9,7 +9,7 @@
 # Note: The PSF must already be fine sampled
 profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all', psfcomp='all', 
   rough=FALSE, acc=0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion, docalcregion=FALSE, 
-  magmu=FALSE, remax, rescaleflux=FALSE, convolve=list(method="Bruteconv"), estdeconvcovar=FALSE, gain=NULL) {
+  magmu=NULL, remax, rescaleflux=FALSE, convolve=list(method="Bruteconv"), estdeconvcovar=FALSE, gain=NULL) {
   stopifnot(is.integer(finesample) && finesample >= 1)
   if(missing(calcregion)){
     if(docalcregion){
@@ -59,7 +59,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       }else{
         box=0
       }
-      if(magmu[i]){
+      if(!is.null(magmu) && magmu[i]){
         mag=profitMu2Mag(mu=as.numeric(model$sersic$mag[i]), re=as.numeric(model$sersic$re[i]), axrat=axrat)
       }else{
         mag=as.numeric(model$sersic$mag[i])

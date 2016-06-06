@@ -38,7 +38,7 @@ errcmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(200))
 xregion = 126:325
 yregion = 137:336
 
-datapath = "data/"
+datapath = "inst/extdata/"
 input= readFITS(paste0(datapath,"G79635_r_fitim.fits"))$imDat
 sigma = readFITS(paste0(datapath,"G79635_r_sigma.fits"))$imDat
 mask = readFITS(paste0(datapath,"G79635_r_mskim.fits"))$imDat[xregion,yregion]
