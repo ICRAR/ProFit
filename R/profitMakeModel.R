@@ -59,8 +59,8 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
       upscale=ceiling(160/reswitch)
       upscale=upscale+upscale%%2
-      upscale=min(upscale,16)
-      upscale=max(upscale,10)
+      upscale=min(upscale,10)
+      upscale=max(upscale,4)
       reswitch=reswitch/re
       if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
       basemat=basemat+
@@ -79,7 +79,7 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
         YLIM=c(0,dim[2]),
         DIM=dim,
         UPSCALE=upscale,
-        MAXDEPTH=3,
+        MAXDEPTH=2,
         RESWITCH=reswitch,
         ACC=acc,
         CALCREGION=calcregion,
@@ -112,5 +112,5 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
     basemat=basemat+model$sky$bg#/(10^(0.4*magzero))
   }
   
-  return=list(x=0:dim[1], y=0:dim[2], z=basemat)
+  return=list(x=seq(0.5,dim[1]-0.5,by=1), y=seq(0.5,dim[2]-0.5,by=1), z=basemat)
 }

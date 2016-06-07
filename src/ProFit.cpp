@@ -299,7 +299,7 @@ NumericMatrix profitMakeBoxySersic(const IntegerMatrix CALCREGION,
   // Precompute things we only need to do once.
   const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
-  const double LUMTOT = pow(RE,2)*2*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)*AXRAT/RBOX;
+  const double LUMTOT = pow(RE,2)*2*PI*NSER*(exp(BN)/pow(BN,2*NSER))*R::gammafn(2*NSER)*AXRAT/RBOX;
   const double Ie=pow(10,(-0.4*(MAG-MAGZERO)))/LUMTOT;
   const double INVRE = 1.0/RE;
   // Do not change this! Read the function definitions for justification

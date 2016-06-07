@@ -82,7 +82,7 @@ The parameters that must be specified for \option{psf} (see \code{\link{profitMa
 The parameter that must be specified for \option{sky} is:
 
 \describe{
-  \item{by}{Value per pixel for the background. This should be the value as measured in the original image, i.e. there is no need to worry about the effect of \option{magzero}.}
+  \item{bg}{Value per pixel for the background. This should be the value as measured in the original image, i.e. there is no need to worry about the effect of \option{magzero}.}
 }
   
 An example of a legal model structure is:
