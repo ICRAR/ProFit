@@ -233,6 +233,8 @@ ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
 
+# There are 10 example galaxies included. Here we run example 1:
+
 useID=ExampleIDs[1]
 
 image = readFITS(system.file("extdata", paste(useID,'fitim.fits',sep=''),package="ProFit"))$imDat
@@ -266,7 +268,7 @@ magimage(profitMakeModel(model,dim=dim(image)))
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
+magimage(profitMakeModel(model,dim=dim(image),psf=psf))
 
 # What should we be fitting:
 

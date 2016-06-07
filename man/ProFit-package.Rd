@@ -70,7 +70,7 @@ magimage(profitMakeModel(model=model, psf=profitGenPSF(), dim=c(200,200)))
 # Load ProFit example data
 
 data('ExampleInit')
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/data/',sep=''))
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
 
@@ -113,7 +113,7 @@ magimage(profitMakeModel(model,dim=dim(image)))
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(image)),psf=psf)
+magimage(profitMakeModel(model,dim=dim(image),psf=psf))
 
 # What should we be fitting:
 
@@ -269,11 +269,11 @@ LDfit$Summary1
 
 #With any luck you have enough stationary samples to run:
 
-BestLD=magtri(LDfit$Posterior2)
+BestLD=magtri(LDfit$Posterior2, samples=500, samptype='ran')
 
 #Otherwise try:
 
-BestLD=magtri(LDfit$Posterior1,500)
+BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
 
 #We can now check our final fit:
 
