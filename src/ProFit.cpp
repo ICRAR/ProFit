@@ -380,6 +380,7 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
     const double ACC=0.1, const bool DOCALCREGION=false, const double REMAX=10)
 {
   //Rcout << UPSCALE << std::endl;
+	printf("profit: Calculating sersic component with xcen=%f / ycen=%f / mag=%f / re=%f / nser=%f / ang=%f / axrat=%f / box=%f / magzero=%f / rough=%d / upscale=%d / maxdepth=%d / reswitch=%f / acc=%f / remax=%f\n", XCEN, YCEN, MAG, RE, NSER, ANG, AXRAT, BOX, MAGZERO, ROUGH, UPSCALE, MAXDEPTH, RESWITCH, ACC, REMAX);
   if(BOX == 0) 
   {
     if(NSER == 0.5) return profitMakeBoxySersic<false,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
