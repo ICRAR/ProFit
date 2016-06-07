@@ -1,4 +1,4 @@
-profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, upscale=9, maxdepth=2, reswitch=2, acc=0.1, calcregion, docalcregion=FALSE, remax, rescaleflux=FALSE){
+profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, upscale=9, maxdepth=2, reswitch=2, acc=0.1, calcregion, docalcregion=FALSE, magmu=FALSE, remax, rescaleflux=FALSE){
 
 	if(rough){rough=1}else{rough=0}
 	if(serscomp=='all'){serscomp=1:length(modellist$sersic$xcen)}
@@ -9,9 +9,16 @@ profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all
 	profiles = list()
 	model_psf = NULL
 	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
+
+		# Copy them
 		profiles[['sersic']] = list()
 		for( name in names(modellist$sersic) ) {
 			profiles[['sersic']][[name]] = modellist$sersic[[name]][serscomp]
+		}
+		# Fix their magnitude if necessary
+		if( magmu & length(profiles[['sersic']][['mag']]) > 0 ) {
+			mag = profitMu2Mag(mu=profiles[['sersic']][['mag']], re=profiles[['sersic']][['re']], axrat=profiles[['sersic']][['axrat']])
+			profiles[['sersic']][['mag']] = mag
 		}
 
 		profiles[['sersic']][['resolution']] = rep(upscale, length(serscomp))
