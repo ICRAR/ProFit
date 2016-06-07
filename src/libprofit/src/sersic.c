@@ -158,7 +158,12 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 	double half_xbin = model->xbin/2.;
 	double half_ybin = model->ybin/2.;
 	double bin_area = model->xbin * model->ybin;
+
 	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
+	double scale = bin_area * sp->_ie;
+	if( sp->rescale_flux ) {
+		scale *= sp->_rescale_factor;
+	}
 
 	/* The middle X/Y value is used for each pixel */
 	y = 0;
@@ -175,7 +180,10 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 			 * TODO: the radius calculation doesn't take into account boxing
 			 */
 			r_ser = sqrt(x_ser*x_ser + y_ser*y_ser);
-			if( sp->rough || r_ser/sp->re > sp->re_switch ){
+			if( sp->re_max > 0 && r_ser/sp->re > sp->re_max ) {
+				pixel_val = 0.;
+			}
+			else if( sp->rough || r_ser/sp->re > sp->re_switch ){
 				pixel_val = _sersic_for_xy_r(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
@@ -191,12 +199,18 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 				                            0, max_recursions, resolution);
 			}
 
-			image[i + j*model->width] = bin_area * sp->_ie * pixel_val;
+			image[i + j*model->width] = scale * pixel_val;
 			x += half_xbin;
 		}
 		y += half_ybin;
 	}
 
+}
+
+static inline
+double profit_sersic_fluxfrac(profit_sersic_profile *sp, double fraction) {
+	double ratio = sp->_qgamma(fraction, 2*sp->nser) / sp->_bn;
+	return sp->re * pow(ratio, sp->nser);
 }
 
 static
@@ -211,6 +225,10 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	double magzero = model->magzero;
 	double bn, angrad;
 
+	if( !sersic_p->_pgamma ) {
+		profile->error = strdup("Missing pgamma function on sersic profile");
+		return;
+	}
 	if( !sersic_p->_qgamma ) {
 		profile->error = strdup("Missing qgamma function on sersic profile");
 		return;
@@ -229,7 +247,7 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	 * later to calculate the exact contribution of each pixel.
 	 * We save bn back into the profile because it's needed later.
 	 */
-	sersic_p->_bn = bn = sersic_p->_qgamma(0.5, 2*nser, 1);
+	sersic_p->_bn = bn = sersic_p->_qgamma(0.5, 2*nser);
 	double Rbox = M_PI * box / (4*sersic_p->_beta(1/box, 1 + 1/box));
 	double gamma = sersic_p->_gammafn(2*nser);
 	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
@@ -242,7 +260,7 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	 */
 	if( sersic_p->adjust ) {
 
-		double re_switch, flux_frac;
+		double re_switch;
 		unsigned int resolution;
 
 		/*
@@ -251,21 +269,35 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 		 * but don't let it become less than 1 pixel (means we do no worse than
 		 * GALFIT anywhere)
 		 */
-		flux_frac = 1 - (nser*nser)/1e3;
-		re_switch = ceil( re * pow(sersic_p->_qgamma(flux_frac, 2*nser, 1) / bn, nser) );
-		re_switch = fmax(fmin(re_switch, 20.), 1);
-		re_switch /= re;
+		re_switch = ceil(profit_sersic_fluxfrac(sersic_p, 1. - nser*nser/2e3));
+		re_switch = fmax(fmin(re_switch, 20.), 2.);
 
 		/*
 		 * Calculate a bound, adaptive upscale; if re is large then we don't need
 		 * so much upscaling
 		 */
-		resolution = (unsigned int)ceil(sersic_p->resolution * sersic_p->resolution / re_switch);
-		resolution = resolution > 9 ? 9 : resolution;
-		resolution = resolution < 3 ? 3 : resolution;
+		resolution = (unsigned int)ceil(160 / re_switch);
+		resolution += resolution%2;
+		resolution = resolution > 16 ? 16 : resolution;
+		resolution = resolution < 10 ? 10 : resolution;
 
-		sersic_p->re_switch = re_switch;
+		sersic_p->re_switch = re_switch / re;
 		sersic_p->resolution = resolution;
+
+		/*
+		 * If the user didn't give a re_max we calculate one that covers
+		 * %99.99 of the flux
+		 */
+		if( sersic_p->re_max == 0 ){
+			sersic_p->re_max = ceil(profit_sersic_fluxfrac(sersic_p, 0.9999));
+		}
+		sersic_p->_rescale_factor = 1;
+		if( sersic_p->rescale_flux ){
+			double flux_r;
+			flux_r = bn * pow(sersic_p->re_max/re, 1/nser);
+			flux_r = sersic_p->_pgamma(flux_r, 2*nser);
+			sersic_p->_rescale_factor = 1/flux_r;
+		}
 	}
 
 	/*
@@ -287,9 +319,19 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 
 }
 
-#if defined(HAVE_R)
-double _Rf_qgamma_wrapper(double a, double b, double c) {
-	return Rf_qgamma(a, b, c, 1, 0);
+#if defined(HAVE_GSL)
+double _gsl_qgamma_wrapper(double p, double shape) {
+	return gsl_cdf_gamma_Pinv(p, shape, 1);
+}
+double _gsl_pgamma_wrapper(double q, double shape) {
+	return gsl_cdf_gamma_P(q, shape, 1);
+}
+#elif defined(HAVE_R)
+double _Rf_qgamma_wrapper(double p, double shape) {
+	return Rf_qgamma(p, shape, 1, 1, 0);
+}
+double _Rf_pgamma_wrapper(double q, double shape) {
+	return Rf_pgamma(q, shape, 1, 1, 0);
 }
 #endif
 
@@ -315,20 +357,26 @@ profit_profile *profit_create_sersic() {
 	p->max_recursions = 2;
 	p->adjust = true;
 
+	p->re_max = 0;
+	p->rescale_flux = false;
+
 	/*
 	 * Point to the corresponding implementation, or leave as NULL if not
 	 * possible. In that case the user will have to provide their own functions.
 	 */
 #if defined(HAVE_GSL)
-	p->_beta = &gsl_sf_beta;
+	p->_qgamma  = &_gsl_qgamma_wrapper;
+	p->_pgamma  = &_gsl_pgamma_wrapper;
 	p->_gammafn = &gsl_sf_gamma;
-	p->_qgamma = &gsl_cdf_gamma_Qinv;
+	p->_beta    = &gsl_sf_beta;
 #elif defined(HAVE_R)
-	p->_qgamma = &_Rf_qgamma_wrapper;
+	p->_qgamma  = &_Rf_qgamma_wrapper;
+	p->_pgamma  = &_Rf_pgamma_wrapper;
 	p->_gammafn = &Rf_gammafn;
-	p->_beta = &Rf_beta;
+	p->_beta    = &Rf_beta;
 #else
 	p->_qgamma = NULL;
+	p->_pgamma = NULL;
 	p->_gammafn = NULL;
 	p->_beta = NULL;
 #endif

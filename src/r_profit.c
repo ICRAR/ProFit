@@ -116,6 +116,9 @@ void list_to_sersic(SEXP sersic_list, profit_profile *p, unsigned int idx) {
 	_read_real(sersic_list, "re_switch",   idx, &(sp->re_switch));
 	_read_unsigned_int(sersic_list, "resolution",   idx, &(sp->resolution));
 	_read_unsigned_int(sersic_list, "max_recursions",   idx, &(sp->max_recursions));
+
+	_read_bool(sersic_list, "rescale_flux", idx, &(sp->rescale_flux));
+	_read_real(sersic_list, "re_max", idx, &(sp->re_max));
 }
 
 static

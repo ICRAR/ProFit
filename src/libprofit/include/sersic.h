@@ -56,8 +56,13 @@ typedef struct _profit_sersic_profile {
 	unsigned int max_recursions;
 	bool adjust;
 
+	/* Used to avoid outer regions */
+	double re_max;
+	bool rescale_flux;
+
 	/* Gamma function and distribution to use */
-	double (*_qgamma)(double, double, double);
+	double (*_qgamma)(double p, double shape);
+	double (*_pgamma)(double q, double shape);
 	double (*_gammafn)(double);
 	double (*_beta)(double, double);
 
@@ -66,6 +71,7 @@ typedef struct _profit_sersic_profile {
 	double _bn;
 	double _cos_ang;
 	double _sin_ang;
+	double _rescale_factor;
 
 } profit_sersic_profile;
 
