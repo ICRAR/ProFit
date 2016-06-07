@@ -138,7 +138,7 @@ template<bool hasbox, nsertype t>
 double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector & XLIM, const NumericVector & YLIM,
                     const double INVREX, const double INVREY, const double INVAXRAT, const double INVNSER,
                     const double BOX, const double BN, const int UPSCALE=8L, const int RECURLEVEL=0L,
-                    const int MAXDEPTH=2, const double ACC=0.1) {
+                    const int MAXDEPTH=2L, const double ACC=0.1) {
   const bool RECURSE = (RECURLEVEL < MAXDEPTH) && (UPSCALE > 1);
 
   double x,y,xmid,ymid,xmod,ymod,radmod,angmod,testvaly;
@@ -209,7 +209,7 @@ double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector &
 template<bool hasbox, nsertype t>
 double profitSumPixGridGrad(double XCEN, double YCEN, const NumericVector & XLIM, const NumericVector & YLIM,
                     const double INVREX, const double INVREY, const double INVAXRAT, const double NSERFAC,
-                    const double BOX, const double BN, const int UPSCALE, const int RECURLEVEL=0, const int MAXDEPTH=3, 
+                    const double BOX, const double BN, const int UPSCALE, const int RECURLEVEL=0, const int MAXDEPTH=2L, 
                     const double ACC=0.1) {
   const bool RECURSE = (RECURLEVEL < MAXDEPTH) && (UPSCALE > 1);
 
