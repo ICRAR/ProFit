@@ -127,7 +127,7 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 			subval = _sersic_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin/sp->axrat), 0, false);
+				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->_sin_ang/sp->re), 0, false);
 				if( fabs(testval/subval - 1.0) > sp->acc ) {
 					subval = _sersic_sumpix(sp,
 					                        x - half_xbin, x + half_xbin,
@@ -159,12 +159,12 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
 
 	/* The middle X/Y value is used for each pixel */
-	x = 0;
-	for(i=0; i < model->width; i++) {
-		x += half_xbin;
-		y = 0;
-		for(j=0; j < model->height; j++) {
-			y += half_ybin;
+	y = 0;
+	for(j=0; j < model->height; j++) {
+		y += half_ybin;
+		x = 0;
+		for(i=0; i < model->width; i++) {
+			x += half_xbin;
 
 			_image_to_sersic_coordinates(sp, x, y, &x_ser, &y_ser);
 
@@ -179,15 +179,15 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 			else {
 				/* Subsample and integrate */
 				pixel_val =  _sersic_sumpix(sp,
-				                            x - model->xbin/2, x + model->xbin/2,
-				                            y - model->ybin/2, y + model->ybin/2,
+				                            x - half_xbin, x + half_xbin,
+				                            y - half_ybin, y + half_ybin,
 				                            0);
 			}
 
 			image[i + j*model->width] = bin_area * sp->_ie * pixel_val;
-			y += half_ybin;
+			x += half_xbin;
 		}
-		x += half_xbin;
+		y += half_ybin;
 	}
 
 }
