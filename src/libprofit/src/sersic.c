@@ -103,24 +103,25 @@ void _image_to_sersic_coordinates(profit_sersic_profile *sp, double x, double y,
 static
 double _sersic_sumpix(profit_sersic_profile *sp,
                       double x0, double x1, double y0, double y1,
-                      unsigned int recur_level) {
+                      unsigned int recur_level, unsigned int max_recursions,
+                      unsigned int resolution) {
 
-	double xbin = (x1-x0) / sp->resolution;
-	double ybin = (y1-y0) / sp->resolution;
+	double xbin = (x1-x0) / resolution;
+	double ybin = (y1-y0) / resolution;
 	double half_xbin = xbin/2.;
 	double half_ybin = ybin/2.;
 	double total = 0, subval, testval;
 	double x , y, x_ser, y_ser;
 	unsigned int i, j;
 
-	bool recurse = sp->resolution > 1 && recur_level < sp->max_recursions;
+	bool recurse = resolution > 1 && recur_level < max_recursions;
 
 	/* The middle X/Y value is used for each pixel */
 	x = x0;
-	for(i=0; i < sp->resolution; i++) {
+	for(i=0; i < resolution; i++) {
 		x += half_xbin;
 		y = y0;
-		for(j=0; j < sp->resolution; j++) {
+		for(j=0; j < resolution; j++) {
 			y += half_ybin;
 
 			_image_to_sersic_coordinates(sp, x, y, &x_ser, &y_ser);
@@ -132,7 +133,8 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 					subval = _sersic_sumpix(sp,
 					                        x - half_xbin, x + half_xbin,
 					                        y - half_ybin, y + half_ybin,
-					                        recur_level + 1);
+					                        recur_level + 1, max_recursions,
+					                        resolution);
 				}
 			}
 
@@ -144,7 +146,7 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 	}
 
 	/* Average and return */
-	return total / (sp->resolution * sp->resolution);
+	return total / (resolution * resolution);
 }
 
 static
@@ -177,11 +179,16 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 				pixel_val = _sersic_for_xy_r(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
+
+				bool center = fabs(x - sp->xcen) < 1. && fabs(y - sp->ycen) < 1.;
+				unsigned int resolution = center ? 8 : sp->resolution;
+				unsigned int max_recursions = center ? 10 : sp->max_recursions;
+
 				/* Subsample and integrate */
 				pixel_val =  _sersic_sumpix(sp,
 				                            x - half_xbin, x + half_xbin,
 				                            y - half_ybin, y + half_ybin,
-				                            0);
+				                            0, max_recursions, resolution);
 			}
 
 			image[i + j*model->width] = bin_area * sp->_ie * pixel_val;
@@ -190,26 +197,6 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 		y += half_ybin;
 	}
 
-}
-
-#include <stdio.h>
-void dump_profile(profit_sersic_profile *s) {
-	printf("Sersic profile details:\n");
-	printf("Shape paremeters:\n");
-	printf("  xcen = %f\n", s->xcen);
-	printf("  ycen = %f\n", s->ycen);
-	printf("   mag = %f\n", s->mag);
-	printf("    re = %f\n", s->re);
-	printf("  nser = %f\n", s->nser);
-	printf("   box = %f\n", s->box);
-	printf("   ang = %f\n", s->ang);
-	printf(" axrat = %f\n", s->axrat);
-	printf("Sub-pixel integration parameters:\n");
-	printf("          rough = %d\n", s->rough);
-	printf("            acc = %f\n", s->xcen);
-	printf("      re_switch = %f\n", s->re_switch);
-	printf("     resolution = %u\n", s->resolution);
-	printf(" max_recursions = %u\n", s->max_recursions);
 }
 
 static
@@ -297,8 +284,6 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 	 * The performance seems pretty similar (measured on a x64 Linux with gcc and clang)
 	 * and doing sin() is more readable.
 	 */
-
-	//dump_profile(sersic_p);
 
 }
 
