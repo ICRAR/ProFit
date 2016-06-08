@@ -39,8 +39,8 @@ profitBenchmarkPadFFT <- function(psf,paddim,psfranges,fftw=FALSE,fftwplan=NULL)
 }
 
 # Benchmarks convolution and covariance functions
-profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, imgdim=NULL, psfdim=NULL, 
-  docovar=FALSE, gain_eff=1, refftpsf=FALSE, fftwplan=NULL)
+profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
+  imgdim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL)
 {
   data = profitBenchmarkPrepData(img,psf,calcregion,imgdim,psfdim)
   imgdim = dim(data$img$z)
@@ -49,7 +49,12 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, 
   npadimg = padimgdim[1]*padimgdim[2]
   cropimg = floor(imgdim/2)
   
-  benchi = 1:nbench  
+  benchi = 1:nbench
+  nbenchibc2 = 10
+  benchibc2 = 1:nbenchibc2
+  benchibc2all = c()
+  if(nbench > 10) benchibc2all = 11:nbench
+  
   names = c("Bruteconv","Bruteconv2","FFTconv","FFTWconv")
   
   npsfpad = floor((imgdim - psfdim)/2)
@@ -59,7 +64,17 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, 
     psfranges[[i]] = (1+npsfpad[i]):(npsfpad[i]+psfdim[i])
   }
   
-  if(is.null(fftwplan)) fftwplan = planFFT(padimgdim[1]*padimgdim[2], effort=1)
+  if(is.null(fftwplan))
+  {
+    factors = unique(c(as.bigz(2),factorize(imgdim[1]),factorize(imgdim[2])))
+    t = proc.time()[['elapsed']]
+    fftwplan = planFFT(padimgdim[1]*padimgdim[2], effort=0)
+    t = proc.time()[['elapsed']]-t
+    # If it took < 1 second to find an optimum plan, try a little harder
+    # But not if the largest factor is > 53 (arbitrary), or there are fewer than 4 factors < 53
+    # In that case it will probably take a loooong time (TODO: test exact criteria)
+    if(t < 1e3 && (max(factors) <= 53 || length(factors[factors <= 53]) > 4)) fftwplan = planFFT(padimgdim[1]*padimgdim[2], effort=1)
+  }
   if(!refftpsf) 
   {
     psffftr = profitBenchmarkPadFFT(psf,padimgdim,psfranges,fftw=FALSE)
@@ -79,7 +94,16 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, 
   bmi = bmi + 1
   times[bmi] = proc.time()[['elapsed']]
   
-  for(i in benchi) imgbrutec2 = profitBruteConv2(data$img$z,data$psf$z,data$calcregion,docalcregion)
+  # This method tends to be the slowest and needs serious improvement, so this hack avoids running 
+  # it too many times if it's just going to turn out painfully slow anyways
+  for(i in benchibc2) imgbrutec2 = profitBruteConv2(data$img$z,data$psf$z,data$calcregion,docalcregion)
+  if((proc.time()[['elapsed']]-times[bmi])/nbenchibc2 < 2*(times[bmi]-times[bmi-1])/nbench)
+  {
+    for(i in benchibc2all) imgbrutec2 = profitBruteConv2(data$img$z,data$psf$z,data$calcregion,docalcregion)
+    nbenchibc2 = nbench
+  } else {
+    bmibc2 = bmi
+  }
   
   bmi = bmi + 1
   times[bmi] = proc.time()[['elapsed']]
@@ -98,7 +122,7 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, 
   
   for(i in benchi)
   {
-    if(refftpsf) psffftw = profitBenchmarkPadFFT(psf,padimgdim,psfranges,fftw=TRUE,fftwplan = ffwtplan)
+    if(refftpsf) psffftw = profitBenchmarkPadFFT(psf,padimgdim,psfranges,fftw=TRUE,fftwplan = fftwplan)
     rimgpad = matrix(0,padimgdim[1],padimgdim[2])
     rimgpad[1:imgdim[1],1:imgdim[2]] = data$img$z
     imgfftw = FFT(rimgpad, plan=fftwplan) * psffftw
@@ -112,6 +136,7 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, 
   
   ntimes = length(times)
   tinms = 1000*(times[2:ntimes] - times[1:(ntimes-1)])/nbench
+  if(nbenchibc2 != nbench) tinms[bmibc2] = tinms[bmibc2]*nbench/nbenchibc2
   ntimes = length(tinms)
   stopifnot(ntimes == length(names))
   result = ""
@@ -125,8 +150,8 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10, 
   names(tinms) = names
   print(result)
   result = list(result=result,times=tinms,best=list(name=names[best],time=times[best]),
-    fft=list(fftwplan=fftwplan, psfr=psffftr, psfw=psffftw, paddim = padimgdim, 
+    fft=list(fftwplan=fftwplan, paddim = padimgdim, 
       padimgx = 1:imgdim[1], padimgy=1:imgdim[2], cropx=cropx, cropy=cropy, 
-      psfx = psfranges[1], psfy = psfranges[2]))
+      psf = list(r=psffftr, w=psffftw, x = psfranges[1], y = psfranges[2])))
   return(result)
 }

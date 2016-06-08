@@ -1,4 +1,5 @@
-profitConvolvePSF=function(image, psf, calcregion, options=list(method="Bruteconv"), docalcregion=FALSE, estdeconvcovar=FALSE){
+profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE, 
+  options=list(method="Bruteconv"), estdeconvcovar=FALSE){
   if(missing(calcregion)){
     if(docalcregion){
       calcregion=matrix(1,dim(image)[1],dim(image)[2])
@@ -11,12 +12,7 @@ profitConvolvePSF=function(image, psf, calcregion, options=list(method="Brutecon
     stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2]," and they must be ",dim(image)[1],":",dim(image)[2],"!",sep=""))
   }
   
-  if(length(psf) > 0 && (dim(psf)[1]%%2==0 | dim(psf)[1]%%2==0)) {
-    xrange=floor(-dim(psf)[1]/2):ceiling(dim(psf)[1]/2)
-    yrange=floor(-dim(psf)[2]/2):ceiling(dim(psf)[2]/2)
-    regrid=expand.grid(xrange,yrange)
-    psf=matrix(profitInterp2d(regrid[,1],regrid[,2],psf)[,3],length(xrange),length(yrange))
-  }
+  stopifnot(all((dim(psf) %% 2) == 1))
   psf=psf/sum(psf)
   if(estdeconvcovar)
   {
@@ -39,19 +35,19 @@ profitConvolvePSF=function(image, psf, calcregion, options=list(method="Brutecon
     } else if(isfft)
     {
       if(isfftr) {
-        psffft = options$fft$psfr
+        psffft = options$fft$psf$r
         if(is.null(psffft))
         {
           psfpad = matrix(0,options$fft$paddim[1],options$fft$paddim[2])
-          psfpad[psfx,psfy] = psf
+          psfpad[options$fft$psf$x,options$fft$psf$y] = psf
           psffft = fft(psf)
         }
       } else if(isfftw) {
-        psffft = options$fft$psfw
+        psffft = options$fft$psf$w
         if(is.null(psffft))
         {
           psfpad = matrix(0,options$fft$paddim[1],options$fft$paddim[2])
-          psfpad[psfx,psfy] = psf
+          psfpad[options$fft$psf$x,options$fft$psf$y] = psf
           psffft = FFT(psf,fftwplan=options$fft$fftwplan)
         }
       }
@@ -62,10 +58,10 @@ profitConvolvePSF=function(image, psf, calcregion, options=list(method="Brutecon
       } else if(isfftr) {
         imgpad = fft(imgpad, inverse = TRUE)
       }
-      imgpad = imgpad * psffftw
+      imgpad = imgpad * psffft
       if(isfftw) {
         imgpad = IFFT(imgpad, plan=options$fft$fftwplan)
-        dim(imgfftw) = padimgdim
+        dim(imgfftw) = options$fft$padimgdim
       } else if(isfftr) {
         imgpad = fft(imgpad, inverse = TRUE)
       }

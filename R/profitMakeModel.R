@@ -66,17 +66,17 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       }
       re=as.numeric(model$sersic$re[i])
       #Find the point at which we capture 90% of the flux (sensible place for upscaling)
-      reswitch=ceiling(.profitFluxFrac(nser=nser,re=re,frac=1-nser^2/1e3))
+      reswitch=ceiling(.profitFluxFrac(nser=nser,re=re,frac=1-nser^2/2e3))
       if(missing(remax)){remax=ceiling(.profitFluxFrac(nser=nser,re=re,frac=0.9999))}
       #Make sure upscaling doesn't go beyond 20 pixels:
       reswitch=min(reswitch,20)
       #Don't let it become less than 2 pixels (means we do no worse than GALFIT anywhere):
       reswitch=max(reswitch,2)
       #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
-      upscale=ceiling(100/reswitch)
+      upscale=ceiling(160/reswitch)
       upscale=upscale+upscale%%2
-      upscale=min(upscale,10)
-      upscale=max(upscale,4)
+      upscale=min(upscale,16)
+      upscale=max(upscale,10)
       reswitch=reswitch/re
       if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
       basemat=basemat+
@@ -95,7 +95,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
         YLIM=c(0,dimbase[2]),
         DIM=dimbase,
         UPSCALE=upscale,
-        MAXDEPTH=2,
+        MAXDEPTH=3,
         RESWITCH=reswitch,
         ACC=acc,
         CALCREGION=calcregion,
@@ -124,8 +124,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
     
     if(length(model$pointsource)>0){
       for(i in psfcomp){
-        basemat=
-        profitMakePSF(
+        basemat = profitMakeEmpiricalPS(add=TRUE,
           xcen=(model$pointsource$xcen[i]-imgcens[1])*finesample+imgcensfine[1]+psfpad[1],
           ycen=(model$pointsource$ycen[i]-imgcens[2])*finesample+imgcensfine[2]+psfpad[2],
           mag=model$pointsource$mag[i],
