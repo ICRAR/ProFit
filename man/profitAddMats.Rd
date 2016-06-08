@@ -23,7 +23,7 @@ The reference ID of the corner pixel to use when adding \option{matadd}. This wi
 }
 }
 \details{
-In practice this function is a convenient low level routine that us used by \code{\link{profitMakePSF}}. It is unlikely the user will use it directly.
+In practice this function is a convenient low level routine that is used by \code{\link{profitMakeEmpiricalPS}}. It is unlikely the user will use it directly.
 
 By ProFit convention the bottom-left part of the bottom-left pixel when plotting the image matrix is c(0,0) and the top-right part of the bottom-left pixel is c(1,1), i.e. the mid-point of pixels are half integer values in x and y.
 
@@ -36,7 +36,7 @@ Matrix; a matrix the same size as matbase, with a region of it added to by the v
 Aaron Robotham
 }
 \seealso{
-\code{\link{profitMakePSF}}
+\code{\link{profitMakeEmpiricalPS}}
 }
 \examples{
 model = list(

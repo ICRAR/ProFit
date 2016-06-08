@@ -30,7 +30,7 @@ The desired dimenions of the 2D image matrix. This should be a two element vecto
 Which component of the Sersic list should be used to create the model image. This is useful if you want to visually see appearance of e.g. Sersic components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakeSersic}} for details.
 }
   \item{psfcomp}{
-Which component of the PSF list should be used to create the model image. This is useful if you want to visually see appearance of e.g. PSF components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakePSF}} for details.
+Which component of the PSF list should be used to create the model image. This is useful if you want to visually see appearance of e.g. PSF components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakeEmpiricalPS}} for details.
 }
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
@@ -71,7 +71,7 @@ The parameters that must be specified for \option{sersic} (see \code{\link{profi
   \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
-The parameters that must be specified for \option{psf} (see \code{\link{profitMakePSF}} for details) are: 
+The parameters that must be specified for \option{psf} (see \code{\link{profitMakeEmpiricalPS}} for details) are: 
 
 \describe{
   \item{xcen}{Vector of x centres of the PSFs (can be fractional pixel positions).}
@@ -110,7 +110,7 @@ model = list(\cr
 
 By ProFit convention the bottom-left part of the bottom-left pixel when plotting the image matrix is c(0,0) and the top-right part of the bottom-left pixel is c(1,1), i.e. the mid-point of pixels are half integer values in x and y.
 
-To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartessian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument referes to row number, but images by convention are accessed in a Cartessian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
+To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument referes to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
 List; structure containing the specified model:
@@ -121,11 +121,11 @@ List; structure containing the specified model:
 }
 
 \author{
-Aaron Robotham
+Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitMakeSersic}}, \code{\link{profitMakePSF}}, \code{\link{profitConvolvePSF}}
+\code{\link{profitMakeSersic}}, \code{\link{profitMakeEmpiricalPS}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
 model = list(

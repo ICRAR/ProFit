@@ -1,4 +1,7 @@
-profitMakePSF=function(xcen=0,ycen=0,mag=15,image,psf,magzero=0){
+profitMakeEmpiricalPS=function(xcen=0,ycen=0,mag=0,image,psf,magzero=0,finesample=1L,
+  add=FALSE)
+{
+  profitCheckFinesample(finesample)
   scale=10^(-0.4*(mag-magzero))
   limx=c(1,dim(image)[1])
   limy=c(1,dim(image)[2])
@@ -11,6 +14,7 @@ profitMakePSF=function(xcen=0,ycen=0,mag=15,image,psf,magzero=0){
   remapgrid[,2]=remapgrid[,2]-offy
   remappsf=matrix(profitInterp2d(remapgrid[,1],remapgrid[,2],psf)[,3],dim(psf)[1],dim(psf)[2])
   remappsf=remappsf/sum(remappsf)
-  output=profitAddMats(image,remappsf*scale,c(pixlocx,pixlocy))
-  return=output
+  output=remappsf*scale
+  if(add) output=profitAddMats(image,output,c(pixlocx,pixlocy))
+  return(output)
 }

@@ -37,7 +37,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitConvolvePSF}}, \code{\link{profitMakePSF}}
+\code{\link{profitConvolvePSF}}, \code{\link{profitMakeEmpiricalPS}}
 }
 \examples{
 PSFeven=profitGenPSF(npix=24)
