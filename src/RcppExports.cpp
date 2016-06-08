@@ -98,35 +98,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// profitPoissonMC
-IntegerMatrix profitPoissonMC(const NumericMatrix& IMAGE, const int SEED, const double THROUGHPUT, const double IGAIN_E);
-RcppExport SEXP ProFit_profitPoissonMC(SEXP IMAGESEXP, SEXP SEEDSEXP, SEXP THROUGHPUTSEXP, SEXP IGAIN_ESEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type IMAGE(IMAGESEXP);
-    Rcpp::traits::input_parameter< const int >::type SEED(SEEDSEXP);
-    Rcpp::traits::input_parameter< const double >::type THROUGHPUT(THROUGHPUTSEXP);
-    Rcpp::traits::input_parameter< const double >::type IGAIN_E(IGAIN_ESEXP);
-    __result = Rcpp::wrap(profitPoissonMC(IMAGE, SEED, THROUGHPUT, IGAIN_E));
-    return __result;
-END_RCPP
-}
-// profitBruteConvMC
-IntegerMatrix profitBruteConvMC(const IntegerMatrix& IMAGE, const NumericMatrix& PSF, const unsigned long int SEED, const double THROUGHPUT, const double IGAIN_E);
-RcppExport SEXP ProFit_profitBruteConvMC(SEXP IMAGESEXP, SEXP PSFSEXP, SEXP SEEDSEXP, SEXP THROUGHPUTSEXP, SEXP IGAIN_ESEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const IntegerMatrix& >::type IMAGE(IMAGESEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type PSF(PSFSEXP);
-    Rcpp::traits::input_parameter< const unsigned long int >::type SEED(SEEDSEXP);
-    Rcpp::traits::input_parameter< const double >::type THROUGHPUT(THROUGHPUTSEXP);
-    Rcpp::traits::input_parameter< const double >::type IGAIN_E(IGAIN_ESEXP);
-    __result = Rcpp::wrap(profitBruteConvMC(IMAGE, PSF, SEED, THROUGHPUT, IGAIN_E));
-    return __result;
-END_RCPP
-}
 // profitBruteConvCovar
 List profitBruteConvCovar(NumericMatrix image, NumericMatrix psf);
 RcppExport SEXP ProFit_profitBruteConvCovar(SEXP imageSEXP, SEXP psfSEXP) {
@@ -167,6 +138,35 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type SKYVAR(SKYVARSEXP);
     Rcpp::traits::input_parameter< const bool >::type FACTORIZE(FACTORIZESEXP);
     __result = Rcpp::wrap(profitChisqFromEstDeconvCovErr(image, model, imageerr, modelcovarsi, psf, N_C_X_TILES, N_C_Y_TILES, SKYVAR, FACTORIZE));
+    return __result;
+END_RCPP
+}
+// profitPoissonMC
+IntegerMatrix profitPoissonMC(const NumericMatrix& IMAGE, const int SEED, const double THROUGHPUT, const double IGAIN_E);
+RcppExport SEXP ProFit_profitPoissonMC(SEXP IMAGESEXP, SEXP SEEDSEXP, SEXP THROUGHPUTSEXP, SEXP IGAIN_ESEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type IMAGE(IMAGESEXP);
+    Rcpp::traits::input_parameter< const int >::type SEED(SEEDSEXP);
+    Rcpp::traits::input_parameter< const double >::type THROUGHPUT(THROUGHPUTSEXP);
+    Rcpp::traits::input_parameter< const double >::type IGAIN_E(IGAIN_ESEXP);
+    __result = Rcpp::wrap(profitPoissonMC(IMAGE, SEED, THROUGHPUT, IGAIN_E));
+    return __result;
+END_RCPP
+}
+// profitBruteConvMC
+IntegerMatrix profitBruteConvMC(const IntegerMatrix& IMAGE, const NumericMatrix& PSF, const unsigned long int SEED, const double THROUGHPUT, const double IGAIN_E);
+RcppExport SEXP ProFit_profitBruteConvMC(SEXP IMAGESEXP, SEXP PSFSEXP, SEXP SEEDSEXP, SEXP THROUGHPUTSEXP, SEXP IGAIN_ESEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type IMAGE(IMAGESEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type PSF(PSFSEXP);
+    Rcpp::traits::input_parameter< const unsigned long int >::type SEED(SEEDSEXP);
+    Rcpp::traits::input_parameter< const double >::type THROUGHPUT(THROUGHPUTSEXP);
+    Rcpp::traits::input_parameter< const double >::type IGAIN_E(IGAIN_ESEXP);
+    __result = Rcpp::wrap(profitBruteConvMC(IMAGE, PSF, SEED, THROUGHPUT, IGAIN_E));
     return __result;
 END_RCPP
 }

@@ -5,7 +5,7 @@ cerf <- function(x) {
     .Call('ProFit_cerf', PACKAGE = 'ProFit', x)
 }
 
-profitMakeSersic <- function(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0, AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric( c(-100,100)), YLIM = as.numeric( c(-100,100)), DIM = as.integer( c(200,200)), UPSCALE = 9L, MAXDEPTH = 2L, RESWITCH = 2, ACC = 0.1, DOCALCREGION = FALSE, REMAX = 10) {
+profitMakeSersic <- function(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0, AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric( c(-100,100)), YLIM = as.numeric( c(-100,100)), DIM = as.integer( c(200,200)), UPSCALE = 8L, MAXDEPTH = 2L, RESWITCH = 2, ACC = 0.1, DOCALCREGION = FALSE, REMAX = 10) {
     .Call('ProFit_profitMakeSersic', PACKAGE = 'ProFit', CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX)
 }
 
@@ -25,14 +25,6 @@ profitUpsample <- function(IMG, UPSAMPLEFAC) {
     .Call('ProFit_profitUpsample', PACKAGE = 'ProFit', IMG, UPSAMPLEFAC)
 }
 
-profitPoissonMC <- function(IMAGE, SEED = 0L, THROUGHPUT = 1, IGAIN_E = 1) {
-    .Call('ProFit_profitPoissonMC', PACKAGE = 'ProFit', IMAGE, SEED, THROUGHPUT, IGAIN_E)
-}
-
-profitBruteConvMC <- function(IMAGE, PSF, SEED = 0L, THROUGHPUT = 1, IGAIN_E = 1) {
-    .Call('ProFit_profitBruteConvMC', PACKAGE = 'ProFit', IMAGE, PSF, SEED, THROUGHPUT, IGAIN_E)
-}
-
 profitBruteConvCovar <- function(image, psf) {
     .Call('ProFit_profitBruteConvCovar', PACKAGE = 'ProFit', image, psf)
 }
@@ -43,5 +35,13 @@ profitBruteConvCovar2 <- function(image, psf) {
 
 profitChisqFromEstDeconvCovErr <- function(image, model, imageerr, modelcovarsi, psf, N_C_X_TILES, N_C_Y_TILES, SKYVAR = 0, FACTORIZE = FALSE) {
     .Call('ProFit_profitChisqFromEstDeconvCovErr', PACKAGE = 'ProFit', image, model, imageerr, modelcovarsi, psf, N_C_X_TILES, N_C_Y_TILES, SKYVAR, FACTORIZE)
+}
+
+profitPoissonMC <- function(IMAGE, SEED = 0L, THROUGHPUT = 1, IGAIN_E = 1) {
+    .Call('ProFit_profitPoissonMC', PACKAGE = 'ProFit', IMAGE, SEED, THROUGHPUT, IGAIN_E)
+}
+
+profitBruteConvMC <- function(IMAGE, PSF, SEED = 0L, THROUGHPUT = 1, IGAIN_E = 1) {
+    .Call('ProFit_profitBruteConvMC', PACKAGE = 'ProFit', IMAGE, PSF, SEED, THROUGHPUT, IGAIN_E)
 }
 
