@@ -54,5 +54,5 @@ profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all
 	}
 	basemat = matrix(image, ncol=dim[2], byrow=F)
 
-	return(list(x=0:dim[1], y=0:dim[2], z=basemat))
+	return(list(x=seq(0.5,dim[1]-0.5,by=1), y=seq(0.5,dim[2]-0.5,by=1), z=basemat))
 }

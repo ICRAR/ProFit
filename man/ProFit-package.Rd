@@ -281,6 +281,20 @@ profitLikeModel(BestLD,Data,image=TRUE,serscomp=1)
 profitLikeModel(BestLD,Data,image=TRUE,serscomp=2)
 profitLikeModel(BestLD,Data,image=TRUE,serscomp='all')
 
+
+#Better errors can be obtained by removing the spurious structure remaining:
+
+bestmodel=profitRemakeModelList(BestLD, Data$model, Data$tofit, Data$tolog)
+imagemod=profitMakeModel(bestmodel,magzero=Data$magzero,dim=Data$imagedim,psf=Data$psf)
+imagemod=imagemod$z+rnorm(length(Data$sigma),mean=0,sd=Data$sigma)
+Datamod=profitSetupData(image=imagemod, mask=mask, sigma=sigma, segim=segim, psf=psf,
+model=bestmodel, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+magzero=0, algo.func='LD', verbose=FALSE)
+
+LDfitmod=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Datamod,
+Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
+
+BestLDmod=magtri(LDfit$Posterior1, samples=500, samptype='end')
 }
 
 }
