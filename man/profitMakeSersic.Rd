@@ -10,7 +10,7 @@ This function provides a low level interface to the Rcpp code that calculates pi
 \usage{
 profitMakeSersic(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0,
 AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric(c(-100, 100)),
-YLIM = as.numeric(c(-100, 100)), DIM = as.integer(c(200, 200)), UPSCALE=9L, MAXDEPTH=2L,
+YLIM = as.numeric(c(-100, 100)), DIM = as.integer(c(200, 200)), UPSCALE=8L, MAXDEPTH=2L,
 RESWITCH=2, ACC=0.1, DOCALCREGION = FALSE, REMAX=10)
 }
 %- maybe also 'usage' for other objects documented here.

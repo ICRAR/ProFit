@@ -184,25 +184,17 @@ model=list(
     axrat= list(1.0, 0.6) #min/maj: 1= o, 0= |
   ),
   magzero=list(0),
-  sky=list(bg=skylevel),
-  psf=list(
-    sigmaj=1.274,
-    ang=130,
-    axrat = 0.95
-  )
+  sky=list(bg=skylevel)
 )
 
-fwhmfac = 2.3548200450309493
+modelpsf = model
+modelpsf$psf=list(
+  hwhm=1.274,
+  ang=130,
+  axrat = 0.95
+)
+
 finesample = 3L
-nx = as.integer(max(3,ceiling(2*4*model$psf$sigmaj)))
-if(nx %% 2 == 0) nx = nx+1L
-nxf = nx*finesample-(finesample > 0)*(finesample - 1)
-psf = profitMakeModel(list(sersic=list(xcen=c(nx/2),ycen=c(nx/2),mag=c(0),nser=0.5,
-  re=c(model$psf$sigmaj*fwhmfac/2),ang=model$psf$ang,axrat=model$psf$axrat)),
-  dim=c(nx,nx))$z
-psff = profitMakeModel(list(sersic=list(xcen=c(nxf/2),ycen=c(nxf/2),mag=c(0),nser=0.5,
-  re=c(finesample*model$psf$sigmaj*fwhmfac/2),ang=model$psf$ang,axrat=model$psf$axrat)),
-  dim=c(nxf,nxf),finesample=finesample)$z
 psfarea = pi*(fwhmfac/2*model$psf$sigmaj)^2*model$psf$axrat
 
 # The pure model (no PSF):
@@ -212,19 +204,19 @@ magimage(profitMakeModel(model,dim=dim(input)),magmap=T,stretch='asinh',stretchs
 magimage(input,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)),col=cmap)
 
 # The convolved model (with PSF):
-modelconv = profitMakeModel(model,dim=dim(input),psf=psf)
+modelconv = profitMakeModel(modelpsf,dim=dim(input))
 magimage(modelconv,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)),col=cmap)
 
 # The convolved model (with fine-sampled PSF):
-modelconvfd = profitMakeModel(model,dim=dim(input),psf=psff,finesample=finesample)
+modelconvfd = profitMakeModel(modelpsf,dim=dim(input),finesample=finesample)
 magimage(modelconvfd,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)),col=cmap)
 
 # The convolved model (with fine-sampled PSF), prior to downsampling:
-modelconvf = profitMakeModel(model,dim=dim(input),finesample=finesample,psf=psff,returnfine = TRUE)
+modelconvf = profitMakeModel(modelpsf,dim=dim(input),finesample=finesample,returnfine = TRUE)
 magimage(modelconvf,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)),col=cmap)
 
 # The fine-sampled model, pre-convolution, prior to downsampling:
-modelf = profitMakeModel(model,dim=dim(input),finesample=finesample,psf=NULL,returnfine = TRUE)
+modelf = profitMakeModel(model,dim=dim(input),finesample=finesample,returnfine = TRUE)
 magimage(modelf,magmap=T,stretch='asinh',stretchscale=1/median(abs(input)),col=cmap)
 
 # Difference between fine and non-finesampled model
