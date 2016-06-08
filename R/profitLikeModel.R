@@ -72,8 +72,12 @@ profitLikeModel=function(parm, Data, image=FALSE, serscomp='all', psfcomp='all',
     #dof=2*var(data)/(var(data)-1)
     scaledata=(cutim-cutmod)/cutsig
     vardata=var(scaledata)
-    dof=2*vardata/(vardata-1)
-    dof=interval(dof,0,Inf)
+    if(vardata>0){
+      dof=2*vardata/(vardata-1)
+      dof=interval(dof,0,Inf)
+    }else{
+      dof=Inf
+    }
     LL=sum(dt(scaledata,dof,log=TRUE))
     
     LP=as.numeric(LL+priorsum)
