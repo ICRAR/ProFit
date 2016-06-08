@@ -25,3 +25,23 @@ profitUpsample <- function(IMG, UPSAMPLEFAC) {
     .Call('ProFit_profitUpsample', PACKAGE = 'ProFit', IMG, UPSAMPLEFAC)
 }
 
+profitBruteConvCovar <- function(image, psf) {
+    .Call('ProFit_profitBruteConvCovar', PACKAGE = 'ProFit', image, psf)
+}
+
+profitBruteConvCovar2 <- function(image, psf) {
+    .Call('ProFit_profitBruteConvCovar2', PACKAGE = 'ProFit', image, psf)
+}
+
+profitChisqFromEstDeconvCovErr <- function(image, model, imageerr, modelcovarsi, psf, N_C_X_TILES, N_C_Y_TILES, SKYVAR = 0, FACTORIZE = FALSE) {
+    .Call('ProFit_profitChisqFromEstDeconvCovErr', PACKAGE = 'ProFit', image, model, imageerr, modelcovarsi, psf, N_C_X_TILES, N_C_Y_TILES, SKYVAR, FACTORIZE)
+}
+
+profitPoissonMC <- function(IMAGE, SEED = 0L, THROUGHPUT = 1, IGAIN_E = 1) {
+    .Call('ProFit_profitPoissonMC', PACKAGE = 'ProFit', IMAGE, SEED, THROUGHPUT, IGAIN_E)
+}
+
+profitBruteConvMC <- function(IMAGE, PSF, SEED = 0L, THROUGHPUT = 1, IGAIN_E = 1) {
+    .Call('ProFit_profitBruteConvMC', PACKAGE = 'ProFit', IMAGE, PSF, SEED, THROUGHPUT, IGAIN_E)
+}
+

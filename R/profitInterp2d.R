@@ -23,21 +23,3 @@ profitInterp2d=function(x,y,image){
 	zimage[cbind(lx1 + 1, ly1 + 1)] * ex * ey
   return = cbind(X=x,Y=y,Z=z)
 }
-
-profitInterp2dAkima=function(x,y,image,linear=TRUE){
-  scale=sum(image)
-  dimim = dim(image)
-  # It shouldn't really be necessary to re-index the image
-  # so the central pixel is (0,0), but anyway...
-  hx = dimim[1]/2
-  hy = dimim[2]/2
-  ximage = seq(-hx,hx,len=dimim[1])
-  yimage = seq(-hy,hy,len=dimim[2])
-  #imagelist=list(x=ximage,y=yimage,z=image)
-  ximage = matrix(rep(ximage,dimim[2]),dimim[1],dimim[2])
-  yimage = t(matrix(rep(yimage,dimim[1]),dimim[1],dimim[2]))
-  nx = length(x)
-  ny = length(y)
-  z = interp(ximage,yimage,image,xo=x-hx,yo=y-hy,linear=linear)$z
-  return(list(x=x,y=y,z=scale*z/sum(z)))
-}

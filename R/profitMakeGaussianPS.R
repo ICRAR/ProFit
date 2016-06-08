@@ -2,7 +2,7 @@
 # If image is specified, the output will have the same dimensions as image
 # Otherwise, the output will cover out to at least hwhmfac times hwhm (half-width half-max = Re) away
 # TODO: Consider returning a rectangular image?
-profitMakeGaussianPS=function(model=list(xcen=NULL,ycen=NULL,mag=0,hwhm=1,axrat=1,ang=0),
+profitMakeGaussianPS=function(model=list(xcen=0,ycen=0,mag=0,hwhm=1,axrat=1,ang=0),
   hwhmfac=4,magzero=0,image=NULL, finesample=1L)
 {
   profitCheckFinesample(finesample)

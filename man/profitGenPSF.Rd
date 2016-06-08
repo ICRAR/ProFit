@@ -31,11 +31,13 @@ Matrix; the 2D image of the specified PSF with dimenions c(npix,npix).
 \author{
 Aaron Robotham
 }
+
 \seealso{
 \code{\link{profitMakePSF}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
 #Various FWHM:
+
 magimage(profitGenPSF(FWHM=1), stretch='lin')
 magimage(profitGenPSF(FWHM=3), stretch='lin')
 magimage(profitGenPSF(FWHM=5), stretch='lin')

@@ -1,4 +1,5 @@
-.profitBenchmarkPrepData = function(img=NULL, psf=NULL, calcregion=NULL, imgdim=NULL, psfdim=NULL){
+profitBenchmarkPrepData <- function(img=NULL, psf=NULL, calcregion=NULL, imgdim=NULL, psfdim=NULL)
+{
   rval = list()
   if(is.null(img))
   {
@@ -41,7 +42,7 @@ profitBenchmarkPadFFT <- function(psf,paddim,psfranges,fftw=FALSE,fftwplan=NULL)
 profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
   imgdim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL)
 {
-  data = .profitBenchmarkPrepData(img,psf,calcregion,imgdim,psfdim)
+  data = profitBenchmarkPrepData(img,psf,calcregion,imgdim,psfdim)
   imgdim = dim(data$img$z)
   psfdim = dim(data$psf$z)
   padimgdim = 2*imgdim
