@@ -66,7 +66,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', psfcomp='a
     
     img = Data$image
     sigimg = Data$sigma
-    psfarea = 1
+    psfarea = 0
     
     skylevel = 0
     if(length(Data$skylevel) > 0) skylevel = Data$skylevel
@@ -77,19 +77,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', psfcomp='a
       skylevel = paramsnew$sky$bg
     }
     
-    fitpsf = fit && !is.null(Data$tofit$psf) && any(unlist(Data$tofit$psf))
-    if(fitpsf)
+    if(Data$fitpsf)
     {
-      nx = as.integer(max(3,ceiling(8*paramsnew$psf$sigmaj)))
-      if(nx %% 2 == 0) nx = nx+1L
-      nxf = nx*finesample
-      # Ratio of FWHM to sigma
-      fwhmfac = 2.3548200450309493
-      # Fine sampling is only needed to match image scales - it doesn't make the integral (much) more accurate
-      psf = profitMakeModel(list(sersic=list(xcen=c(nxf/2),ycen=c(nyf/2),mag=c(0),nser=0.5,
-        re=c(finesample*paramsnew$psf$sigmaj*fwhmfac/2),ang=paramsnew$psf$ang,axrat=paramsnew$psf$axrat)),dim=c(nxf,nxf))
+      psf = profitMakeGaussianPS(model=model$psf, finesample = finesample) 
       
-      psfarea = pi*(fwhmfac/2*paramsnew$psf$sigmaj)^2*paramsnew$psf$axrat;
+      psfarea = pi*(paramsnew$psf$hwhm)^2*paramsnew$psf$axrat;
       if(!is.null(Data$psfarea) && is.numeric(Data$psfarea)) psfarea = Data$psfarea
     }
     else
