@@ -8,8 +8,9 @@ Calculate the log likelihood of a model given the input data
 This is the work-horse log-likelihood that we can use to assess the current fit. This function becomes the input for generic R fitting codes like \code{\link{optim}} (or any that user wants to use).
 }
 \usage{
-profitLikeModel(parm, Data, image = FALSE, serscomp = "all", psfcomp = "all",
-rough = FALSE, docalcregion=FALSE)
+profitLikeModel(parm, Data, makeplots = FALSE, serscomp = "all", psfcomp = "all",
+rough = FALSE, usedt = FALSE, cmap = colorRampPalette(rev(brewer.pal(11, 'RdYlBu')))(1e3),
+errcmap = cmap)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -19,7 +20,7 @@ A vector of values for the parameters being fit. These must be in the expected o
   \item{Data}{
 Data of class profit.data. In practice this can only be generated easily by the profitSetupData function, which re-formats fairly generic user inputs into the strict format required by ProFit. See \code{\link{profitSetupData}} for details.
 }
-  \item{image}{
+  \item{makeplots}{
 logical; should an image be made showing the Data, model, Data-model and a histogram of (Data-model)/sigma
 }
   \item{serscomp}{

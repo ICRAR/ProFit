@@ -8,7 +8,7 @@ Benchmark convolution of an image with a point spread function (PSF).
 This function will benchmark convolution of an image with a point spread function (PSF), returning results as well as a list of data stored by \code{\link{profitSetupData}} for optimizing calls to \code{\link{profitConvolvePSF}}.
 }
 \usage{
-function(img=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
+profitBenchmarkConv(img=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
   imgdim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL)
 }
 %- maybe also 'usage' for other objects documented here.

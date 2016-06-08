@@ -1,8 +1,8 @@
 # Convenient function to flatten a list into another list and
 # avoid coercion into a single type (usually numeric/double)
-renquote <- function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, renquote) else enquote(l)
-flattenlist <- function(ml) lapply(unlist(renquote(ml)), eval)
-rrelist <- function(flesh, skeleton=attr(flesh, "skeleton"))
+.renquote <- function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, .renquote) else enquote(l)
+.flattenlist <- function(ml) lapply(unlist(.renquote(ml)), eval)
+.relist <- function(flesh, skeleton=attr(flesh, "skeleton"))
 {
   index <- 1
   result <- skeleton
@@ -11,11 +11,11 @@ rrelist <- function(flesh, skeleton=attr(flesh, "skeleton"))
     size <- length(unlist(result[[i]]))
     if(is.list(result[[i]]))
     {
-      result[[i]] <- rrelist(flesh[index:(index + size - 1)], result[[i]])
+      result[[i]] <- .relist(flesh[index:(index + size - 1)], result[[i]])
     }
     else if(size >1)
     {
-      result[[i]] <- relist(flesh[index:(index + size - 1)], result[[i]])
+      result[[i]] <- .relist(flesh[index:(index + size - 1)], result[[i]])
     }
     else
     {
@@ -37,20 +37,20 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', psfcomp='a
     
     fitIDs=which(unlist(Data$tofit))
     parm=parm[1:length(fitIDs)]
-    paramsinit=flattenlist(Data$model)
+    paramsinit=.flattenlist(Data$model)
     paramsnew=paramsinit
     paramsnew[fitIDs]=parm
     
-    intervals = flattenlist(Data$intervals)
+    intervals = .flattenlist(Data$intervals)
     for(i in fitIDs){
       paramsnew[i]=intervals[[i]](paramsnew[[i]])
     }
     parm=paramsnew[fitIDs]
     
-    inheritIDs=which(is.na(flattenlist(Data$tofit)))
+    inheritIDs=which(is.na(.flattenlist(Data$tofit)))
     paramsnew[inheritIDs]=paramsnew[inheritIDs-1]
     
-    priors = flattenlist(Data$priors)
+    priors = .flattenlist(Data$priors)
     priorsum=0
     for(i in fitIDs){
       priorsum=priorsum+priors[[i]](paramsinit[[i]]-paramsnew[[i]])
@@ -62,7 +62,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', psfcomp='a
       paramsnew[i]=10^paramsnew[[i]]
     }
     
-    paramsnew=rrelist(paramsnew,Data$model)
+    paramsnew=.relist(paramsnew,Data$model)
     
     img = Data$image
     sigimg = Data$sigma

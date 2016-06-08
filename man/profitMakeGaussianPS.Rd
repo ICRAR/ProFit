@@ -8,8 +8,8 @@ Create an image of a point source (PS) with a Gaussian point spread function (PS
 Create an image of a point source at an arbitrary location (can be fractional pixels) with a user defined magnitude and a Gaussian point spread function (PSF).
 }
 \usage{
-profitMakeGaussianPS=(model=list(xcen=0,ycen=0,mag=0,hwhm=1,axrat=1,ang=0),
-  hwhmfac=4,magzero=0,image=NULL, finesample=1L)
+profitMakeGaussianPS(model=list(xcen=0, ycen=0, mag=0, hwhm=1, axrat=1, ang=0),
+  hwhmfac=4, magzero=0, image=NULL, finesample=1L)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

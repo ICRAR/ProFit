@@ -61,7 +61,7 @@ magimage(model.image)
 
 # With convolution:
 
-magimage(profitBruteConv(image=model.image, psf=profitGenPSF(), matrix(1,1,1)))
+magimage(profitBruteConv(IMG=model.image, PSF=profitGenPSF(), matrix(1,1,1)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
