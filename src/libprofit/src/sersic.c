@@ -173,6 +173,12 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 		for(i=0; i < model->width; i++) {
 			x += half_xbin;
 
+			/* We were instructed, we were instructed to ignore this pixel */
+			if( model->calcmask && !model->calcmask[i + j*model->width] ) {
+				x += half_xbin;
+				continue;
+			}
+
 			_image_to_sersic_coordinates(sp, x, y, &x_ser, &y_ser);
 
 			/*
@@ -278,8 +284,8 @@ void profit_init_sersic(profit_profile *profile, profit_model *model) {
 		 */
 		resolution = (unsigned int)ceil(160 / re_switch);
 		resolution += resolution%2;
-		resolution = resolution > 16 ? 16 : resolution;
-		resolution = resolution < 10 ? 10 : resolution;
+		resolution = resolution > 10 ? 10 : resolution;
+		resolution = resolution <  4 ?  4 : resolution;
 
 		sersic_p->re_switch = re_switch / re;
 		sersic_p->resolution = resolution;

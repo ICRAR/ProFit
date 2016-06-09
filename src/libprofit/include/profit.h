@@ -129,6 +129,11 @@ typedef struct _profit_model {
 	 */
 	unsigned int psf_height;
 
+	/*
+	 * Used to limit the profile calculation only to a given area
+	 */
+	bool *calcmask;
+
 	/**
 	 * The image created by libprofit.
 	 *

@@ -30,7 +30,7 @@
 
 double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
                         double *krn, unsigned int krn_width, unsigned int krn_height,
-                        bool replace){
+                        bool *mask, bool replace){
 
 	double pixel;
 	unsigned int i, j, k, l;
@@ -45,6 +45,12 @@ double *profit_convolve(double *src, unsigned int src_width, unsigned int src_he
 	/* Loop around the image first... */
 	for (j = 0; j < src_height; j++) {
 		for (i = 0; i < src_width; i++) {
+
+			/* Don't convolve this pixel */
+			if( mask && !mask[i + j*src_width] ) {
+				continue;
+			}
+
 			pixel = src[i + j*src_width];
 
 			/* ... now loop around the kernel */

@@ -42,6 +42,9 @@ void profit_make_sky(profit_profile *profile, profit_model *model, double *image
 	/* Fill the image with the background value */
 	for(i=0; i!=model->width; i++) {
 		for(j=0; j!=model->height; j++) {
+			if( model->calcmask && !model->calcmask[i + j*model->width] ) {
+				continue;
+			}
 			image[j*model->width + i] = sky_p->bg;
 		}
 	}

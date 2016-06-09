@@ -90,6 +90,7 @@ void profit_make_psf(profit_profile *profile, profit_model *model, double *image
 
 	/*
 	 * TODO: This method still doesn't take into account the image xbin/ybin
+	 *       It also doesn't obey the model's calcregion mask
 	 */
 
 	unsigned int i, j;

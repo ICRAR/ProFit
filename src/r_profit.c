@@ -190,25 +190,32 @@ SEXP R_profit_make_model(SEXP model_list) {
 
 	ssize_t size;
 	unsigned int i, p;
+	unsigned int img_w, img_h;
 	char *error;
 	double psf_width = 0, psf_height = 0;
 	double *psf = NULL;
+	bool *mask = NULL;
 
 	SEXP width = _get_list_element(model_list, "width");
 	if( width == R_NilValue ) {
 		Rf_error("No width provided in the model\n");
 		return R_NilValue;
 	}
+	img_w = (unsigned int)Rf_asReal(width);
+
 	SEXP height = _get_list_element(model_list, "height");
 	if( height == R_NilValue ) {
 		Rf_error("No height provided in the model\n");
 		return R_NilValue;
 	}
+	img_h = (unsigned int)Rf_asReal(height);
+
 	SEXP magzero = _get_list_element(model_list, "magzero");
 	if( magzero == R_NilValue ) {
 		Rf_error("No magzero provided in the model\n");
 		return R_NilValue;
 	}
+
 	SEXP r_psf = _get_list_element(model_list, "psf");
 	if( r_psf != R_NilValue ) {
 		psf_width = Rf_nrows(r_psf);
@@ -217,14 +224,25 @@ SEXP R_profit_make_model(SEXP model_list) {
 		memcpy(psf, REAL(r_psf), sizeof(double) * psf_width * psf_height);
 	}
 
+	SEXP r_calcregion = _get_list_element(model_list, "calcregion");
+	if( r_calcregion != R_NilValue ) {
+		unsigned int mask_w, mask_h;
+		mask = _read_mask(r_calcregion, &mask_w, &mask_h);
+		if( mask_w != img_w || mask_h != img_h ) {
+			Rf_error("Calc region has different dimensions than the PSF");
+			return R_NilValue;
+		}
+	}
+
 	/* Read model parameters */
 	profit_model *m = profit_create_model();
-	m->width  = m->res_x = (unsigned int)Rf_asReal(width);
-	m->height = m->res_y = (unsigned int)Rf_asReal(height);
+	m->width  = m->res_x = img_w;
+	m->height = m->res_y = img_h;
 	m->magzero = Rf_asReal(magzero);
 	m->psf = psf;
 	m->psf_width = psf_width;
 	m->psf_height = psf_height;
+	m->calcmask = mask;
 
 	/* Read profiles and parameters and append them to the model */
 	SEXP profiles = _get_list_element(model_list, "profiles");
@@ -272,13 +290,13 @@ SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_c
 	if( Rf_asLogical(r_do_calc_region) ) {
 		unsigned int calc_w, calc_h;
 		bool *calc_region = _read_mask(r_calc_region, &calc_w, &calc_h);
-		if( calc_w != psf_w || calc_h != psf_h ) {
+		if( calc_w != img_w || calc_h != img_h ) {
 			Rf_error("Calc region has different dimensions than the PSF");
 			return R_NilValue;
 		}
 	}
 
-	image = profit_convolve(image, img_w, img_h, psf, psf_w, psf_h, true);
+	image = profit_convolve(image, img_w, img_h, psf, psf_w, psf_h, calc_region, true);
 	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, img_w * img_h));
 	memcpy(REAL(ret_image), image, sizeof(double) * img_w * img_h);
 	free(image);

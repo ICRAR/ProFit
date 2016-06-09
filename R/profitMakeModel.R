@@ -48,6 +48,9 @@ profitMakeModel = function(modellist,magzero=0,psf,dim=c(100,100), serscomp='all
 		profiles = profiles,
 		psf = model_psf
 	)
+	if( docalcregion ) {
+		model[['calcregion']] = calcregion
+	}
 	image = .Call("R_profit_make_model", model)
 	if( is.null(image) ) {
 		return(NULL)

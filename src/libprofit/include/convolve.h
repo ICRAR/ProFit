@@ -40,10 +40,13 @@ extern "C"
  * Depending on the value of the replace parameter, the same src image will be
  * used to store the convolution result (if replace != 0), or a new vector will
  * be allocated and filled instead.
+ *
+ * A mask parameter also controls which pixels from the original image should be
+ * convolved. If NULL all pixels are convolved.
  */
 double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
                         double *krn, unsigned int krn_width, unsigned int krn_height,
-                        bool replace);
+                        bool *mask, bool replace);
 
 #ifdef __cplusplus
 }
