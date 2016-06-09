@@ -15,8 +15,8 @@
 static
 double *_read_image(SEXP r_image, unsigned int *im_width, unsigned int *im_height) {
 
-	unsigned int width = Rf_ncols(r_image);
-	unsigned int height = Rf_nrows(r_image);
+	unsigned int width = Rf_nrows(r_image);
+	unsigned int height = Rf_ncols(r_image);
 
 	double *image = (double *)malloc(sizeof(double) * width * height);
 	memcpy(image, REAL(r_image), sizeof(double) * width * height);
@@ -29,8 +29,8 @@ static
 bool *_read_mask(SEXP r_mask, unsigned int *m_width, unsigned int *m_height) {
 
 	unsigned int i, j;
-	unsigned int width = Rf_ncols(r_mask);
-	unsigned int height = Rf_nrows(r_mask);
+	unsigned int width = Rf_nrows(r_mask);
+	unsigned int height = Rf_ncols(r_mask);
 
 	bool *mask = (bool *)malloc(sizeof(double) * width * height);
 	int *r_raw_mask = LOGICAL(r_mask);
