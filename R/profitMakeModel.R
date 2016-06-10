@@ -81,7 +81,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       upscale=ceiling(160/reswitch)
       upscale=upscale+upscale%%2
       upscale=min(upscale,16)
-      upscale=max(upscale,10)
+      upscale=max(upscale,4)
       reswitch=reswitch/re
       if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
       basemat=basemat+
@@ -100,7 +100,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
           YLIM=c(0,dimbase[2]),
           DIM=dimbase,
           UPSCALE=upscale,
-          MAXDEPTH=3,
+          MAXDEPTH=2,
           RESWITCH=reswitch,
           ACC=acc,
           CALCREGION=calcregion,

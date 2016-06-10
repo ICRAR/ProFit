@@ -8,9 +8,9 @@ Plot images of an image, a model, and residuals.
 Plots appropriately scaled data and model images, along with a residual (data-model) image, and histograms of the residuals.
 }
 \usage{
-profitMakePlots(image, model, region, error, errischisq = FALSE, 
+profitMakePlots(image, model, region, sigma, errischisq = FALSE, 
 cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(200)), errcmap = cmap, 
-plotchisq = FALSE, dofs = c())
+plotchisq = FALSE, dofs)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -23,7 +23,7 @@ plotchisq = FALSE, dofs = c())
   \item{region}{
   Logical matrix defining the region of the data that the model was actually fit to.
 }
-  \item{error}{
+  \item{sigma}{
   Numeric matrix containing errors on the data (assumed to be the Gaussian sigma).
 }
   \item{errischisq}{
@@ -39,7 +39,7 @@ plotchisq = FALSE, dofs = c())
   Logical flag to determine if the function should plot a map and a histogram of chi squared = (((\option{image}-option{model})/option{error})[/option{region}])^2.
 }
   \item{dofs}{
-  Numeric vector of degrees-of-freedom, used only if \option{plotchisq} is set.
+  Numeric vector of degrees-of-freedom (up to length 2), used only if \option{plotchisq} is set.
 }
 }
 \details{
@@ -84,7 +84,7 @@ noise = sigma
 for(i in 1:length(noise)) noise[i] = rnorm(1,mean=0,sd=noise[i])
 region = segim == segim[dim(segim)[1]/2,dim(segim)[2]/2]
 
-profitMakePlots(image = image, model = image+noise, region = region, error = sigma, 
+profitMakePlots(image = image, model = image+noise, region = region, sigma = sigma, 
   errischisq = FALSE, plotchisq = TRUE, dofs = c(2))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

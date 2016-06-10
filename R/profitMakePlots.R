@@ -36,11 +36,12 @@
   if(add.axis) {axis(axis.pos, padj=axis.padj, tck=axis.tck)}
 }
 
-profitMakePlots <- function(image, model, region, error, errischisq = FALSE,
+profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(200)), errcmap=cmap,
-  plotchisq=FALSE, dofs=c()) {
+  plotchisq=FALSE, dofs) {
   Data = list(x=1:dim(image)[1],y=1:dim(image)[2],z=image)
   residual = image - model
+  error=sigma
   
   parmar = par("mar")
   
@@ -73,11 +74,10 @@ profitMakePlots <- function(image, model, region, error, errischisq = FALSE,
   }
   else
   {
-    ndofs = length(dofs)
+    if(missing(dofs)){ndofs=0}else{ndofs = length(dofs)}
     if(ndofs>0) stopifnot(length(dofs) <= 2)
 
     parmar2=c(1.5,2,0.5,0)
-    plot.new()
     par(mar=parmar2)
 
     layout(rbind(c(1,2,3,5),c(7,8,4,6)),widths=c(0.31,0.31,0.31,0.07),heights=c(0.5,0.5))
@@ -138,11 +138,16 @@ profitMakePlots <- function(image, model, region, error, errischisq = FALSE,
     y = hist(error,breaks=c(-(maxerr+dx),x,maxerr+dx),plot=FALSE)$count[2:length(x)]/ndat/dx
     ylim = c(min(y[y>0]),0.5)
     y[y<=0] = ylim[1]-1
+    
+    vardata = var(error)
+    tdof=2*vardata/(vardata-1)
+    tdof=interval(tdof,0,Inf)
+  
     magplot(x[1:(length(x)-1)]+dx,y, xlim=xlims, ylim=ylim, xlab="",ylab="", xaxs="i", type="s",log="y")
     lines(x, dnorm(x), col="blue", xaxs="i")
-    lines(x, dt(x,1), col="red", xaxs="i")
+    lines(x, dt(x,tdof), col="red", xaxs="i")
     
-    labs = c(bquote(Chi),bquote(norm(1)),bquote(t(1)))
+    labs = c(bquote(Chi),bquote(norm(1)),bquote(Student-T(.(signif(tdof,5)))))
     cols = c("black","blue","red")
     ltys = c(1,1,1)
     legend("bottom",legend=labs,col=cols,lty=ltys)    
@@ -156,11 +161,11 @@ profitMakePlots <- function(image, model, region, error, errischisq = FALSE,
     y = y/sum(y)/dxbin
     ylim = c(min(y[y>0]),10)
     y[y<=0] = ylim[1]-1
-    magplot(x[1:(length(x)-1)]+dx, y, xlim=xlims,ylim=ylim, xlab="",ylab="", xaxs="i", type="s",log="y")
+  magplot(x[1:(length(x)-1)]+dx, y, xlim=xlims,ylim=ylim, xlab="",ylab="", xaxs="i", type="s",log="y")
     xp=10^x
     lines(x, dchisq(xp,1), col="blue", xaxs="i")
-    lines(x, dt(xp,1), col="red", xaxs="i")
-    labs = c(bquote(chi^2),expression(chi^2 (1)),bquote(t(1)))
+    #lines(x, dt(xp,1), col="red", xaxs="i")
+    labs = c(bquote(chi^2),expression(chi^2 (1)))
     dofcols = c("purple","orange")
     if(ndofs > 0)
     {
