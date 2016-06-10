@@ -145,7 +145,7 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     lines(x, dnorm(x), col="blue", xaxs="i")
     lines(x, dt(x,tdof), col="red", xaxs="i")
     
-    labs = c(bquote(Chi),bquote(norm(1)),bquote(Student-T(.(signif(tdof,5)))))
+    labs = c(expression(chi),bquote(norm(1)),bquote(Student-T(.(signif(tdof,5)))))
     cols = c("black","blue","red")
     ltys = c(1,1,1)
     legend("bottom",legend=labs,col=cols,lty=ltys)    
@@ -163,7 +163,7 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     xp=10^x
     lines(x, dchisq(xp,1), col="blue", xaxs="i")
     #lines(x, dt(xp,1), col="red", xaxs="i")
-    labs = c(bquote(chi^2),expression(chi^2 (1)))
+    labs = c(bquote(chi^2),expression(chi^2*(1)))
     cols = c("black","blue")
     if(ndofs > 0){
       dofcols = c("red","darkgreen")

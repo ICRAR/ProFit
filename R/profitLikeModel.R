@@ -27,7 +27,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   finesample = 1L
   if(length(Data$finesample)>0) finesample = Data$finesample
   profitCheckFinesample(finesample)
-  stopifnot(!is.null(Data$likefunc) && (Data$likefunc == "chisq" || Data$likefunc == "t"))
+  stopifnot(Data$likefunc %in% c('norm', 't', 'chisq'))
   
   fitIDs=which(unlist(Data$tofit))
   parm=parm[1:length(fitIDs)]
@@ -98,17 +98,21 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   vardata = var(cutsig)
   dof=2*vardata/(vardata-1)
   dof=interval(dof,0,Inf)
-  if(Data$likefunc=="chisq") {
+  if(Data$likefunc=="norm"){
+    LL=sum(dnorm(cutsig, log=TRUE))
+  } else if(Data$likefunc=="chisq") {
     LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
   } else if(Data$likefunc=="t") {
     LL=sum(dt(cutsig,dof,log=TRUE))
+  } else if(Data$likefunc=="pois") {
+    scale=sqrt(median(abs(cutim/cutsig)))
+    LL=sum(dpois(ceiling(cutim/scale),cutmod/scale,log=T))
   } else {
     stop(paste0("Error: unknown likelihood function: '",Data$likefunc,"'"))
   }
   
   if(makeplots){
-    profitMakePlots(img-skylevel,model$z-skylevel,Data$region, sigimg, cmap=cmap, errcmap=errcmap, 
-      dofs=c(dof),plotchisq=TRUE)
+    profitMakePlots(img-skylevel,model$z-skylevel,Data$region, sigimg, cmap=cmap, errcmap=errcmap,plotchisq=TRUE)
   }
   
   LP=as.numeric(LL+priorsum)

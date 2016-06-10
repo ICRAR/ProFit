@@ -1,5 +1,5 @@
 profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,intervals,psf=NULL,
-  finesample=2L,magzero=0, algo.func='LA', likefunc="chisq", verbose=FALSE, magmu=FALSE, nbenchmark=10L){
+  finesample=1L,magzero=0, algo.func='LA', likefunc="chisq", verbose=FALSE, magmu=FALSE, nbenchmark=10L){
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmark) && nbenchmark >= 1L)
   imagedim = dim(image)
