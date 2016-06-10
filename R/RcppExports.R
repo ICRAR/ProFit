@@ -5,7 +5,15 @@ profitMakeSersic <- function(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, N
     .Call('ProFit_profitMakeSersic', PACKAGE = 'ProFit', CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX)
 }
 
-profitBruteConv <- function(image, psf, CALCREGION, DOCALCREGION = FALSE) {
-    .Call('ProFit_profitBruteConv', PACKAGE = 'ProFit', image, psf, CALCREGION, DOCALCREGION)
+profitBruteConv <- function(IMG, PSF, CALCREGION, DOCALCREGION = FALSE) {
+    .Call('ProFit_profitBruteConv', PACKAGE = 'ProFit', IMG, PSF, CALCREGION, DOCALCREGION)
+}
+
+profitDownsample <- function(IMG, DOWNSAMPLEFAC) {
+    .Call('ProFit_profitDownsample', PACKAGE = 'ProFit', IMG, DOWNSAMPLEFAC)
+}
+
+profitUpsample <- function(IMG, UPSAMPLEFAC) {
+    .Call('ProFit_profitUpsample', PACKAGE = 'ProFit', IMG, UPSAMPLEFAC)
 }
 

@@ -36,16 +36,40 @@ BEGIN_RCPP
 END_RCPP
 }
 // profitBruteConv
-NumericMatrix profitBruteConv(NumericMatrix image, NumericMatrix psf, const IntegerMatrix& CALCREGION, const bool DOCALCREGION);
-RcppExport SEXP ProFit_profitBruteConv(SEXP imageSEXP, SEXP psfSEXP, SEXP CALCREGIONSEXP, SEXP DOCALCREGIONSEXP) {
+NumericMatrix profitBruteConv(const NumericMatrix& IMG, const NumericMatrix& PSF, const IntegerMatrix& CALCREGION, const bool DOCALCREGION);
+RcppExport SEXP ProFit_profitBruteConv(SEXP IMGSEXP, SEXP PSFSEXP, SEXP CALCREGIONSEXP, SEXP DOCALCREGIONSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< NumericMatrix >::type image(imageSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type psf(psfSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type IMG(IMGSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type PSF(PSFSEXP);
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type CALCREGION(CALCREGIONSEXP);
     Rcpp::traits::input_parameter< const bool >::type DOCALCREGION(DOCALCREGIONSEXP);
-    __result = Rcpp::wrap(profitBruteConv(image, psf, CALCREGION, DOCALCREGION));
+    __result = Rcpp::wrap(profitBruteConv(IMG, PSF, CALCREGION, DOCALCREGION));
+    return __result;
+END_RCPP
+}
+// profitDownsample
+NumericMatrix profitDownsample(const NumericMatrix& IMG, const int DOWNSAMPLEFAC);
+RcppExport SEXP ProFit_profitDownsample(SEXP IMGSEXP, SEXP DOWNSAMPLEFACSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type IMG(IMGSEXP);
+    Rcpp::traits::input_parameter< const int >::type DOWNSAMPLEFAC(DOWNSAMPLEFACSEXP);
+    __result = Rcpp::wrap(profitDownsample(IMG, DOWNSAMPLEFAC));
+    return __result;
+END_RCPP
+}
+// profitUpsample
+NumericMatrix profitUpsample(const NumericMatrix& IMG, const int UPSAMPLEFAC);
+RcppExport SEXP ProFit_profitUpsample(SEXP IMGSEXP, SEXP UPSAMPLEFACSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type IMG(IMGSEXP);
+    Rcpp::traits::input_parameter< const int >::type UPSAMPLEFAC(UPSAMPLEFACSEXP);
+    __result = Rcpp::wrap(profitUpsample(IMG, UPSAMPLEFAC));
     return __result;
 END_RCPP
 }

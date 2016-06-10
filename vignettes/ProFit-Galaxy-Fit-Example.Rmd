@@ -1,6 +1,6 @@
 ---
 title: "ProFit: Galaxy Fitting Example"
-author: "Aaron Robotham"
+author: "Aaron Robotham & Dan Taranu"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -41,7 +41,7 @@ ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'
 ExampleIDs
 ```
 
-There are 10 example galaxies included. Here we run example 1:
+There are 10 example galaxies included. Here we run example 1, explicitly re-normalizing the PSF:
 
 ```{r}
 useID=ExampleIDs[1]
@@ -59,7 +59,7 @@ useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
 useloc=which(ExampleInit$CATAID==useIDnum)
 ```
 
-For our initial model we treat component 1 as the putitive bulge and componet 2 as the putitive disk. We are going to attempt a fit where the disk is forced to have nser=1 and the bulge has an axial ratio of 1.
+For our initial model we treat component 1 as the putative bulge and component 2 as the putative disk. We are going to attempt a fit where the disk is forced to have nser=1 and the bulge has an axial ratio of 1.
 
 ```{r}
 model=list(
@@ -184,12 +184,12 @@ intervals=list(
 )
 ```
 
-Setup the data structure we need for optimisation:
+Setup the data structure we need for optimisation, taking a few seconds to find the optimal convolution method:
 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-magzero=0, algo.func='optim', verbose=TRUE)
+  model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+  magzero=0, algo.func='optim', verbose=TRUE, finesample=1L, nbenchmark=1L)
 ```
 
 This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
@@ -202,8 +202,8 @@ These are the parameters we wish to fit for, and we take the initial guesses fro
 
 We can test how things currently look (we get an output because we set verbose=TRUE earlier):
 
-```{r, fig.width=7, fig.height=3}
-profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
+```{r, fig.width=21, fig.height=7}
+profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 ```
 
 ## Do some fitting
@@ -225,12 +225,13 @@ optimfit$par
 Check it out:
 
 ```{r, eval=FALSE}
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=1)
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=2)
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp='all')
+library("RColorBrewer")
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
 ```
 
-Now we can try a `LaplaceApproximation` fit (should take a few minutes):
+Now we can try a `LaplaceApproximation` fit. This should take a few minutes and might stall briefly when computing models near the intervals defined above:
 
 ```{r, eval=FALSE}
 library(LaplacesDemon)
@@ -248,18 +249,43 @@ LAfit$Summary1[,1]
 Check it out:
 
 ```{r, eval=FALSE}
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=1)
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=2)
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp='all')
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
 ```
 
-Now we can try a `LaplacesDemon` fit:
+Other optimizers can be used. One particularly effective algorithm is `CMA-ES` (`Covariance Matrix Adaptation - Evolutionary Strategy`).
+`CMA-ES` samples multiple points (members of a population) from the supplied priors, and then adapts the priors each iteration, shrinking the parameter space that points are sampled from to converge on the best fit.
+It is a popular optimizer as it is fairly robust (but not immune) to becoming trapped in local minima while still fairly quick to converge.
+
+First make sure that the `cmaeshpc` package is installed:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('taranu/cmaes')
+```
+
+It is recommended to use narrower priors than the very broad ones specified above to speed up convergence:
+
+```{r, eval=FALSE}
+library(cmaeshpc)
+Data$algo.func = "CMA"
+cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
+cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3, fnscale=-1.0, sigma=cmasigma,
+  diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE, diag.value=TRUE,
+  maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
+profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
+```
+
+`CMA-ES` sometimes takes longer than `LaplaceApproximation` - depending on the convergence criterion specified by `stop.tolx` - but it usually finds a better fit, and can be run many times to avoid becoming trapped in local minima. Alternately, you may wish to use the faster `LaplaceApproximation` first, redefine your priors, and then run `CMA-ES` to search around the `LaplaceApproximation` best fit.
+
+Now we can try a `LaplacesDemon` fit (this will take about an hour):
 
 ```{r, eval=FALSE}
 Data$algo.func = "LD"
 
-LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
-Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
+LDfit=LaplacesDemon(profitLikeModel, Initial.Values=LAfit$Summary1[,1], Data=Data,
+  Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
 ```
 
 If it has converged well you will have a Summary2 structure using the ESS:
@@ -274,24 +300,69 @@ If not you can still check Summary1:
 LDfit$Summary1
 ```
 
-The global fit is very close to the initial LA fit on this occassion.
+The global fit should be close to the initial LA fit (shown in blue in the following figures).
 
 With any luck you have enough stationary samples to run:
 
 ```{r, eval=FALSE}
-BestLD=magtri(LDfit$Posterior2, samples=500, samptype='ran')
+BestLD=profitMagtri(LDfit$Posterior2, samples=500, samptype='ran',inputpar = LAfit$Summary1[,1])
 ```
 
 Otherwise try:
 
 ```{r, eval=FALSE}
-BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
+BestLD=profitMagtri(LDfit$Posterior1, samples=1000, samptype='end',inputpar = LAfit$Summary1[,1])
 ```
 
 We can now check our final fit:
 
 ```{r, eval=FALSE}
-profitLikeModel(BestLD,Data,image=TRUE,serscomp=1)
-profitLikeModel(BestLD,Data,image=TRUE,serscomp=2)
-profitLikeModel(BestLD,Data,image=TRUE,serscomp='all')
+profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=1)
+profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=2)
+profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp='all')
+```
+
+Without fine sampling, the model convolution is slightly inaccurate and can bias the final result.
+
+To test this, set up the data again. This time we will fine sample the model and PSF by a factor of 3, and take a few minutes to benchmark convolution methods:
+
+```{r,eval=FALSE}
+Dataf=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+  model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=50L, finesample=2L)
+```
+
+Note that profitSetupData automagically fine-samples the PSF by interpolating it. Usually, brute-force convolution is faster than an FFT (which requires 2x padding to avoid artifacts), but it scales as finesample^4, so FFT is often faster with large images and/or PSFs.
+
+Let's check to see how the fine-sampled model looks:
+
+```{r, eval=FALSE}
+profitLikeModel(BestLD,Dataf,makeplots=TRUE,serscomp='all')
+```
+
+First, let's run `LaplaceApproximation` again to see how the best-fit parameters changed:
+
+```{r, eval=FALSE}
+Dataf$algo.func = "LA"
+LAfitf=LaplaceApproximation(profitLikeModel, parm=LAfit$Summary1[,1], Data=Dataf, Iterations=1e3,
+  Method='BFGS', CovEst='Identity', sir=FALSE)
+```
+
+Now run `LaplacesDemon` again, with fewer iterations to begin with (as it's slower to convolve):
+
+```{r, eval=FALSE}
+Data$algo.func = "LD"
+
+LDfitf=LaplacesDemon(profitLikeModel, Initial.Values=LAfitf$Summary1[,1], Data=Dataf,
+  Iterations=1e3, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
+```
+
+If you run the above for 1e4 iterations (will take several hours), try comparing posteriors (ha!):
+
+```{r, eval=FALSE}
+LDfit$Summary2
+LDfitf$Summary2
+
+BestLDf=profitMagtri(LDfit$Posterior1, samptype='end',inputpar = LDfit$Posterior1[,1])
+profitLikeModel(BestLDf,Dataf,makeplots=TRUE,serscomp='all')
 ```

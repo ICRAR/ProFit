@@ -6,7 +6,11 @@
   pgamma(qgamma(0.5,2*nser)*(r/re)^(1/nser),2*nser)
 }
 
-profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psfcomp='all', rough=FALSE, acc=0.1, calcregion, docalcregion=FALSE, magmu=FALSE, remax, rescaleflux=FALSE){
+# Note: The PSF must already be fine sampled
+profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all', pscomp='all', 
+  rough=FALSE, acc=0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion, docalcregion=FALSE, 
+  magmu=FALSE, remax, rescaleflux=FALSE, convopt=list(method="Bruteconv")) {
+  stopifnot(is.integer(finesample) && finesample >= 1)
   if(missing(calcregion)){
     if(docalcregion){
       calcregion=matrix(1,dim[1],dim[2])
@@ -14,10 +18,27 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       calcregion=matrix(1,1,1)
     }
   }
-  if(all(dim(calcregion)==dim)==FALSE & docalcregion){stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2]," and they must be ",dim[1],":",dim[2],"!",sep=""))}
   if(serscomp=='all'){serscomp=1:length(model$sersic$xcen)}
-  if(psfcomp=='all'){psfcomp=1:length(model$psf$xcen)}
-  basemat=matrix(0,dim[1],dim[2])
+  if(pscomp=='all'){pscomp=1:length(model$pointsource$xcen)}
+  
+  # Must pad the model image by the PSF size, then crop it in order to properly model
+  # light scattered from *outside* of the observation into the cropped region
+  psfpad = c(0,0)
+  haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
+  haspsfmodel = !is.null(model$psf)
+  if(haspsfmodel && !haspsf) {
+    haspsf = TRUE
+    psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = model$psf)
+  }
+  if(haspsf) psfpad = floor(dim(psf)/2)
+  imgcens = dim/2
+  imgcensfine = imgcens*finesample
+  basemat=matrix(0,dim[1]*finesample+2*psfpad[1],dim[2]*finesample+2*psfpad[2])
+  dimbase = dim(basemat)
+  if(all(dim(calcregion)==dimbase)==FALSE & docalcregion) {
+    stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2],
+               " and they must be ",dimbase[1],":",dimbase[2],"!",sep=""))
+  }
   if(length(model$sersic)>0){
     if(length(magmu)<length(model$sersic$xcen)){
       magmu=rep(magmu,length(model$sersic$xcen))
@@ -43,7 +64,7 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       }else{
         box=0
       }
-      if(magmu[i]){
+      if(!is.null(magmu) && magmu[i]){
         mag=profitMu2Mag(mu=as.numeric(model$sersic$mag[i]), re=as.numeric(model$sersic$re[i]), axrat=axrat)
       }else{
         mag=as.numeric(model$sersic$mag[i])
@@ -59,58 +80,74 @@ profitMakeModel=function(model,magzero=0,psf,dim=c(100,100), serscomp='all', psf
       #Calculate an adaptive upscale- if re is large then we don't need so much upscaling
       upscale=ceiling(160/reswitch)
       upscale=upscale+upscale%%2
-      upscale=min(upscale,10)
-      upscale=max(upscale,4)
+      upscale=min(upscale,16)
+      upscale=max(upscale,10)
       reswitch=reswitch/re
       if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
       basemat=basemat+
-      rescale*profitMakeSersic(
-        XCEN=as.numeric(model$sersic$xcen[i]),
-        YCEN=as.numeric(model$sersic$ycen[i]),
-        MAG=mag,
-        RE=as.numeric(model$sersic$re[i]),
-        NSER=nser,
-        ANG=ang,
-        AXRAT=axrat,
-        BOX=box,
-        MAGZERO=magzero,
-        ROUGH=rough,
-        XLIM=c(0,dim[1]),
-        YLIM=c(0,dim[2]),
-        DIM=dim,
-        UPSCALE=upscale,
-        MAXDEPTH=2,
-        RESWITCH=reswitch,
-        ACC=acc,
-        CALCREGION=calcregion,
-        DOCALCREGION=docalcregion,
-        REMAX=remax)
+        rescale*profitMakeSersic(
+          XCEN=(as.numeric(model$sersic$xcen[i])-imgcens[1])*finesample+imgcensfine[1]+psfpad[1],
+          YCEN=(as.numeric(model$sersic$ycen[i])-imgcens[2])*finesample+imgcensfine[2]+psfpad[2],
+          MAG=mag,
+          RE=as.numeric(model$sersic$re[i])*finesample,
+          NSER=nser,
+          ANG=ang,
+          AXRAT=axrat,
+          BOX=box,
+          MAGZERO=magzero,
+          ROUGH=rough,
+          XLIM=c(0,dimbase[1]),
+          YLIM=c(0,dimbase[2]),
+          DIM=dimbase,
+          UPSCALE=upscale,
+          MAXDEPTH=3,
+          RESWITCH=reswitch,
+          ACC=acc,
+          CALCREGION=calcregion,
+          DOCALCREGION=docalcregion,
+          REMAX=remax)
     }
   }
   
-  if(!missing(psf)){
-  
-    basemat=profitConvolvePSF(basemat,psf)
+  rval = list()
+  if(haspsf){
     
-    if(length(model$psf)>0){
-      for(i in psfcomp){
-        basemat=
-        profitMakePSF(
-          xcen=model$psf$xcen[i],
-          ycen=model$psf$ycen[i],
-          mag=model$psf$mag[i],
-          image=basemat,
-          psf=psf,
-          magzero=magzero
-          )
+    xcrop = (1+psfpad[1]):(dimbase[1]-psfpad[1])
+    ycrop = (1+psfpad[2]):(dimbase[2]-psfpad[2])
+    basemat=profitConvolvePSF(basemat,psf,options=convopt)
+    tmppsf = psf
+    if(haspsfmodel) tmppsf=NULL
+    if(length(model$pointsource)>0){
+        for(i in pscomp){
+          basemat = profitMakePointSource(image=basemat, add=TRUE, magzero=magzero, psf=tmppsf, model = model$psf,
+            xcen=(model$pointsource$xcen[i]-imgcens[1])*finesample+imgcensfine[1]+psfpad[1],
+            ycen=(model$pointsource$ycen[i]-imgcens[2])*finesample+imgcensfine[2]+psfpad[2],
+            mag=model$pointsource$mag[i])
       }
     }
-    
   }
   
-  if(length(model$sky)>0){
+  if(haspsf && returncrop)
+  {
+    dimbase = dim*finesample
+    psfcrop = floor(dim(psf)/2)
+    stopifnot(all((psfcrop %% 1) == 0))
+    basemat = basemat[(1:dimbase[1])+psfcrop[1],(1:dimbase[2])+psfcrop[2]]
+  }
+  if(finesample > 1 && !returnfine)
+  {
+    basemat = profitDownsample(basemat,finesample)
+  }
+  
+  if(length(model$sky)>0 && length(model$sky$bg) > 0){
     basemat=basemat+model$sky$bg#/(10^(0.4*magzero))
   }
+  pixdim = 1
+  if(returnfine) pixdim = 1/finesample
+  if(!returncrop) dim = dim + 2*psfpad/finesample
+  rval$x = seq(0,dim[1]-pixdim,by=pixdim)
+  rval$y = seq(0,dim[2]-pixdim,by=pixdim)
+  rval$z = basemat
   
-  return=list(x=seq(0.5,dim[1]-0.5,by=1), y=seq(0.5,dim[2]-0.5,by=1), z=basemat)
+  return(rval)
 }

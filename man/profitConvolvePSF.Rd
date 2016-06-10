@@ -2,13 +2,14 @@
 \alias{profitConvolvePSF}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-High level brute force image convolution
+High level image convolution
 }
 \description{
-A high level interface to fast brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. This high level routine interfaces with the lower level \code{\link{profitBruteConv}}, with the advantage that it re-interpolates the provided PSF such that it has odd dimensions and therefore does not cause a systematic shift in the image during convolution.
+A high level interface to fast convolution that takes a user supplied image and point spread function (PSF) as inputs. This routine calls lower level functions like \code{\link{profitBruteConv}} and also implements FFT-based convolution using either R's built-in FFT or the `fftw` interface to the FFTW library (the latter is usually significantly faster).
 }
 \usage{
-profitConvolvePSF(image, psf, calcregion, docalcregion=FALSE)
+profitConvolvePSF(image, psf, calcregion, docalcregion=FALSE, 
+  options=list(method="Bruteconv"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,6 +18,9 @@ The image matrix to be convolved by the point spread function (PSF).
 }
   \item{psf}{
 The point spread function (PSF) image matrix that ProFit will use to convolve the image. This can have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. The PSF will be automatically rescaled so it sums to 1 before convolution to ensure flux conservation in the model.
+}
+ \item{options}{
+Additional options for  
 }
   \item{calcregion}{
 Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
@@ -32,15 +36,15 @@ In the regime where one image is significantly (a factor of a few) smaller than 
 Matrix; convolved image matrix the same size as the input \option{image} matrix.
 }
 \author{
-Aaron Robotham
+Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitBruteConv}}, \code{\link{profitMakePSF}}, \code{\link{profitMakeModel}}
+\code{\link{profitBruteConv}}, \code{\link{profitMakePointSource}}
 }
 \examples{
 model = list(
-	sersic = list(
+  sersic = list(
 		xcen   = c(180, 60),
 		ycen   = c(90, 10),
 		mag = c(15, 13),
@@ -60,7 +64,7 @@ magimage(model.image)
 
 # With convolution:
 
-magimage(profitConvolvePSF(image=model.image, psf=profitGenPSF()))
+magimage(profitConvolvePSF(image=model.image, psf=profitMakePointSource()))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
