@@ -34,6 +34,14 @@ extern "C"
 #endif
 
 /**
+ * Normalizes the values of image so their total sum is 1.
+ *
+ * The values are written back into the image, so if the original needs to be retained
+ * then a copy should be supplied.
+ */
+void profit_normalize(double *image, unsigned int img_width, unsigned int img_height);
+
+/**
  * Convolves image src with the kernel krn.
  *
  * Both the source image and the kernel need to specify their width and height.

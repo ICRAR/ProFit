@@ -190,7 +190,12 @@ void profit_eval_model(profit_model *model) {
 		}
 	}
 	if( convolve ) {
-		profit_convolve(model->image, model->width, model->height, model->psf, model->psf_width, model->psf_height, model->calcmask, true);
+		size_t psf_size = sizeof(double) * model->psf_width * model->psf_height;
+		double *psf = (double *)malloc(psf_size);
+		memcpy(psf, model->psf, psf_size);
+		profit_normalize(psf, model->psf_width, model->psf_height);
+		profit_convolve(model->image, model->width, model->height, psf, model->psf_width, model->psf_height, model->calcmask, true);
+		free(psf);
 	}
 	for(p=0; p != model->n_profiles; p++) {
 		if( !model->profiles[p]->convolve ) {

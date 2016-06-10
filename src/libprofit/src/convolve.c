@@ -25,8 +25,29 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "convolve.h"
+
+void profit_normalize(double *image, unsigned int img_width, unsigned int img_height) {
+
+	unsigned int i;
+	unsigned int size = img_width * img_height;
+	double sum = 0;
+
+	double *in = image;
+	for(i=0; i!=size; i++) {
+		sum += *in;
+		in++;
+	}
+
+	in = image;
+	for(i=0; i!=size; i++) {
+		*in /= sum;
+		in++;
+	}
+
+}
 
 double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
                         double *krn, unsigned int krn_width, unsigned int krn_height,
@@ -34,15 +55,14 @@ double *profit_convolve(double *src, unsigned int src_width, unsigned int src_he
 
 	double pixel;
 	unsigned int i, j, k, l;
-	unsigned int extrax = krn_width % 2;
-	unsigned int extray = krn_height % 2;
+	unsigned int krn_center_x = krn_width / 2;
+	unsigned int krn_center_y = krn_height / 2;
+	int src_i, src_j;
 
-	unsigned int conv_width = src_width + krn_width - extrax;
-	unsigned int conv_height = src_height + krn_height - extray;
-	double *convolution = (double *)calloc(conv_width * conv_height, sizeof(double));
+	double *convolution = (double *)calloc(src_width * src_height, sizeof(double));
 
 	/* Convolve! */
-	/* Loop around the image first... */
+	/* Loop around the output image first... */
 	for (j = 0; j < src_height; j++) {
 		for (i = 0; i < src_width; i++) {
 
@@ -51,28 +71,28 @@ double *profit_convolve(double *src, unsigned int src_width, unsigned int src_he
 				continue;
 			}
 
-			pixel = src[i + j*src_width];
-
 			/* ... now loop around the kernel */
+			pixel = 0;
 			for (l = 0; l < krn_height; l++) {
 				for (k = 0; k < krn_width; k++) {
-					convolution[k+i + (l + j)*conv_width] += pixel * krn[k + l*krn_width];
+
+					src_i = (int)i + (int)l - (int)krn_center_x;
+					src_j = (int)j + (int)k - (int)krn_center_y;
+					if( src_i >= 0 && src_i < src_width &&
+					    src_j >= 0 && src_j < src_height ) {
+						pixel +=  src[(unsigned int)src_i + (unsigned int)src_j*src_width] * krn[k + l*krn_width];
+					}
 				}
 			}
+			convolution[i + j*src_width] = pixel;
 		}
 	}
 
-	/* Cut out to the original size and return */
-	double *cutout = src;
-	if( !replace ) {
-		cutout = (double *)malloc(sizeof(double) * src_width * src_height);
+	if( replace ) {
+		src = memcpy(src, convolution, sizeof(double) * src_width * src_height);
+		free(convolution);
+		return src;
 	}
-	for (j = 0; j < src_height; j++) {
-		for (i = 0; i < src_width; i++) {
-			src[i + j*src_width] = convolution[i+(krn_width-extrax)/2 + (j+(krn_height-extray)/2) * conv_width];
-		}
-	}
-	free(convolution);
 
-	return cutout;
+	return convolution;
 }
