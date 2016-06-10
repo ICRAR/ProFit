@@ -82,11 +82,9 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
 
     layout(rbind(c(1,2,3,5),c(7,8,4,6)),widths=c(0.31,0.31,0.31,0.07),heights=c(0.5,0.5))
     
-    medimg = median(image[region]+model[region])/2
-    minimg = min(min(image), min(model))
-    maximg = max(max(image[region]), max(model))
-    # Avoid clipping of large values... not sure if this is necessary in magimage?
-    image[!region & (image > maximg)] = maximg
+    medimg = median(abs(image[region]))/2
+    maximg = max(abs(image[region]))
+    
     Data$z = image
     zlims = c(0,1)
     stretch="asinh"
@@ -166,11 +164,10 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     lines(x, dchisq(xp,1), col="blue", xaxs="i")
     #lines(x, dt(xp,1), col="red", xaxs="i")
     labs = c(bquote(chi^2),expression(chi^2 (1)))
-    dofcols = c("purple","orange")
-    if(ndofs > 0)
-    {
-      for(i in 1:length(dofs))
-      {
+    cols = c("black","blue")
+    if(ndofs > 0){
+      dofcols = c("red","darkgreen")
+      for(i in 1:length(dofs)){
         dofstr = sprintf("%.3e",dofs[i])
         lines(x, dchisq(xp,dofs[i]), col=dofcols[i], xaxs="i")
         labs = c(labs,bquote(chi^2 (.(dofstr))))
