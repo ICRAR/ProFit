@@ -192,7 +192,7 @@ SEXP R_profit_make_model(SEXP model_list) {
 	unsigned int i, p;
 	unsigned int img_w, img_h;
 	char *error;
-	double psf_width = 0, psf_height = 0;
+	unsigned int psf_width = 0, psf_height = 0;
 	double *psf = NULL;
 	bool *mask = NULL;
 
@@ -218,10 +218,7 @@ SEXP R_profit_make_model(SEXP model_list) {
 
 	SEXP r_psf = _get_list_element(model_list, "psf");
 	if( r_psf != R_NilValue ) {
-		psf_width = Rf_nrows(r_psf);
-		psf_height = Rf_ncols(r_psf);
-		psf = (double *)malloc(sizeof(double) * psf_width * psf_height);
-		memcpy(psf, REAL(r_psf), sizeof(double) * psf_width * psf_height);
+		psf = _read_image(r_psf, &psf_width, &psf_height);
 	}
 
 	SEXP r_calcregion = _get_list_element(model_list, "calcregion");
