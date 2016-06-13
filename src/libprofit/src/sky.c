@@ -36,17 +36,29 @@ void profit_init_sky(profit_profile *profile, profit_model *model) {
 
 static
 void profit_make_sky(profit_profile *profile, profit_model *model, double *image) {
-	unsigned int i, j;
+
+	/* Setup a pointer to iterate over the calcmask, if any */
+	bool *mask_ptr = model->calcmask;
+	if( mask_ptr ) {
+		mask_ptr -= 1;
+	}
+
 	profit_sky_profile *sky_p = (profit_sky_profile *)profile;
+	unsigned int i, size = model->width * model->height;
 
 	/* Fill the image with the background value */
-	for(i=0; i!=model->width; i++) {
-		for(j=0; j!=model->height; j++) {
-			if( model->calcmask && !model->calcmask[i + j*model->width] ) {
+	for(i=0; i!=size; i++) {
+
+		/* Check the calculation mask and avoid pixel if necessary  */
+		if( model->calcmask ) {
+			mask_ptr++;
+			if( !*mask_ptr ) {
 				continue;
 			}
-			image[j*model->width + i] = sky_p->bg;
 		}
+
+		*image = sky_p->bg;
+		image++;
 	}
 }
 
