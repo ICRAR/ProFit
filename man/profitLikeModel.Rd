@@ -10,7 +10,7 @@ This is the work-horse log-likelihood that we can use to assess the current fit.
 \usage{
 profitLikeModel(parm, Data, makeplots = FALSE, serscomp = "all", pscomp = "all",
 rough = FALSE, cmap = rev(colorRampPalette(brewer.pal(9,"RdYlBu"))(200)),
-errcmap = cmap)
+errcmap = cmap, plotchisq = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,6 +37,9 @@ The colour map to use for images if \option{makeplots} is TRUE; see \code{\link{
 }
   \item{errcmap}{
 The colour map to use for chi-square residual images if \option{makeplots} is TRUE; see \code{\link{profitMakePlots}} for details.
+}
+  \item{plotchisq}{
+  Logical flag to determine if the function should plot a map and a histogram of chi squared = (((image-optionmodel)/optionerror)[/optionregion])^2.
 }
 }
 \details{

@@ -130,7 +130,7 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     
     par(mar=parmar2)
     ndat = sum(region)
-    dx = 0.01
+    dx = 0.1
     xlims = c(-4,4)
     x = seq(xlims[1],xlims[2],dx)
     y = hist(error,breaks=c(-(maxerr+dx),x,maxerr+dx),plot=FALSE)$count[2:length(x)]/ndat/dx
