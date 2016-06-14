@@ -11,7 +11,7 @@ vignette: >
 
 ## A Simple Model Structure
 
-It is worth checking you haev the latest version of `ProFit`:
+It is worth checking that you have the latest version of `ProFit`:
 
 ```{r, eval=FALSE}
 library(devtools)

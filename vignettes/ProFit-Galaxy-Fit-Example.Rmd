@@ -11,7 +11,7 @@ vignette: >
 
 ## Prepare the test data
 
-It is worth checking you haev the latest version of `ProFit`:
+It is worth checking that you have the latest version of `ProFit`:
 
 ```{r, eval=FALSE}
 library(devtools)
@@ -202,7 +202,7 @@ These are the parameters we wish to fit for, and we take the initial guesses fro
 
 We can test how things currently look (we get an output because we set verbose=TRUE earlier):
 
-```{r, fig.width=21, fig.height=7}
+```{r,  fig.width=7, fig.height=3}
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 ```
 
@@ -271,9 +271,9 @@ It is recommended to use narrower priors than the very broad ones specified abov
 library(cmaeshpc)
 Data$algo.func = "CMA"
 cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
-cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3, fnscale=-1.0, sigma=cmasigma,
-  diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE, diag.value=TRUE,
-  maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
+cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
+  fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
+  diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
 profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
 ```
 
@@ -305,13 +305,13 @@ The global fit should be close to the initial LA fit (shown in blue in the follo
 With any luck you have enough stationary samples to run:
 
 ```{r, eval=FALSE}
-BestLD=profitMagtri(LDfit$Posterior2, samples=500, samptype='ran',inputpar = LAfit$Summary1[,1])
+BestLD=magtri(LDfit$Posterior2, samples=500, samptype='ran')
 ```
 
 Otherwise try:
 
 ```{r, eval=FALSE}
-BestLD=profitMagtri(LDfit$Posterior1, samples=1000, samptype='end',inputpar = LAfit$Summary1[,1])
+BestLD=magtri(LDfit$Posterior1, samples=1000, samptype='end')
 ```
 
 We can now check our final fit:
@@ -363,6 +363,6 @@ If you run the above for 1e4 iterations (will take several hours), try comparing
 LDfit$Summary2
 LDfitf$Summary2
 
-BestLDf=profitMagtri(LDfit$Posterior1, samptype='end',inputpar = LDfit$Posterior1[,1])
+BestLDf=magtri(LDfit$Posterior1, samptype='end')
 profitLikeModel(BestLDf,Dataf,makeplots=TRUE,serscomp='all')
 ```

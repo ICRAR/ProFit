@@ -250,6 +250,26 @@ profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
 
+#If we get CMAES we can try to fit using genetic algorithms:
+
+#library(devtools)
+#install_github('taranu/cmaes')
+#library(cmaeshpc)
+
+Data$algo.func = "CMA"
+cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
+cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
+fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
+diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
+
+#The parameters:
+
+cmafit$par
+
+#The fit plots:
+
+profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
+
 #Now we can try a LaplacesDemon fit:
 
 Data$algo.func = "LD"
