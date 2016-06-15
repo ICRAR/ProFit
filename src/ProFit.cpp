@@ -13,7 +13,7 @@ using namespace Rcpp;
  n_ser to pass in, because in the non-boxy case, we want to pass in
  1/(2*nser), whereas in the boxiness it must be 1/nser.
  
- I've called the variable NSERFAC instead of INVNSER to emphasize this.
+ I've called the variable NSERFAC instead of INVNSER to emphasize this..
  */
 inline double nserfac(double nser, double box)
 {
@@ -24,7 +24,7 @@ enum nsertype {general=0, exponent=1, two=2, three=3, four=4, gauss=5};
 
 inline nsertype getnsertype(double nser)
 {
-  if(nser == 0.5) return gauss;
+  if(nser == -0.5) return gauss;
   if(nser == 1) return exponent;
   if(nser == 2) return two;
   if(nser == 3) return three;
@@ -321,7 +321,7 @@ double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector &
   const double YINIT = YREV ? YLIM(1) : YLIM(0);
   const int YI0 = YREV ? 1 : 0;
   const int YI1 = 1 - YI0;
-
+  //Rcout << XINIT << " " << XBIN << " " << YINIT << " " <<YBIN << std::endl;
   int i,j;
   x = XINIT;
   
@@ -343,7 +343,7 @@ double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector &
       //std::cout << "(" << xmid << "," << ymid << ") -> (" << xmod << "," << ymod << "): " << 
       //  addval << " for (" << BN << "," << INVNSER << "," << BOX << "), RECURSE=" << RECURSE << std::endl;
       if(RECURSE){
-          testvaly = profitEvalSersic<hasbox,t>(xmod, std::abs(ymod)+std::abs(YBIN*INVREY), BN, BOX, INVNSER);
+          testvaly = profitEvalSersic<hasbox,t>(xmod, std::abs(ymod)+std::abs(YBIN*INVREY*INVAXRAT), BN, BOX, INVNSER);
           if(std::abs(testvaly/addval - 1.0) > ACC){
             //Rcpp::Rcout << testvaly/addval<< " " << ACC << std::endl;
             ylim2(YI0) = y;
@@ -600,7 +600,7 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
   //Rcout << UPSCALE << std::endl;
   if(BOX == 0) 
   {
-    if(NSER == 0.5) return profitMakeBoxySersic<false,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
+    if(NSER == -0.5) return profitMakeBoxySersic<false,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
       AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC*1e-4, DOCALCREGION, REMAX);
     else if(NSER == 1) return profitMakeBoxySersic<false,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
       AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
@@ -613,7 +613,7 @@ NumericMatrix profitMakeSersic(const IntegerMatrix & CALCREGION,
     return profitMakeBoxySersic<false,general>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
       AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   }
-  if(NSER == 0.5) return profitMakeBoxySersic<true,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
+  if(NSER == -0.5) return profitMakeBoxySersic<true,gauss>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
     AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);
   else if(NSER == 1) return profitMakeBoxySersic<true,exponent>(CALCREGION, XCEN, YCEN, MAG, RE, NSER, ANG, 
     AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, DIM, UPSCALE, MAXDEPTH, RESWITCH, ACC, DOCALCREGION, REMAX);

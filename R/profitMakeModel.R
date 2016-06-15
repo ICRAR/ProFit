@@ -7,9 +7,7 @@
 }
 
 # Note: The PSF must already be fine sampled
-profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all', pscomp='all', 
-  rough=FALSE, acc=0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion, docalcregion=FALSE, 
-  magmu=FALSE, remax, rescaleflux=FALSE, convopt=list(method="Bruteconv")) {
+profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all', pscomp='all', rough=FALSE, acc=0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion, docalcregion=FALSE,  magmu=FALSE, remax, rescaleflux=FALSE, convopt=list(method="Bruteconv")) {
   stopifnot(is.integer(finesample) && finesample >= 1)
   if(missing(calcregion)){
     if(docalcregion){
@@ -83,6 +81,8 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       upscale=min(upscale,16)
       upscale=max(upscale,4)
       reswitch=reswitch/re
+      acc=0.4/nser
+      acc=max(0.1,acc)/axrat
       if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remaxtemp)}else{rescale=1}
       basemat=basemat+
         rescale*profitMakeSersic(

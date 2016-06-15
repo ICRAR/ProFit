@@ -225,7 +225,6 @@ optimfit$par
 Check it out:
 
 ```{r, eval=FALSE}
-library("RColorBrewer")
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
