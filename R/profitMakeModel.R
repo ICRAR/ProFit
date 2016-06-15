@@ -72,7 +72,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       re=as.numeric(model$sersic$re[i])
       #Find the point at which we capture 90% of the flux (sensible place for upscaling)
       reswitch=ceiling(.profitFluxFrac(nser=nser,re=re,frac=1-nser^2/2e3))
-      if(missing(remax)){remax=ceiling(.profitFluxFrac(nser=nser,re=re,frac=0.9999))}
+      if(missing(remax)){remaxtemp=ceiling(.profitFluxFrac(nser=nser,re=re,frac=0.9999))}else{remaxtemp=remax}
       #Make sure upscaling doesn't go beyond 20 pixels:
       reswitch=min(reswitch,20)
       #Don't let it become less than 2 pixels (means we do no worse than GALFIT anywhere):
@@ -83,7 +83,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
       upscale=min(upscale,16)
       upscale=max(upscale,4)
       reswitch=reswitch/re
-      if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remax)}else{rescale=1}
+      if(rescaleflux){rescale=1/.profitFluxR(nser=nser,re=re,r=remaxtemp)}else{rescale=1}
       basemat=basemat+
         rescale*profitMakeSersic(
           XCEN=(as.numeric(model$sersic$xcen[i])-imgcens[1])*finesample+imgcensfine[1]+psfpad[1],
@@ -105,7 +105,7 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
           ACC=acc,
           CALCREGION=calcregion,
           DOCALCREGION=docalcregion,
-          REMAX=remax)
+          REMAX=remaxtemp)
     }
   }
   
