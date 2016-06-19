@@ -145,8 +145,8 @@ profitMakeModel=function(model,magzero=0,psf=NULL,dim=c(100,100), serscomp='all'
   pixdim = 1
   if(returnfine) pixdim = 1/finesample
   if(!returncrop) dim = dim + 2*psfpad/finesample
-  rval$x = seq(0,dim[1]-pixdim,by=pixdim)
-  rval$y = seq(0,dim[2]-pixdim,by=pixdim)
+  rval$x = seq(pixdim/2,dim[1]-pixdim/2,by=pixdim)
+  rval$y = seq(pixdim/2,dim[2]-pixdim/2,by=pixdim)
   rval$z = basemat
   
   return(rval)

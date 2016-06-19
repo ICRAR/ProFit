@@ -36,11 +36,11 @@
   if(add.axis) {axis(axis.pos, padj=axis.padj, tck=axis.tck)}
 }
 
-profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
+profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(200)), errcmap=cmap,
   plotchisq=FALSE, dofs) {
   Data = list(x=1:dim(image)[1],y=1:dim(image)[2],z=image)
-  residual = image - model
+  residual = image - modelimage
   error=sigma
   
   parmar = par("mar")
@@ -58,7 +58,7 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend='Data')
     
-    magimage(model,stretchscale=1/median(abs(image[image>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
+    magimage(modelimage,stretchscale=1/median(abs(image[image>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
     contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend='Model')
     
@@ -95,7 +95,7 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     contour(tempcon,add=T,drawlabels = F,levels=1)
     legend('topleft',legend='Data')
     
-    magimage(model,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
+    magimage(modelimage,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
     contour(tempcon,add=T,drawlabels = F,levels=1)
     legend('topleft',legend='Model')
     
@@ -103,7 +103,7 @@ profitMakePlots <- function(image, model, region, sigma, errischisq = FALSE,
     contour(tempcon,add=T,drawlabels = F,levels=1)
     legend('topleft',legend='Data-Model')
       
-    errsign = (-1)^(image > model)
+    errsign = (-1)^(image > modelimage)
     if(!errischisq)
     {
       error = residual/error

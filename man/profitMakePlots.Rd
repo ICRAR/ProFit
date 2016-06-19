@@ -8,7 +8,7 @@ Plot images of an image, a model, and residuals.
 Plots appropriately scaled data and model images, along with a residual (data-model) image, and histograms of the residuals.
 }
 \usage{
-profitMakePlots(image, model, region, sigma, errischisq = FALSE, 
+profitMakePlots(image, modelimage, region, sigma, errischisq = FALSE, 
 cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(200)), errcmap = cmap, 
 plotchisq = FALSE, dofs)
 }
@@ -17,7 +17,7 @@ plotchisq = FALSE, dofs)
   \item{image}{
   Numeric matrix containing an image to plot (usually the data).
 }
-  \item{model}{
+  \item{modelimage}{
   Numeric matrix containing another image to plot and compare to (usually the model).
 }
   \item{region}{
@@ -84,7 +84,7 @@ noise = sigma
 for(i in 1:length(noise)) noise[i] = rnorm(1,mean=0,sd=noise[i])
 region = segim == segim[dim(segim)[1]/2,dim(segim)[2]/2]
 
-profitMakePlots(image = image, model = image+noise, region = region, sigma = sigma, 
+profitMakePlots(image = image, modelimage = image+noise, region = region, sigma = sigma, 
   errischisq = FALSE, plotchisq = TRUE, dofs = c(2))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
