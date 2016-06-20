@@ -56,17 +56,19 @@ typedef struct _profit_profile {
 	bool convolve;
 
 	/**
-	 * A pointer to the function that performs the initial calculations needed
-	 * by the profile, which are not dependent on individual positions. This
-	 * function can signal an error.
+	 * A pointer to the function that performs the initial profile validation,
+	 * making sure that all parameters of the profile are correct and can be
+	 * safely used to create an image.
+	 * This function can signal an error by setting a value in the error member
+	 * of this structure.
 	 */
-	void (* init_profile)(struct _profit_profile *profile, struct _profit_model *model);
+	void (* validate_profile)(struct _profit_profile *profile, struct _profit_model *model);
 
 	/**
-	 * The main function of the profile, which is in charge of filling the given
-	 * image array with the corresponding values for each pixel's intensity.
+	 * A pointer to the function that performs the profile evaluation.
+	 * This is the main function of the profile.
 	 */
-	void (* make_profile)(struct _profit_profile *profile, struct _profit_model *model, double *image);
+	void (* evaluate_profile)(struct _profit_profile *profile, struct _profit_model *model, double *image);
 
 	/**
 	 * An error string indicating that an error related to this profile was
@@ -168,18 +170,13 @@ typedef struct _profit_model {
 profit_model *profit_create_model(void);
 
 /**
- * Creates a new profile for the given name.
- * On success, the new profile is created and its reference is returned for
- * further customization.
+ * Creates a new profile for the given name and adds it to the given model.
+ * On success, the new profile is created, added to the model,
+ * and its reference is returned for further customization.
  * On failure (i.e., if a profile with the given name is not supported) NULL is
- * returned.
+ * returned and no profile is added to the model.
  */
-profit_profile *profit_create_profile(const char *profile_name);
-
-/**
- * Adds the given profile to the model.
- */
-void profit_add_profile(profit_model *model, profit_profile *profile);
+profit_profile *profit_create_profile(profit_model *model, const char *profile_name);
 
 /**
  * Calculates an image using the information contained in the model.

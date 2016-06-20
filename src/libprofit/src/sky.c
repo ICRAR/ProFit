@@ -29,13 +29,13 @@
 #include "sky.h"
 
 static
-void profit_init_sky(profit_profile *profile, profit_model *model) {
+void profit_validate_sky(profit_profile *profile, profit_model *model) {
 	/* no-op for the time being, probably check value in range, etc */
 	return;
 }
 
 static
-void profit_make_sky(profit_profile *profile, profit_model *model, double *image) {
+void profit_evaluate_sky(profit_profile *profile, profit_model *model, double *image) {
 
 	/* Setup a pointer to iterate over the calcmask, if any */
 	bool *mask_ptr = model->calcmask;
@@ -64,8 +64,8 @@ void profit_make_sky(profit_profile *profile, profit_model *model, double *image
 
 profit_profile *profit_create_sky() {
 	profit_sky_profile *p = (profit_sky_profile *)malloc(sizeof(profit_sky_profile));
-	p->profile.init_profile = &profit_init_sky;
-	p->profile.make_profile = &profit_make_sky;
+	p->profile.validate_profile = &profit_validate_sky;
+	p->profile.evaluate_profile = &profit_evaluate_sky;
 	p->bg = 0.;
 	return (profit_profile *)p;
 }

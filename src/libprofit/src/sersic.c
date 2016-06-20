@@ -128,7 +128,7 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 			subval = _sersic_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->_sin_ang/sp->re), 0, false);
+				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->_sin_ang/sp->axrat), 0, false);
 				if( fabs(testval/subval - 1.0) > sp->acc ) {
 					subval = _sersic_sumpix(sp,
 					                        x - half_xbin, x + half_xbin,
@@ -149,8 +149,138 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 	return total / (resolution * resolution);
 }
 
+static inline
+double profit_sersic_fluxfrac(profit_sersic_profile *sp, double fraction) {
+	double ratio = sp->_qgamma(fraction, 2*sp->nser) / sp->_bn;
+	return sp->re * pow(ratio, sp->nser);
+}
+
+static inline
+void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model) {
+
+	double nser = sp->nser;
+	double re = sp->re;
+	double axrat = sp->axrat;
+	double mag = sp->mag;
+	double box = sp->box + 2;
+	double magzero = model->magzero;
+	double bn, angrad;
+
+	/*
+	 * Calculate the total luminosity used by the sersic profile, used
+	 * later to calculate the exact contribution of each pixel.
+	 * We save bn back into the profile because it's needed later.
+	 */
+	sp->_bn = bn = sp->_qgamma(0.5, 2*nser);
+	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
+	double gamma = sp->_gammafn(2*nser);
+	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
+	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
+
+	/*
+	 * Optionally adjust the user-given re_switch (totally) and resolution
+	 * (partially) parameters to more sensible values that will result in faster
+	 * profile calculations.
+	 */
+	if( sp->adjust ) {
+
+		double re_switch;
+		unsigned int resolution;
+
+		/*
+		 * Find the point at which we capture most of the flux (sensible place
+		 * for upscaling). We make sure upscaling doesn't go beyond 20 pixels,
+		 * but don't let it become less than 1 pixel (means we do no worse than
+		 * GALFIT anywhere)
+		 */
+		re_switch = ceil(profit_sersic_fluxfrac(sp, 1. - nser*nser/2e3));
+		re_switch = fmax(fmin(re_switch, 20.), 2.);
+
+		/*
+		 * Calculate a bound, adaptive upscale; if re is large then we don't need
+		 * so much upscaling
+		 */
+		resolution = (unsigned int)ceil(160 / re_switch);
+		resolution += resolution%2;
+		resolution = resolution > 10 ? 10 : resolution;
+		resolution = resolution <  4 ?  4 : resolution;
+
+		sp->re_switch = re_switch / re;
+		sp->resolution = resolution;
+
+		/*
+		 * If the user didn't give a re_max we calculate one that covers
+		 * %99.99 of the flux
+		 */
+		if( sp->re_max == 0 ) {
+			sp->re_max = ceil(profit_sersic_fluxfrac(sp, 0.9999));
+		}
+		sp->_rescale_factor = 1;
+		if( sp->rescale_flux ) {
+			double flux_r;
+			flux_r = bn * pow(sp->re_max/re, 1/nser);
+			flux_r = sp->_pgamma(flux_r, 2*nser);
+			sp->_rescale_factor = 1/flux_r;
+		}
+
+		/* Adjust the accuracy we'll use for sub-pixel integration */
+		double acc = 0.4 / nser;
+		acc = fmax(0.1, acc) / axrat;
+		sp->acc = acc;
+
+	}
+
+	/*
+	 * Get the rotation angle in radians and calculate the coefficients
+	 * that will fill the rotation matrix we'll use later to transform
+	 * from image coordinates into sersic coordinates.
+	 *
+	 * In galfit the angle started from the Y image axis.
+	 */
+	angrad = fmod(sp->ang + 90, 360.) * M_PI / 180.;
+	sp->_cos_ang = cos(angrad);
+	sp->_sin_ang = sin(angrad);
+
+	/* Other way to get sin is doing: cos^2 + sin^2 = 1
+	 * sp->_sin_ang = sqrt(1. - cos_ang * cos_ang) * (angrad < M_PI ? -1. : 1.);
+	 * The performance seems pretty similar (measured on a x64 Linux with gcc and clang)
+	 * and doing sin() is more readable.
+	 */
+
+}
+
+/**
+ * The sersic validation function
+ */
 static
-void profit_make_sersic(profit_profile *profile, profit_model *model, double *image) {
+void profit_validate_sersic(profit_profile *profile, profit_model *model) {
+
+	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
+
+	if( !sp->_pgamma ) {
+		profile->error = strdup("Missing pgamma function on sersic profile");
+		return;
+	}
+	if( !sp->_qgamma ) {
+		profile->error = strdup("Missing qgamma function on sersic profile");
+		return;
+	}
+	if( !sp->_gammafn ) {
+		profile->error = strdup("Missing gamma function on sersic profile");
+		return;
+	}
+	if( !sp->_beta ) {
+		profile->error = strdup("Missing beta function on sersic profile");
+		return;
+	}
+
+}
+
+/**
+ * The sersic evaluation function
+ */
+static
+void profit_evaluate_sersic(profit_profile *profile, profit_model *model, double *image) {
 
 	unsigned int i, j;
 	double x, y, pixel_val;
@@ -160,6 +290,15 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 	double bin_area = model->xbin * model->ybin;
 
 	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
+
+	/*
+	 * All the pre-calculations needed by the sersic profile (Ie, cos/sin ang, etc)
+	 * We store these profile-global results in the profile structure itself
+	 * (it contains extra members to store these values) to avoid passing a long
+	 * list of values around every method call.
+	 */
+	sersic_initial_calculations(sp, model);
+
 	double scale = bin_area * sp->_ie;
 	if( sp->rescale_flux ) {
 		scale *= sp->_rescale_factor;
@@ -173,7 +312,7 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 		for(i=0; i < model->width; i++) {
 			x += half_xbin;
 
-			/* We were instructed, we were instructed to ignore this pixel */
+			/* We were instructed to ignore this pixel */
 			if( model->calcmask && !model->calcmask[i + j*model->width] ) {
 				x += half_xbin;
 				continue;
@@ -213,118 +352,6 @@ void profit_make_sersic(profit_profile *profile, profit_model *model, double *im
 
 }
 
-static inline
-double profit_sersic_fluxfrac(profit_sersic_profile *sp, double fraction) {
-	double ratio = sp->_qgamma(fraction, 2*sp->nser) / sp->_bn;
-	return sp->re * pow(ratio, sp->nser);
-}
-
-static
-void profit_init_sersic(profit_profile *profile, profit_model *model) {
-
-	profit_sersic_profile *sersic_p = (profit_sersic_profile *)profile;
-	double nser = sersic_p->nser;
-	double re = sersic_p->re;
-	double axrat = sersic_p->axrat;
-	double mag = sersic_p->mag;
-	double box = sersic_p->box + 2;
-	double magzero = model->magzero;
-	double bn, angrad;
-
-	if( !sersic_p->_pgamma ) {
-		profile->error = strdup("Missing pgamma function on sersic profile");
-		return;
-	}
-	if( !sersic_p->_qgamma ) {
-		profile->error = strdup("Missing qgamma function on sersic profile");
-		return;
-	}
-	if( !sersic_p->_gammafn ) {
-		profile->error = strdup("Missing gamma function on sersic profile");
-		return;
-	}
-	if( !sersic_p->_beta ) {
-		profile->error = strdup("Missing beta function on sersic profile");
-		return;
-	}
-
-	/*
-	 * Calculate the total luminosity used by the sersic profile, used
-	 * later to calculate the exact contribution of each pixel.
-	 * We save bn back into the profile because it's needed later.
-	 */
-	sersic_p->_bn = bn = sersic_p->_qgamma(0.5, 2*nser);
-	double Rbox = M_PI * box / (4*sersic_p->_beta(1/box, 1 + 1/box));
-	double gamma = sersic_p->_gammafn(2*nser);
-	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
-	sersic_p->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
-
-	/*
-	 * Optionally adjust the user-given re_switch (totally) and resolution
-	 * (partially) parameters to more sensible values that will result in faster
-	 * profile calculations.
-	 */
-	if( sersic_p->adjust ) {
-
-		double re_switch;
-		unsigned int resolution;
-
-		/*
-		 * Find the point at which we capture most of the flux (sensible place
-		 * for upscaling). We make sure upscaling doesn't go beyond 20 pixels,
-		 * but don't let it become less than 1 pixel (means we do no worse than
-		 * GALFIT anywhere)
-		 */
-		re_switch = ceil(profit_sersic_fluxfrac(sersic_p, 1. - nser*nser/2e3));
-		re_switch = fmax(fmin(re_switch, 20.), 2.);
-
-		/*
-		 * Calculate a bound, adaptive upscale; if re is large then we don't need
-		 * so much upscaling
-		 */
-		resolution = (unsigned int)ceil(160 / re_switch);
-		resolution += resolution%2;
-		resolution = resolution > 10 ? 10 : resolution;
-		resolution = resolution <  4 ?  4 : resolution;
-
-		sersic_p->re_switch = re_switch / re;
-		sersic_p->resolution = resolution;
-
-		/*
-		 * If the user didn't give a re_max we calculate one that covers
-		 * %99.99 of the flux
-		 */
-		if( sersic_p->re_max == 0 ){
-			sersic_p->re_max = ceil(profit_sersic_fluxfrac(sersic_p, 0.9999));
-		}
-		sersic_p->_rescale_factor = 1;
-		if( sersic_p->rescale_flux ){
-			double flux_r;
-			flux_r = bn * pow(sersic_p->re_max/re, 1/nser);
-			flux_r = sersic_p->_pgamma(flux_r, 2*nser);
-			sersic_p->_rescale_factor = 1/flux_r;
-		}
-	}
-
-	/*
-	 * Get the rotation angle in radians and calculate the coefficients
-	 * that will fill the rotation matrix we'll use later to transform
-	 * from image coordinates into sersic coordinates.
-	 *
-	 * In galfit the angle started from the Y image axis.
-	 */
-	angrad = fmod(sersic_p->ang + 90, 360.) * M_PI / 180.;
-	sersic_p->_cos_ang = cos(angrad);
-	sersic_p->_sin_ang = sin(angrad);
-
-	/* Other way to get sin is doing: cos^2 + sin^2 = 1
-	 * sersic_p->_sin_ang = sqrt(1. - cos_ang * cos_ang) * (angrad < M_PI ? -1. : 1.);
-	 * The performance seems pretty similar (measured on a x64 Linux with gcc and clang)
-	 * and doing sin() is more readable.
-	 */
-
-}
-
 #if defined(HAVE_GSL)
 double _gsl_qgamma_wrapper(double p, double shape) {
 	return gsl_cdf_gamma_Pinv(p, shape, 1);
@@ -341,10 +368,13 @@ double _Rf_pgamma_wrapper(double q, double shape) {
 }
 #endif
 
+/**
+ * The sersic creation function
+ */
 profit_profile *profit_create_sersic() {
 	profit_sersic_profile *p = (profit_sersic_profile *)malloc(sizeof(profit_sersic_profile));
-	p->profile.init_profile = &profit_init_sersic;
-	p->profile.make_profile = &profit_make_sersic;
+	p->profile.validate_profile = &profit_validate_sersic;
+	p->profile.evaluate_profile = &profit_evaluate_sersic;
 
 	/* Sane defaults */
 	p->xcen = 0;

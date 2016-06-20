@@ -158,8 +158,7 @@ void _read_profiles(profit_model *model, SEXP profiles_list,
 
 	/* Create that many profiles and then start reading the info if available */
 	for(i=0; i!=count; i++) {
-		profit_profile *p = profit_create_profile(profile_name);
-		profit_add_profile(model, p);
+		profit_profile *p = profit_create_profile(model, profile_name);
 		list_to_profile(profile_list, p, i);
 
 		_read_bool(profile_list, "convolve", i, &(p->convolve));

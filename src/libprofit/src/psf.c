@@ -31,7 +31,7 @@
 #include "psf.h"
 
 static
-void profit_init_psf(profit_profile *profile, profit_model *model)  {
+void profit_validate_psf(profit_profile *profile, profit_model *model)  {
 	profit_psf_profile *psf = (profit_psf_profile *)profile;
 
 	if( !model->psf ) {
@@ -86,7 +86,7 @@ void profit_psf_normalize_and_apply(profit_psf_profile *psf, profit_model *model
 }
 
 static
-void profit_make_psf(profit_profile *profile, profit_model *model, double *image) {
+void profit_evaluate_psf(profit_profile *profile, profit_model *model, double *image) {
 
 	/*
 	 * TODO: This method still doesn't take into account the image xbin/ybin
@@ -186,8 +186,8 @@ void profit_make_psf(profit_profile *profile, profit_model *model, double *image
 profit_profile *profit_create_psf() {
 
 	profit_psf_profile *psf = (profit_psf_profile *)malloc(sizeof(profit_psf_profile));
-	psf->profile.init_profile = &profit_init_psf;
-	psf->profile.make_profile = &profit_make_psf;
+	psf->profile.validate_profile = &profit_validate_psf;
+	psf->profile.evaluate_profile = &profit_evaluate_psf;
 
 	psf->xcen = 0;
 	psf->ycen = 0;
