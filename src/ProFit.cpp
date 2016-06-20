@@ -343,7 +343,7 @@ double profitSumPixMinorAxisGrad(double XCEN, double YCEN, const NumericVector &
       //std::cout << "(" << xmid << "," << ymid << ") -> (" << xmod << "," << ymod << "): " << 
       //  addval << " for (" << BN << "," << INVNSER << "," << BOX << "), RECURSE=" << RECURSE << std::endl;
       if(RECURSE){
-          testvaly = profitEvalSersic<hasbox,t>(xmod, std::abs(ymod)+std::abs(YBIN*INVREY*INVAXRAT), BN, BOX, INVNSER);
+          testvaly = profitEvalSersic<hasbox,t>(xmod, std::abs(ymod)+std::abs(YBIN*INVREX*INVAXRAT), BN, BOX, INVNSER);
           if(std::abs(testvaly/addval - 1.0) > ACC){
             //Rcpp::Rcout << testvaly/addval<< " " << ACC << std::endl;
             ylim2(YI0) = y;
@@ -692,7 +692,7 @@ NumericMatrix profitBruteConv(const NumericMatrix & IMG, const NumericMatrix & P
 // [[Rcpp::export]]
 NumericMatrix profitDownsample(const NumericMatrix & IMG, const int DOWNSAMPLEFAC){
   if(DOWNSAMPLEFAC == 1) return IMG;
-  if(!DOWNSAMPLEFAC > 1) return NumericMatrix(0,0);
+  if(!(DOWNSAMPLEFAC > 1)) return NumericMatrix(0,0);
   const int X_S = IMG.nrow(), Y_S = IMG.ncol();
   const int X_D = X_S / DOWNSAMPLEFAC, Y_D = Y_S / DOWNSAMPLEFAC;
   NumericMatrix d(X_D,Y_D);
@@ -715,7 +715,7 @@ NumericMatrix profitDownsample(const NumericMatrix & IMG, const int DOWNSAMPLEFA
 // [[Rcpp::export]]
 NumericMatrix profitUpsample(const NumericMatrix & IMG, const int UPSAMPLEFAC){
   if(UPSAMPLEFAC == 1) return IMG;
-  if(!UPSAMPLEFAC > 1) return NumericMatrix(0,0);
+  if(!(UPSAMPLEFAC > 1)) return NumericMatrix(0,0);
   const int X_S = IMG.nrow(), Y_S = IMG.ncol();
   const int X_U = X_S * UPSAMPLEFAC, Y_U = Y_S * UPSAMPLEFAC;
   NumericMatrix u(X_U,Y_U);
