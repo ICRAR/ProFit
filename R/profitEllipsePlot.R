@@ -21,6 +21,9 @@ profitEllipse=function(x, y, flux, xcen=0, ycen=0, ang=0, axrat=1, box=0){
 }
 
 profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=1, SBlim=26, df=100, raw=FALSE){
+  if(missing(Data)){stop('Data object of class profit.data must be provided!')}
+  if(class(Data)!="profit.data"){stop("Data must be of class profit.data, as output by profitSetupData!")}
+  if(missing(model)){model=Data$model}
   
   bulge=profitMakeModel(model, serscomp = bulgeloc, dim = Data$imagedim, psf=Data$psf)
   disk=profitMakeModel(model, serscomp = diskloc, dim = Data$imagedim, psf=Data$psf)
@@ -31,7 +34,7 @@ profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=
   bulgeellipse=profitEllipse(bulge$z, xcen=model$sersic$xcen[bulgeloc], ycen=model$sersic$ycen[bulgeloc], ang=model$sersic$ang[bulgeloc], axrat=model$sersic$axrat[bulgeloc], box=model$sersic$box[bulgeloc])
   diskellipse=profitEllipse(disk$z, xcen=model$sersic$xcen[diskloc], ycen=model$sersic$ycen[diskloc], ang=model$sersic$ang[diskloc], axrat=model$sersic$axrat[diskloc], box=model$sersic$box[diskloc])
   totalellipse=profitEllipse(total$z, xcen=model$sersic$xcen[diskloc], ycen=model$sersic$ycen[diskloc], ang=model$sersic$ang[diskloc], axrat=model$sersic$axrat[diskloc], box=model$sersic$box[diskloc])
-  psfellipse=cbind(seq(0,10*FWHM*pixscale,len=1e3), dnorm(seq(0,10*FWHM/pixscale,len=1e3),sd=FWHM/(2*sqrt(2*log(2)))/pixscale))
+  psfellipse=cbind(seq(0,10*FWHM,len=1e3), dnorm(seq(0,10*FWHM,len=1e3),sd=FWHM/(2*sqrt(2*log(2)))/pixscale))
   
   imageellipse[,1]=imageellipse[,1]*pixscale
   sigmaellipse[,1]=sigmaellipse[,1]*pixscale
@@ -42,25 +45,25 @@ profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=
   
   sigmaellipse=cbind(sigmaellipse,imageellipse[,2]-sigmaellipse[,2])
   sigmaellipse=cbind(sigmaellipse,imageellipse[,2]+sigmaellipse[,2])
-  imageellipse[,2]=-2.5*log10(imageellipse[,2])+5*log10(pixscale)+Data$magzero
-  sigmaellipse[,2:4]=-2.5*log10(sigmaellipse[,2:4])+5*log10(pixscale)+Data$magzero
-  bulgeellipse[,2]=-2.5*log10(bulgeellipse[,2])+5*log10(pixscale)+Data$magzero
-  diskellipse[,2]=-2.5*log10(diskellipse[,2])+5*log10(pixscale)+Data$magzero
-  totalellipse[,2]=-2.5*log10(totalellipse[,2])+5*log10(pixscale)+Data$magzero
-  psfellipse[,2]=-2.5*log10(psfellipse[,2])+5*log10(pixscale)+Data$magzero
+  imageellipse[,2]=-2.5*suppressWarnings(log10(imageellipse[,2]))+5*log10(pixscale)+Data$magzero
+  sigmaellipse[,2:4]=-2.5*suppressWarnings(log10(sigmaellipse[,2:4]))+5*log10(pixscale)+Data$magzero
+  bulgeellipse[,2]=-2.5*suppressWarnings(log10(bulgeellipse[,2]))+5*log10(pixscale)+Data$magzero
+  diskellipse[,2]=-2.5*suppressWarnings(log10(diskellipse[,2]))+5*log10(pixscale)+Data$magzero
+  totalellipse[,2]=-2.5*suppressWarnings(log10(totalellipse[,2]))+5*log10(pixscale)+Data$magzero
+  psfellipse[,2]=-2.5*suppressWarnings(log10(psfellipse[,2]))+5*log10(pixscale)+Data$magzero
   
   imageellipse[is.na(imageellipse)]=SBlim
   imageellipse[is.infinite(imageellipse)]=SBlim
   sigmaellipse[is.na(sigmaellipse)]=SBlim
   sigmaellipse[is.infinite(sigmaellipse)]=SBlim
-  bulgeellipse[is.na(bulgeellipse)]=SBlim
-  bulgeellipse[is.infinite(bulgeellipse)]=SBlim
+  bulgeellipse[is.na(bulgeellipse)]=SBlim+5
+  bulgeellipse[is.infinite(bulgeellipse)]=SBlim+5
   diskellipse[is.na(diskellipse)]=SBlim
   diskellipse[is.infinite(diskellipse)]=SBlim
   totalellipse[is.na(totalellipse)]=SBlim
   totalellipse[is.infinite(totalellipse)]=SBlim
-  psfellipse[is.na(psfellipse)]=SBlim
-  psfellipse[is.infinite(psfellipse)]=SBlim
+  psfellipse[is.na(psfellipse)]=SBlim+5
+  psfellipse[is.infinite(psfellipse)]=SBlim+5
     
   if(raw){
     predict.image=list(x=imageellipse[,1],y=imageellipse[,2])
@@ -90,7 +93,7 @@ profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=
     predict.total=predict(smooth.total,imageellipse[,1])
   }
   
-  psfellipse[,2]=psfellipse[,2]+min(predict.total$y)-min(psfellipse[1,2])
+  psfellipse[,2]=psfellipse[,2]+min(predict.bulge$y)-min(psfellipse[1,2])
   
   xhi=predict.total$x[min(which(predict.total$y>SBlim))]
   yhi=min(predict.image$y,predict.total$y)
