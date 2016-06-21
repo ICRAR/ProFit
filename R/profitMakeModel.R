@@ -28,7 +28,7 @@ profitMakeModel = function(modellist,
 	haspsfmodel = !is.null(modellist$psf)
 	if( haspsfmodel && !haspsf ) {
 		haspsf = TRUE
-		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = modellist$psf)
+		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = list(psf=modellist$psf))
 	}
 
 	# The following is commented out because when using libprofit we always do
