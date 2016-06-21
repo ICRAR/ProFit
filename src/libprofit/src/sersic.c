@@ -80,15 +80,15 @@ double _sersic_for_xy_r(profit_sersic_profile *sp,
 	else {
 
 		double base;
-		double exponent;
 
 		if( sp->box != 0 ) {
 
 			/*
 			 * box != 0
 			 */
+			double exponent = sp->box + 2;
 			base = pow(fabs(x/sp->re), exponent) + pow(fabs(y/sp->re), exponent);
-			double exp_divisor = sp->nser*(sp->box + 2);
+			double exp_divisor = sp->nser*exponent;
 
 			if( exp_divisor == 0.5 ) {
 				r_factor = base*base;
