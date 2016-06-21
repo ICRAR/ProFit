@@ -5,4 +5,7 @@ OBJECTS = libprofit/src/profit.o \
           libprofit/src/sky.o \
           libprofit/src/psf.o \
           libprofit/src/convolve.o \
-          r_profit.o
+          r_profit.o \
+          ProFit.o \
+          RcppExports.o \
+          gauss.o

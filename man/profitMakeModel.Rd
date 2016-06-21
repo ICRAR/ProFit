@@ -2,15 +2,16 @@
 \alias{profitMakeModel}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-High-Level 2D Sersic Model Image Creation
+High-Level 2D Galaxy and Point Source Image Creation
 }
 \description{
-Create an image of a galaxy model wit of without convolution with the PSF. This is achieved by providing a model list that contains the main parameters that define the model.
+Create an astronomical image containing model galaxies or point sources, with or without convolution with the PSF. This is achieved by providing a model list that contains the main parameters that define the model.
 }
 \usage{
-profitMakeModel(model, magzero = 0, psf, dim = c(100, 100), serscomp = "all",
-psfcomp = "all", rough = FALSE, acc = 0.1, calcregion, docalcregion=FALSE, magmu=FALSE,
-remax, rescaleflux = FALSE)
+profitMakeModel(model, magzero = 0, psf=NULL, dim = c(100, 100), serscomp = "all",
+pscomp = "all", rough = FALSE, acc = 0.1, finesample=1L, returnfine=FALSE, 
+returncrop=TRUE, calcregion, docalcregion=FALSE, magmu=FALSE,
+remax, rescaleflux = FALSE, convopt=list(method="Bruteconv"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,14 +30,23 @@ The desired dimenions of the 2D image matrix. This should be a two element vecto
   \item{serscomp}{
 Which component of the Sersic list should be used to create the model image. This is useful if you want to visually see appearance of e.g. Sersic components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakeSersic}} for details.
 }
-  \item{psfcomp}{
-Which component of the PSF list should be used to create the model image. This is useful if you want to visually see appearance of e.g. PSF components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakePSF}} for details.
+  \item{pscomp}{
+Which component of the PS list should be used to create the model image. This is useful if you want to visually see appearance of e.g. PS components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakePointSource}} for details.
 }
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
 }
   \item{acc}{
 Desired minimum per pixel accuracy within the upscaling region defined by \option{RESWITCH}. \option{ACC} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. 
+}
+  \item{finesample}{
+Integer specifying the number of times to subdivide the model image and therefore finely sample it (compared to the dimensions specified in \option{dim}), for more accurate PSF convolution. Must be one or higher. Note that the \option{psf} image and \option{model} PSF are not automatically fine sampled; this is only done by \code{\link{profitSetupData}}.
+}
+  \item{returnfine}{
+  Logical flag to return the finely-sampled model instead of downsampling to the specified \option{dim}.
+}
+  \item{returncrop}{
+  Logical flag to return the appropriately PSF-padded \option{model} instead of cropping to the specified \option{dim}.
 }
   \item{calcregion}{
 Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
@@ -52,6 +62,9 @@ If provided the profile is computed out to this many times Re, after this point 
 }
   \item{rescaleflux}{
 Logical; where the profile has been truncated via \option{remax} this specifies whether the profile should be rescaled since the total integrated flux will be less than without truncation. In practice this means image values are increases by 1/0.9999 for the default case (where the profile is truncated at the point where 99.99\% of flux is contained).  
+}
+\item{convopt}{
+  A list specifying options for convolution. See 
 }
 }
 \details{
@@ -71,7 +84,7 @@ The parameters that must be specified for \option{sersic} (see \code{\link{profi
   \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
-The parameters that must be specified for \option{psf} (see \code{\link{profitMakePSF}} for details) are: 
+The parameters that must be specified for pointsource (see \code{\link{profitMakePointSource}} for details) are: 
 
 \describe{
   \item{xcen}{Vector of x centres of the PSFs (can be fractional pixel positions).}
@@ -98,7 +111,7 @@ model = list(\cr
 		axrat  = c(0.5, 0.3),\cr
 		box = c(2,-2)\cr
 	),\cr
-	psf = list(\cr
+	pointsource = list(\cr
 		xcen   = c(34,10,150),\cr
 		ycen   = c(74,120,130),\cr
 		mag = c(10,13,16)\cr
@@ -110,7 +123,7 @@ model = list(\cr
 
 By ProFit convention the bottom-left part of the bottom-left pixel when plotting the image matrix is c(0,0) and the top-right part of the bottom-left pixel is c(1,1), i.e. the mid-point of pixels are half integer values in x and y.
 
-To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartessian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument refers to row number, but images by convention are accessed in a Cartessian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
+To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument refers to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
 List; structure containing the specified model:
@@ -121,32 +134,32 @@ List; structure containing the specified model:
 }
 
 \author{
-Aaron Robotham
+Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitMakeSersic}}, \code{\link{profitMakePSF}}, \code{\link{profitConvolvePSF}}
+\code{\link{profitMakeSersic}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
 model = list(
-	sersic = list(
-		xcen   = c(180, 60),
-		ycen   = c(90, 10),
-		mag = c(15, 13),
-		re  = c(14, 5),
-		nser  = c(3, 10),
-		ang  = c(46, 80),
-		axrat  = c(0.4, 0.6),
-		box = c(0.5,-0.5)
-	),
-	psf = list(
-		xcen   = c(34,10,150),
-		ycen   = c(74,120,130),
-		mag = c(10,13,16)
-	),
-	sky = list(
-		bg = 3e-12
-	)
+  sersic = list(
+    xcen   = c(180, 60),
+    ycen   = c(90, 10),
+    mag = c(15, 13),
+    re  = c(14, 5),
+    nser  = c(3, 10),
+    ang  = c(46, 80),
+    axrat  = c(0.4, 0.6),
+    box = c(0.5,-0.5)
+  ),
+  pointsource = list(
+    xcen   = c(34,10,150),
+    ycen   = c(74,120,130),
+    mag = c(10,13,16)
+  ),
+  sky = list(
+    bg = 3e-12
+  )
 )
 
 # Without a PSF provided only the extended sources are shown, with no convolution:
@@ -156,7 +169,7 @@ magimage(profitMakeModel(model=model, dim=c(200,200)))
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(model=model, psf=profitGenPSF(), dim=c(200,200)))
+magimage(profitMakeModel(model=model, psf=profitMakePointSource(), dim=c(200,200)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -44,7 +44,7 @@ model = list(
     axrat  = c(0.4, 0.6),
     box = c(0.5,-0.5)
   ),
-  psf = list(
+  pointsource = list(
     xcen   = c(34,10,150),
     ycen   = c(74,120,130),
     mag = c(10,13,16)
@@ -61,7 +61,7 @@ magimage(profitMakeModel(model=model, dim=c(200,200)))
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(model=model, psf=profitGenPSF(), dim=c(200,200)))
+magimage(profitMakeModel(model=model, psf=profitMakePointSource(), dim=c(200,200)))
 
 ############### Full fit example ##############
 
@@ -215,7 +215,7 @@ Data$init
 # We can test how things currently look (we get an output because we set verbose=TRUE
 # earlier):
 
-profitLikeModel(parm=Data$init, Data=Data, image=TRUE)
+profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
 #First try optim BFGS:
 
@@ -229,9 +229,9 @@ optimfit$par
 
 #Check it out:
 
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=1)
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp=2)
-profitLikeModel(optimfit$par,Data,image=TRUE,serscomp='all')
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
 
 #Now we can try a LaplaceApproximation fit (should take a few minutes):
 
@@ -246,9 +246,29 @@ LAfit$Summary1[,1]
 
 #Check it out:
 
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=1)
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp=2)
-profitLikeModel(LAfit$Summary1[,1],Data,image=TRUE,serscomp='all')
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
+
+#If we get CMAES we can try to fit using genetic algorithms:
+
+#library(devtools)
+#install_github('taranu/cmaes')
+#library(cmaeshpc)
+
+Data$algo.func = "CMA"
+cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
+cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
+fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
+diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
+
+#The parameters:
+
+cmafit$par
+
+#The fit plots:
+
+profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
 
 #Now we can try a LaplacesDemon fit:
 
@@ -277,9 +297,9 @@ BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
 
 #We can now check our final fit:
 
-profitLikeModel(BestLD,Data,image=TRUE,serscomp=1)
-profitLikeModel(BestLD,Data,image=TRUE,serscomp=2)
-profitLikeModel(BestLD,Data,image=TRUE,serscomp='all')
+profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=1)
+profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=2)
+profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp='all')
 
 
 #Better errors can be obtained by removing the spurious structure remaining:

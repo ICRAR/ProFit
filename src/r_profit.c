@@ -190,24 +190,15 @@ SEXP R_profit_make_model(SEXP model_list) {
 	ssize_t size;
 	unsigned int i, p;
 	unsigned int img_w, img_h;
+	double res = 1;
 	char *error;
 	unsigned int psf_width = 0, psf_height = 0;
 	double *psf = NULL;
 	bool *mask = NULL;
 
-	SEXP width = _get_list_element(model_list, "width");
-	if( width == R_NilValue ) {
-		Rf_error("No width provided in the model\n");
-		return R_NilValue;
-	}
-	img_w = (unsigned int)Rf_asReal(width);
-
-	SEXP height = _get_list_element(model_list, "height");
-	if( height == R_NilValue ) {
-		Rf_error("No height provided in the model\n");
-		return R_NilValue;
-	}
-	img_h = (unsigned int)Rf_asReal(height);
+	SEXP dimensions = _get_list_element(model_list, "dimensions");
+	img_w = (unsigned int)REAL(dimensions)[0];
+	img_h = (unsigned int)REAL(dimensions)[1];
 
 	SEXP magzero = _get_list_element(model_list, "magzero");
 	if( magzero == R_NilValue ) {
@@ -230,10 +221,17 @@ SEXP R_profit_make_model(SEXP model_list) {
 		}
 	}
 
+	SEXP resolution = _get_list_element(model_list, "resolution");
+	if( resolution != R_NilValue ) {
+		res = (unsigned int)Rf_asReal(resolution);
+	}
+
 	/* Read model parameters */
 	profit_model *m = profit_create_model();
-	m->width  = m->res_x = img_w;
-	m->height = m->res_y = img_h;
+	m->width  = img_w;
+	m->height = img_h;
+	m->res_x = (unsigned int)floor(m->width * res);
+	m->res_y = (unsigned int)floor(m->height * res);
 	m->magzero = Rf_asReal(magzero);
 	m->psf = psf;
 	m->psf_width = psf_width;

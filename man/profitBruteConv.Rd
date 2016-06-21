@@ -9,14 +9,14 @@ Low level brute force image convolution
 A low level direct Rcpp implementation of brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. In most situations users should make convolutions using the higher level \code{\link{profitConvolvePSF}} provided.
 }
 \usage{
-profitBruteConv(image, psf, CALCREGION, DOCALCREGION=FALSE)
+profitBruteConv(IMG, PSF, CALCREGION, DOCALCREGION=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{image}{
+  \item{IMG}{
 The image matrix to be convolved by the point spread function (PSF).
 }
-  \item{psf}{
+  \item{PSF}{
 The point spread function (PSF) image matrix that ProFit will use to convolve the image (should have odd size in both dimensions to prevent the image becoming offset.
 }
   \item{CALCREGION}{
@@ -27,17 +27,17 @@ Logical; should the \option{CALCREGION} logical matrix be used to define a subse
 }
 }
 \details{
-In the regime where one image is significantly (a factor of a few) smaller than the other image, this tends to be faster than FFT based convolution due to the lack of image padding and other overheads. PSf images tend to be only dozens of pixels and images 100s, so brute force convolution is the standard approach used in ProFit. For this low level function the PSF supplied must have odd size in both dimensions or the image will become offset. To alleviate this issue a higher level function \code{\link{profitConvolvePSF}} is provided, that will re-interpolate the image to force the required odd sizes.
+In the regime where one image is significantly (a factor of a few) smaller than the other image, this tends to be faster than FFT based convolution due to the lack of image padding and other overheads. PSF images tend to be only dozens of pixels and images 100s, so brute force convolution is the default convolution algorithmin ProFit. For this low level function the PSF supplied must have odd size in both dimensions or the image will become offset. To alleviate this issue a higher level function \code{\link{profitConvolvePSF}} is provided, that will re-interpolate the image to force the required odd sizes.
 }
 \value{
 Matrix; image matrix the same size as the input \option{image} matrix.
 }
 \author{
-Aaron Robotham
+Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitConvolvePSF}}, \code{\link{profitMakePSF}}, \code{\link{profitMakeModel}}
+\code{\link{profitConvolvePSF}}, \code{\link{profitMakePointSource}}, \code{\link{profitMakeModel}}
 }
 \examples{
 model = list(
@@ -61,7 +61,7 @@ magimage(model.image)
 
 # With convolution:
 
-magimage(profitBruteConv(image=model.image, psf=profitGenPSF(), matrix(1,1,1)))
+magimage(profitBruteConv(IMG=model.image, PSF=profitMakePointSource(), CALCREGION=matrix(1,1,1)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

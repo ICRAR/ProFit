@@ -21,7 +21,7 @@ params = list(
 
 temp=magimage(profitMakeModel(params, dim=c(200,200))$z)
 contour(temp,add=T,col='red')
-temp=magimage(profitMakeModel(params, psf=profitGenPSF(), dim=c(200,200))$z)
+temp=magimage(profitMakeModel(params, psf=profitMakePointSource(), dim=c(200,200))$z)
 contour(temp,add=T,col='red')
 
 params = list(
