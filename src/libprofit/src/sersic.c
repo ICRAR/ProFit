@@ -128,7 +128,7 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 			subval = _sersic_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->_sin_ang/sp->axrat), 0, false);
+				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(-ybin*sp->_cos_ang/sp->axrat), 0, false);
 				if( fabs(testval/subval - 1.0) > sp->acc ) {
 					subval = _sersic_sumpix(sp,
 					                        x - half_xbin, x + half_xbin,
@@ -202,7 +202,7 @@ void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model)
 		 */
 		resolution = (unsigned int)ceil(160 / re_switch);
 		resolution += resolution%2;
-		resolution = resolution > 10 ? 10 : resolution;
+		resolution = resolution > 16 ? 16 : resolution;
 		resolution = resolution <  4 ?  4 : resolution;
 
 		sp->re_switch = re_switch / re;
