@@ -62,6 +62,15 @@ double _sersic_for_xy_r(profit_sersic_profile *sp,
 	 * Reducing:
 	 *  r_factor = (x/re)^{2+b} + (y/re)^{2+b})^{1/(nser*(2+b)}
 	 *
+	 * Although this reduced form has only three powers instead of 4
+	 * in the original form, it still doesn't mean that it's the fastest
+	 * way of computing r_factor. Depending on the libc/libm being used
+	 * using a combination of sqrt, cbrt and pow will yield better or
+	 * worse performances (within certain limits).
+	 * The different "if/else if/if" statements below cover those
+	 * cases where we've found that some performance can be gained
+	 * by using different computation routes.
+	 *
 	 */
 
 	double r_factor;
@@ -69,23 +78,67 @@ double _sersic_for_xy_r(profit_sersic_profile *sp,
 		r_factor = pow(r/sp->re, 1/sp->nser);
 	}
 	else {
-		double exponent = sp->box + 2;
-		double base = pow(fabs(x/sp->re), exponent) + pow(fabs(y/sp->re), exponent);
-		double divisor = sp->nser*exponent;
 
-		if( divisor == 0.5 ) {
-			r_factor = base*base;
-		} else if( divisor == 1. ) {
-			r_factor = base;
-		} else if( divisor == 2. ) {
-			r_factor = sqrt(base);
-		} else if( divisor == 3. ) {
-			r_factor = cbrt(base);
-		} else if( divisor == 4. ) {
-			r_factor = sqrt(sqrt((base)));
-		} else {
-			r_factor = pow(base, 1/divisor);
+		double base;
+		double exponent;
+
+		if( sp->box != 0 ) {
+
+			/*
+			 * box != 0
+			 */
+			base = pow(fabs(x/sp->re), exponent) + pow(fabs(y/sp->re), exponent);
+			double exp_divisor = sp->nser*(sp->box + 2);
+
+			if( exp_divisor == 0.5 ) {
+				r_factor = base*base;
+			} else if( exp_divisor == 1. ) {
+				r_factor = base;
+			} else if( exp_divisor == 2. ) {
+				r_factor = sqrt(base);
+			} else if( exp_divisor == 3. ) {
+				r_factor = cbrt(base);
+			} else if( exp_divisor == 4. ) {
+				r_factor = sqrt(sqrt(base));
+			} else if( exp_divisor == 8. ) {
+				r_factor = sqrt(sqrt(sqrt(base)));
+			} else if( exp_divisor == 16. ) {
+				r_factor = sqrt(sqrt(sqrt(sqrt(base))));
+			} else {
+				r_factor = pow(base, 1/exp_divisor);
+			}
+
 		}
+
+		else {
+
+			/*
+			 * box == 0
+			 * thus r_factor = base ^ (1/2*nser)
+			 * We still avoid calling pow as much as possible
+			 **/
+			base = (x*x + y*y)/(sp->re * sp->re);
+
+			if( sp->nser == 0.5 ) {
+				r_factor = base;
+			} else if( sp->nser == 1. ) {
+				r_factor = sqrt(base);
+			} else if( sp->nser == 2. ) {
+				r_factor = sqrt(sqrt(base));
+			} else if( sp->nser == 3. ) {
+				r_factor = cbrt(sqrt(base));
+			} else if( sp->nser == 4. ) {
+				r_factor = sqrt(sqrt(sqrt(base)));
+			} else if( sp->nser == 8. ) {
+				r_factor = sqrt(sqrt(sqrt(sqrt(base))));
+			} else if( sp->nser == 16. ) {
+				r_factor = sqrt(sqrt(sqrt(sqrt(sqrt(base)))));
+			} else {
+				r_factor = pow(sqrt(base), 1/sp->nser);
+			}
+
+		}
+
 	}
 
 	return exp(-sp->_bn * (r_factor - 1));
@@ -128,7 +181,7 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 			subval = _sersic_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(-ybin*sp->_cos_ang/sp->axrat), 0, false);
+				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->_cos_ang/sp->axrat), 0, false);
 				if( fabs(testval/subval - 1.0) > sp->acc ) {
 					subval = _sersic_sumpix(sp,
 					                        x - half_xbin, x + half_xbin,
