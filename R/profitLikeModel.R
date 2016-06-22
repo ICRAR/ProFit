@@ -77,11 +77,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   
   if(Data$usecalcregion){
     model = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
-      serscomp=serscomp, pscomp=pscomp, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
+      serscomp=serscomp, psfcomp=pscomp, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
       magmu=Data$magmu,finesample=finesample, convopt=Data$convopt)
   }else{
     model = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
-      serscomp=serscomp, pscomp=pscomp, rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt)
+      serscomp=serscomp, psfcomp=pscomp, rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt)
   }
   
   if(any(Data$region)) {

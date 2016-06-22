@@ -285,7 +285,7 @@ SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_c
 		unsigned int calc_w, calc_h;
 		bool *calc_region = _read_mask(r_calc_region, &calc_w, &calc_h);
 		if( calc_w != img_w || calc_h != img_h ) {
-			Rf_error("Calc region has different dimensions than the PSF");
+			Rf_error("Calc region has different dimensions than the image");
 			return R_NilValue;
 		}
 	}
