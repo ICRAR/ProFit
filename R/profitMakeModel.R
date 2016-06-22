@@ -80,7 +80,7 @@ profitMakeModel = function(modellist,
 		# Copy them
 		profiles$sersic = list()
 		for( name in names(modellist$sersic) ) {
-			profiles$sersic[[name]] = modellist$sersic[[name]][serscomp]
+			profiles$sersic[[name]] = c(unlist(modellist$sersic[[name]][serscomp]))
 		}
 
 		# Fix their magnitude if necessary
@@ -90,11 +90,9 @@ profitMakeModel = function(modellist,
 		}
 
 		# Fix X/Y center of the sersic profile as needed
-		if( finesample > 1 ) {
-			profiles$sersic[['xcen']] = (profiles$sersic[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-			profiles$sersic[['ycen']] = (profiles$sersic[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
-			profiles$sersic[['re']] = profiles$sersic[['re']] * finesample
-		}
+		profiles$sersic[['xcen']] = (profiles$sersic[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+		profiles$sersic[['ycen']] = (profiles$sersic[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
+		profiles$sersic[['re']] = profiles$sersic[['re']] * finesample
 
 		profiles$sersic[['rough']] = rep(as.integer(rough), length(serscomp))
 		profiles$sersic[['acc']] = rep(acc, length(serscomp))
@@ -105,7 +103,7 @@ profitMakeModel = function(modellist,
 		model_psf = psf
 		if( length(modellist$psf) > 0 && length(psfcomp) > 0 ) {
 			for( name in names(modellist$psf) ) {
-				profiles[['psf']][[name]] = modellist$psf[[name]][psfcomp]
+				profiles[['psf']][[name]] = c(unlist(modellist$psf[[name]][psfcomp]))
 			}
 		}
 		if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
