@@ -25,11 +25,17 @@ profitMakeModel = function(modellist,
 	# light scattered from *outside* of the observation into the cropped region
 	psfpad = c(0,0)
 	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
-	haspsfmodel = !is.null(modellist$psf)
-	if( haspsfmodel && !haspsf ) {
-		haspsf = TRUE
-		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = list(psf=modellist$psf))
-	}
+
+	# In the original code image convolution and PSF profiles were turned on only if a
+	# PSF was given in the "psf" parameter of this method.
+	# This bit of logic goes against that original idea, creating a PSF if required
+	# (because there are psf profiles to be drawn) and none was given.
+	#
+	#haspsfmodel = !is.null(modellist$psf)
+	#if( haspsfmodel && !haspsf ) {
+	#	haspsf = TRUE
+	#	psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = list(psf=modellist$psf))
+	#}
 
 	# The following is commented out because when using libprofit we always do
 	# brute-force convolution within the boundaries of the original image
