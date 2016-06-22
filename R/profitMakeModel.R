@@ -21,30 +21,36 @@ profitMakeModel = function(modellist,
 		remax = 0
 	}
 
-	# Must pad the model image by the PSF size, then crop it in order to properly model
-	# light scattered from *outside* of the observation into the cropped region
+	# Regarding "psfpad" and "returncrop"
+	# ===================================
+	#
+	# In Dan's code it was envisioned that when doing brute-force convolution
+	# the target surface is bigger to avoid if statements in the convolution
+	# method.  This internal behavior is then exposed to the callers of this
+	# function via the "returncrop" argument (defaults to FALSE), which allows
+	# them to receive this expanded surface.
+
+
+	# Must pad the model image by the PSF size, then crop it in order to
+	# properly model light scattered from *outside* of the observation into the
+	# cropped region
 	psfpad = c(0,0)
 	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
 
-	# In the original code image convolution and PSF profiles were turned on only if a
-	# PSF was given in the "psf" parameter of this method.
-	# This bit of logic goes against that original idea, creating a PSF if required
-	# (because there are psf profiles to be drawn) and none was given.
+	if( haspsf ) {
+		psfpad = floor(dim(psf)/2)
+	}
+
+	# In the original code image convolution and PSF profiles were turned on
+	# only if a PSF was given in the "psf" parameter of this method. This bit
+	# of logic below goes against that original idea, creating a PSF if required
+	# (because there are psf profiles to be drawn) and none was given, so I'm
+	# commenting it out for the time being.
 	#
 	#haspsfmodel = !is.null(modellist$psf)
 	#if( haspsfmodel && !haspsf ) {
 	#	haspsf = TRUE
 	#	psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = list(psf=modellist$psf))
-	#}
-
-	# The following is commented out because when using libprofit we always do
-	# brute-force convolution within the boundaries of the original image
-	# (instead of doing it in an image bigger than the original and then
-	# cropping it).
-	# We leave the rest of the code using psfpad anyway to make it clear that
-	# that was the intention
-	#if( haspsf ) {
-	#	psfpad = floor(dim(psf)/2)
 	#}
 
 	# Handle fine sampling
@@ -126,13 +132,20 @@ profitMakeModel = function(modellist,
 	if( is.null(image) ) {
 		return(NULL)
 	}
-	basemat = matrix(image, ncol=dim[2], byrow=F)
+	basemat = matrix(image, ncol=dimbase[2], byrow=F)
 
 	# Up to this point basemat has been convolved already
 	# That means that we're explicitly ignoring the convopt parameter
 	# and doing always a brute-force convolution inside libprofit,
 	# since that's the only one supported at the moment
 
+	# Crop the resulting image, we requested a bigger one to include the PSF...
+	if( haspsf && returncrop ) {
+		dimbase = dim*finesample
+		psfcrop = floor(dim(psf)/2)
+		stopifnot(all((psfcrop %% 1) == 0))
+		basemat = basemat[(1:dimbase[1]) + psfcrop[1], (1:dimbase[2]) + psfcrop[2]]
+	}
 
 	# Downsample if necessary, create final structure and return
 	if( finesample > 1 && !returnfine )
