@@ -109,6 +109,10 @@ profitMakeModel = function(modellist,
 		if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 			profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
 		}
+
+		# Fix X/Y center of the psf profile as needed
+		profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+		profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 	}
 
 	# Build the top-level model structure
