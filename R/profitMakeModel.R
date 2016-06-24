@@ -1,6 +1,6 @@
 profitMakeModel = function(modellist,
                            magzero=0, psf=NULL, dim=c(100,100),
-                           serscomp='all', psfcomp='all',
+                           serscomp='all', pscomp='all',
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
@@ -14,8 +14,8 @@ profitMakeModel = function(modellist,
 	if( serscomp=='all' ) {
 		serscomp = 1:length(modellist$sersic$xcen)
 	}
-	if( psfcomp=='all' ) {
-		psfcomp = 1:length(modellist$psf$xcen)
+	if( pscomp=='all' ) {
+		pscomp = 1:length(modellist$pointsource$xcen)
 	}
 	if( missing(remax) ) {
 		remax = 0
@@ -101,18 +101,18 @@ profitMakeModel = function(modellist,
 	}
 	if( haspsf ) {
 		model_psf = psf
-		if( length(modellist$psf) > 0 && length(psfcomp) > 0 ) {
-			for( name in names(modellist$psf) ) {
-				profiles[['psf']][[name]] = c(unlist(modellist$psf[[name]][psfcomp]))
+		if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
+			for( name in names(modellist$pointsource) ) {
+				profiles[['pointsource']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
 			}
 		}
 		if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 			profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
 		}
 
-		# Fix X/Y center of the psf profile as needed
-		profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-		profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
+		# Fix X/Y center of the pointsource profile as needed
+		profiles$pointsource[['xcen']] = (profiles$pointsource[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+		profiles$pointsource[['ycen']] = (profiles$pointsource[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 	}
 
 	# Build the top-level model structure

@@ -177,7 +177,7 @@ void _read_sky_profiles(profit_model *model, SEXP profiles_list) {
 
 static
 void _read_psf_profiles(profit_model *model, SEXP profiles_list) {
-	_read_profiles(model, profiles_list, "psf", "xcen", &list_to_psf);
+	_read_profiles(model, profiles_list, "pointsource", "xcen", &list_to_psf);
 }
 
 

@@ -46,6 +46,7 @@ struct _profit_profile_index _all_profiles[] = {
 	{"sky",    profit_create_sky},
 	{"sersic", profit_create_sersic},
 	{"psf",    profit_create_psf},
+	{"pointsource", profit_create_psf},
 	{NULL, NULL} // Sentinel
 };
 
