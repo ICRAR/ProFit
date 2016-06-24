@@ -33,7 +33,7 @@ profitMakePointSource=function(xcen=NULL,ycen=NULL,mag=0,magzero=0,
       model[[comp]]$ycen = rep(ycen,length(compmag))
     }
     # Fine sampling is only needed to match image scales - it doesn't make the integral (much) more accurate
-    output = profitMakeModel(model,dim=dimimg,psf=matrix(1,2,2))$z*scale
+    output = profitMakeModel(model,dim=dimimg)$z*scale
   }
   if(add) output=profitAddMats(image,output,pixlocs)
   return(output)

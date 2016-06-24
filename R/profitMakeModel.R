@@ -41,17 +41,15 @@ profitMakeModel = function(modellist,
 		psfpad = floor(dim(psf)/2)
 	}
 
-	# In the original code image convolution and PSF profiles were turned on
-	# only if a PSF was given in the "psf" parameter of this method. This bit
-	# of logic below goes against that original idea, creating a PSF if required
-	# (because there are psf profiles to be drawn) and none was given, so I'm
-	# commenting it out for the time being.
-	#
-	#haspsfmodel = !is.null(modellist$psf)
-	#if( haspsfmodel && !haspsf ) {
-	#	haspsf = TRUE
-	#	psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = list(psf=modellist$psf))
-	#}
+	# If the "psf" argument is not given, users can still provide an analytical
+	# PSF function by specifing a "psf model"; that is, a list of profiles
+	# that will be evaluated in a small area, producing an image that we will
+	# then user as our PSF.
+	haspsfmodel = !is.null(modellist$psf)
+	if( haspsfmodel && !haspsf ) {
+		haspsf = TRUE
+		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = modellist$psf)
+	}
 
 	# Handle fine sampling
 	# Fine sampling increases the size of the generated image, and therefore
