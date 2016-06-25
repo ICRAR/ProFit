@@ -140,12 +140,12 @@ void profit_evaluate_psf(profit_profile *profile, profit_model *model, double *i
 	 * all the same on each image pixel so we calculate them once.
 	 */
 
-	double xd1 = psf->xcen - floor(psf->xcen);
+	double xd1 = psf_origin_x - floor(psf_origin_x);
 	double xd2 = 1 - xd1;
-	double yd1 = psf->ycen - floor(psf->ycen);
+	double yd1 = psf_origin_y - floor(psf_origin_y);
 	double yd2 = 1 - yd1;
 	double a1 = xd1 * yd1;
-	double a2 = xd2 * yd2;
+	double a2 = xd2 * yd1;
 	double a3 = xd1 * yd2;
 	double a4 = xd2 * yd2;
 
