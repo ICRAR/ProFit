@@ -1,5 +1,5 @@
 /**
- * Header file for the image convolution implementation
+ * Utility routines for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -23,34 +23,32 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _CONVOLUTION_H_
-#define _CONVOLUTION_H_
 
-#include <stdbool.h>
+void profit_add_images(double *dest, double *src,
+                       unsigned int width, unsigned int height) {
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+	for(unsigned int i=0; i != width*height; i++, dest++, src++) {
+		*dest += *src;
+	}
 
-/**
- * Convolves image src with the kernel krn.
- *
- * Both the source image and the kernel need to specify their width and height.
- * Depending on the value of the replace parameter, the same src image will be
- * used to store the convolution result (if replace != 0), or a new vector will
- * be allocated and filled instead.
- *
- * A mask parameter also controls which pixels from the original image should be
- * convolved. If NULL all pixels are convolved.
- */
-double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
-                        double *krn, unsigned int krn_width, unsigned int krn_height,
-                        bool *mask, bool replace);
-
-#ifdef __cplusplus
 }
-#endif
 
-#endif /* _CONVOLUTION_H_ */
+void profit_normalize(double *image, unsigned int img_width, unsigned int img_height) {
 
+	unsigned int i;
+	unsigned int size = img_width * img_height;
+	double sum = 0;
+
+	double *in = image;
+	for(i=0; i!=size; i++) {
+		sum += *in;
+		in++;
+	}
+
+	in = image;
+	for(i=0; i!=size; i++) {
+		*in /= sum;
+		in++;
+	}
+
+}

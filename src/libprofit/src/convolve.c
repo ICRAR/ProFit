@@ -29,26 +29,6 @@
 
 #include "convolve.h"
 
-void profit_normalize(double *image, unsigned int img_width, unsigned int img_height) {
-
-	unsigned int i;
-	unsigned int size = img_width * img_height;
-	double sum = 0;
-
-	double *in = image;
-	for(i=0; i!=size; i++) {
-		sum += *in;
-		in++;
-	}
-
-	in = image;
-	for(i=0; i!=size; i++) {
-		*in /= sum;
-		in++;
-	}
-
-}
-
 double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
                         double *krn, unsigned int krn_width, unsigned int krn_height,
                         bool *mask, bool replace){

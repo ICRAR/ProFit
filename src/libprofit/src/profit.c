@@ -35,6 +35,7 @@
 #include "psf.h"
 #include "sersic.h"
 #include "sky.h"
+#include "utils.h"
 
 struct _profit_profile_index {
 	char *name;
@@ -91,7 +92,7 @@ profit_profile* profit_create_profile(profit_model *model, const char * profile_
 
 void profit_eval_model(profit_model *model) {
 
-	unsigned int i, j, p;
+	unsigned int p;
 
 	/* Check limits */
 	if( !model->width ) {
@@ -185,11 +186,7 @@ void profit_eval_model(profit_model *model) {
 	for(p=0; p != model->n_profiles; p++) {
 		if( model->profiles[p]->convolve ) {
 			convolve = true;
-			for(i=0; i != model->width; i++) {
-				for(j=0; j != model->height; j++) {
-					model->image[j*model->width + i] += profile_images[p][j*model->width + i];
-				}
-			}
+			profit_add_images(model->image, profile_images[p], model->width, model->height);
 		}
 	}
 	if( convolve ) {
@@ -202,16 +199,13 @@ void profit_eval_model(profit_model *model) {
 	}
 	for(p=0; p != model->n_profiles; p++) {
 		if( !model->profiles[p]->convolve ) {
-			for(i=0; i != model->width; i++) {
-				for(j=0; j != model->height; j++) {
-					model->image[j*model->width + i] += profile_images[p][j*model->width + i];
-				}
-			}
+			profit_add_images(model->image, profile_images[p], model->width, model->height);
 		}
 		free(profile_images[p]);
 	}
 	free(profile_images);
 
+	/* Done! Good job :-) */
 }
 
 char *profit_get_error(profit_model *m) {
