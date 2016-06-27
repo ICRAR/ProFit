@@ -188,9 +188,6 @@ profitMakeModel = function(modellist,
 		}
 	}
 
-	print("This is the list of profiles we'll draw:")
-	print(profiles)
-
 	# Build the top-level model structure
 	model = list(
 		magzero = magzero,
