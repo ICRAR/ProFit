@@ -37,10 +37,6 @@ profitMakeModel = function(modellist,
 	psfpad = c(0,0)
 	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
 
-	if( haspsf ) {
-		psfpad = floor(dim(psf)/2)
-	}
-
 	# If the "psf" argument is not given, users can still provide an analytical
 	# PSF function by specifing a "psf model"; that is, a list of profiles
 	# that will be evaluated in a small area, producing an image that we will
@@ -49,6 +45,10 @@ profitMakeModel = function(modellist,
 	if( haspsfmodel && !haspsf ) {
 		haspsf = TRUE
 		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = modellist$psf)
+	}
+
+	if( haspsf ) {
+		psfpad = floor(dim(psf)/2)
 	}
 
 	# Handle fine sampling
@@ -70,9 +70,10 @@ profitMakeModel = function(modellist,
 		}
 	}
 
-	# Collect only the profiles we'll use
+	# Let's start collecting profiles now...
 	profiles = list()
-	model_psf = NULL
+
+	# Collect only the sersic profiles that the user specified
 	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 
 		# Copy them
@@ -92,33 +93,110 @@ profitMakeModel = function(modellist,
 		profiles$sersic[['ycen']] = (profiles$sersic[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 		profiles$sersic[['re']] = profiles$sersic[['re']] * finesample
 
+		# Down in libprofit these values are specified per-profile instead of globally,
+		# so we simply replicate them here
 		profiles$sersic[['rough']] = rep(as.integer(rough), length(serscomp))
 		profiles$sersic[['acc']] = rep(acc, length(serscomp))
 		profiles$sersic[['re_max']] = rep(remax, length(serscomp))
 		profiles$sersic[['rescale_flux']] = rep(rescaleflux, length(serscomp))
 	}
+
+	# pointsource profiles are accomlished in two different ways:
+	#  * If a PSF image was given, then we consider each of the
+	#    pointsource profiles is translated into a "psf" libprofit
+	#    profile, which draws the PSF image into the desired location
+	#  * If on the other hand the user specified a PSF model (itself
+	#    consisting on a list of profiles), we take this list of
+	#    "subprofiles" and reproduce it for each of the pointsource
+	#    profiles, adjusting values as needed.
+	#    For example if we pass down a model$psf with two sersic profiles
+	#    and a modellist with three pointsource profiles, we will add
+	#    three different versions of the two sersic profiles to the
+	#    global list of profiles of the model.
 	if( haspsf ) {
-		model_psf = psf
-		if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
-			for( name in names(modellist$pointsource) ) {
-				profiles[['pointsource']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
+
+		if( haspsfmodel ) {
+
+			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
+
+				submodel = modellist$psf
+				for(i in 1:length(modellist$pointsource)) {
+
+					for(comp in names(submodel)) {
+
+						# Create the new profile with proper values
+						new_profiles = submodel[[comp]]
+						compmag = new_profiles[['mag']]
+						stopifnot(!is.null(compmag))
+						n_profiles = length(new_profiles[['mag']])
+
+						xcen = modellist$pointsource$xcen[[i]] - imgcens[1] * finesample + imgcensfine[1] + psfpad[1]
+						ycen = modellist$pointsource$ycen[[i]] - imgcens[2] * finesample + imgcensfine[2] + psfpad[2]
+						new_profiles$xcen = rep(xcen, n_profiles)
+						new_profiles$ycen = rep(ycen, n_profiles)
+
+						# The original code did this:
+						# output = profitMakeModel() * 10^(-0.4*(mag-magzero))
+						# But I don't get why it scales by 10^... if internally
+						# each profile already scales the values but that magnitude
+						# TODO: ask Aaron about this
+						# If we have to apply the scale again then we simply have to
+						# modify the magnitude we set on these profiles
+						#new_profiles$mag = rep(modellist$pointsource$mag[[i]] - psprofile$mag, length(new_profiles[['mag']]))
+						new_profiles$mag = rep(modellist$pointsource$mag[[i]], n_profiles)
+
+						# Add default values for missing properties on the submodel profiles
+						add_defaults = function(new_profiles, propname, val) {
+							if ( !(propname %in% names(new_profiles)) && propname %in% names(profiles[[comp]]) ) {
+								new_profiles[[propname]] = rep(val, n_profiles)
+							}
+							return(new_profiles)
+						}
+						if( comp == 'sersic' ) {
+							new_profiles = add_defaults(new_profiles, 'box', 0)
+							new_profiles = add_defaults(new_profiles, 'rough', F)
+							new_profiles = add_defaults(new_profiles, 'acc', 0.1)
+							new_profiles = add_defaults(new_profiles, 're_max', 0)
+							new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
+						}
+
+						# Merge into the main list of profiles
+						for(name in c(names(modellist$comp), names(new_profiles))) {
+							profiles[[comp]][[name]] = c(profiles[[comp]][[name]], new_profiles[[name]])
+						}
+
+					}
+				}
 			}
-		}
-		if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
-			profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
+
 		}
 
-		# Fix X/Y center of the pointsource profile as needed
-		profiles$pointsource[['xcen']] = (profiles$pointsource[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-		profiles$pointsource[['ycen']] = (profiles$pointsource[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
+		else {
+
+			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
+				for( name in names(modellist$pointsource) ) {
+					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
+				}
+			}
+			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
+				profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
+			}
+
+			# Fix X/Y center of the pointsource profile as needed
+			profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+			profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
+		}
 	}
+
+	print("This is the list of profiles we'll draw:")
+	print(profiles)
 
 	# Build the top-level model structure
 	model = list(
 		magzero = magzero,
 		dimensions = dimbase,
 		profiles = profiles,
-		psf = model_psf
+		psf = psf
 	)
 	if( docalcregion ) {
 		model[['calcregion']] = calcregion
