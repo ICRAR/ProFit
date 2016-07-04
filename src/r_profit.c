@@ -188,7 +188,6 @@ void _read_psf_profiles(profit_model *model, SEXP profiles_list) {
 SEXP R_profit_make_model(SEXP model_list) {
 
 	ssize_t size;
-	unsigned int i, p;
 	unsigned int img_w, img_h;
 	double res = 1;
 	char *error;
