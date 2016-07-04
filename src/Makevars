@@ -1,0 +1,12 @@
+PKG_CPPFLAGS = -Ilibprofit/include  -DPROFIT_VERSION=$(shell cat libprofit/VERSION) -DHAVE_R
+
+OBJECTS = libprofit/src/profit.o \
+          libprofit/src/sersic.o \
+          libprofit/src/sky.o \
+          libprofit/src/psf.o \
+          libprofit/src/convolve.o \
+          libprofit/src/utils.o \
+          r_profit.o \
+          ProFit.o \
+          RcppExports.o \
+          gauss.o
