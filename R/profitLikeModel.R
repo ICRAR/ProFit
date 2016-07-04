@@ -1,19 +1,18 @@
 # Convenient function to flatten a list into another list and
 # avoid coercion into a single type (usually numeric/double)
-.renquote <- function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, .renquote) else enquote(l)
-.flattenlist <- function(ml) lapply(unlist(.renquote(ml)), eval)
-.rrelist <- function(flesh, skeleton=attr(flesh, "skeleton"))
-{
-  index <- 1
-  result <- skeleton
+.renquote = function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, .renquote) else enquote(l)
+.flattenlist = function(ml) lapply(unlist(.renquote(ml)), eval)
+.rrelist = function(flesh, skeleton=attr(flesh, "skeleton")){
+  index = 1
+  result = skeleton
   for (i in 1:length(skeleton)) {
-    size <- length(unlist(result[[i]]))
+    size = length(unlist(result[[i]]))
     if(is.list(result[[i]])) {
-      result[[i]] <- .rrelist(flesh[index:(index + size - 1)], result[[i]])
+      result[[i]] = .rrelist(flesh[index:(index + size - 1)], result[[i]])
     } else if(size >1) {
-      result[[i]] <- relist(flesh[index:(index + size - 1)], result[[i]])
+      result[[i]] = relist(flesh[index:(index + size - 1)], result[[i]])
     } else {
-      result[[i]] <- flesh[[index]]
+      result[[i]] = flesh[[index]]
     }
     index <- index + size
   }
@@ -76,11 +75,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   }
   
   if(Data$usecalcregion){
-    model = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
+    model = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
       serscomp=serscomp, pscomp=pscomp, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
       magmu=Data$magmu,finesample=finesample, convopt=Data$convopt)
   }else{
-    model = profitMakeModel(model=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
+    model = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
       serscomp=serscomp, pscomp=pscomp, rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt)
   }
   

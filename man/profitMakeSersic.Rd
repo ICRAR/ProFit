@@ -8,16 +8,13 @@ Low-Level 2D Sersic Model Image Creation
 This function provides a low level interface to the Rcpp code that calculates pixel integrals on an image matrix for a user defined 2D Sersic function. In general users should use the higher level \code{\link{profitMakeModel}} function instead to generate an arbitrary model image with one or more 2D Sersic components.
 }
 \usage{
-profitMakeSersic(CALCREGION, XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0,
+profitMakeSersic(XCEN = 0, YCEN = 0, MAG = 15, RE = 1, NSER = 1, ANG = 0,
 AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric(c(-100, 100)),
-YLIM = as.numeric(c(-100, 100)), DIM = as.integer(c(200, 200)), UPSCALE=8L, MAXDEPTH=2L,
-RESWITCH=2, ACC=0.1, DOCALCREGION = FALSE, REMAX=10)
+YLIM = as.numeric(c(-100, 100)), DIM = as.integer(c(200, 200)), ACC=0.1, DOCALCREGION
+= FALSE, CALCREGION)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{CALCREGION}{
-Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{DOCALCREGION}=TRUE, then pixels in \option{CALCREGION} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
-}
   \item{XCEN}{
 Scalar; x centre of the 2D Sersic profile (can be fractional pixel positions).
 }
@@ -58,24 +55,27 @@ The y pixel range of the image to generate the image on. Typically this should b
   \item{DIM}{
 Vector of length 2; the dimensions of the image to be generated. Typically this should be c(Nx,Ny).
 }
-  \item{UPSCALE}{
-The upsampling to use for refined pixels. larger UPSCALE means a more accurate pixel integration. The default (9) works reasonably for a wide range of profiles.
-}
-  \item{MAXDEPTH}{
-The allowed maximum depth of integration recursion. Larger (e.g. 5) means more accurate integration, but increased computation time. The default (2) works reasonably for a wide range of profiles.
-}
-  \item{RESWITCH}{
-The axial ratio and boxiness corrected radius with respect to \option{RE} inside of which pixels should be refined using the \option{UPSCALE} and \option{MAXDEPTH} options.  The default (2, i.e. 2*Re) works reasonably for a wide range of profiles.
-}
+%  \item{UPSCALE}{
+%The upsampling to use for refined pixels. larger UPSCALE means a more accurate pixel integration. The default (9) works reasonably for a wide range of profiles.
+%}
+%  \item{MAXDEPTH}{
+%The allowed maximum depth of integration recursion. Larger (e.g. 5) means more accurate integration, but increased computation time. The default (2) works reasonably for a wide range of profiles.
+%}
+%  \item{RESWITCH}{
+%The axial ratio and boxiness corrected radius with respect to \option{RE} inside of which pixels should be refined using the \option{UPSCALE} and \option{MAXDEPTH} options.  The default (2, i.e. 2*Re) works reasonably for a wide range of profiles.
+%}
   \item{ACC}{
 Desired minimum per pixel accuracy within the upscaling region defined by \option{RESWITCH}. \option{ACC} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. The default (0.1) works reasonably for a wide range of profiles.
 }
   \item{DOCALCREGION}{
 Logical; should the \option{CALCREGION} logical matrix be used to define a subset of pixels to be convolved.
 }
-  \item{REMAX}{
-The profile is computed out to this many times Re, after this point the values in the image are set to zero.
+  \item{CALCREGION}{
+Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{DOCALCREGION}=TRUE, then pixels in \option{CALCREGION} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
 }
+%  \item{REMAX}{
+%The profile is computed out to this many times Re, after this point the values in the image are set to zero.
+%}
 }
 \details{
 In general this function should not be used directly, and instead users should access it via specifying a model list and using the \code{\link{profitMakeModel}} function.
@@ -104,7 +104,7 @@ Aaron Robotham & Dan Taranu
 }
 \examples{
 #Notice the dummy matrix that is passed.
-magimage(profitMakeSersic(matrix(1,1,1), XCEN=0, YCEN=0, RE=5, NSER=4, ANG=45, AXRAT=0.3))
+magimage(profitMakeSersic(XCEN=0, YCEN=0, RE=5, NSER=4, ANG=45, AXRAT=0.3))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

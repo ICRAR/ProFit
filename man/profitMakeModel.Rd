@@ -8,14 +8,14 @@ High-Level 2D Galaxy and Point Source Image Creation
 Create an astronomical image containing model galaxies or point sources, with or without convolution with the PSF. This is achieved by providing a model list that contains the main parameters that define the model.
 }
 \usage{
-profitMakeModel(model, magzero = 0, psf=NULL, dim = c(100, 100), serscomp = "all",
+profitMakeModel(modellist, magzero = 0, psf=NULL, dim = c(100, 100), serscomp = "all",
 pscomp = "all", rough = FALSE, acc = 0.1, finesample=1L, returnfine=FALSE, 
 returncrop=TRUE, calcregion, docalcregion=FALSE, magmu=FALSE,
 remax, rescaleflux = FALSE, convopt=list(method="Bruteconv"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{model}{
+  \item{modellist}{
 The model list that describes the analytic model to be created. See Details.
 }
   \item{magzero}{

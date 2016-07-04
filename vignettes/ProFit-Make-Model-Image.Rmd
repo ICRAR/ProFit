@@ -177,14 +177,14 @@ model2 = list(
 )
 ```
 
-As before we can run this through `profitMakeModel` and then plot the image. This should run in ~1 second, which means we are scaling well with our more complex model:
+As before we can run this through `profitMakeModel` and then plot the image. This should run in ~0.5 second, which means we are scaling well with our more complex model:
 
 ```{r, fig.width=5, fig.height=5}
 system.time(ExampleImagePSF2<-profitMakeModel(model=model2, psf=ExamplePSF, dim=c(200,200)))
 magimage(ExampleImagePSF2)
 ```
 
-We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~6 seconds). However, this is much faster than the naive 1x(1000/200)^2=25 seconds that we might expect. This is because the lower level `profitMakeSersic` Rcpp routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
+We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~3 seconds). However, this is much faster than the naive 1x(1000/200)^2=25 seconds that we might expect. This is because the lower level `profitMakeSersic` Rcpp routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
 
 ```{r, fig.width=5, fig.height=5}
 model3 = list(
@@ -211,7 +211,7 @@ system.time(ExampleImagePSF3<-profitMakeModel(model=model3, psf=ExamplePSF, dim=
 magimage(ExampleImagePSF3)
 ```
 
-A faster image can be generated if the remax flag is turned on. With remax=10 it only takes ~3 seconds to make the model image. This might be accurate enough for many simulation purposes and can be a factor of 2 faster.
+A faster image can be generated if the remax flag is turned on. With remax=10 it only takes ~1.5 seconds to make the model image. This might be accurate enough for many simulation purposes and can be a factor of 2 faster.
 
 ```{r, fig.width=5, fig.height=5}
 system.time(profitMakeModel(model=model3, psf=ExamplePSF, dim=c(1000,1000), remax=10))
