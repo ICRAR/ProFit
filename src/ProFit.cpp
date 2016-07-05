@@ -9,7 +9,7 @@ NumericMatrix profitDownsample(const NumericMatrix & IMG, const int DOWNSAMPLEFA
   if(DOWNSAMPLEFAC == 1) return IMG;
   if(!(DOWNSAMPLEFAC > 1)) return NumericMatrix(0,0);
   const int X_S = IMG.nrow(), Y_S = IMG.ncol();
-  const int X_D = X_S / DOWNSAMPLEFAC, Y_D = Y_S / DOWNSAMPLEFAC;
+  const int X_D = std::ceil(X_S / (float)DOWNSAMPLEFAC), Y_D = std::ceil(Y_S / (float)DOWNSAMPLEFAC);
   NumericMatrix d(X_D,Y_D);
   int row,col,rowd, cold;
   for(col = 0; col < Y_S; ++col)
