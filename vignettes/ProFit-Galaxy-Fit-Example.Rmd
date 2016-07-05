@@ -328,7 +328,7 @@ To test this, set up the data again. This time we will fine sample the model and
 ```{r,eval=FALSE}
 Dataf=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
   model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=50L, finesample=2L)
+  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=10L, finesample=2L)
 ```
 
 Note that profitSetupData automagically fine-samples the PSF by interpolating it. Usually, brute-force convolution is faster than an FFT (which requires 2x padding to avoid artifacts), but it scales as finesample^4, so FFT is often faster with large images and/or PSFs.

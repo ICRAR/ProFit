@@ -56,7 +56,7 @@ profitMakeModel = function(modellist,
 	# will affect the coordinates given by the user, which are relative to the
 	# original image size.
 	imgcens = dim/2
-	imgcensfine = imgcens*finesample
+	imgcensfine = imgcens#*finesample
 	dimbase = c(dim[1]*finesample + 2*psfpad[1], dim[2]*finesample + 2*psfpad[2])
 
 	# Wrong calcregion dimensions, should be the same as the model's
@@ -89,9 +89,8 @@ profitMakeModel = function(modellist,
 		}
 
 		# Fix X/Y center of the sersic profile as needed
-		profiles$sersic[['xcen']] = (profiles$sersic[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-		profiles$sersic[['ycen']] = (profiles$sersic[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
-		profiles$sersic[['re']] = profiles$sersic[['re']] * finesample
+		profiles$sersic[['xcen']] = profiles$sersic[['xcen']] + psfpad[1]/finesample
+		profiles$sersic[['ycen']] = profiles$sersic[['ycen']] + psfpad[2]/finesample
 
 		# Down in libprofit these values are specified per-profile instead of globally,
 		# so we simply replicate them here
@@ -130,8 +129,8 @@ profitMakeModel = function(modellist,
 						stopifnot(!is.null(compmag))
 						n_profiles = length(new_profiles[['mag']])
 
-						xcen = modellist$pointsource$xcen[[i]] - imgcens[1] * finesample + imgcensfine[1] + psfpad[1]
-						ycen = modellist$pointsource$ycen[[i]] - imgcens[2] * finesample + imgcensfine[2] + psfpad[2]
+						xcen = (modellist$pointsource$xcen[[i]] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+						ycen = (modellist$pointsource$ycen[[i]] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 						new_profiles$xcen = rep(xcen, n_profiles)
 						new_profiles$ycen = rep(ycen, n_profiles)
 
