@@ -8,10 +8,9 @@ Low-Level 2D Sersic Model Image Creation
 This function provides a low level interface to the Rcpp code that calculates pixel integrals on an image matrix for a user defined 2D Sersic function. In general users should use the higher level \code{\link{profitMakeModel}} function instead to generate an arbitrary model image with one or more 2D Sersic components.
 }
 \usage{
-profitMakeSersic(xcen = 0, ycen = 0, mag = 15, re = 1, nser = 1, ang = 0,
-axrat = 1, box = 0, magzero = 0, rough = FALSE, xlim = as.numeric(c(-100, 100)),
-ylim = as.numeric(c(-100, 100)), dim = as.integer(c(200, 200)), acc=0.1, docalcregion
-= FALSE, calcregion)
+profitMakeSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 1, ang = 0,
+axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(200, 200), acc=0.1,
+docalcregion = FALSE, calcregion)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -46,12 +45,12 @@ Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, def
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
 }
-  \item{xlim}{
-The x pixel range of the image to generate the image on. Typically this should be c(0,Nx).
-}
-  \item{ylim}{
-The y pixel range of the image to generate the image on. Typically this should be c(0,Ny).
-}
+%  \item{xlim}{
+%The x pixel range of the image to generate the image on. Typically this should be c(0,Nx).
+%}
+%  \item{ylim}{
+%The y pixel range of the image to generate the image on. Typically this should be c(0,Ny).
+%}
   \item{dim}{
 Vector of length 2; the dimensions of the image to be generated. Typically this should be c(Nx,Ny).
 }
@@ -104,7 +103,7 @@ Aaron Robotham & Dan Taranu
 }
 \examples{
 #Notice the dummy matrix that is passed.
-magimage(profitMakeSersic(xcen=0, ycen=0, re=5, nser=4, ang=45, axrat=0.3))
+magimage(profitMakeSersic(xcen=100, ycen=100, re=5, nser=4, ang=45, axrat=0.3))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
