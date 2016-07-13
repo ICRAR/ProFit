@@ -1,5 +1,5 @@
 profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,intervals,psf=NULL,
-  finesample=1L,magzero=0, algo.func='LA', likefunc="chisq", verbose=FALSE, magmu=FALSE, nbenchmark=10L){
+  finesample=1L,magzero=0, algo.func='LA', like.func="chisq", verbose=FALSE, magmu=FALSE, nbenchmark=10L){
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmark) && nbenchmark >= 1L)
   imagedim = dim(image)
@@ -100,7 +100,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
   profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, model=model, psf=psf, psftype=psftype, fitpsf=fitpsf,
                    algo.func=algo.func, mon.names=c("LL","LP","dof"), parm.names=parm.names, N=length(which(as.logical(region))), region=region,
                    calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
-                   tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, likefunc = likefunc,
+                   tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, like.func = like.func,
                    magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu)
   class(profit.data)="profit.data"
   return=profit.data

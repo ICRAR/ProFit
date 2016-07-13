@@ -189,7 +189,7 @@ Setup the data structure we need for optimisation, taking a few seconds to find 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
   model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='optim', verbose=TRUE, finesample=1L, nbenchmark=1L)
+  magzero=0, algo.func='optim', like.func = "t", verbose=TRUE, finesample=1L, nbenchmark=1L)
 ```
 
 This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
@@ -350,13 +350,13 @@ LAfitf=LaplaceApproximation(profitLikeModel, parm=LAfit$Summary1[,1], Data=Dataf
 Now run `LaplacesDemon` again, with fewer iterations to begin with (as it's slower to convolve):
 
 ```{r, eval=FALSE}
-Data$algo.func = "LD"
+Dataf$algo.func = "LD"
 
 LDfitf=LaplacesDemon(profitLikeModel, Initial.Values=LAfitf$Summary1[,1], Data=Dataf,
   Iterations=1e3, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
 ```
 
-If you run the above for 1e4 iterations (will take several hours), try comparing posteriors (ha!):
+If you run the above for 1e4 iterations (will take several hours), try comparing posteriors:
 
 ```{r, eval=FALSE}
 LDfit$Summary2

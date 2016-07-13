@@ -9,8 +9,8 @@ This function provides a low level interface to the Rcpp code that calculates pi
 }
 \usage{
 profitMakeSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 1, ang = 0,
-axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(200, 200), acc=0.1,
-docalcregion = FALSE, calcregion)
+axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(200, 200), acc=0.1, calcregion,
+docalcregion = FALSE, remax)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -66,15 +66,15 @@ Vector of length 2; the dimensions of the image to be generated. Typically this 
   \item{acc}{
 Desired minimum per pixel accuracy within the upscaling region. \option{acc} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. The default (0.1) works reasonably for a wide range of profiles.
 }
-  \item{docalcregion}{
-Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
-}
   \item{calcregion}{
 Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
 }
-%  \item{REMAX}{
-%The profile is computed out to this many times Re, after this point the values in the image are set to zero.
-%}
+  \item{docalcregion}{
+Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
+}
+  \item{remax}{
+If provided the profile is computed out to this many times Re, after this point the values in the image are set to zero. If missing the profile is calculated out to the radius at which 99.99% of flux is contained within the elliptical isocontour.
+}
 }
 \details{
 In general this function should not be used directly, and instead users should access it via specifying a model list and using the \code{\link{profitMakeModel}} function.

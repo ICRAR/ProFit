@@ -26,7 +26,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   finesample = 1L
   if(length(Data$finesample)>0) finesample = Data$finesample
   profitCheckFinesample(finesample)
-  stopifnot(Data$likefunc %in% c('norm', 't', 'chisq'))
+  stopifnot(Data$like.func %in% c('norm', 't', 'chisq'))
   
   fitIDs=which(unlist(Data$tofit))
   parm=parm[1:length(fitIDs)]
@@ -97,17 +97,17 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   vardata = var(cutsig)
   dof=2*vardata/(vardata-1)
   dof=interval(dof,0,Inf)
-  if(Data$likefunc=="norm"){
+  if(Data$like.func=="norm"){
     LL=sum(dnorm(cutsig, log=TRUE))
-  } else if(Data$likefunc=="chisq") {
+  } else if(Data$like.func=="chisq") {
     LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
-  } else if(Data$likefunc=="t") {
+  } else if(Data$like.func=="t") {
     LL=sum(dt(cutsig,dof,log=TRUE))
-  } else if(Data$likefunc=="pois") {
+  } else if(Data$like.func=="pois") {
     scale=sqrt(median(abs(cutim/cutsig)))
     LL=sum(dpois(ceiling(cutim/scale),cutmod/scale,log=T))
   } else {
-    stop(paste0("Error: unknown likelihood function: '",Data$likefunc,"'"))
+    stop(paste0("Error: unknown likelihood function: '",Data$like.func,"'"))
   }
   
   if(makeplots){

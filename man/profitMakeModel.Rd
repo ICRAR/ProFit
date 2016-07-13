@@ -64,7 +64,7 @@ If provided the profile is computed out to this many times Re, after this point 
 Logical; where the profile has been truncated via \option{remax} this specifies whether the profile should be rescaled since the total integrated flux will be less than without truncation. In practice this means image values are increases by 1/0.9999 for the default case (where the profile is truncated at the point where 99.99\% of flux is contained).  
 }
 \item{convopt}{
-  A list specifying options for convolution. See 
+  A list specifying options for convolution. Currently ignored.
 }
 }
 \details{
