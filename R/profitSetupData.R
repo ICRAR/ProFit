@@ -1,7 +1,7 @@
 profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,intervals,psf=NULL,
-  finesample=1L,magzero=0, algo.func='LA', like.func="chisq", verbose=FALSE, magmu=FALSE, nbenchmark=10L){
+  finesample=1L,magzero=0, algo.func='LA', like.func="chisq", verbose=FALSE, magmu=FALSE, nbenchmark=0L){
   profitCheckFinesample(finesample)
-  stopifnot(is.integer(nbenchmark) && nbenchmark >= 1L)
+  stopifnot(is.integer(nbenchmark) && nbenchmark >= 0L)
   imagedim = dim(image)
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
   region = segim==segimkeep
@@ -57,7 +57,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
   calcregion=calcregion>0
   usecalcregion=TRUE
   
-  if(haspsf)
+  if(haspsf & nbenchmark>0)
   {
     dimmodel = dim(modelimg$z)
     dimregion = dim(calcregion)
@@ -89,6 +89,8 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
     }
   } else {
     convolve = list(method="Bruteconv")
+    convusecalcregion = TRUE
+    convopt = NA
   }
   
   init = unlist(model)

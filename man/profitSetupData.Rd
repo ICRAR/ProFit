@@ -9,8 +9,8 @@ This is a utility function to get the user inputs in the format required for mod
 }
 \usage{
 profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals,
-psf=NULL, finesample=1L, magzero=0, algo.func='LA', likefunc="chisq", verbose=FALSE,
-magmu=FALSE, nbenchmark=10L)
+psf=NULL, finesample=1L, magzero=0, algo.func='LA', like.func="chisq", verbose=FALSE,
+magmu=FALSE, nbenchmark=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -53,7 +53,7 @@ The magntiude zero point, where values become scaled by the standard scale=10^(-
   \item{algo.func}{
 Character string; the fitting functions being used. Allowed options are "optim", "CMA", "LA" and "LD". \code{profitLikeModel} uses the value of algo.func in the profit.data object to determine the type of output generated  for fitting purposes (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a single value. If set to "LA" or "LD" then a more complex structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algortithms available within R. In practice the user must ensure that this option is set correctly for the higher level function used to fit the image data.
 }
-  \item{likefunc}{
+  \item{like.func}{
   Character string specifying the likelihood distribution function to use. Chi-Squared "chisq" (default), Normal "norm", and Student-T "t" are the currently supported options.
 }
   \item{verbose}{
@@ -63,7 +63,7 @@ Logical; if TRUE then the value of parameters currently being assessed will be p
 Logical vector. If TRUE then the mag parameter in the input \option{model} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
 }
   \item{nbenchmark}{
-  Integer; the number of times to benchmark the speed of the available convolution methods. The results of this benchmarking are saved, along with the optimal benchmarking method and any additional data required for efficient convolution (such as the FFT of the PSF, if it is not variable).
+  Integer; the number of times to benchmark the speed of the available convolution methods. The results of this benchmarking are saved, along with the optimal benchmarking method and any additional data required for efficient convolution (such as the FFT of the PSF, if it is not variable). Default 0 means no benchmarking is done, and brute force convolution is always used.
   }
 }
 \details{

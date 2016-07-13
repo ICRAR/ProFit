@@ -7,7 +7,7 @@ Author: Aaron Robotham & Dan Taranu
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Get data / Define model / ??? / ProFit!
 License: file LICENSE
-Imports: fftw, gmp, Rcpp (>= 0.11.6)
+Imports: fftw, Rcpp (>= 0.11.6)
 Depends: FITSio, LaplacesDemon, magicaxis, R2Cuba, RColorBrewer
 LinkingTo: Rcpp
 Suggests: knitr

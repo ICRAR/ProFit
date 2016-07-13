@@ -64,17 +64,18 @@ profitBenchmarkConv <- function(img=NULL, psf=NULL, calcregion=NULL, nbench=10L,
     psfranges[[i]] = (1+npsfpad[i]):(npsfpad[i]+psfdim[i])
   }
   
-  if(is.null(fftwplan)) fftwplan = fftw::planFFT(padimgdim[1]*padimgdim[2], effort=0)
+  if(is.null(fftwplan))
   {
-    factors = unique(c(gmp::as.bigz(2),gmp::factorize(imgdim[1]),gmp::factorize(imgdim[2])))
-    t = proc.time()[['elapsed']]
     fftwplan = fftw::planFFT(padimgdim[1]*padimgdim[2], effort=0)
-    t = proc.time()[['elapsed']]-t
+    # factors = unique(c(gmp::as.bigz(2),gmp::factorize(imgdim[1]),gmp::factorize(imgdim[2])))
+    # t = proc.time()[['elapsed']]
+    # fftwplan = fftw::planFFT(padimgdim[1]*padimgdim[2], effort=0)
+    # t = proc.time()[['elapsed']]-t
     # If it took < 1 second to find an optimum plan, try a little harder
     # But not if the largest factor is > 53 (arbitrary), or there are fewer than 4 factors < 53
     # In that case it will probably take a loooong time (TODO: test exact criteria)
-    if(t < 1e3 && (max(factors) <= 53 || length(factors[factors <= 53]) > 4)) fftwplan = 
-      fftw::planFFT(padimgdim[1]*padimgdim[2], effort=maxfftwplaneffort)
+    # if(t < 1e3 && (max(factors) <= 53 || length(factors[factors <= 53]) > 4)) 
+    # fftwplan = fftw::planFFT(padimgdim[1]*padimgdim[2], effort=maxfftwplaneffort)
   }
   if(!refftpsf) 
   {

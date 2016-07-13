@@ -189,7 +189,7 @@ Setup the data structure we need for optimisation, taking a few seconds to find 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
   model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='optim', like.func = "t", verbose=TRUE, finesample=1L, nbenchmark=1L)
+  magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
 ```
 
 This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
