@@ -93,7 +93,7 @@ model=list(
     re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc]),
     nser= c(ExampleInit$sersic.nser1[useloc], 1),  #Disk is initially nser=1
     ang= c(ExampleInit$sersic.ang2[useloc], ExampleInit$sersic.ang2[useloc]),
-    axrat= c(1, ExampleInit$sersic.axrat2[useloc]),
+    axrat= c(1, ExampleInit$sersic.axrat2[useloc]),  #Bulge is initially axrat=1
     box=c(0, 0)
   )
 )
