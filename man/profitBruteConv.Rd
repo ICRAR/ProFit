@@ -9,21 +9,21 @@ Low level brute force image convolution
 A low level direct Rcpp implementation of brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. In most situations users should make convolutions using the higher level \code{\link{profitConvolvePSF}} provided.
 }
 \usage{
-profitBruteConv(IMG, PSF, CALCREGION, DOCALCREGION=FALSE)
+profitBruteConv(image, psf, calcregion=matrix(1,1,1), docalcregion=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{IMG}{
+  \item{image}{
 The image matrix to be convolved by the point spread function (PSF).
 }
-  \item{PSF}{
+  \item{psf}{
 The point spread function (PSF) image matrix that ProFit will use to convolve the image (should have odd size in both dimensions to prevent the image becoming offset.
 }
-  \item{CALCREGION}{
-Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{DOCALCREGION}=TRUE, then pixels in \option{CALCREGION} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
+  \item{calcregion}{
+Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
 }
-  \item{DOCALCREGION}{
-Logical; should the \option{CALCREGION} logical matrix be used to define a subset of pixels to be convolved.
+  \item{docalcregion}{
+Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
 }
 }
 \details{
@@ -61,7 +61,7 @@ magimage(model.image)
 
 # With convolution:
 
-magimage(profitBruteConv(IMG=model.image, PSF=profitMakePointSource(), CALCREGION=matrix(1,1,1)))
+magimage(profitBruteConv(image=model.image, psf=profitMakePointSource()))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

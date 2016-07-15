@@ -1,4 +1,4 @@
-profitBruteConv <- function(IMG, PSF, CALCREGION, DOCALCREGION = FALSE) {
-	convolved_image = .Call('R_profit_convolve', IMG, PSF, CALCREGION, DOCALCREGION)
-	return(matrix(convolved_image, ncol=dim(IMG)[2], byrow=F))
+profitBruteConv <- function(image, psf, calcregion=matrix(1,1,1), docalcregion = FALSE) {
+	convolved_image = .Call('R_profit_convolve', image, psf, calcregion, docalcregion)
+	return(matrix(convolved_image, ncol=dim(image)[2], byrow=F))
 }
