@@ -117,16 +117,16 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     errmap[!region & (errmap>maxerr)] = maxerr
     minerr = -maxerr
     errmap[!region & (errmap<minerr)] = minerr
-    magimage(errmap,stretch="atan",stretchscale=stretcherr,stype='num',col=errcmap)
+    magimage(errmap,magmap=FALSE,zlim=c(-3,3),col=errcmap)
     contour(tempcon,add=T,drawlabels = F,levels=1)
     legend('topleft',legend=bquote(chi*"=(Data-Model)"/sigma))
     
     par(mar=parmar2 + c(0,0,0,1))
     pady=1
     breaks = seq(-maximg,maximg, length.out=length(cmap)+1)
-    .profitImageScale(residuals,zlims, col=cmap, breaks = breaks, axis.pos=2, axis.padj=pady)
-    breaks = seq(minerr,maxerr, length.out=length(cmap)+1)
-    .profitImageScale(errmap,zlims, col=errcmap, breaks = breaks, axis.pos=2, axis.padj=pady)
+    .profitImageScale(zlim=range(residuals), col=cmap, breaks = breaks, axis.pos=2, axis.padj=pady)
+    breaks = seq(-3, 3, length.out=length(cmap)+1)
+    .profitImageScale(zlim=c(-3,3), col=errcmap, breaks = breaks, axis.pos=2, axis.padj=pady)
     
     par(mar=parmar2)
     ndat = sum(region)

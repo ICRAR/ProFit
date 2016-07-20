@@ -64,7 +64,7 @@ Projecting data back to 1D profiles is a knowingly imperfect process, but it can
 }
 \examples{
 
-#The best fit model for G266033
+#The rough best fit model for G266033 (KiDS)
 
 model=list(
   sersic=list(
@@ -80,7 +80,7 @@ model=list(
 )
 
 data('ExampleInit')
-image = readFITS(system.file("extdata", 'G266033fitim.fits', package="ProFit"))$imDat
+image = readFITS(system.file("extdata", 'KiDS/G266033fitim.fits',package="ProFit"))$imDat
 
 temp=profitEllipse(x=image, xcen=model$sersic$xcen[2], ycen=model$sersic$ycen[2], ang=
   model$sersic$ang[2], axrat=model$sersic$axrat[2], box=model$sersic$box[2])

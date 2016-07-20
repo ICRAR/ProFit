@@ -67,29 +67,15 @@ Projecting data back to 1D profiles is a knowingly imperfect process, but it can
 \code{\link{profitEllipse}}, \code{\link{profitRemakeModelList}}
 }
 \examples{
-# Load ProFit example data
+# Here we use galaxy G266033:
 
-data('ExampleInit')
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/',sep=''))
-ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
-print(ExampleIDs)
+image = readFITS(system.file("extdata", 'KiDS/G266033fitim.fits',package="ProFit"))$imDat
+mask = readFITS(system.file("extdata", 'KiDS/G266033mskim.fits',package="ProFit"))$imDat
+sigma = readFITS(system.file("extdata", 'KiDS/G266033sigma.fits',package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", 'KiDS/G266033segim.fits',package="ProFit"))$imDat
+psf = readFITS(system.file("extdata", 'KiDS/G266033psfim.fits',package="ProFit"))$imDat
 
-# There are 10 example galaxies included. Here we run example 3 (G266033):
-
-useID=ExampleIDs[3]
-
-image = readFITS(system.file("extdata", paste(useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(useID,'mskim.fits',sep=''),package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(useID,'sigma.fits',sep=''),package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(useID,'segim.fits',sep=''),package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(useID,'psfim.fits',sep=''),package="ProFit"))$imDat
-
-#Very rough model (not meant to look too good yet):
-
-useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
-useloc=which(ExampleInit$CATAID==useIDnum)
-
-#The best fit model for G266033
+#The rough best fit model for G266033 (KiDS)
 
 model=list(
   sersic=list(

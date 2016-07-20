@@ -70,19 +70,28 @@ magimage(profitMakeModel(model=model, psf=profitMakePointSource(), dim=c(200,200
 # Load ProFit example data
 
 data('ExampleInit')
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/',sep=''))
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/KiDS/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
+
+# There are 2 data source options: KiDS or SDSS (the galaxies are the same)
+
+datasource='KiDS' 
 
 # There are 10 example galaxies included. Here we run example 1:
 
 useID=ExampleIDs[1]
 
-image = readFITS(system.file("extdata", paste(useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(useID,'mskim.fits',sep=''),package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(useID,'sigma.fits',sep=''),package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(useID,'segim.fits',sep=''),package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(useID,'psfim.fits',sep=''),package="ProFit"))$imDat
+image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
+package="ProFit"))$imDat
+mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),
+package="ProFit"))$imDat
+sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
+package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
+package="ProFit"))$imDat
+psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
+package="ProFit"))$imDat
 
 # Very rough model (not meant to look too good yet):
 
@@ -95,10 +104,11 @@ useloc=which(ExampleInit$CATAID==useIDnum)
 
 model=list(
   sersic=list(
-    xcen= c(ExampleInit$sersic.xcen1[useloc], ExampleInit$sersic.xcen1[useloc]),
-    ycen= c(ExampleInit$sersic.ycen1[useloc], ExampleInit$sersic.ycen1[useloc]),
+    xcen= c(dim(image)[1]/2, dim(image)[1]/2),
+    ycen= c(dim(image)[2]/2, dim(image)[2]/2),
     mag= c(ExampleInit$sersic.mag1[useloc], ExampleInit$sersic.mag2[useloc]),
-    re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc]),
+    re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc])*
+      if(datasource=='KiDS'){1}else{0.2/0.339},
     nser= c(ExampleInit$sersic.nser1[useloc], 1),  #Disk is initially nser=1
     ang= c(ExampleInit$sersic.ang2[useloc], ExampleInit$sersic.ang2[useloc]),
     axrat= c(1, ExampleInit$sersic.axrat2[useloc]),  #Bulge is initially axrat=1
@@ -172,7 +182,7 @@ priors=list(
   )
 )
 
-#the hard intervals should also be specified in log space if relevant:
+# The hard intervals should also be specified in log space if relevant:
 
 lowers=c(0,0,0,0,10,10,0,0,-1,-1,-180,-180,-1,-1,-1,-1)
 uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
@@ -217,40 +227,40 @@ Data$init
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
-#First try optim BFGS:
+# First try optim BFGS:
 
 optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
 lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 
-#The best optim BFGS fit is given by:
+# The best optim BFGS fit is given by:
 
 optimfit$par
 
-#Check it out:
+# Check it out:
 
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
 
-#Now we can try a LaplaceApproximation fit (should take a few minutes):
+# Now we can try a LaplaceApproximation fit (should take a few minutes):
 
 Data$algo.func = "LA"
 
 LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e4,
 Method='BFGS', CovEst='Identity', sir=FALSE)
 
-#The best LA BFGS fit is given by:
+# The best LA BFGS fit is given by:
 
 LAfit$Summary1[,1]
 
-#Check it out:
+# Check it out:
 
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
 
-#If we get CMAES we can try to fit using genetic algorithms:
+# If we get CMAES we can try to fit using genetic algorithms:
 
 #library(devtools)
 #install_github('taranu/cmaes')
@@ -262,47 +272,47 @@ cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
 fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
 diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
 
-#The parameters:
+# The parameters:
 
 cmafit$par
 
-#The fit plots:
+# The fit plots:
 
 profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
 
-#Now we can try a LaplacesDemon fit:
+# Now we can try a LaplacesDemon fit:
 
 Data$algo.func = "LD"
 
 LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
 Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
 
-#If it has converged well you will have a Summary2 structure using the ESS:
+# If it has converged well you will have a Summary2 structure using the ESS:
 
 LDfit$Summary2
 
-#If not you can still check Summary1:
+# If not you can still check Summary1:
 
 LDfit$Summary1
 
-#The global fit is very close to the initial LA fit on this occassion.
+# The global fit is very close to the initial LA fit on this occassion.
 
-#With any luck you have enough stationary samples to run:
+# With any luck you have enough stationary samples to run:
 
 BestLD=magtri(LDfit$Posterior2, samples=500, samptype='ran')
 
-#Otherwise try:
+# Otherwise try:
 
 BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
 
-#We can now check our final fit:
+# We can now check our final fit:
 
 profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp='all')
 
 
-#Better errors can be obtained by removing the spurious structure remaining:
+# Better errors can be obtained by removing the spurious structure remaining:
 
 bestmodel=profitRemakeModelList(BestLD, Data$model, Data$tofit, Data$tolog)
 imagemod=profitMakeModel(bestmodel,magzero=Data$magzero,dim=Data$imagedim,psf=Data$psf)

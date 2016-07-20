@@ -62,19 +62,28 @@ Aaron Robotham & Dan Taranu
 # Load ProFit example data
 
 data('ExampleInit')
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/',sep=''))
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/KiDS/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
+
+# There are 2 data source options: KiDS or SDSS (the galaxies are the same)
+
+datasource='KiDS' 
 
 # There are 10 example galaxies included. Here we run example 1:
 
 useID=ExampleIDs[1]
 
-image = readFITS(system.file("extdata", paste(useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(useID,'mskim.fits',sep=''),package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(useID,'sigma.fits',sep=''),package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(useID,'segim.fits',sep=''),package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(useID,'psfim.fits',sep=''),package="ProFit"))$imDat
+image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
+package="ProFit"))$imDat
+mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),
+package="ProFit"))$imDat
+sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
+package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
+package="ProFit"))$imDat
+psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
+package="ProFit"))$imDat
 
 # Very rough model (not meant to look too good yet):
 
@@ -87,10 +96,11 @@ useloc=which(ExampleInit$CATAID==useIDnum)
 
 model=list(
   sersic=list(
-    xcen= c(ExampleInit$sersic.xcen1[useloc], ExampleInit$sersic.xcen1[useloc]),
-    ycen= c(ExampleInit$sersic.ycen1[useloc], ExampleInit$sersic.ycen1[useloc]),
+    xcen= c(dim(image)[1]/2, dim(image)[1]/2),
+    ycen= c(dim(image)[2]/2, dim(image)[2]/2),
     mag= c(ExampleInit$sersic.mag1[useloc], ExampleInit$sersic.mag2[useloc]),
-    re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc]),
+    re= c(ExampleInit$sersic.re1[useloc], ExampleInit$sersic.re2[useloc])*
+      if(datasource=='KiDS'){1}else{0.2/0.339},
     nser= c(ExampleInit$sersic.nser1[useloc], 1),  #Disk is initially nser=1
     ang= c(ExampleInit$sersic.ang2[useloc], ExampleInit$sersic.ang2[useloc]),
     axrat= c(1, ExampleInit$sersic.axrat2[useloc]),  #Bulge is initially axrat=1

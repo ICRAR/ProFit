@@ -67,18 +67,28 @@ TBD.
 # Load ProFit example data
 
 data('ExampleInit')
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/',sep=''))
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/KiDS/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
+
+# There are 2 data source options: KiDS or SDSS (the galaxies are the same)
+
+datasource='KiDS' 
 
 # There are 10 example galaxies included. Here we run example 1:
 
 useID=ExampleIDs[1]
 
-image = readFITS(system.file("extdata", paste(useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(useID,'mskim.fits',sep=''),package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(useID,'sigma.fits',sep=''),package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(useID,'segim.fits',sep=''),package="ProFit"))$imDat
+image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
+package="ProFit"))$imDat
+mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),
+package="ProFit"))$imDat
+sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
+package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
+package="ProFit"))$imDat
+psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
+package="ProFit"))$imDat
 
 noise = sigma
 for(i in 1:length(noise)) noise[i] = rnorm(1,mean=0,sd=noise[i])

@@ -25,9 +25,9 @@ profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=
   if(class(Data)!="profit.data"){stop("Data must be of class profit.data, as output by profitSetupData!")}
   if(missing(model)){model=Data$model}
   
-  bulge=profitMakeModel(model, serscomp = bulgeloc, dim = Data$imagedim, psf=Data$psf)
-  disk=profitMakeModel(model, serscomp = diskloc, dim = Data$imagedim, psf=Data$psf)
-  total=profitMakeModel(model, serscomp = 'all', dim = Data$imagedim, psf=Data$psf)
+  bulge=profitMakeModel(model, magzero = Data$magzero, serscomp = bulgeloc, dim = Data$imagedim, psf=Data$psf)
+  disk=profitMakeModel(model, magzero = Data$magzero, serscomp = diskloc, dim = Data$imagedim, psf=Data$psf)
+  total=profitMakeModel(model, magzero = Data$magzero, serscomp = 'all', dim = Data$imagedim, psf=Data$psf)
 
   imageellipse=profitEllipse(Data$image*(1-Data$mask), xcen=model$sersic$xcen[diskloc], ycen=model$sersic$ycen[diskloc], ang=model$sersic$ang[diskloc], axrat=model$sersic$axrat[diskloc], box=model$sersic$box[diskloc])
   sigmaellipse=profitEllipse(Data$sigma*(1-Data$mask), xcen=model$sersic$xcen[diskloc], ycen=model$sersic$ycen[diskloc], ang=model$sersic$ang[diskloc], axrat=model$sersic$axrat[diskloc], box=model$sersic$box[diskloc])
@@ -95,7 +95,10 @@ profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=
   
   psfellipse[,2]=psfellipse[,2]+min(predict.bulge$y)-min(psfellipse[1,2])
   
-  xhi=predict.total$x[min(which(predict.total$y>SBlim))]
+  smooth.total=smooth.spline(totalellipse,df=df)
+  refpredict=predict(smooth.total,imageellipse[,1])
+  
+  xhi=refpredict$x[min(which(refpredict$y>SBlim))]
   yhi=min(predict.image$y,predict.total$y)
   
   sigma.polygon=rbind(cbind(predict.sigma.lo$x,predict.sigma.lo$y),
