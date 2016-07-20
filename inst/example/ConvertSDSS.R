@@ -27,9 +27,9 @@ for(i in 1:10){
   
   segim=segimmod
   
-  writeFITSim(image,paste('inst/extdata/SDSS/',useID,'fitim.fits',sep=''))
+  writeFITSim(image*10^(-0.4*30),paste('inst/extdata/SDSS/',useID,'fitim.fits',sep=''))
   writeFITSim(mask,paste('inst/extdata/SDSS/',useID,'mskim.fits',sep=''))
-  writeFITSim(sigma,paste('inst/extdata/SDSS/',useID,'sigma.fits',sep=''))
+  writeFITSim(sigma*10^(-0.4*30),paste('inst/extdata/SDSS/',useID,'sigma.fits',sep=''))
   writeFITSim(segim,paste('inst/extdata/SDSS/',useID,'segim.fits',sep=''))
   writeFITSim(psf,paste('inst/extdata/SDSS/',useID,'psfim.fits',sep=''))
 }
