@@ -65,6 +65,25 @@ magimage(model.image)
 # With convolution:
 
 magimage(profitConvolvePSF(image=model.image, psf=profitMakePointSource()))
+
+# Comparison of convolution types:
+
+image=profitMakeSersic(re=10,axrat=0.3,ang=30,dim=c(1e3,1e3))$z
+psf=profitGenPSF(10,75)
+
+# Get the becnhmarks:
+
+bench=profitBenchmarkConv(image,psf,nbench = 1L)
+
+# Convolve and plot:
+
+convBrute=profitConvolvePSF(image,psf,options=list(method='Bruteconv'))
+convFFT=profitConvolvePSF(image,psf,options=list(method='FFTconv',fft=bench$fft))
+convFFTW=profitConvolvePSF(image,psf,options=list(method='FFTWconv',fft=bench$fft))
+
+magimage(convBrute)
+magimage(convFFT)
+magimage(convFFTW)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

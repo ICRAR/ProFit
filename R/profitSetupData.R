@@ -69,8 +69,8 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
       benchregion = calcregion
     }
     
-    benchcalc = profitBenchmarkConv(img = modelimg$z, psf=psf,nbench = nbenchmark, calcregion = benchregion, refftpsf = fitpsf)
-    benchnocalc = profitBenchmarkConv(img = modelimg$z, psf=psf,nbench = nbenchmark, fftwplan = benchcalc$fftwplan, refftpsf = fitpsf)
+    benchcalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmark, calcregion = benchregion, refftpsf = fitpsf)
+    benchnocalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmark, fftwplan = benchcalc$fftwplan, refftpsf = fitpsf)
     
     convopt = list()
     convusecalcregion = benchcalc$best$time < benchnocalc$best$time
