@@ -33,7 +33,6 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
       {
         xrange = seq(0.5*(1+xeven),dimpsf[1]-0.5*(1+xeven),1/finesample)
         yrange = seq(0.5*(1+yeven),dimpsf[2]-0.5*(1+yeven),1/finesample)
-        # Doesn't seem to work so well and requires an additional package ("akima")
         # psf = profitInterp2d(xrange,yrange,psf,linear=TRUE)$z
         regrid=expand.grid(xrange-dimpsf[1]/2,yrange-dimpsf[2]/2)
         psf=matrix(profitInterp2d(regrid[,1],regrid[,2],psf)[,3],length(xrange),length(yrange))

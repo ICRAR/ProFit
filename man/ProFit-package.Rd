@@ -263,7 +263,7 @@ profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
 # If we get CMAES we can try to fit using genetic algorithms:
 
 #library(devtools)
-#install_github('taranu/cmaes')
+#install_github('taranu/cmaeshpc')
 #library(cmaeshpc)
 
 Data$algo.func = "CMA"
