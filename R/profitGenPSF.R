@@ -1,4 +1,4 @@
-profitGenPSF=function(FWHM=3,sigma,npix=25){
+profitGenPSF=function(FWHM=3, npix=25, sigma){
   if(missing(sigma)){sigma=FWHM/(2*sqrt(2*log(2)))}
   x0=y0=npix/2+0.5
   y=matrix(1:npix,npix,npix)

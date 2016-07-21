@@ -8,14 +8,14 @@ Benchmark convolution of an image with a point spread function (PSF).
 This function will benchmark convolution of an image with a point spread function (PSF), returning results as well as a list of data stored by \code{\link{profitSetupData}} for optimizing calls to \code{\link{profitConvolvePSF}}.
 }
 \usage{
-profitBenchmarkConv(img=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
-  imgdim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL, 
+profitBenchmarkConv(image=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
+  imagedim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL, 
   maxfftwplaneffort=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{img}{
-A matrix containing the image to benchmark convolution for. It should already be padded by half of the PSF width on either side to ensure that the convolved model can be cropped to the same size as the data. If no \option{img} is supplied, the user must supply \option{imgdim}.
+  \item{image}{
+A matrix containing the image to benchmark convolution for. It should already be padded by half of the PSF width on either side to ensure that the convolved model can be cropped to the same size as the data. If no \option{image} is supplied, the user must supply \option{imagedim}.
 }
   \item{psf}{
 A matrix containing the PSF image to convolve the model image with. If no PSF is supplied, the user must supply \option{psfdim.}
@@ -26,8 +26,8 @@ A logical matrix specifying regions of the image to avoid computing convolution 
   \item{nbench}{
 Integer; the number of times to benchmark each method. Repeated convolutions can vary in running time for all kinds of reasons, so \option{nbench} >= 10 is recommended.
 }
-  \item{imgdim}{
-Vector of dimensions of the image to create, if \option{img} is not provided.
+  \item{imagedim}{
+Vector of dimensions of the image to create, if \option{image} is not provided.
 }
   \item{psfdim}{
 Vector of dimensions of the PSF to create, if \option{psf} is not provided.
@@ -60,8 +60,8 @@ List; complex structure containing:
 \item{fft}{A list of useful items for FFTs, including: \describe{
   \item{fftwplan}{The FFTW plan.}
   \item{paddim}{The dimensions of the zero-padded image, usually twice the input image dimensions and necessary to avoid periodicity artifacts.}
-  \item{padimgx}{The x coordinates to place the original image in; by default the bottom-left corner of the padded image.}
-  \item{padimgy}{The y coordinates to place the original image in; by default the bottom-left corner of the padded image.}
+  \item{padimagex}{The x coordinates to place the original image in; by default the bottom-left corner of the padded image.}
+  \item{padimagey}{The y coordinates to place the original image in; by default the bottom-left corner of the padded image.}
   \item{cropx}{The x coordinates of the convolved image within the padded output image; usually in the center.}
   \item{cropy}{The y coordinates of the convolved image within the padded output image; usually in the center.}
   \item{fft}{A list of useful items relating to the PSF, including: \describe{

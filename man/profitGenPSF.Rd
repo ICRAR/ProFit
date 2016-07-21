@@ -8,18 +8,18 @@ Generate a 2D Gaussian PSF profile
 Simple function to create an analytic 2D Gaussian PSF. The integral within the generated pixels is forced to be 1.
 }
 \usage{
-profitGenPSF(FWHM = 3, sigma, npix = 25)
+profitGenPSF(FWHM = 3, npix = 25, sigma)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{FWHM}{
 The full width half max of the desired PSF. This is internally converted to a Gaussian standard deviation (sigma) using sigma=FWHM/(2*sqrt(2*log(2))).
 }
-  \item{sigma}{
-If provided then \option{sigma} is used to define the standard deviation of the profile directly, rather than \option{FWHM}.
-}
   \item{npix}{
 The number of pixel to be generated on each side of the 2D image of the PSF. The PSF is always generated such that it is centred within this.
+}
+  \item{sigma}{
+If provided then \option{sigma} is used to define the standard deviation of the profile directly, rather than \option{FWHM}.
 }
 }
 \details{
