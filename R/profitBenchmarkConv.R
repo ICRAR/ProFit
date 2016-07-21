@@ -102,7 +102,7 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     rimagepad = matrix(0,padimagedim[1],padimagedim[2])
     rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
     imagefftr = fft(rimagepad) * psffftr
-    imagefftr = Re(fft(imagefftr,inverse = TRUE)[cropx,cropy])/npadimage
+    imagefftr = Re(fft(imagefftr,inverse = TRUE))[cropx,cropy]/npadimage
   }
   
   bmi = bmi + 1

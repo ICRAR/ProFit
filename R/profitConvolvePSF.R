@@ -34,6 +34,7 @@ profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE,
       {
         psfpad = matrix(0,options$fft$paddim[1],options$fft$paddim[2])
         psfpad[options$fft$psf$x,options$fft$psf$y] = psf
+        psfpad
         psffft = fft(psfpad)
       }
     } else if(isfftw) {
@@ -50,16 +51,16 @@ profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE,
     if(isfftw) {
       imagepad = fftw::FFT(imagepad, plan=options$fft$fftwplan)
     } else if(isfftr) {
-      imagepad = fft(imagepad, inverse = TRUE)
+      imagepad = fft(imagepad, inverse = FALSE)
     }
     imagepad = imagepad * psffft
     if(isfftw) {
       imagepad = fftw::IFFT(imagepad, plan=options$fft$fftwplan)
-      #dim(imagefftw) = options$fft$padimagedim
+      dim(imagepad) = options$fft$paddim
     } else if(isfftr) {
-      imagepad = fft(imagepad, inverse = TRUE)
+      imagepad = fft(imagepad, inverse = TRUE)/options$fft$paddim[1]/options$fft$paddim[2]
     }
-    output=matrix(Re(imagepad),options$fft$paddim[1])[options$fft$cropx,options$fft$cropy]
+    output=Re(imagepad)[options$fft$cropx,options$fft$cropy]
   }
   return(output)
 }
