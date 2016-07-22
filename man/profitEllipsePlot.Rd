@@ -29,7 +29,7 @@ Location ID of disk component in the Sersic list provided in \option{model}.
 The pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1, then the plot is output in terms of pixels, otherwise it is rescaled to be in arcseconds.  
 }
   \item{FWHM}{
-The full width half max of the PSF in multiples of \option{pixscale}. A vertical votted line is drawn at half this number (since we are plotting radius). The fits inside of the region is inherently hard because it is well within the PSF convolution kernel. 
+The full width half max of the PSF in units of arc seconds. A vertical votted line is drawn at half this number (since we are plotting radius). The fits inside of the region is inherently hard because it is well within the PSF convolution kernel. 
 }
   \item{SBlim}{
 5 sigma surface brightness limit of the data. The data will plot to \option{SBlim}+1. This should be provided in terms of how the \option{pixscale} is defined, e.g. it should either be per asec^2 (when \option{pixscale}!=1) or per pix^2 (when \option{pixscale}=1).
