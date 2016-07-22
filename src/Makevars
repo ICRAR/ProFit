@@ -1,3 +1,5 @@
+CXX_STD = CXX11
+
 PKG_CPPFLAGS = -Ilibprofit/include  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R
 
 OBJECTS = libprofit/src/profit.o \

@@ -27,28 +27,62 @@
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
 
-#include <stdbool.h>
+#include <exception>
+#include <string>
+#include <vector>
 
-#ifdef __cplusplus
-extern "C"
+namespace profit
 {
-#endif
 
-struct _profit_model;
+/*
+ * Exception class thrown when an invalid parameter has been supplied to either
+ * a model or a specific profile.
+ */
+class invalid_parameter : public std::exception
+{
+
+public:
+	invalid_parameter(std::string what);
+	invalid_parameter(const invalid_parameter &e);
+	const char *what() const throw();
+
+private:
+	std::string m_what;
+
+};
+
+/* Forward declaration */
+class Model;
 
 /**
- * The base profile structure
+ * The base profile class
  *
  * Specific profile structures *must* declare a profit_profile structure as its
  * first element, so the resulting memory can be addressed both as a generic
  * profit_profile or as the specific profile structure.
  */
-typedef struct _profit_profile {
+class Profile {
+
+public:
+
+	Profile();
+	virtual ~Profile() = 0;
 
 	/**
-	 * The name of this profile
+	 * Performs the initial profile validation, making sure that all parameters
+	 * of the profile are correct and can be safely used to create an image.
+	 * This function can signal an error by throwing an invalid_parameter exception.
 	 */
-	const char *name;
+	virtual void validate() = 0;
+
+	/**
+	 * Performs the profile evaluation and saves the resulting image into
+	 * the given `image` array. This is the main function of the profile.
+	 */
+	virtual void evaluate(double *image) = 0;
+
+	/* A pointer to the model this profile belongs to */
+	Model *model;
 
 	/**
 	 * Whether the resulting image of this profile should be convolved or not.
@@ -56,29 +90,11 @@ typedef struct _profit_profile {
 	bool convolve;
 
 	/**
-	 * A pointer to the function that performs the initial profile validation,
-	 * making sure that all parameters of the profile are correct and can be
-	 * safely used to create an image.
-	 * This function can signal an error by setting a value in the error member
-	 * of this structure.
+	 * The name of this profile
 	 */
-	void (* validate_profile)(struct _profit_profile *profile, struct _profit_model *model);
+	std::string name;
 
-	/**
-	 * A pointer to the function that performs the profile evaluation.
-	 * This is the main function of the profile.
-	 */
-	void (* evaluate_profile)(struct _profit_profile *profile, struct _profit_model *model, double *image);
-
-	/**
-	 * An error string indicating that an error related to this profile was
-	 * detected. The error string can be set either during the profile
-	 * initialization or during the image creation process. Users should check
-	 * that there is no error in any of the profiles after making a model.
-	 */
-	char *error;
-
-} profit_profile;
+};
 
 /**
  * The overall model to be created
@@ -88,7 +104,39 @@ typedef struct _profit_profile {
  * allows us to specify pixel position with decimal places; e.g., the center
  * point for a given profile.
  */
-typedef struct _profit_model {
+class Model {
+
+public:
+
+
+	/**
+	 * Constructor
+	 * It creates a new model to which profiles can be added, and that can be
+	 * used to calculate an image.
+	 */
+	Model();
+
+	/**
+	 * Destructor.
+	 * It frees all the resources used by the given model, after which it cannot
+	 * be used anymore.
+	 */
+	~Model();
+
+	/**
+	 * Creates a new profile for the given name and adds it to the given model.
+	 * On success, the new profile is created, added to the model,
+	 * and its reference is returned for further customization.
+	 * On failure (i.e., if a profile with the given name is not supported) NULL is
+	 * returned and no profile is added to the model.
+	 */
+	Profile *add_profile(std::string profile_name);
+
+	/**
+	 * Calculates an image using the information contained in the model.
+	 * The result of the computation is stored in the image field.
+	 */
+	void evaluate();
 
 	/**
 	 * The width of the model to generate
@@ -145,62 +193,13 @@ typedef struct _profit_model {
 	double *image;
 
 	/**
-	 * The number of profiles used to generate the model's image
-	 */
-	unsigned int n_profiles;
-
-	/**
 	 * A list of pointers to the individual profiles used to generate the
 	 * model's image
 	 */
-	profit_profile **profiles;
+	std::vector<Profile *> profiles;
 
-	/**
-	 * An error string indicating that there is something wrong with the model.
-	 * Users should check that there is no error after making a model.
-	 */
-	char *error;
+};
 
-} profit_model;
-
-/**
- * Creates a new model to which profiles can be added, and that can
- * be used to calculate an image.
- */
-profit_model *profit_create_model(void);
-
-/**
- * Creates a new profile for the given name and adds it to the given model.
- * On success, the new profile is created, added to the model,
- * and its reference is returned for further customization.
- * On failure (i.e., if a profile with the given name is not supported) NULL is
- * returned and no profile is added to the model.
- */
-profit_profile *profit_create_profile(profit_model *model, const char *profile_name);
-
-/**
- * Calculates an image using the information contained in the model.
- * The result of the computation is stored in the image field.
- */
-void profit_eval_model(profit_model *model);
-
-/**
- * Returns the first error string found either on the model itself or in any of
- * it profiles. This method should be called on the model right after invoking
- * profit_eval_model to make sure that no errors were found during the process.
- * If NULL is returned it means that no errors were found and that the image
- * stored in the model is valid.
- */
-char *profit_get_error(profit_model *model);
-
-/**
- * Frees all the resources used by the given model, after which it cannot be
- * used anymore.
- */
-void profit_cleanup(profit_model *model);
-
-#ifdef __cplusplus
-}
-#endif
+} /* namespace profit */
 
 #endif /* _PROFIT_H_ */

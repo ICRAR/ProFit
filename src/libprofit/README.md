@@ -17,3 +17,5 @@ If that is the case, then a common PSF convolution matrix must be provided.
 libprofit has no compiling dependencies other than libc and libm;
 however some profiles require some high-level functions that can be found in third-party mathematical packages like R or GSL.
 These functions must thus be provided when linking libprofile into the resulting library or program.
+
+For more information read [libprofit's documentation](https://libprofit.readthedocs.io/).

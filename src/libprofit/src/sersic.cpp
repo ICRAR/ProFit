@@ -6,7 +6,7 @@
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Aaron Robotham, Rodrigo Tobar
+ * Contributed by Aaron Robotham, Dan Taranu, Rodrigo Tobar
  *
  * This file is part of libprofit.
  *
@@ -24,9 +24,9 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <algorithm>
 
 /*
  * We use either GSL or Rmath to provide the low-level
@@ -44,108 +44,203 @@
 
 #include "sersic.h"
 
-static inline
-double _sersic_for_xy_r(profit_sersic_profile *sp,
+using namespace std;
+
+namespace profit
+{
+
+/*
+ * The evaluation of the sersic profile at sersic coordinates (x,y).
+ *
+ * The sersic profile has this form:
+ *
+ * e^{-bn * (r_factor - 1)}
+ * where r_factor = (r/Re)^{1/nser}
+ *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
+ *              b = box parameter
+ *
+ * Reducing:
+ *  r_factor = ((x/re)^{2+b} + (y/re)^{2+b})^{1/(nser*(2+b)}
+ *
+ * Although this reduced form has only three powers instead of 4
+ * in the original form, it still doesn't mean that it's the fastest
+ * way of computing r_factor. Depending on the libc/libm being used
+ * using a combination of sqrt, cbrt and pow will yield better or
+ * worse performances (within certain limits).
+ *
+ * Also, in particular for b = 0:
+ *  r_factor = ((x*x + y*y/(re*re))^{1/(2*nser}
+ *
+ * In our code we thus logically decompose r_factor (for both cases) as such:
+ *
+ * r_factor = base^(1/invexp)
+ *
+ * We then use specialized code templates to get the proper base, the proper
+ * invexp, and finally to check whether some calls to pow() can be avoided or
+ * not.
+ */
+
+/*
+ * The nser parameter is a double; we need an enumeration of the known values
+ * to optimize for to use in our templates
+ */
+enum nser_t {
+	general,
+	pointfive,
+	one,
+	two,
+	three,
+	four,
+	eight,
+	sixteen
+};
+
+/*
+ * r_factor calculation follows. Several template specializations avoid the
+ * call to pow().
+ * This first generic template will finally be called only with parameters
+ * true/general because all the other combinations are already specialized.
+ */
+
+/* "true" cases for r_factor */
+template<bool boxy, nser_t t>
+inline double _r_factor(double b, double invexp)
+{
+  return pow(b, 1/invexp);
+}
+
+template<> inline double _r_factor<true, pointfive>(double b, double invexp)
+{
+	return b*b;
+}
+
+template<> inline double _r_factor<true, one>(double b, double invexp)
+{
+	return b;
+}
+
+template<> inline double _r_factor<true, two>(double b, double invexp)
+{
+	return sqrt(b);
+}
+
+template<> inline double _r_factor<true, three>(double b, double invexp)
+{
+	return cbrt(b);
+}
+
+template<> inline double _r_factor<true, four>(double b, double invexp)
+{
+	return sqrt(sqrt(b));
+}
+
+template<> inline double _r_factor<true, eight>(double b, double invexp)
+{
+	return sqrt(sqrt(sqrt(b)));
+}
+
+template<> inline double _r_factor<true, sixteen>(double b, double invexp)
+{
+	return sqrt(sqrt(sqrt(sqrt(b))));
+}
+
+/* "false" cases for r_factor */
+template<> inline double _r_factor<false, general>(double b, double invexp)
+{
+	return pow(sqrt(b), 1/invexp);
+}
+
+template<> inline double _r_factor<false, pointfive>(double b, double invexp)
+{
+	return b;
+}
+
+template<> inline double _r_factor<false, one>(double b, double invexp)
+{
+	return sqrt(b);
+}
+
+template<> inline double _r_factor<false, two>(double b, double invexp)
+{
+	return sqrt(sqrt(b));
+}
+
+template<> inline double _r_factor<false, three>(double b, double invexp)
+{
+	return cbrt(sqrt(b));
+}
+
+template<> inline double _r_factor<false, four>(double b, double invexp)
+{
+	return sqrt(sqrt(sqrt(b)));
+}
+
+template<> inline double _r_factor<false, eight>(double b, double invexp)
+{
+	return sqrt(sqrt(sqrt(sqrt(b))));
+}
+
+template<> inline double _r_factor<false, sixteen>(double b, double invexp)
+{
+	return sqrt(sqrt(sqrt(sqrt(sqrt(b)))));
+}
+
+/*
+ * The base component of r_factor
+ */
+template<bool boxy>
+inline double _base(double x, double y, double re, double exponent)
+{
+	return pow(fabs(x/re), exponent) + pow(fabs(y/re), exponent);
+}
+
+template<>
+inline double _base<false>(double x, double y, double re, double exponent)
+{
+	return (x*x + y*y)/(re * re);
+}
+
+/*
+ * The invexpt component of r_factor
+ */
+template<bool boxy>
+inline double _invexp(const double nser, const double exponent)
+{
+  return nser*exponent;
+}
+
+template<>
+inline double _invexp<false>(const double nser, const double exponent)
+{
+  return nser;
+}
+
+
+/*
+ * The main sersic evaluation function for a given X/Y coordinate
+ */
+template <bool boxy, nser_t t>
+inline
+double _sersic_for_xy_r(SersicProfile *sp,
                         double x, double y,
                         double r, bool reuse_r) {
-
-	/*
-	 * The evaluation of the sersic profile at sersic coordinates (x,y).
-	 *
-	 * The sersic profile has this form:
-	 *
-	 * e^{-bn * (r_factor - 1)}
-	 * where r_factor = (r/Re)^{1/nser}
-	 *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
-	 *              b = box parameter
-	 *
-	 * Reducing:
-	 *  r_factor = (x/re)^{2+b} + (y/re)^{2+b})^{1/(nser*(2+b)}
-	 *
-	 * Although this reduced form has only three powers instead of 4
-	 * in the original form, it still doesn't mean that it's the fastest
-	 * way of computing r_factor. Depending on the libc/libm being used
-	 * using a combination of sqrt, cbrt and pow will yield better or
-	 * worse performances (within certain limits).
-	 * The different "if/else if/if" statements below cover those
-	 * cases where we've found that some performance can be gained
-	 * by using different computation routes.
-	 *
-	 */
 
 	double r_factor;
 	if( reuse_r && sp->box == 0. ){
 		r_factor = pow(r/sp->re, 1/sp->nser);
 	}
 	else {
-
 		double base;
-
-		if( sp->box != 0 ) {
-
-			/*
-			 * box != 0
-			 */
-			double exponent = sp->box + 2;
-			base = pow(fabs(x/sp->re), exponent) + pow(fabs(y/sp->re), exponent);
-			double exp_divisor = sp->nser*exponent;
-
-			if( exp_divisor == 0.5 ) {
-				r_factor = base*base;
-			} else if( exp_divisor == 1. ) {
-				r_factor = base;
-			} else if( exp_divisor == 2. ) {
-				r_factor = sqrt(base);
-			} else if( exp_divisor == 3. ) {
-				r_factor = cbrt(base);
-			} else if( exp_divisor == 4. ) {
-				r_factor = sqrt(sqrt(base));
-			} else if( exp_divisor == 8. ) {
-				r_factor = sqrt(sqrt(sqrt(base)));
-			} else if( exp_divisor == 16. ) {
-				r_factor = sqrt(sqrt(sqrt(sqrt(base))));
-			} else {
-				r_factor = pow(base, 1/exp_divisor);
-			}
-
-		}
-
-		else {
-
-			/*
-			 * box == 0
-			 * thus r_factor = base ^ (1/2*nser)
-			 * We still avoid calling pow as much as possible
-			 **/
-			base = (x*x + y*y)/(sp->re * sp->re);
-
-			if( sp->nser == 0.5 ) {
-				r_factor = base;
-			} else if( sp->nser == 1. ) {
-				r_factor = sqrt(base);
-			} else if( sp->nser == 2. ) {
-				r_factor = sqrt(sqrt(base));
-			} else if( sp->nser == 3. ) {
-				r_factor = cbrt(sqrt(base));
-			} else if( sp->nser == 4. ) {
-				r_factor = sqrt(sqrt(sqrt(base)));
-			} else if( sp->nser == 8. ) {
-				r_factor = sqrt(sqrt(sqrt(sqrt(base))));
-			} else if( sp->nser == 16. ) {
-				r_factor = sqrt(sqrt(sqrt(sqrt(sqrt(base)))));
-			} else {
-				r_factor = pow(sqrt(base), 1/sp->nser);
-			}
-
-		}
-
+		double exponent = sp->box + 2;
+		base = _base<boxy>(x, y, sp->re, exponent);
+		r_factor = _r_factor<boxy,t>(base,_invexp<boxy>(sp->nser,exponent));
 	}
 
 	return exp(-sp->_bn * (r_factor - 1));
 }
 
 static inline
-void _image_to_sersic_coordinates(profit_sersic_profile *sp, double x, double y, double *x_ser, double *y_ser) {
+void _image_to_sersic_coordinates(SersicProfile *sp, double x, double y, double *x_ser, double *y_ser) {
 	x -= sp->xcen;
 	y -= sp->ycen;
 	*x_ser =  x * sp->_cos_ang + y * sp->_sin_ang;
@@ -153,8 +248,8 @@ void _image_to_sersic_coordinates(profit_sersic_profile *sp, double x, double y,
 	*y_ser /= sp->axrat;
 }
 
-static
-double _sersic_sumpix(profit_sersic_profile *sp,
+template <bool boxy, nser_t t>
+double _sersic_sumpix(SersicProfile *sp,
                       double x0, double x1, double y0, double y1,
                       unsigned int recur_level, unsigned int max_recursions,
                       unsigned int resolution) {
@@ -178,16 +273,16 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 			y += half_ybin;
 
 			_image_to_sersic_coordinates(sp, x, y, &x_ser, &y_ser);
-			subval = _sersic_for_xy_r(sp, x_ser, y_ser, 0, false);
+			subval = _sersic_for_xy_r<boxy, t>(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _sersic_for_xy_r(sp, x_ser, fabs(y_ser) + fabs(ybin*sp->_cos_ang/sp->axrat), 0, false);
-				if( fabs(testval/subval - 1.0) > sp->acc ) {
-					subval = _sersic_sumpix(sp,
-					                        x - half_xbin, x + half_xbin,
-					                        y - half_ybin, y + half_ybin,
-					                        recur_level + 1, max_recursions,
-					                        resolution);
+				testval = _sersic_for_xy_r<boxy, t>(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
+				if( abs(testval/subval - 1.0) > sp->acc ) {
+					subval = _sersic_sumpix<boxy, t>(sp,
+					                                 x - half_xbin, x + half_xbin,
+					                                 y - half_ybin, y + half_ybin,
+					                                 recur_level + 1, max_recursions,
+					                                 resolution);
 				}
 			}
 
@@ -203,13 +298,13 @@ double _sersic_sumpix(profit_sersic_profile *sp,
 }
 
 static inline
-double profit_sersic_fluxfrac(profit_sersic_profile *sp, double fraction) {
+double sersic_fluxfrac(SersicProfile *sp, double fraction) {
 	double ratio = sp->_qgamma(fraction, 2*sp->nser) / sp->_bn;
 	return sp->re * pow(ratio, sp->nser);
 }
 
 static inline
-void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model) {
+void sersic_initial_calculations(SersicProfile *sp, Model *model) {
 
 	double nser = sp->nser;
 	double re = sp->re;
@@ -246,8 +341,8 @@ void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model)
 		 * but don't let it become less than 1 pixel (means we do no worse than
 		 * GALFIT anywhere)
 		 */
-		re_switch = ceil(profit_sersic_fluxfrac(sp, 1. - nser*nser/2e3));
-		re_switch = fmax(fmin(re_switch, 20.), 2.);
+		re_switch = ceil(sersic_fluxfrac(sp, 1. - nser*nser/2e3));
+		re_switch = max(min(re_switch, 20.), 2.);
 
 		/*
 		 * Calculate a bound, adaptive upscale; if re is large then we don't need
@@ -266,7 +361,7 @@ void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model)
 		 * %99.99 of the flux
 		 */
 		if( sp->re_max == 0 ) {
-			sp->re_max = ceil(profit_sersic_fluxfrac(sp, 0.9999));
+			sp->re_max = ceil(sersic_fluxfrac(sp, 0.9999));
 		}
 		sp->_rescale_factor = 1;
 		if( sp->rescale_flux ) {
@@ -278,7 +373,7 @@ void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model)
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
 		double acc = 0.4 / nser;
-		acc = fmax(0.1, acc) / axrat;
+		acc = max(0.1, acc) / axrat;
 		sp->acc = acc;
 
 	}
@@ -305,35 +400,28 @@ void sersic_initial_calculations(profit_sersic_profile *sp, profit_model *model)
 /**
  * The sersic validation function
  */
-static
-void profit_validate_sersic(profit_profile *profile, profit_model *model) {
+void SersicProfile::validate() {
 
-	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
-
-	if( !sp->_pgamma ) {
-		profile->error = strdup("Missing pgamma function on sersic profile");
-		return;
+	if( !this->_pgamma ) {
+		throw invalid_parameter("Missing pgamma function on sersic profile");
 	}
-	if( !sp->_qgamma ) {
-		profile->error = strdup("Missing qgamma function on sersic profile");
-		return;
+	if( !this->_qgamma ) {
+		throw invalid_parameter("Missing qgamma function on sersic profile");
 	}
-	if( !sp->_gammafn ) {
-		profile->error = strdup("Missing gamma function on sersic profile");
-		return;
+	if( !this->_gammafn ) {
+		throw invalid_parameter("Missing gamma function on sersic profile");
 	}
-	if( !sp->_beta ) {
-		profile->error = strdup("Missing beta function on sersic profile");
-		return;
+	if( !this->_beta ) {
+		throw invalid_parameter("Missing beta function on sersic profile");
 	}
 
 }
 
 /**
- * The sersic evaluation function
+ * The main sersic evaluation function
  */
-static
-void profit_evaluate_sersic(profit_profile *profile, profit_model *model, double *image) {
+template <bool boxy, nser_t t>
+void _evaluate(SersicProfile *sp, Model *model, double *image) {
 
 	unsigned int i, j;
 	double x, y, pixel_val;
@@ -341,8 +429,6 @@ void profit_evaluate_sersic(profit_profile *profile, profit_model *model, double
 	double half_xbin = model->xbin/2.;
 	double half_ybin = model->ybin/2.;
 	double bin_area = model->xbin * model->ybin;
-
-	profit_sersic_profile *sp = (profit_sersic_profile *)profile;
 
 	/*
 	 * All the pre-calculations needed by the sersic profile (Ie, cos/sin ang, etc)
@@ -382,19 +468,19 @@ void profit_evaluate_sersic(profit_profile *profile, profit_model *model, double
 				pixel_val = 0.;
 			}
 			else if( sp->rough || r_ser/sp->re > sp->re_switch ){
-				pixel_val = _sersic_for_xy_r(sp, x_ser, y_ser, r_ser, true);
+				pixel_val = _sersic_for_xy_r<boxy, t>(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
 
-				bool center = fabs(x - sp->xcen) < 1. && fabs(y - sp->ycen) < 1.;
+				bool center = abs(x - sp->xcen) < 1. && abs(y - sp->ycen) < 1.;
 				unsigned int resolution = center ? 8 : sp->resolution;
 				unsigned int max_recursions = center ? 10 : sp->max_recursions;
 
 				/* Subsample and integrate */
-				pixel_val =  _sersic_sumpix(sp,
-				                            x - half_xbin, x + half_xbin,
-				                            y - half_ybin, y + half_ybin,
-				                            0, max_recursions, resolution);
+				pixel_val =  _sersic_sumpix<boxy, t>(sp,
+				                                     x - half_xbin, x + half_xbin,
+				                                     y - half_ybin, y + half_ybin,
+				                                     0, max_recursions, resolution);
 			}
 
 			image[i + j*model->width] = scale * pixel_val;
@@ -403,6 +489,32 @@ void profit_evaluate_sersic(profit_profile *profile, profit_model *model, double
 		y += half_ybin;
 	}
 
+}
+
+void SersicProfile::evaluate(double *image) {
+
+	Model *m = this->model;
+
+	if( this->box != 0 ) {
+		     if( this->nser == 0.5 ) _evaluate<true, pointfive>(this, m, image);
+		else if( this->nser == 1 )   _evaluate<true, one>(this, m, image);
+		else if( this->nser == 2 )   _evaluate<true, two>(this, m, image);
+		else if( this->nser == 3 )   _evaluate<true, three>(this, m, image);
+		else if( this->nser == 4 )   _evaluate<true, four>(this, m, image);
+		else if( this->nser == 8 )   _evaluate<true, eight>(this, m, image);
+		else if( this->nser == 16 )  _evaluate<true, sixteen>(this, m, image);
+		else                         _evaluate<true, general>(this, m, image);
+	}
+	else {
+		     if( this->nser == 0.5 ) _evaluate<false, pointfive>(this, m, image);
+		else if( this->nser == 1 )   _evaluate<false, one>(this, m, image);
+		else if( this->nser == 2 )   _evaluate<false, two>(this, m, image);
+		else if( this->nser == 3 )   _evaluate<false, three>(this, m, image);
+		else if( this->nser == 4 )   _evaluate<false, four>(this, m, image);
+		else if( this->nser == 8 )   _evaluate<false, eight>(this, m, image);
+		else if( this->nser == 16 )  _evaluate<false, sixteen>(this, m, image);
+		else                         _evaluate<false, general>(this, m, image);
+	}
 }
 
 #if defined(HAVE_GSL)
@@ -424,10 +536,11 @@ double _Rf_pgamma_wrapper(double q, double shape) {
 /**
  * The sersic creation function
  */
-profit_profile *profit_create_sersic() {
-	profit_sersic_profile *p = (profit_sersic_profile *)malloc(sizeof(profit_sersic_profile));
-	p->profile.validate_profile = &profit_validate_sersic;
-	p->profile.evaluate_profile = &profit_evaluate_sersic;
+SersicProfile::SersicProfile() :
+	Profile()
+{
+
+	SersicProfile *p = this;
 
 	/* Sane defaults */
 	p->xcen = 0;
@@ -469,5 +582,7 @@ profit_profile *profit_create_sersic() {
 	p->_gammafn = NULL;
 	p->_beta = NULL;
 #endif
-	return (profit_profile *)p;
+
 }
+
+} /* namespace profit */

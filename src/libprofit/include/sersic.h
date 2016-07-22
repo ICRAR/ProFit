@@ -26,17 +26,19 @@
 #ifndef _SERSIC_H_
 #define _SERSIC_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <stdbool.h>
-
 #include "profit.h"
 
-typedef struct _profit_sersic_profile {
-	profit_profile profile;
+namespace profit
+{
+
+class SersicProfile : public Profile {
+
+public:
+
+	SersicProfile();
+
+	void validate();
+	void evaluate(double *image);
 
 	/* General parameters */
 	double xcen;
@@ -73,12 +75,8 @@ typedef struct _profit_sersic_profile {
 	double _sin_ang;
 	double _rescale_factor;
 
-} profit_sersic_profile;
+};
 
-profit_profile *profit_create_sersic(void);
-
-#ifdef __cplusplus
-}
-#endif
+} /* namespace profit */
 
 #endif /* _SERSIC_H_ */
