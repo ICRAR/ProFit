@@ -243,6 +243,9 @@ profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
 
+modeloptim=profitRemakeModelList(optimfit$par,Data$model,Data$tofit,Data$tolog)
+profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
+
 # Now we can try a LaplaceApproximation fit (should take a few minutes):
 
 Data$algo.func = "LA"
@@ -259,6 +262,9 @@ LAfit$Summary1[,1]
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
+
+modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$model,Data$tofit,Data$tolog)
+profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 
 # If we get CMAES we can try to fit using genetic algorithms:
 
@@ -311,6 +317,8 @@ profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=1)
 profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=2)
 profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp='all')
 
+modeloptim=profitRemakeModelList(BestLD,Data$model,Data$tofit,Data$tolog)
+profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 
 # Better errors can be obtained by removing the spurious structure remaining:
 
