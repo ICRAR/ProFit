@@ -83,8 +83,8 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     psffftw = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=TRUE,fftwplan=fftwplan)
   }
   
-  cropx = (cropimage[1]+1):(imagedim[1]+cropimage[1])-1
-  cropy = (cropimage[2]+1):(imagedim[2]+cropimage[2])-1
+  cropx = (cropimage[1]+1):(imagedim[1]+cropimage[1])
+  cropy = (cropimage[2]+1):(imagedim[2]+cropimage[2])
   
   bmi = 1
   times = numeric()
@@ -102,7 +102,7 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     rimagepad = matrix(0,padimagedim[1],padimagedim[2])
     rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
     imagefftr = fft(rimagepad) * psffftr
-    imagefftr = Re(fft(imagefftr,inverse = TRUE))[cropx,cropy]/npadimage
+    imagefftr = Re(fft(imagefftr,inverse = TRUE)[cropx,cropy])/npadimage
   }
   
   bmi = bmi + 1
@@ -116,7 +116,7 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     imagefftw = FFT(rimagepad, plan=fftwplan) * psffftw
     imagefftw = IFFT(imagefftw,plan=fftwplan)
     dim(imagefftw) = padimagedim
-    imagefftw = Re(imagefftw)[cropx,cropy]
+    imagefftw = Re(imagefftw[cropx,cropy])
   }
       
   bmi = bmi + 1
