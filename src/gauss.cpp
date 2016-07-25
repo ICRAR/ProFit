@@ -3,17 +3,17 @@
 using namespace Rcpp;
 
 /*
- * The code in this file is not currently being used, but we keep it
- * as part of the source code base and as part of the compilation in case
- * we need it later.
- *
- * Its purpose is to produce a more accurate sersic profile for nser=0.5,
- * but at the expense of taking more time.
- */
-
-/*
-
-Integral for an elliptical Gaussian via Wolfram Alpha:
+  Author: Dan Taranu
+ 
+  Semi-analytic integration for a Gaussian profile.
+ 
+  I call this semi-analytic because there is an analytical solution for the integral
+  of a 2D Gaussian over one dimension of a rectangular area, which is basically just 
+  the product of an exponential and error function (not too surprising). Unfortunately 
+  Wolfram Alpha wasn't able to integrate it over the second dimension. Perhaps a more
+  clever person could find a useful normal integral as from here:
+ 
+  http://www.tandfonline.com/doi/pdf/10.1080/03610918008812164
 
   xmod = xmid * INVREX + ymid * INVREY;
   ymod = (xmid * INVREY - ymid * INVREX)*INVAXRAT;
@@ -51,6 +51,8 @@ Integral for an elliptical Gaussian via Wolfram Alpha:
         = sqrt(pi)/(2*sqb)*isqd2pac2
         
   (In other words, exactly the same but replacing c2pad2 with d2pac2 and isqc2pad2 with isqd2pac2)
+ 
+ TODO: Integrate this into libprofit
 */
 
 class Profit2DGaussianIntegrator{
@@ -174,34 +176,17 @@ const std::vector<double> & Profit2DGaussianIntegrator::integral(
   return rval;
 }
 
-enum nsertype { gauss };
-
-template<nsertype t>
-NumericMatrix profitMakeBoxySersic(
-    const IntegerMatrix CALCREGION, const double XCEN, const double YCEN,
-    const double MAG, const double RE, const double NSER, const double ANG,
-    const double AXRAT, const double BOX, const double MAGZERO, const bool ROUGH,
-    const NumericVector & XLIM, const NumericVector & YLIM, const IntegerVector & DIM,
-    const int UPSCALE, const int MAXDEPTH, const double RESWITCH, const double ACC,
-    const bool DOCALCREGION, const double REMAX) {
-  NumericMatrix mat(DIM(0), DIM(1));
-  return mat;
-}
-
-template <>
-NumericMatrix profitMakeBoxySersic<gauss>(
-    const IntegerMatrix CALCREGION, const double XCEN, const double YCEN, 
-    const double MAG, const double RE, const double NSER, const double ANG,
-    const double AXRAT, const double BOX, const double MAGZERO, const bool ROUGH,
+NumericMatrix profitMakeGaussian(
+    const double XCEN, const double YCEN, const double MAG, const double RE, 
+    const double ANG, const double AXRAT, const double BOX, const double MAGZERO, 
     const NumericVector & XLIM, const NumericVector & YLIM, const IntegerVector & DIM, 
-    const int UPSCALE, const int MAXDEPTH, const double RESWITCH, const double ACC, 
-    const bool DOCALCREGION, const double REMAX) {
+    const double ACC) {
   //const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double BN = 0.69314718055994528623;
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
   const double LUMTOT = pow(10,(-0.4*(MAG-MAGZERO)));
   // TODO: Figure out why this empirical factor of 2*exp(1) is required to normalize properly
-  const double Ie=2.*exp(1.)*LUMTOT/(RE*RE*AXRAT*2.*PI*NSER*((exp(BN))/pow(BN,2*NSER))*R::gammafn(2*NSER)/RBOX);
+  const double Ie=2.*exp(1.)*LUMTOT/(RE*RE*AXRAT*PI*((exp(BN))/BN)*R::gammafn(1)/RBOX);
   const double INVRE = 1.0/RE;
 
   NumericMatrix mat(DIM(0), DIM(1));
@@ -228,16 +213,10 @@ NumericMatrix profitMakeBoxySersic<gauss>(
   for(i = 0; i < DIM(0); i++) {
     y=YLIM(0)-YCEN; yhi = y+ybin;
     for(j = 0; j < DIM(1); j++) {
-      if(DOCALCREGION==FALSE || CALCREGION(i,j)==1){
-        const std::vector<double> & rval = gauss2.integral(x,xhi,y,yhi,ACC2,bottomval,0,leftvals[j]);
-        bottomval = rval[2];
-        leftvals[j] = rval[4];
-        mat(i,j)=rval[0]*Ie;
-      } else {
-        mat(i,j)=0;
-        bottomval = 0;
-        leftvals[j] = 0;
-      }
+      const std::vector<double> & rval = gauss2.integral(x,xhi,y,yhi,ACC2,bottomval,0,leftvals[j]);
+      bottomval = rval[2];
+      leftvals[j] = rval[4];
+      mat(i,j)=rval[0]*Ie;
       y = yhi;
       yhi += ybin;
       bottomval = 0;
