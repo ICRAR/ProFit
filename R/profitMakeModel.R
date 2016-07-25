@@ -81,6 +81,9 @@ profitMakeModel = function(modellist,
 	# Let's start collecting profiles now...
 	profiles = list()
 
+	stopifnot(!is.null(convopt$method) && is.character(convopt$method))
+	usebruteconv = convopt$method == "Bruteconv"
+	
 	# Collect only the sersic profiles that the user specified
 	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 
@@ -183,15 +186,14 @@ profitMakeModel = function(modellist,
 			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
 				for( name in names(modellist$pointsource) ) {
 					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
+					# Fix X/Y center of the pointsource profile as needed
+					profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+					profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 				}
 			}
 			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
-				profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
+				profiles[['sersic']][['convolve']] = rep(usebruteconv, length(serscomp))
 			}
-
-			# Fix X/Y center of the pointsource profile as needed
-			profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-			profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 		}
 	}
 
@@ -209,10 +211,21 @@ profitMakeModel = function(modellist,
 		model[['resolution']] = finesample
 	}
 
+	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)
+	# TODO: Remove this after adding FFTW convolution to libprofit. R's built-in FFT never seems to be faster so it can go
+	if(!usebruteconv) model$profiles$psf = NULL
+	
 	# Go, go, go!
-	image = .Call("R_profit_make_model", model)
+	image = .Call("R_profit_make_model",model)
 	if( is.null(image) ) {
 		return(NULL)
+	}
+	if(!usebruteconv) {
+	  if(!is.null(profiles$psf)) {
+	    model$profiles = list(psf=profiles$psf)
+	    image = image + .Call("R_profit_make_model",model)
+	  }
+	  image = profitConvolvePSF(image, psf, calcregion, docalcregion, options = convopt)
 	}
 	basemat = matrix(image, ncol=dimbase[2], byrow=F)
 
