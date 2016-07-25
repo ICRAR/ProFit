@@ -39,6 +39,7 @@ double *convolve(double *src, unsigned int src_width, unsigned int src_height,
 	unsigned int i, j, k, l;
 	unsigned int krn_half_width = (krn_width - 1) / 2;
 	unsigned int krn_half_height = (krn_height - 1) / 2;
+	unsigned int krn_size = krn_width * krn_height;
 	int src_i, src_j;
 
 	double *convolution = new double[src_width * src_height];
@@ -69,7 +70,7 @@ double *convolve(double *src, unsigned int src_width, unsigned int src_height,
 			}
 
 			pixel = 0;
-			krnPtr = krn;
+			krnPtr = krn + krn_size;
 			srcPtr2 = srcPtr1 - krn_half_width - krn_half_height*src_width;
 
 			/* ... now loop around the kernel */
@@ -86,7 +87,7 @@ double *convolve(double *src, unsigned int src_width, unsigned int src_height,
 					}
 
 					srcPtr2++;
-					krnPtr++;
+					krnPtr--;
 				}
 				srcPtr2 += src_width - krn_width;
 			}
