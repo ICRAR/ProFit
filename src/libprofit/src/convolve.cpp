@@ -6,7 +6,7 @@
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Aaron Robotham, Rodrigo Tobar
+ * Contributed by Aaron Robotham, Dan Taranu, Rodrigo Tobar
  *
  * This file is part of libprofit.
  *
@@ -24,14 +24,16 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 #include "convolve.h"
 
-double *profit_convolve(double *src, unsigned int src_width, unsigned int src_height,
-                        double *krn, unsigned int krn_width, unsigned int krn_height,
-                        bool *mask, bool replace){
+namespace profit
+{
+
+double *convolve(double *src, unsigned int src_width, unsigned int src_height,
+                 double *krn, unsigned int krn_width, unsigned int krn_height,
+                 bool *mask, bool replace){
 
 	double pixel;
 	unsigned int i, j, k, l;
@@ -39,7 +41,7 @@ double *profit_convolve(double *src, unsigned int src_width, unsigned int src_he
 	unsigned int krn_half_height = (krn_height - 1) / 2;
 	int src_i, src_j;
 
-	double *convolution = (double *)calloc(src_width * src_height, sizeof(double));
+	double *convolution = new double[src_width * src_height];
 
 	double *out = convolution - 1;
 	double *srcPtr1 = src - 1, *srcPtr2;
@@ -94,10 +96,12 @@ double *profit_convolve(double *src, unsigned int src_width, unsigned int src_he
 	}
 
 	if( replace ) {
-		src = memcpy(src, convolution, sizeof(double) * src_width * src_height);
-		free(convolution);
+		src = (double *)memcpy(src, convolution, sizeof(double) * src_width * src_height);
+		delete [] convolution;
 		return src;
 	}
 
 	return convolution;
 }
+
+} /* namespace profit */

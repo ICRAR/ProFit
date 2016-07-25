@@ -1,4 +1,5 @@
-#include <math.h>
+#include <cmath>
+#include <sstream>
 
 /* Use the cannonical Rf_* names */
 #define R_NO_REMAP
@@ -11,6 +12,11 @@
 #include <sersic.h>
 #include <sky.h>
 #include <psf.h>
+
+using namespace profit;
+using namespace std;
+
+extern "C" {
 
 static
 double *_read_image(SEXP r_image, unsigned int *im_width, unsigned int *im_height) {
@@ -99,8 +105,8 @@ void _read_real(SEXP list, const char *name, unsigned int idx, double *target) {
 }
 
 static
-void list_to_sersic(SEXP sersic_list, profit_profile *p, unsigned int idx) {
-	profit_sersic_profile *sp = (profit_sersic_profile *)p;
+void list_to_sersic(SEXP sersic_list, Profile *p, unsigned int idx) {
+	SersicProfile *sp = static_cast<SersicProfile *>(p);
 	sp->adjust = true;
 	_read_real(sersic_list, "xcen",  idx, &(sp->xcen));
 	_read_real(sersic_list, "ycen",  idx, &(sp->ycen));
@@ -122,14 +128,14 @@ void list_to_sersic(SEXP sersic_list, profit_profile *p, unsigned int idx) {
 }
 
 static
-void list_to_sky(SEXP sky_list, profit_profile *p, unsigned int idx) {
-	profit_sky_profile *sp = (profit_sky_profile *)p;
+void list_to_sky(SEXP sky_list, Profile *p, unsigned int idx) {
+	SkyProfile *sp = static_cast<SkyProfile *>(p);
 	_read_real(sky_list, "bg",  idx, &(sp->bg));
 }
 
 static
-void list_to_psf(SEXP psf_list, profit_profile *p, unsigned int idx) {
-	profit_psf_profile *psf = (profit_psf_profile *)p;
+void list_to_psf(SEXP psf_list, Profile *p, unsigned int idx) {
+	PsfProfile *psf = static_cast<PsfProfile *>(p);
 	_read_real(psf_list, "xcen",  idx, &(psf->xcen));
 	_read_real(psf_list, "ycen",  idx, &(psf->ycen));
 	_read_real(psf_list, "mag",   idx, &(psf->mag));
@@ -137,9 +143,9 @@ void list_to_psf(SEXP psf_list, profit_profile *p, unsigned int idx) {
 
 
 static
-void _read_profiles(profit_model *model, SEXP profiles_list,
+void _read_profiles(Model &model, SEXP profiles_list,
                     const char *profile_name, const char* example_property,
-                    void (*list_to_profile)(SEXP, profit_profile *, unsigned int)) {
+                    void (*list_to_profile)(SEXP, Profile *, unsigned int)) {
 
 	/* Is the profile specified in the model? */
 	SEXP profile_list = _get_list_element(profiles_list, profile_name);
@@ -158,7 +164,7 @@ void _read_profiles(profit_model *model, SEXP profiles_list,
 
 	/* Create that many profiles and then start reading the info if available */
 	for(i=0; i!=count; i++) {
-		profit_profile *p = profit_create_profile(model, profile_name);
+		Profile *p = model.add_profile(profile_name);
 		list_to_profile(profile_list, p, i);
 
 		_read_bool(profile_list, "convolve", i, &(p->convolve));
@@ -166,17 +172,17 @@ void _read_profiles(profit_model *model, SEXP profiles_list,
 }
 
 static
-void _read_sersic_profiles(profit_model *model, SEXP profiles_list) {
+void _read_sersic_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "sersic", "xcen", &list_to_sersic);
 }
 
 static
-void _read_sky_profiles(profit_model *model, SEXP profiles_list) {
+void _read_sky_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "sky", "bg", &list_to_sky);
 }
 
 static
-void _read_psf_profiles(profit_model *model, SEXP profiles_list) {
+void _read_psf_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "psf", "xcen", &list_to_psf);
 }
 
@@ -190,7 +196,7 @@ SEXP R_profit_make_model(SEXP model_list) {
 	ssize_t size;
 	unsigned int img_w, img_h;
 	double res = 1;
-	char *error;
+	string error;
 	unsigned int psf_width = 0, psf_height = 0;
 	double *psf = NULL;
 	bool *mask = NULL;
@@ -226,16 +232,16 @@ SEXP R_profit_make_model(SEXP model_list) {
 	}
 
 	/* Read model parameters */
-	profit_model *m = profit_create_model();
-	m->width  = img_w;
-	m->height = img_h;
-	m->res_x = (unsigned int)floor(m->width * res);
-	m->res_y = (unsigned int)floor(m->height * res);
-	m->magzero = Rf_asReal(magzero);
-	m->psf = psf;
-	m->psf_width = psf_width;
-	m->psf_height = psf_height;
-	m->calcmask = mask;
+	Model m;
+	m.width  = img_w;
+	m.height = img_h;
+	m.res_x = (unsigned int)floor(m.width * res);
+	m.res_y = (unsigned int)floor(m.height * res);
+	m.magzero = Rf_asReal(magzero);
+	m.psf = psf;
+	m.psf_width = psf_width;
+	m.psf_height = psf_height;
+	m.calcmask = mask;
 
 	/* Read profiles and parameters and append them to the model */
 	SEXP profiles = _get_list_element(model_list, "profiles");
@@ -246,27 +252,25 @@ SEXP R_profit_make_model(SEXP model_list) {
 	_read_sersic_profiles(m, profiles);
 	_read_sky_profiles(m, profiles);
 	_read_psf_profiles(m, profiles);
-	if( !m->n_profiles ) {
+	if( !m.profiles.size() ) {
 		Rf_error("No valid profiles found in profiles list\n");
-		profit_cleanup(m);
 		return R_NilValue;
 	}
 
 	/* Go, go, go! */
-	profit_eval_model(m);
-	error = profit_get_error(m);
-	if( error ) {
-		Rf_error("Error while calculating model: %s\n", error);
-		profit_cleanup(m);
+	try {
+		m.evaluate();
+	} catch (invalid_parameter &e) {
+		stringstream ss;
+		ss << "Error while calculating model: " << e.what() << endl;
+		Rf_error(ss.str().c_str());
 		return R_NilValue;
 	}
 
 	/* Copy the image, clean up, and good bye */
-	size = m->width * m->height;
+	size = m.width * m.height;
 	SEXP image = PROTECT(Rf_allocVector(REALSXP, size));
-	memcpy(REAL(image), m->image, sizeof(double) * size);
-
-	profit_cleanup(m);
+	memcpy(REAL(image), m.image, sizeof(double) * size);
 
 	UNPROTECT(1);
 	return image;
@@ -289,7 +293,7 @@ SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_c
 		}
 	}
 
-	image = profit_convolve(image, img_w, img_h, psf, psf_w, psf_h, calc_region, true);
+	image = convolve(image, img_w, img_h, psf, psf_w, psf_h, calc_region, true);
 	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, img_w * img_h));
 	memcpy(REAL(ret_image), image, sizeof(double) * img_w * img_h);
 	free(image);
@@ -297,5 +301,7 @@ SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_c
 
 	UNPROTECT(1);
 	return ret_image;
+
+}
 
 }

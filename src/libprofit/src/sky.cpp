@@ -1,12 +1,12 @@
 /**
- * Utility routines for libprofit
+ * Sky profile implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Rodrigo Tobar
+ * Contributed by Aaron Robotham, Rodrigo Tobar
  *
  * This file is part of libprofit.
  *
@@ -24,31 +24,48 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void profit_add_images(double *dest, double *src,
-                       unsigned int width, unsigned int height) {
+#include "sky.h"
 
-	for(unsigned int i=0; i != width*height; i++, dest++, src++) {
-		*dest += *src;
-	}
+namespace profit {
 
+void SkyProfile::validate() {
+	/* no-op for the time being, probably check value in range, etc */
+	return;
 }
 
-void profit_normalize(double *image, unsigned int img_width, unsigned int img_height) {
+void SkyProfile::evaluate(double *image) {
 
-	unsigned int i;
-	unsigned int size = img_width * img_height;
-	double sum = 0;
+	Model *model = this->model;
 
-	double *in = image;
-	for(i=0; i!=size; i++) {
-		sum += *in;
-		in++;
+	/* Setup a pointer to iterate over the calcmask, if any */
+	bool *mask_ptr = model->calcmask;
+	if( mask_ptr ) {
+		mask_ptr -= 1;
 	}
 
-	in = image;
-	for(i=0; i!=size; i++) {
-		*in /= sum;
-		in++;
-	}
+	unsigned int i, size = model->width * model->height;
 
+	/* Fill the image with the background value */
+	for(i=0; i!=size; i++) {
+
+		/* Check the calculation mask and avoid pixel if necessary  */
+		if( model->calcmask ) {
+			mask_ptr++;
+			if( !*mask_ptr ) {
+				continue;
+			}
+		}
+
+		*image = this->bg;
+		image++;
+	}
 }
+
+SkyProfile::SkyProfile() :
+	Profile(),
+	bg(0.)
+{
+	// no-op
+}
+
+} /* namespace profit */

@@ -1,5 +1,5 @@
 /**
- * Header file for PSF profile implementation
+ * Utility routines for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -23,28 +23,36 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _PSF_H_
-#define _PSF_H_
 
-#include "profit.h"
+namespace profit {
 
-namespace profit
-{
+void add_images(double *dest, double *src,
+                unsigned int width, unsigned int height) {
 
-class PsfProfile : public Profile {
+	for(unsigned int i=0; i != width*height; i++, dest++, src++) {
+		*dest += *src;
+	}
 
-public:
-	PsfProfile();
-	void validate();
-	void evaluate(double *image);
-	double xcen;
-	double ycen;
-	double mag;
+}
 
-	/* This is calculated from mag */
-	double scale;
-};
+void normalize(double *image, unsigned int img_width, unsigned int img_height) {
+
+	unsigned int i;
+	unsigned int size = img_width * img_height;
+	double sum = 0;
+
+	double *in = image;
+	for(i=0; i!=size; i++) {
+		sum += *in;
+		in++;
+	}
+
+	in = image;
+	for(i=0; i!=size; i++) {
+		*in /= sum;
+		in++;
+	}
+
+}
 
 } /* namespace profit */
-
-#endif /* _PSF_H_ */
