@@ -92,15 +92,15 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     
     magimage(Data,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
     tempcon=magimage(1-region,add=T,col=NA)#hsv(s=0,alpha=0.5)
-    contour(tempcon,add=T,drawlabels = F,levels=1)
+    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend='Data')
     
     magimage(modelimage,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
-    contour(tempcon,add=T,drawlabels = F,levels=1)
+    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend='Model')
     
     magimage(residual,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
-    contour(tempcon,add=T,drawlabels = F,levels=1)
+    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend='Data-Model')
       
     errsign = (-1)^(image > modelimage)
@@ -118,7 +118,7 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     minerr = -maxerr
     errmap[!region & (errmap<minerr)] = minerr
     magimage(errmap,magmap=FALSE,zlim=c(-3,3),col=errcmap)
-    contour(tempcon,add=T,drawlabels = F,levels=1)
+    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend=bquote(chi*"=(Data-Model)"/sigma))
     
     par(mar=parmar2 + c(0,0,0,1))

@@ -27,22 +27,20 @@
 #ifndef _SKY_H_
 #define _SKY_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 #include "profit.h"
 
-typedef struct _profit_sky_profile {
-	profit_profile profile;
+namespace profit
+{
+
+class SkyProfile : public Profile {
+
+public:
+	SkyProfile();
+	void validate();
+	void evaluate(double *image);
 	double bg;
-} profit_sky_profile;
+};
 
-profit_profile *profit_create_sky(void);
-
-#ifdef __cplusplus
-}
-#endif
+} /* namespace profit */
 
 #endif /* _SKY_H_ */

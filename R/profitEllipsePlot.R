@@ -34,14 +34,13 @@ profitEllipsePlot=function(Data, model, bulgeloc=1, diskloc=2, pixscale=1, FWHM=
   bulgeellipse=profitEllipse(bulge$z, xcen=model$sersic$xcen[bulgeloc], ycen=model$sersic$ycen[bulgeloc], ang=model$sersic$ang[bulgeloc], axrat=model$sersic$axrat[bulgeloc], box=model$sersic$box[bulgeloc])
   diskellipse=profitEllipse(disk$z, xcen=model$sersic$xcen[diskloc], ycen=model$sersic$ycen[diskloc], ang=model$sersic$ang[diskloc], axrat=model$sersic$axrat[diskloc], box=model$sersic$box[diskloc])
   totalellipse=profitEllipse(total$z, xcen=model$sersic$xcen[diskloc], ycen=model$sersic$ycen[diskloc], ang=model$sersic$ang[diskloc], axrat=model$sersic$axrat[diskloc], box=model$sersic$box[diskloc])
-  psfellipse=cbind(seq(0,10*FWHM,len=1e3), dnorm(seq(0,10*FWHM,len=1e3),sd=FWHM/(2*sqrt(2*log(2)))/pixscale))
+  psfellipse=cbind(seq(0,10*FWHM,len=1e3), dnorm(seq(0,10*FWHM,len=1e3),sd=FWHM/(2*sqrt(2*log(2)))))
   
   imageellipse[,1]=imageellipse[,1]*pixscale
   sigmaellipse[,1]=sigmaellipse[,1]*pixscale
   bulgeellipse[,1]=bulgeellipse[,1]*pixscale
   diskellipse[,1]=diskellipse[,1]*pixscale
   totalellipse[,1]=totalellipse[,1]*pixscale
-  psfellipse[,1]=psfellipse[,1]*pixscale
   
   sigmaellipse=cbind(sigmaellipse,imageellipse[,2]-sigmaellipse[,2])
   sigmaellipse=cbind(sigmaellipse,imageellipse[,2]+sigmaellipse[,2])
