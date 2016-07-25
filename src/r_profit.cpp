@@ -16,8 +16,6 @@
 using namespace profit;
 using namespace std;
 
-extern "C" {
-
 static
 double *_read_image(SEXP r_image, unsigned int *im_width, unsigned int *im_height) {
 
@@ -191,7 +189,8 @@ void _read_psf_profiles(Model &model, SEXP profiles_list) {
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
  */
-SEXP R_profit_make_model(SEXP model_list) {
+
+SEXP _R_profit_make_model(SEXP model_list) {
 
 	ssize_t size;
 	unsigned int img_w, img_h;
@@ -276,7 +275,7 @@ SEXP R_profit_make_model(SEXP model_list) {
 	return image;
 }
 
-SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
+SEXP _R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
 
 	unsigned int img_w, img_h, psf_w, psf_h;
 
@@ -304,4 +303,12 @@ SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_c
 
 }
 
+extern "C" {
+  SEXP R_profit_make_model(SEXP model_list) {
+    return _R_profit_make_model(model_list);
+  }
+  
+  SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
+    return(_R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region));
+  }
 }
