@@ -10,7 +10,7 @@ This is a utility function to get the user inputs in the format required for mod
 \usage{
 profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals,
 psf=NULL, finesample=1L, magzero=0, algo.func='LA', like.func="chisq", verbose=FALSE,
-magmu=FALSE, nbenchmark=0)
+magmu=FALSE, nbenchmark=0L)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -237,6 +237,8 @@ List; complex structure  of class profit.data containing:
 \item{region}{Logical matrix specifying which pixels are inside the fitting region.}
 \item{calcregion}{Logical matrix specifying which pixels should have their model values calculated and be convolved by the \option{psf}.}
 \item{usecalcregion}{Logical specifying whether the calcregion matrix should be used; it may be more efficient not to use it.}
+\item{convusecalcregion}{Logical specifying whether only the calcregion should be considered during convolution.}
+\item{convopt}{List specifying the preferred convolution method (Bruteconv, FFTconv, FFTWconv) and additional items to aid future convolution calculations (only relevant for FFTconv and FFTWconv). When \option{nbenchmark}=0L then the default of Bruteconv is assumed.}
 \item{tofit}{The specified \option{tofit} list.}
 \item{tolog}{The specified \option{tolog} list.}
 \item{priors}{The specified \option{priors} list.}
