@@ -70,7 +70,7 @@ double *convolve(double *src, unsigned int src_width, unsigned int src_height,
 			}
 
 			pixel = 0;
-			krnPtr = krn + krn_size;
+			krnPtr = krn + krn_size - 1;
 			srcPtr2 = srcPtr1 - krn_half_width - krn_half_height*src_width;
 
 			/* ... now loop around the kernel */
