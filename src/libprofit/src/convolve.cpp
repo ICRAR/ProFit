@@ -65,6 +65,7 @@ double *convolve(double *src, unsigned int src_width, unsigned int src_height,
 			if( mask ) {
 				maskPtr++;
 				if( !*maskPtr ) {
+					*out = 0;
 					continue;
 				}
 			}
