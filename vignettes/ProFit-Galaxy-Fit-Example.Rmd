@@ -339,17 +339,17 @@ modeloptim=profitRemakeModelList(BestLD,Data$model,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
-Without fine sampling, the model convolution is slightly inaccurate and can bias the final result.
+In the previous examples, the resolution of the convolved model was limited by the size of the pixels, since convolution can only spread flux from pixel-to-pixel. We can do better by sampling the model and PSF on a finer grid than the pixel scale ("fine-sampling"), through interpolation for empirical PSFs.
 
-To test this, set up the data again. This time we will fine sample the model and PSF by a factor of 3, and take a few minutes to benchmark convolution methods:
+To test this, set up the data again. This time we will fine-sample the model and PSF by a factor of 3, and take a few minutes to benchmark convolution methods:
 
 ```{r,eval=FALSE}
 Dataf=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
   model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=10L, finesample=2L)
+  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=10L, finesample=3L)
 ```
 
-Note that profitSetupData automagically fine-samples the PSF by interpolating it. Usually, brute-force convolution is faster than an FFT (which requires 2x padding to avoid artifacts), but it scales as finesample^4, so FFT is often faster with large images and/or PSFs.
+Note that profitSetupData automagically fine-sampled the PSF by interpolation. Usually, brute-force convolution is faster than an FFT (which requires 2x padding to avoid artifacts), but it scales as finesample^4, so FFT is often faster with large images and/or PSFs.
 
 Let's check to see how the fine-sampled model looks:
 
@@ -357,12 +357,18 @@ Let's check to see how the fine-sampled model looks:
 profitLikeModel(BestLD,Dataf,makeplots=TRUE,serscomp='all')
 ```
 
-First, let's run `LaplaceApproximation` again to see how the best-fit parameters changed:
+That doesn't look so different, but let's run `LaplaceApproximation` again to see how the best-fit parameters changed:
 
 ```{r, eval=FALSE}
 Dataf$algo.func = "LA"
 LAfitf=LaplaceApproximation(profitLikeModel, parm=LAfit$Summary1[,1], Data=Dataf, Iterations=1e3,
   Method='BFGS', CovEst='Identity', sir=FALSE)
+```
+
+Does the new best fit look slightly better? It should:
+
+```{r, eval=FALSE}
+profitLikeModel(LAfitf$Summary1[,1],Dataf,makeplots=TRUE,serscomp='all')
 ```
 
 Now run `LaplacesDemon` again, with fewer iterations to begin with (as it's slower to convolve):

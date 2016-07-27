@@ -93,6 +93,7 @@ Notice there are no stars and the models look very sharp - this is because we ha
 
 ```{r, fig.width=5, fig.height=5}
 ExamplePSF = profitMakePointSource()
+ExamplePSF = ExamplePSF/sum(ExamplePSF)
 ExampleImagePSF1=profitMakeModel(model=model1, psf=ExamplePSF, dim=c(200,200))
 magimage(ExampleImagePSF1)
 ```
@@ -134,7 +135,7 @@ The cuspy bulge is evident in the centre of the image, and you can see the dull 
 Note that the accuracy of convolution is limited by the pixel dimensions relative to the PSF. In this case, the PSF is quite small, so for accurate convolution, we need to sample the model more finely:
 
 ```{r, fig.width=5, fig.height=5}
-Finesample=2L
+Finesample=3L
 FinePSFmodel = model1a$psf
 FinePSFmodel$sersic$re = FinePSFmodel$sersic$re*Finesample
 ExamplePSFFine = profitMakePointSource(model=FinePSFmodel,image = matrix(0,27,27))

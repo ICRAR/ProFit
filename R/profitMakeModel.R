@@ -10,11 +10,12 @@ profitMakeModel = function(modellist,
 	stopifnot(is.integer(finesample) && finesample >= 1)
 
 	# Some defaults...
-	rough = if ( rough ) 1 else 0
+	rough = rough == TRUE
+	stopifnot(is.logical(rough) && length(rough) == 1)
 	if( serscomp=='all' ) {
 		serscomp = 1:length(modellist$sersic$xcen)
 	}
-	if( pscomp=='all' ) {
+	if(pscomp=='all') {
 		pscomp = 1:length(modellist$pointsource$xcen)
 	}
 	if( missing(remax) ) {
@@ -24,23 +25,30 @@ profitMakeModel = function(modellist,
 	# Regarding "psfpad" and "returncrop"
 	# ===================================
 	#
-	# In Dan's code it was envisioned that when doing brute-force convolution
-	# the target surface is bigger to avoid if statements in the convolution
-	# method.  This internal behavior is then exposed to the callers of this
-	# function via the "returncrop" argument (defaults to FALSE), which allows
-	# them to receive this expanded surface.
-
-
-	# Must pad the model image by the PSF size, then crop it in order to
-	# properly model light scattered from *outside* of the observation into the
-	# cropped region
+	# When convolving an analytical model with a PSF, the model must be padded by
+	# the PSF size (half width on either side) and then cropped in order to
+	# properly model light scattered from *outside* of the original image dimensions
+	# by the PSF, back into the PSF-convolved image's dimensions. We usually don't 
+	# care about light scattered from within the original image dimensions back 
+	# outside; nonetheless, the "returncrop" option can be set to FALSE if the 
+	# user wants the full model image for some reason (mostly for the 
+	# convenience of having the padded instead of cropped dimensions).
+	# 
+	# Note that for the same reason mentioned above, if returncrop is FALSE,
+	# the data for the model in the padded region will be slightly underestimated,
+	# lacking the light scattered from outside of the padded region back into it.
+	
 	psfpad = c(0,0)
 	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
 
 	# If the "psf" argument is not given, users can still provide an analytical
 	# PSF function by specifing a "psf model"; that is, a list of profiles
 	# that will be evaluated in a small area, producing an image that we will
-	# then user as our PSF.
+	# then use as our PSF.
+	
+	# Normally the user would want to pre-generate this PSF image for efficiency,
+	# unless they are fitting the PSF - in which case it may need to be 
+	# re-generated constantly
 	haspsfmodel = !is.null(modellist$psf)
 	if( haspsfmodel && !haspsf ) {
 		haspsf = TRUE
@@ -73,6 +81,9 @@ profitMakeModel = function(modellist,
 	# Let's start collecting profiles now...
 	profiles = list()
 
+	stopifnot(!is.null(convopt$method) && is.character(convopt$method))
+	usebruteconv = convopt$method == "Bruteconv"
+	
 	# Collect only the sersic profiles that the user specified
 	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 
@@ -100,14 +111,17 @@ profitMakeModel = function(modellist,
 		profiles$sersic[['rescale_flux']] = rep(rescaleflux, length(serscomp))
 	}
 
-	# pointsource profiles are accomlished in two different ways:
+	# pointsource profiles are generated in two different ways:
+	#
 	#  * If a PSF image was given, then we consider each of the
 	#    pointsource profiles is translated into a "psf" libprofit
 	#    profile, which draws the PSF image into the desired location
+	#
 	#  * If on the other hand the user specified a PSF model (itself
 	#    consisting on a list of profiles), we take this list of
 	#    "subprofiles" and reproduce it for each of the pointsource
 	#    profiles, adjusting values as needed.
+	#
 	#    For example if we pass down a model$psf with two sersic profiles
 	#    and a modellist with three pointsource profiles, we will add
 	#    three different versions of the two sersic profiles to the
@@ -163,27 +177,23 @@ profitMakeModel = function(modellist,
 						for(name in c(names(modellist$comp), names(new_profiles))) {
 							profiles[[comp]][[name]] = c(profiles[[comp]][[name]], new_profiles[[name]])
 						}
-
 					}
 				}
 			}
-
 		}
 
 		else {
-
 			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
 				for( name in names(modellist$pointsource) ) {
 					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
+					# Fix X/Y center of the pointsource profile as needed
+					profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
+					profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 				}
 			}
 			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
-				profiles[['sersic']][['convolve']] = rep(TRUE, length(serscomp))
+				profiles[['sersic']][['convolve']] = rep(usebruteconv, length(serscomp))
 			}
-
-			# Fix X/Y center of the pointsource profile as needed
-			profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-			profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
 		}
 	}
 
@@ -201,10 +211,21 @@ profitMakeModel = function(modellist,
 		model[['resolution']] = finesample
 	}
 
+	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)
+	# TODO: Remove this after adding FFTW convolution to libprofit. R's built-in FFT never seems to be faster so it can go
+	if(!usebruteconv) model$profiles$psf = NULL
+	
 	# Go, go, go!
-	image = .Call("R_profit_make_model", model)
+	image = .Call("R_profit_make_model",model)
 	if( is.null(image) ) {
 		return(NULL)
+	}
+	if(!usebruteconv) {
+	  if(!is.null(profiles$psf)) {
+	    model$profiles = list(psf=profiles$psf)
+	    image = image + .Call("R_profit_make_model",model)
+	  }
+	  image = profitConvolvePSF(image, psf, calcregion, docalcregion, options = convopt)
 	}
 	basemat = matrix(image, ncol=dimbase[2], byrow=F)
 
@@ -213,7 +234,7 @@ profitMakeModel = function(modellist,
 	# and doing always a brute-force convolution inside libprofit,
 	# since that's the only one supported at the moment
 
-	# Crop the resulting image, we requested a bigger one to include the PSF...
+	# Crop the resulting image - we only requested a bigger one to include the PSF buffer
 	if( haspsf && returncrop ) {
 		dimbase = dim*finesample
 		psfcrop = floor(dim(psf)/2)
@@ -241,5 +262,4 @@ profitMakeModel = function(modellist,
 	rval$z = basemat
 
 	return(rval)
-
 }

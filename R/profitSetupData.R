@@ -21,7 +21,6 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
   if(haspsf)
   {
     psf[psf<0] = 0
-    psf = psf/sum(psf)
     # Linearly interpolate the PSF. Cubic/spline would be preferred but it's too finicky with negative/coerced zero values
     # Also force it to be odd on both axes
     dimpsf = dim(psf)
@@ -83,13 +82,12 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
     # No need to store the PSF FFT if it's varying
     if(fitpsf)
     {
-      convolve$fft$psf$r = NULL
-      convolve$fft$psf$w = NULL
+      convopt$fft$psf$r = NULL
+      convopt$fft$psf$w = NULL
     }
   } else {
-    convolve = list(method="Bruteconv")
+    convopt = list(method="Bruteconv")
     convusecalcregion = TRUE
-    convopt = NA
   }
   
   init = unlist(model)

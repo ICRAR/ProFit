@@ -69,7 +69,7 @@ magimage(profitConvolvePSF(image=model.image, psf=profitMakePointSource()))
 # Comparison of convolution types:
 
 image=profitMakeSersic(re=10,axrat=0.3,ang=30,dim=c(1e3,1e3))$z
-psf=profitGenPSF(10,75)
+psf=profitMakeGaussianPSF(10,75)
 
 # Get the becnhmarks:
 
