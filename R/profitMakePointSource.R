@@ -1,4 +1,4 @@
-profitMakePointSource=function(xcen=NULL,ycen=NULL,mag=0,magzero=0,
+profitMakePointSource=function(xcen,ycen,mag=0,magzero=0,
   model=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
   psf=NULL,image=matrix(0,9,9),finesample=1L, add=FALSE)
 {
@@ -9,8 +9,8 @@ profitMakePointSource=function(xcen=NULL,ycen=NULL,mag=0,magzero=0,
   hasimage = !is.null(image)
   scale=10^(-0.4*(mag-magzero))
   dimimg = dim(image)
-  if(is.null(xcen)) xcen = dimimg[1]/2
-  if(is.null(ycen)) ycen = dimimg[2]/2
+  if(missing(xcen)) xcen = dimimg[1]/2
+  if(missing(ycen)) ycen = dimimg[2]/2
   pixlocs = c(1,1)
   if(haspsfimg)
   {

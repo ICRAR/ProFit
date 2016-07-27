@@ -8,17 +8,17 @@ Create an image of a point source (PS) with an analytical or empirical point spr
 Create an image of a point source at an arbitrary location (can be fractional pixels) based on a user-defined point spread function (PSF) model, or by interpolating a user-defined empirical PSF image. Defaults to creating an empirical image of a Gaussian PSF.
 }
 \usage{
-profitMakePointSource(xcen=NULL,ycen=NULL,mag=0,magzero=0,
+profitMakePointSource(xcen,ycen,mag=0,magzero=0,
   model=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
   psf=NULL,image=matrix(0,9,9),finesample=1L, add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{xcen}{
-The x-axis center of the point source in image coordinates.
+The x-axis center of the point source in image coordinates. If missing it will be the mid-x location on the specified \option{image}.
 }
   \item{ycen}{
-The y-axis center of the point source in image coordinates.
+The y-axis center of the point source in image coordinates. If missing it will be the mid-y location on the specified \option{image}.
 }
   \item{model}{
 An optional list containing a valid model as described in \code{\link{profitMakeModel}}, which must be defined such that the integral of the model is unity (mag=0). One of \option{model} or \option{psf} (but not both) must be supplied.
