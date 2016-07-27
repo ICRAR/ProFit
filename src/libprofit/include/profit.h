@@ -42,8 +42,9 @@ class invalid_parameter : public std::exception
 {
 
 public:
-	invalid_parameter(std::string what);
+	invalid_parameter(const std::string &what);
 	invalid_parameter(const invalid_parameter &e);
+	~invalid_parameter() throw();
 	const char *what() const throw();
 
 private:

@@ -40,7 +40,7 @@ using namespace std;
 
 namespace profit {
 
-invalid_parameter::invalid_parameter(string what_arg) :
+invalid_parameter::invalid_parameter(const string &what_arg) :
 	exception(),
 	m_what(what_arg)
 {
@@ -50,6 +50,10 @@ invalid_parameter::invalid_parameter(string what_arg) :
 invalid_parameter::invalid_parameter(const invalid_parameter &e) :
    m_what(e.m_what)
 {
+	// no-op
+}
+
+invalid_parameter::~invalid_parameter() throw () {
 	// no-op
 }
 
