@@ -40,29 +40,14 @@ Scalar; axial ratio of the Sersic profile defined as minor-axis/major-axis, i.e.
 Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{magzero}{
-%%     ~~Describe \code{magzero} here~~
+The magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
 }
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
 }
-%  \item{xlim}{
-%The x pixel range of the image to generate the image on. Typically this should be c(0,Nx).
-%}
-%  \item{ylim}{
-%The y pixel range of the image to generate the image on. Typically this should be c(0,Ny).
-%}
   \item{dim}{
 Vector of length 2; the dimensions of the image to be generated. Typically this should be c(Nx,Ny).
 }
-%  \item{UPSCALE}{
-%The upsampling to use for refined pixels. larger UPSCALE means a more accurate pixel integration. The default (9) works reasonably for a wide range of profiles.
-%}
-%  \item{MAXDEPTH}{
-%The allowed maximum depth of integration recursion. Larger (e.g. 5) means more accurate integration, but increased computation time. The default (2) works reasonably for a wide range of profiles.
-%}
-%  \item{RESWITCH}{
-%The axial ratio and boxiness corrected radius with respect to \option{RE} inside of which pixels should be refined using the \option{UPSCALE} and \option{MAXDEPTH} options.  The default (2, i.e. 2*Re) works reasonably for a wide range of profiles.
-%}
   \item{acc}{
 Desired minimum per pixel accuracy within the upscaling region. \option{acc} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. The default (0.1) works reasonably for a wide range of profiles.
 }

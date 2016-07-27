@@ -83,8 +83,8 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     psffftw = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=TRUE,fftwplan=fftwplan)
   }
   
-  cropx = (cropimage[1]+1):(imagedim[1]+cropimage[1])
-  cropy = (cropimage[2]+1):(imagedim[2]+cropimage[2])
+  cropx = (cropimage[1]+1):(imagedim[1]+cropimage[1]) + if(imagedim[1]%%2==0){-1}else{0}
+  cropy = (cropimage[2]+1):(imagedim[2]+cropimage[2]) + if(imagedim[2]%%2==0){-1}else{0}
   
   bmi = 1
   times = numeric()

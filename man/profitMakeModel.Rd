@@ -19,7 +19,7 @@ remax, rescaleflux = FALSE, convopt=list(method="Bruteconv"))
 The model list that describes the analytic model to be created. See Details.
 }
   \item{magzero}{
-The magntiude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero))
+The magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
 }
   \item{psf}{
 The PSF matrix to use for the model. This will both be used to convolve the Sersic model and to model point sources (i.e.) stars.
