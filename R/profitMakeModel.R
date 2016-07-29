@@ -90,7 +90,7 @@ profitMakeModel = function(modellist,
 		# Copy them
 		profiles$sersic = list()
 		for( name in names(modellist$sersic) ) {
-			profiles$sersic[[name]] = c(unlist(modellist$sersic[[name]][serscomp]))
+			profiles$sersic[[name]] = c(unlist(as.numeric(modellist$sersic[[name]][serscomp])))
 		}
 
 		# Fix their magnitude if necessary
