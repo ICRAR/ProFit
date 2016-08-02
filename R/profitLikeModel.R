@@ -26,7 +26,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   finesample = 1L
   if(length(Data$finesample)>0) finesample = Data$finesample
   profitCheckFinesample(finesample)
-  stopifnot(Data$like.func %in% c('norm', 't', 'chisq'))
   
   fitIDs=which(unlist(Data$tofit))
   parm=parm[1:length(fitIDs)]
@@ -91,21 +90,31 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
     cutim=img
     cutmod=model$z
   }
-  ndata = length(cutim)
   
-  cutsig=(cutim-cutmod)/cutsig
-  vardata = var(cutsig)
-  dof=2*vardata/(vardata-1)
-  dof=interval(dof,0,Inf)
-  if(Data$like.func=="norm"){
+  #Force like.func to be lower case:
+  Data$like.func=tolower(Data$like.func)
+  
+  #Various allowed likelihoods:
+  if(Data$like.func=="norm" | Data$like.func=="normal"){
+    cutsig=(cutim-cutmod)/cutsig
     LL=sum(dnorm(cutsig, log=TRUE))
-  } else if(Data$like.func=="chisq") {
+  } else if(Data$like.func=="chisq" | Data$like.func=="chi-sq") {
+    cutsig=(cutim-cutmod)/cutsig
+    ndata = length(cutim)
     LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
-  } else if(Data$like.func=="t") {
+  } else if(Data$like.func=="t" | Data$like.func=='student' | Data$like.func=='student-t') {
+    cutsig=(cutim-cutmod)/cutsig
+    vardata = var(cutsig)
+    dof=2*vardata/(vardata-1)
+    dof=interval(dof,0,Inf)
     LL=sum(dt(cutsig,dof,log=TRUE))
-  } else if(Data$like.func=="pois") {
-    scale=sqrt(median(abs(cutim/cutsig)))
-    LL=sum(dpois(ceiling(cutim/scale),cutmod/scale,log=T))
+  } else if(Data$like.func=="pois" | Data$like.func=="poisson" | Data$like.func=="cash" | Data$like.func=="c") {
+    scale=max(abs(Data$image)/abs(Data$sigma)^2)
+    if(scale<0.1 | scale>10){
+      cutmod=cutmod*scale
+      cutim=cutim*scale
+    }
+    LL=-sum(cutmod-cutim*log(cutmod))
   } else {
     stop(paste0("Error: unknown likelihood function: '",Data$like.func,"'"))
   }

@@ -28,7 +28,7 @@ Depends: \tab magicaxis, FITSio, LaplacesDemon, RColorBrewer, R2Cuba\cr
 Maintainer: \packageMaintainer{ProFit}
 }
 \references{
-~~ Literature or other references for background information ~~
+Robotham A.S.G. et al., in prep
 }
 \keyword{profile}
 
