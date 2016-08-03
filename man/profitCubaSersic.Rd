@@ -8,8 +8,8 @@ Exact 2D Sersic Model Image Creation
 This function computes the exact pixel integrals for a given model image. This is very slow compared to the low-level \code{\link{profitMakeSersic}} or high-level \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}.
 }
 \usage{
-profitCubaSersic(xcen = 0, ycen = 0, mag = 15, re = 1, nser = 1, ang = 0, axrat = 1,
-box = 0, xlim = c(-10, 10), ylim = c(-10, 10), dim = c(20, 20), acc = 1e-3)
+profitCubaSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 4, ang = 0,
+axrat = 1, box = 0, dim = c(25, 25), acc = 1e-3)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,14 +37,8 @@ Axial ratio of the Sersic profile defined as minor-axis/major-axis, i.e. 1 is a 
   \item{box}{
 The boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
-  \item{xlim}{
-The x pixel range of the image to generate the image on. Typically this should be c(0,Nx).
-}
-  \item{ylim}{
-The y pixel range of the image to generate the image on. Typically this should be c(0,Ny).
-}
   \item{dim}{
-The dimensions of the image to be generated. Typically this should be c(Nx,Ny).
+The dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
 }
   \item{acc}{
 The target relative accuracy of the cubature integral. The relative flux in a pixel will be no more inaccurate than this specified figure. Making this smaller will increase (the already long) computation time. The default of \option{acc}=1e-3 means computed fluxes are accurate to at least 0.1\% (and usually much better than this figure).
@@ -81,19 +75,15 @@ model = list(
 	)
 )
 
-xlim=c(0,20)
-ylim=c(0,20)
 dim=c(20,20)
 
 tempExact=profitCubaSersic(xcen=model$sersic$xcen, ycen=model$sersic$ycen,
 mag=model$sersic$mag, re=model$sersic$re, nser=model$sersic$nser, ang=model$sersic$ang,
-axrat=model$sersic$axrat, box=model$sersic$box, xlim=xlim, ylim=ylim, dim=dim)
+axrat=model$sersic$axrat, box=model$sersic$box, dim=dim)
 tempProFit=profitMakeModel(model, dim=dim)$z
 
-#The absolute differences between the exact and approximate ProFit model image:
-magimage(tempExact-tempProFit)
 #The relative differences between the exact and approximate ProFit model image:
-magimage((tempExact-tempProFit)/tempExact)
+magimage((tempExact-tempProFit)/tempExact, magmap=FALSE, zlim=c(-1,1))
 #They differ by no more the 1\% in flux for any pixel, and in general much less than that:
 hist((tempExact-tempProFit)/tempExact)
 }

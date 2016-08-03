@@ -1,4 +1,5 @@
-profitMakeSersic <- function(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 1, ang = 0, axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(200,200), acc = 0.1, calcregion, docalcregion = FALSE, remax) {
+profitMakeSersic <- function(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 4, ang = 0, axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(100,100), acc = 0.1, calcregion, docalcregion = FALSE, remax) {
+  if(length(dim)==1){dim=rep(dim,2)}
 	# Simply prepare a model with one sersic profile and fire
 	model = list(
 		sersic = list(

@@ -8,8 +8,8 @@ Low-Level 2D Sersic Model Image Creation
 This function provides a low level interface to the Rcpp code that calculates pixel integrals on an image matrix for a user defined 2D Sersic function. In general users should use the higher level \code{\link{profitMakeModel}} function instead to generate an arbitrary model image with one or more 2D Sersic components.
 }
 \usage{
-profitMakeSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 1, ang = 0,
-axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(200, 200), acc=0.1, calcregion,
+profitMakeSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 4, ang = 0,
+axrat = 1, box = 0, magzero = 0, rough = FALSE, dim = c(100, 100), acc=0.1, calcregion,
 docalcregion = FALSE, remax)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -46,7 +46,7 @@ The magnitude zero point, where values become scaled by the standard scale=10^(-
 Logical; should an approximate model image be created. If TRUE only one evalaution of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values.
 }
   \item{dim}{
-Vector of length 2; the dimensions of the image to be generated. Typically this should be c(Nx,Ny).
+The dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
 }
   \item{acc}{
 Desired minimum per pixel accuracy within the upscaling region. \option{acc} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. The default (0.1) works reasonably for a wide range of profiles.

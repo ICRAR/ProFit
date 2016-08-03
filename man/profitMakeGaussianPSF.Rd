@@ -8,15 +8,15 @@ Make a 2D Gaussian PSF (point source profile or point spread function)
 Creates an analytic 2D Gaussian PSF with a given full-width at half-maximum.
 }
 \usage{
-profitMakeGaussianPSF(FWHM = 3, npix = 25)
+profitMakeGaussianPSF(fwhm = 3, dim = c(25,25))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{FWHM}{
-The full width half max of the desired PSF. This is internally converted to a Gaussian standard deviation (sigma) using sigma=FWHM/(2*sqrt(2*log(2)))~FWHM/2.355.
+  \item{fwhm}{
+The full width half max (FWHM) of the desired PSF. This is internally converted to a Gaussian standard deviation (sigma) using sigma=FWHM/(2*sqrt(2*log(2)))~FWHM/2.355.
 }
-  \item{npix}{
-The number of pixel to be generated on each side of the 2D image of the PSF. The PSF is always generated such that it is centred within this.
+  \item{dim}{
+The dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
 }
 }
 \details{
@@ -35,9 +35,9 @@ Aaron Robotham & Dan Taranu
 \examples{
 #Various FWHM:
 
-magimage(profitMakeGaussianPSF(FWHM=1), stretch='lin')
-magimage(profitMakeGaussianPSF(FWHM=3), stretch='lin')
-magimage(profitMakeGaussianPSF(FWHM=5), stretch='lin')
+magimage(profitMakeGaussianPSF(fwhm=1), stretch='lin')
+magimage(profitMakeGaussianPSF(fwhm=3), stretch='lin')
+magimage(profitMakeGaussianPSF(fwhm=5), stretch='lin')
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

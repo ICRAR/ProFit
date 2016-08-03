@@ -128,7 +128,12 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   if(Data$verbose){print(c(parm,LP))}
   if(Data$algo.func=='') return(list(model=model,psf=psf))
   if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}
-  if(Data$algo.func=='LA' | Data$algo.func=='LD'){out=list(LP=LP,Dev=-2*LL,
-    Monitor=c(LL=LL,LP=LP,dof=dof),yhat=1,parm=parm)}
+  if(Data$algo.func=='LA' | Data$algo.func=='LD'){
+    if(Data$like.func=="chisq" | Data$like.func=="chi-sq"){
+      out=list(LP=LP,Dev=-2*LL,Monitor=c(LL=LL,LP=LP,dof=dof),yhat=1,parm=parm)
+    }else{
+      out=list(LP=LP,Dev=-2*LL,Monitor=c(LL=LL,LP=LP),yhat=1,parm=parm)
+    }
+  }
   return(out)
 }

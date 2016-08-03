@@ -8,6 +8,8 @@ profitMakeModel = function(modellist,
                            convopt=list(method="Bruteconv")) {
 
 	stopifnot(is.integer(finesample) && finesample >= 1)
+  
+  if(length(dim)==1){dim=rep(dim,2)}
 
 	# Some defaults...
 	rough = rough == TRUE
@@ -64,7 +66,7 @@ profitMakeModel = function(modellist,
 	# will affect the coordinates given by the user, which are relative to the
 	# original image size.
 	imgcens = dim/2
-	imgcensfine = imgcens#*finesample
+	#imgcensfine = imgcens*finesample
 	dimbase = c(dim[1]*finesample + 2*psfpad[1], dim[2]*finesample + 2*psfpad[2])
 
 	# Wrong calcregion dimensions, should be the same as the model's
@@ -142,9 +144,8 @@ profitMakeModel = function(modellist,
 						compmag = new_profiles[['mag']]
 						stopifnot(!is.null(compmag))
 						n_profiles = length(new_profiles[['mag']])
-
-						xcen = (modellist$pointsource$xcen[[i]] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-						ycen = (modellist$pointsource$ycen[[i]] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
+						xcen = modellist$pointsource$xcen[[i]] + psfpad[1]/finesample
+						ycen = modellist$pointsource$ycen[[i]] + psfpad[2]/finesample
 						new_profiles$xcen = rep(xcen, n_profiles)
 						new_profiles$ycen = rep(ycen, n_profiles)
 
@@ -168,7 +169,7 @@ profitMakeModel = function(modellist,
 						if( comp == 'sersic' ) {
 							new_profiles = add_defaults(new_profiles, 'box', 0)
 							new_profiles = add_defaults(new_profiles, 'rough', F)
-							new_profiles = add_defaults(new_profiles, 'acc', 0.1)
+							new_profiles = add_defaults(new_profiles, 'acc', acc)
 							new_profiles = add_defaults(new_profiles, 're_max', 0)
 							new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
 						}
@@ -187,8 +188,8 @@ profitMakeModel = function(modellist,
 				for( name in names(modellist$pointsource) ) {
 					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
 					# Fix X/Y center of the pointsource profile as needed
-					profiles$psf[['xcen']] = (profiles$psf[['xcen']] - imgcens[1]) * finesample + imgcensfine[1] + psfpad[1]
-					profiles$psf[['ycen']] = (profiles$psf[['ycen']] - imgcens[2]) * finesample + imgcensfine[2] + psfpad[2]
+					profiles$psf[['xcen']] = profiles$psf[['xcen']] + psfpad[1]/finesample
+					profiles$psf[['ycen']] = profiles$psf[['ycen']] + psfpad[1]/finesample
 				}
 			}
 			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
