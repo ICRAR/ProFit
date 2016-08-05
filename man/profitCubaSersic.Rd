@@ -9,7 +9,7 @@ This function computes the exact pixel integrals for a given model image. This i
 }
 \usage{
 profitCubaSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 4, ang = 0,
-axrat = 1, box = 0, dim = c(25, 25), acc = 1e-3)
+axrat = 1, box = 0, dim = c(25, 25), rel.tol=1e-3, abs.tol= 1e-10)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,8 +40,11 @@ The boxiness of the Sersic profile that traces contours of iso-flux, defined suc
   \item{dim}{
 The dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
 }
-  \item{acc}{
-The target relative accuracy of the cubature integral. The relative flux in a pixel will be no more inaccurate than this specified figure. Making this smaller will increase (the already long) computation time. The default of \option{acc}=1e-3 means computed fluxes are accurate to at least 0.1\% (and usually much better than this figure).
+  \item{rel.tol}{
+The requested relative accuracy. Default, 0.001.
+}
+  \item{abs.tol}{
+The requested absolute accuracy. The algorithm stops when either the relative or the absolute accuracies are met. Default, near 1e-10.  
 }
 }
 \details{
