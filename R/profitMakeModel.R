@@ -8,7 +8,7 @@ profitMakeModel = function(modellist,
                            convopt=list(method="Bruteconv")) {
 
 	stopifnot(is.integer(finesample) && finesample >= 1)
-  
+
   if(length(dim)==1){dim=rep(dim,2)}
 
 	# Some defaults...
@@ -30,16 +30,16 @@ profitMakeModel = function(modellist,
 	# When convolving an analytical model with a PSF, the model must be padded by
 	# the PSF size (half width on either side) and then cropped in order to
 	# properly model light scattered from *outside* of the original image dimensions
-	# by the PSF, back into the PSF-convolved image's dimensions. We usually don't 
-	# care about light scattered from within the original image dimensions back 
-	# outside; nonetheless, the "returncrop" option can be set to FALSE if the 
-	# user wants the full model image for some reason (mostly for the 
+	# by the PSF, back into the PSF-convolved image's dimensions. We usually don't
+	# care about light scattered from within the original image dimensions back
+	# outside; nonetheless, the "returncrop" option can be set to FALSE if the
+	# user wants the full model image for some reason (mostly for the
 	# convenience of having the padded instead of cropped dimensions).
-	# 
+	#
 	# Note that for the same reason mentioned above, if returncrop is FALSE,
 	# the data for the model in the padded region will be slightly underestimated,
 	# lacking the light scattered from outside of the padded region back into it.
-	
+
 	psfpad = c(0,0)
 	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
 
@@ -47,9 +47,9 @@ profitMakeModel = function(modellist,
 	# PSF function by specifing a "psf model"; that is, a list of profiles
 	# that will be evaluated in a small area, producing an image that we will
 	# then use as our PSF.
-	
+
 	# Normally the user would want to pre-generate this PSF image for efficiency,
-	# unless they are fitting the PSF - in which case it may need to be 
+	# unless they are fitting the PSF - in which case it may need to be
 	# re-generated constantly
 	haspsfmodel = !is.null(modellist$psf)
 	if( haspsfmodel && !haspsf ) {
@@ -85,7 +85,7 @@ profitMakeModel = function(modellist,
 
 	stopifnot(!is.null(convopt$method) && is.character(convopt$method))
 	usebruteconv = convopt$method == "Bruteconv"
-	
+
 	# Collect only the sersic profiles that the user specified
 	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 
@@ -218,7 +218,7 @@ profitMakeModel = function(modellist,
 	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)
 	# TODO: Remove this after adding FFTW convolution to libprofit. R's built-in FFT never seems to be faster so it can go
 	if(!usebruteconv) model$profiles$psf = NULL
-	
+
 	# Go, go, go!
 	image = .Call("R_profit_make_model",model)
 	if( is.null(image) ) {
