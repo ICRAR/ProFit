@@ -426,9 +426,9 @@ void _evaluate(SersicProfile *sp, Model *model, double *image) {
 	unsigned int i, j;
 	double x, y, pixel_val;
 	double x_ser, y_ser, r_ser;
-	double half_xbin = model->xbin/2.;
-	double half_ybin = model->ybin/2.;
-	double bin_area = model->xbin * model->ybin;
+	double half_xbin = model->scale_x/2.;
+	double half_ybin = model->scale_x/2.;
+	double pixel_area = model->scale_x * model->scale_y;
 
 	/*
 	 * All the pre-calculations needed by the sersic profile (Ie, cos/sin ang, etc)
@@ -438,7 +438,7 @@ void _evaluate(SersicProfile *sp, Model *model, double *image) {
 	 */
 	sersic_initial_calculations(sp, model);
 
-	double scale = bin_area * sp->_ie;
+	double scale = pixel_area * sp->_ie;
 	if( sp->rescale_flux ) {
 		scale *= sp->_rescale_factor;
 	}

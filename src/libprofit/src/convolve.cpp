@@ -82,8 +82,8 @@ double *convolve(double *src, unsigned int src_width, unsigned int src_height,
 
 					src_i = (int)i + (int)k - (int)krn_half_width;
 
-					if( src_i >= 0 && src_i < src_width &&
-					    src_j >= 0 && src_j < src_height ) {
+					if( src_i >= 0 && (unsigned int)src_i < src_width &&
+					    src_j >= 0 && (unsigned int)src_j < src_height ) {
 						pixel +=  *srcPtr2 * *krnPtr;
 					}
 

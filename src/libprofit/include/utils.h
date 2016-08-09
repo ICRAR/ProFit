@@ -36,6 +36,14 @@ namespace profit
  */
 void add_images(double *dest, double *src, unsigned int width, unsigned int height);
 
+/*
+ * Copies the values from ``src_img`` into ``tgt_img`` at position ``pos_x``/``pos_y``.
+ * The sizes of the source and target image are given by the rest of the arguments.
+ */
+void copy_to(double *tgt_img, unsigned int tgt_w, unsigned int tgt_h,
+             double *src_img, unsigned int src_w, unsigned int src_h,
+             int pos_x, int pos_y);
+
 /**
  * Normalizes the values of image so their total sum is 1.
  *

@@ -24,9 +24,11 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <cmath>
 
 #include "psf.h"
+#include "utils.h"
 
 namespace profit
 {
@@ -36,147 +38,113 @@ void PsfProfile::validate()  {
 	if( !this->model->psf ) {
 		throw invalid_parameter("No psf present in the model, cannot produce a psf profile");
 	}
-	this->scale = pow(10, -0.4*(this->mag - this->model->magzero));
 
 }
 
-static inline
-void psf_normalize_and_apply(PsfProfile *psf, Model *model, double *image,
-                             double *psf_img, unsigned int psf_w, unsigned int psf_h,
-                             int target_x, int target_y) {
-
-	unsigned int i, j, img_x, img_y;
-
-	double total = 0;
-	for(j=0; j!=psf_h; j++) {
-		for(i=0; i!=psf_w; i++) {
-			total += psf_img[i + j*psf_w];
-		}
+unsigned int bind(double value, unsigned int max) {
+	int intval = static_cast<int>(floor(value));
+	if( intval < 0 ) {
+		return 0;
 	}
-
-	double scale = psf->scale / total;
-	for(j=0; j!=psf_h; j++) {
-
-		/* Don't draw outside the boundaries of the full image */
-		if( (int)j+target_y < 0 ) {
-			continue;
-		}
-		img_y = j + (unsigned int)target_y;
-		if( img_y >= model->height ) {
-			break;
-		}
-
-		for(i=0; i!=psf_w; i++) {
-
-			/* Don't draw outside the boundaries of the full image */
-			if( (int)i+target_x < 0 ) {
-				continue;
-			}
-			img_x = i + (unsigned int)target_x;
-			if( img_x >= model->width ) {
-				break;
-			}
-
-			image[img_x + img_y*model->width] = psf_img[i + j*psf_w] * scale;
-		}
-	}
-
+	unsigned int uintval = static_cast<unsigned int>(intval);
+	return std::min(uintval, max);
 }
 
 void PsfProfile::evaluate(double *image) {
 
-	/*
-	 * TODO: This method still doesn't take into account the image xbin/ybin
-	 *       It also doesn't obey the model's calcregion mask
-	 */
+	int psf_pix_x, psf_pix_y;
+	unsigned int i, pix_x, pix_y;
+	double x, y, psf_x, psf_y;
+	double total = 0;
+	double scale = pow(10, -0.4*(this->mag - this->model->magzero));
 
-	unsigned int i, j;
-	Model *model = this->model;
+	/* Making the code more readable */
+	double scale_x = model->scale_x;
+	double scale_y = model->scale_y;
+	double psf_scale_x = model->psf_scale_x;
+	double psf_scale_y = model->psf_scale_y;
+	unsigned int width = model->width;
+	unsigned int height = model->height;
+	unsigned int psf_width = model->psf_width;
+	unsigned int psf_height = model->psf_height;
 
-	/*
-	 * The PSF is not simply put "as is" in the nearest position of the desired
-	 * center. Its values are interpolated instead to take into account the
-	 * sub-pixel distance needed to reach the center.
-	 *
-	 * We avoid this extra calculation only if the target position of the psf's
-	 * origin is located exactly on a pixel crossing, and if the psf's
-	 * dimensions are both even. This would ensure that each pixel of the PSF
-	 * corresponds exactly to one pixel on the target image, allowing us to have
-	 * a direct copy of values.
-	 */
-	double psf_origin_x = this->xcen - model->psf_width/2.;
-	double psf_origin_y = this->ycen - model->psf_height/2.;
-	if( (model->psf_width % 2 == 0 && model->psf_height % 2 == 0) && \
-	    (floor(psf_origin_x) == psf_origin_x || ceil(psf_origin_x) == psf_origin_x) && \
-	    (floor(psf_origin_y) == psf_origin_y || ceil(psf_origin_y) == psf_origin_y) ) {
-
-		psf_normalize_and_apply(this, model, image,
-		                        model->psf, model->psf_width, model->psf_height,
-		                        (int)psf_origin_x, (int)psf_origin_y);
-
-		return;
-	}
+	/* Where we start/end applying the psf into the target image */
+	double origin_x = this->xcen - psf_width*psf_scale_x/2.;
+	double end_x    = this->xcen + psf_width*psf_scale_x/2.;
+	double origin_y = this->ycen - psf_height*psf_scale_y/2.;
+	double end_y    = this->ycen + psf_height*psf_scale_y/2.;
 
 	/*
-	 * Each image pixel is now divided into four regions because of its
-	 * intersection with the PSF pixels:
-	 *
-	 *             |
-	 *    ---------|------
-	 *    |        |      |
-	 *    |   a3   |  a4  |  yd2
-	 *  ___________|________
-	 *    |        |      |
-	 *    |        |      |
-	 *    |   a1   |  a2  |  yd1
-	 *    |        |      |
-	 *    ---------|-------
-	 *        xd1  |  xd2
-	 *
-	 * We average the four areas to obtain the value of the pixel. The areas are
-	 * all the same on each image pixel so we calculate them once.
+	 * We first loop over the pixels of the image, making sure we don't go
+	 * outside the image
 	 */
+	unsigned int x0 = bind(origin_x/scale_x, width - 1);
+	unsigned int y0 = bind(origin_y/scale_y, height - 1);
+	unsigned int x1 = bind(end_x/scale_x, width - 1);
+	unsigned int y1 = bind(end_y/scale_y, height - 1);
 
-	double xd1 = psf_origin_x - floor(psf_origin_x);
-	double xd2 = 1 - xd1;
-	double yd1 = psf_origin_y - floor(psf_origin_y);
-	double yd2 = 1 - yd1;
-	double a1 = xd1 * yd1;
-	double a2 = xd2 * yd1;
-	double a3 = xd1 * yd2;
-	double a4 = xd2 * yd2;
+	for(pix_y=y0; pix_y <= y1; pix_y++) {
 
-	unsigned int new_psf_w = model->psf_width + 1;
-	unsigned int new_psf_h = model->psf_height + 1;
-	double *new_psf = new double[new_psf_w * new_psf_h];
+		y = pix_y * scale_y;
 
-	for(j=0; j!=new_psf_h; j++) {
-		for(i=0; i!=new_psf_w; i++) {
+		for(pix_x=x0; pix_x <= x1; pix_x++) {
 
-			/* The borders of the target image area use less psf pixels */
-			double psf_val = 0;
-			if( i != 0 && j != 0 ) {
-				psf_val += model->psf[i-1 + (j-1)*model->psf_width] * a1;
+			x = pix_x * scale_x;
+
+			/*
+			 * Image pixel (pix_x,pix_y) covers [x:x+scale_x; y:y+scale_y]
+			 * We now find out the range of psf pixels that cover the same space
+			 */
+			int psf_pix_x0 = bind(floor((x - origin_x) / psf_scale_x), psf_width - 1);
+			int psf_pix_x1 = bind(floor((x - origin_x + scale_x) / psf_scale_x), psf_height - 1);
+			int psf_pix_y0 = bind(floor((y - origin_y) / psf_scale_y), psf_width - 1);
+			int psf_pix_y1 = bind(floor((y - origin_y + scale_y) / psf_scale_y), psf_height - 1);
+
+			/* Accumulate the proportional values from the PSF */
+			double val = 0;
+			for(psf_pix_y = psf_pix_y0; psf_pix_y <= psf_pix_y1; psf_pix_y++) {
+
+				psf_y = psf_pix_y * psf_scale_y + origin_y;
+
+				for(psf_pix_x = psf_pix_x0; psf_pix_x <= psf_pix_x1; psf_pix_x++) {
+
+					psf_x = psf_pix_x * psf_scale_x + origin_x;
+
+					/*
+					 * PSF pixel (psf_pix_x,psf_pix_y) covers [psf_x:psf_x+psf_scale_x; psf_y:psf_y+psf_scale_y]
+					 *
+					 * Now we find the intersection of this PSF pixel area with the
+					 * area covered by the image pixel and add its contribution to
+					 * the final value of the image pixel.
+					 *
+					 * On the X coordinate psf_x will always be <= x+scale_x,
+					 * and psf_x+psf_scale_x will always be >= x; likewise for the Y
+					 * coordinate.
+					 *
+					 * The contribution will then be given by:
+					 */
+					double intersect_x = std::min(x + scale_x, psf_x + psf_scale_x) - std::max(x, psf_x);
+					double intersect_y = std::min(y + scale_y, psf_y + psf_scale_y) - std::max(y, psf_y);
+					val += model->psf[psf_pix_x + psf_pix_y*psf_width] * (intersect_x * intersect_y)/(psf_scale_x * psf_scale_y);
+
+				}
 			}
-			if( i != 0 && j != (new_psf_h - 1) ) {
-				psf_val += model->psf[i-1 + j*model->psf_width] * a3;
-			}
-			if( i != (new_psf_w - 1) && j != 0 ) {
-				psf_val += model->psf[i + (j-1)*model->psf_width] * a2;
-			}
-			if( i != (new_psf_w - 1) && j != (new_psf_h - 1) ) {
-				psf_val += model->psf[i + j*model->psf_width] * a4;
-			}
 
-			new_psf[i + j*new_psf_w] = psf_val;
+			/* Finally, write down the final value into our pixel */
+			image[pix_x + pix_y*width] = val;
+			total += val;
 		}
 	}
 
-	psf_normalize_and_apply(this, model, image,
-	                        new_psf, new_psf_w, new_psf_h,
-	                        (int)floor(psf_origin_x), (int)floor(psf_origin_y));
-
-	delete [] new_psf;
+	/* We're done applying the ps, now normalize and scale */
+	double multiplier = scale;
+	if( total != 0 ) {
+		multiplier = scale / total;
+	}
+	double *img_ptr = image;
+	for(i=0; i!=height * height; i++, img_ptr++) {
+		*img_ptr *= multiplier;
+	}
 
 }
 
@@ -189,4 +157,4 @@ PsfProfile::PsfProfile() :
 	// no-op
 }
 
-} /* namespace rofit */
+} /* namespace profit */

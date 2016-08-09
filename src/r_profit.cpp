@@ -194,7 +194,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
 
 	ssize_t size;
 	unsigned int img_w, img_h;
-	double res = 1;
+	double scale_x = 1, scale_y = 1;
 	string error;
 	unsigned int psf_width = 0, psf_height = 0;
 	double *psf = NULL;
@@ -225,21 +225,27 @@ SEXP _R_profit_make_model(SEXP model_list) {
 		}
 	}
 
-	SEXP resolution = _get_list_element(model_list, "resolution");
-	if( resolution != R_NilValue ) {
-		res = (unsigned int)Rf_asReal(resolution);
+	SEXP r_scale_x = _get_list_element(model_list, "scale_x");
+	if( r_scale_x != R_NilValue ) {
+		scale_x = Rf_asReal(r_scale_x);
+	}
+	SEXP r_scale_y = _get_list_element(model_list, "scale_y");
+	if( r_scale_y != R_NilValue ) {
+		scale_y = Rf_asReal(r_scale_y);
 	}
 
 	/* Read model parameters */
 	Model m;
 	m.width  = img_w;
 	m.height = img_h;
-	m.res_x = (unsigned int)floor(m.width * res);
-	m.res_y = (unsigned int)floor(m.height * res);
+	m.scale_x = scale_x;
+	m.scale_y = scale_y;
 	m.magzero = Rf_asReal(magzero);
 	m.psf = psf;
 	m.psf_width = psf_width;
 	m.psf_height = psf_height;
+	m.psf_scale_x = scale_x;
+	m.psf_scale_y = scale_y;
 	m.calcmask = mask;
 
 	/* Read profiles and parameters and append them to the model */
@@ -304,11 +310,11 @@ SEXP _R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_
 }
 
 extern "C" {
-  SEXP R_profit_make_model(SEXP model_list) {
-    return _R_profit_make_model(model_list);
-  }
-  
-  SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
-    return(_R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region));
-  }
+	SEXP R_profit_make_model(SEXP model_list) {
+		return _R_profit_make_model(model_list);
+	}
+
+	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
+		return(_R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region));
+	}
 }

@@ -150,19 +150,16 @@ public:
 	unsigned int height;
 
 	/**
-	 * The horizontal resolution to use when generating the model
+	 * The horizontal scale used to convert pixels into image coordinates
 	 */
-	unsigned int res_x;
+	double scale_x;
 
 	/**
-	 * The vertical resolution to use when generating the model
+	 * The vertical scale used to convert pixels into image coordinates
 	 */
-	unsigned int res_y;
+	double scale_y;
 
-	/* These are calculated from the widht/height and res fields */
-	double xbin;
-	double ybin;
-
+	/* The base magnitude applied to all models */
 	double magzero;
 
 	/**
@@ -179,6 +176,16 @@ public:
 	 * The psf's height
 	 */
 	unsigned int psf_height;
+
+	/**
+	 * The horizontal scale used to convert psf pixels into image coordinates
+	 */
+	double psf_scale_x;
+
+	/**
+	 * The vertical scale used to convert psf pixels into image coordinates
+	 */
+	double psf_scale_y;
 
 	/*
 	 * Used to limit the profile calculation only to a given area

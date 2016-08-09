@@ -74,9 +74,10 @@ Profile::~Profile()
 
 Model::Model() :
 	width(0), height(0),
-	res_x(0), res_y(0),
+	scale_x(1), scale_y(1),
 	magzero(0),
 	psf(NULL), psf_width(0), psf_height(0),
+	psf_scale_x(1), psf_scale_y(1),
 	calcmask(NULL), image(NULL),
 	profiles()
 {
@@ -116,11 +117,11 @@ void Model::evaluate() {
 	else if( !this->height ) {
 		throw invalid_parameter("Model's height is 0");
 	}
-	else if( !this->res_x ) {
-		throw invalid_parameter("Model's res_x is 0");
+	else if( this->scale_x <= 0 ) {
+		throw invalid_parameter("Model's scale_x cannot be negative or zero");
 	}
-	else if( !this->res_y ) {
-		throw invalid_parameter("Model's res_y is 0");
+	else if( this->scale_y <= 0 ) {
+		throw invalid_parameter("Model's scale_y cannot be negative or zero");
 	}
 
 	/*
@@ -144,8 +145,6 @@ void Model::evaluate() {
 		}
 	}
 
-	this->xbin = this->width/(double)this->res_x;
-	this->ybin = this->height/(double)this->res_y;
 	this->image = new double[this->width * this->height];
 	memset(this->image, 0, sizeof(double) * this->width * this->height);
 

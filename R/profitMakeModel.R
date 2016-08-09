@@ -61,13 +61,35 @@ profitMakeModel = function(modellist,
 		psfpad = floor(dim(psf)/2)
 	}
 
-	# Handle fine sampling
-	# Fine sampling increases the size of the generated image, and therefore
-	# will affect the coordinates given by the user, which are relative to the
-	# original image size.
-	imgcens = dim/2
-	#imgcensfine = imgcens*finesample
+	# Regarding finesampling
+	# ======================
+	#
+	# The purpose of fine sampling is to generate a bigger image (in pixels) so
+	# the evaluation of the different profiles is more precise on each of the
+	# pixels. The resulting image is then downscaled (or not, depending on the
+	# 'returnfine' parameter) and returned to the user.
+	#
+	# libprofit supports specifying (separately) horizontal and vertical pixel
+	# scales both for the resulting image and for the given PSF. These scales
+	# indicate how much of the image coordinate space each pixel represents on
+	# each dimension. For example, if we give libprofit width=100 and scale_x=2,
+	# we are instructing it to generate an image 100 pixels wide, but 200 units
+	# wide in the image coordinate space.
+	#
+	# Thus to implement finesampling we instruct libprofit to generate a bigger
+	# image but stating at the same time that the scale of each of the pixels is
+	# lower (so that the image coordinate space isn't altered). For example, if
+	# this method receives dim=c(50,50) and finesample=3, we tell libprofit to
+	# generate an image with width=150, height=150, scale_x=1/3 and scale_y=1/3,
+	# which will preserve an image coordinate space of 50x50 internally.
+	#
+	# Note that even after all the explained above the user-given coordinates
+	# shouldn't be corrected at all. However because of "psfpad" and
+	# "returncrop" (see above) we still have to.
+
 	dimbase = c(dim[1]*finesample + 2*psfpad[1], dim[2]*finesample + 2*psfpad[2])
+	scale_x = 1/as.double(finesample)
+	scale_y = 1/as.double(finesample)
 
 	# Wrong calcregion dimensions, should be the same as the model's
 	if( docalcregion ) {
@@ -205,14 +227,13 @@ profitMakeModel = function(modellist,
 	model = list(
 		magzero = magzero,
 		dimensions = dimbase,
+		scale_x = scale_x,
+		scale_y = scale_y,
 		profiles = profiles,
 		psf = psf
 	)
 	if( docalcregion ) {
 		model[['calcregion']] = calcregion
-	}
-	if( finesample > 1 ) {
-		model[['resolution']] = finesample
 	}
 
 	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)
