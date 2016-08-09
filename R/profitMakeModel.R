@@ -185,12 +185,15 @@ profitMakeModel = function(modellist,
 
 		else {
 			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
+
+				# Copy the values
 				for( name in names(modellist$pointsource) ) {
 					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
-					# Fix X/Y center of the pointsource profile as needed
-					profiles$psf[['xcen']] = profiles$psf[['xcen']] + psfpad[1]/finesample
-					profiles$psf[['ycen']] = profiles$psf[['ycen']] + psfpad[1]/finesample
 				}
+
+				# Fix X/Y center of the pointsource profile as needed
+				profiles$psf[['xcen']] = profiles$psf[['xcen']] + psfpad[1]/finesample
+				profiles$psf[['ycen']] = profiles$psf[['ycen']] + psfpad[2]/finesample
 			}
 			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 				profiles[['sersic']][['convolve']] = rep(usebruteconv, length(serscomp))
