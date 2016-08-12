@@ -40,7 +40,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   parm=paramsnew[fitIDs]
   
   inheritIDs=which(is.na(.flattenlist(Data$tofit)))
-  paramsnew[inheritIDs]=paramsnew[inheritIDs-1]
+  for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
   
   priors = .flattenlist(Data$priors)
   priorsum=0
@@ -53,6 +53,8 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   for(i in tounlogIDs){
     paramsnew[i]=10^paramsnew[[i]]
   }
+  # Re-inherit unlogged parameters, just in case the user set inconsistent flags
+  for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
   
   paramsnew=.rrelist(paramsnew,Data$model)
   
@@ -95,17 +97,15 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   Data$like.func=tolower(Data$like.func)
   
   #Various allowed likelihoods:
+  cutsig=(cutim-cutmod)/cutsig
+  vardata = var(cutsig)
+  dof=2*vardata/(vardata-1)
   if(Data$like.func=="norm" | Data$like.func=="normal"){
-    cutsig=(cutim-cutmod)/cutsig
     LL=sum(dnorm(cutsig, log=TRUE))
   } else if(Data$like.func=="chisq" | Data$like.func=="chi-sq") {
-    cutsig=(cutim-cutmod)/cutsig
     ndata = length(cutim)
     LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
   } else if(Data$like.func=="t" | Data$like.func=='student' | Data$like.func=='student-t') {
-    cutsig=(cutim-cutmod)/cutsig
-    vardata = var(cutsig)
-    dof=2*vardata/(vardata-1)
     dof=interval(dof,0,Inf)
     LL=sum(dt(cutsig,dof,log=TRUE))
   } else if(Data$like.func=="pois" | Data$like.func=="poisson" | Data$like.func=="cash" | Data$like.func=="c") {
@@ -129,11 +129,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   if(Data$algo.func=='') return(list(model=model,psf=psf))
   if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}
   if(Data$algo.func=='LA' | Data$algo.func=='LD'){
-    if(Data$like.func=="chisq" | Data$like.func=="chi-sq"){
-      out=list(LP=LP,Dev=-2*LL,Monitor=c(LL=LL,LP=LP,dof=dof),yhat=1,parm=parm)
-    }else{
-      out=list(LP=LP,Dev=-2*LL,Monitor=c(LL=LL,LP=LP),yhat=1,parm=parm)
-    }
+    out=list(LP=LP,Dev=-2*LL,Monitor=c(LL=LL,LP=LP,dof=dof),yhat=1,parm=parm)
   }
   return(out)
 }
