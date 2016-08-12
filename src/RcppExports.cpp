@@ -29,3 +29,27 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// profitMakeMoffat
+NumericMatrix profitMakeMoffat(const double XCEN, const double YCEN, const double MAG, const double FWHM, const double CON, const double ANG, const double AXRAT, const double BOX, const double MAGZERO, const bool ROUGH, const NumericVector& XLIM, const NumericVector& YLIM, const IntegerVector& N, const double ACC);
+RcppExport SEXP ProFit_profitMakeMoffat(SEXP XCENSEXP, SEXP YCENSEXP, SEXP MAGSEXP, SEXP FWHMSEXP, SEXP CONSEXP, SEXP ANGSEXP, SEXP AXRATSEXP, SEXP BOXSEXP, SEXP MAGZEROSEXP, SEXP ROUGHSEXP, SEXP XLIMSEXP, SEXP YLIMSEXP, SEXP NSEXP, SEXP ACCSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const double >::type XCEN(XCENSEXP);
+    Rcpp::traits::input_parameter< const double >::type YCEN(YCENSEXP);
+    Rcpp::traits::input_parameter< const double >::type MAG(MAGSEXP);
+    Rcpp::traits::input_parameter< const double >::type FWHM(FWHMSEXP);
+    Rcpp::traits::input_parameter< const double >::type CON(CONSEXP);
+    Rcpp::traits::input_parameter< const double >::type ANG(ANGSEXP);
+    Rcpp::traits::input_parameter< const double >::type AXRAT(AXRATSEXP);
+    Rcpp::traits::input_parameter< const double >::type BOX(BOXSEXP);
+    Rcpp::traits::input_parameter< const double >::type MAGZERO(MAGZEROSEXP);
+    Rcpp::traits::input_parameter< const bool >::type ROUGH(ROUGHSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type XLIM(XLIMSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type YLIM(YLIMSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const double >::type ACC(ACCSEXP);
+    __result = Rcpp::wrap(profitMakeMoffat(XCEN, YCEN, MAG, FWHM, CON, ANG, AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, N, ACC));
+    return __result;
+END_RCPP
+}

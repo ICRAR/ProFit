@@ -46,6 +46,9 @@ public:
 	double mag;
 	double fwhm;
 	double con;
+	double ang;
+	double axrat;
+	double box;
 
 	/* Used to control the subsampling */
 	bool rough;

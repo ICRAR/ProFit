@@ -8,7 +8,7 @@ Cubature 2D Moffat Model Image Creation
 This function computes the exact pixel integrals for a given model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}.
 }
 \usage{
-profitCubaMoffat(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, con = 2, fwhm = 3, ang = 0,
+profitCubaMoffat(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, fwhm = 3, con = 2, ang = 0,
 axrat = 1, box = 0, dim = c(25, 25), rel.tol=1e-3, abs.tol= 1e-10)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -22,11 +22,11 @@ y centre of the 2D Sersic profile (can be fractional pixel positions).
   \item{mag}{
 Total magnitude of the 2D Sersic profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
 }
-  \item{con}{
-Concentration parameter for Moffat functions. Must be larger than 1.
-}
   \item{fwhm}{
 Full width half max of the Moffat function.
+}
+  \item{con}{
+Concentration parameter for Moffat functions. Must be larger than 1.
 }
   \item{ang}{
 The orientation of the major axis of the Sersic profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang.

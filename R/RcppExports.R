@@ -9,3 +9,7 @@ profitUpsample <- function(IMG, UPSAMPLEFAC) {
     .Call('ProFit_profitUpsample', PACKAGE = 'ProFit', IMG, UPSAMPLEFAC)
 }
 
+profitMakeMoffat <- function(XCEN = 0, YCEN = 0, MAG = 15, FWHM = 1, CON = 2, ANG = 0, AXRAT = 1, BOX = 0, MAGZERO = 0, ROUGH = FALSE, XLIM = as.numeric( c(-12.5,12.5)), YLIM = as.numeric( c(-12.5,12.5)), N = as.integer( c(25,25)), ACC = 2e-2) {
+    .Call('ProFit_profitMakeMoffat', PACKAGE = 'ProFit', XCEN, YCEN, MAG, FWHM, CON, ANG, AXRAT, BOX, MAGZERO, ROUGH, XLIM, YLIM, N, ACC)
+}
+
