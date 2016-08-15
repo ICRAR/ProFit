@@ -76,8 +76,11 @@ double _ferrer_for_xy_r(FerrerProfile *sp,
     double r_factor = (sp->box == 0) ?
                sqrt(x*x + y*y)/sp->rout :
                (pow(pow(abs(x),2.+sp->box)+pow(abs(y),2.+sp->box),1./(2.+sp->box)) ) / sp->rout;
-
-	return pow(1-pow(r_factor,2-sp->b),sp->a);
+    if(r_factor<1){
+      return pow(1-pow(r_factor,2-sp->b),sp->a);
+    }else{
+      return 0;
+    }
 }
 
 static inline
