@@ -135,7 +135,7 @@ double _moffat_sumpix(MoffatProfile *sp,
 				testval = _moffat_for_xy_r(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
 				if( abs(testval/subval - 1.0) > sp->acc ) {
 					subval = _moffat_sumpix(sp,
-                                            x - half_xbin, x + half_xbin,
+                                  x - half_xbin, x + half_xbin,
 					                        y - half_ybin, y + half_ybin,
 					                        recur_level + 1, max_recursions,
 					                        resolution);
@@ -176,7 +176,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 	 */
 	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
     double re = sp->_re = fwhm/(2*sqrt(pow(2,(1/con))-1));
-    double lumtot = pow(re, 2) * 2 * M_PI * axrat/(con-1)/Rbox;
+    double lumtot = pow(re, 2) * M_PI * axrat/(con-1)/Rbox;
 	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
@@ -195,7 +195,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 		 * but don't let it become less than 1 pixel (means we do no worse than
 		 * GALFIT anywhere)
 		 */
-		re_switch = ceil(moffat_fluxfrac(sp, 1. - con*con/2e3));
+		re_switch = sp->fwhm*4;
 		re_switch = max(min(re_switch, 20.), 2.);
 
 		/*
@@ -215,7 +215,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 		 * %99.99 of the flux
 		 */
 		if( sp->re_max == 0 ) {
-			sp->re_max = ceil(moffat_fluxfrac(sp, 0.9999));
+			sp->re_max = sp->fwhm*8;
 		}
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
