@@ -1,6 +1,6 @@
 profitMakeModel = function(modellist,
                            magzero=0, psf=NULL, dim=c(100,100),
-                           serscomp='all', pscomp='all',
+                           serscomp='all', moffatcomp='all', pscomp='all',
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
@@ -16,6 +16,9 @@ profitMakeModel = function(modellist,
 	stopifnot(is.logical(rough) && length(rough) == 1)
 	if( serscomp=='all' ) {
 		serscomp = 1:length(modellist$sersic$xcen)
+	}
+	if( moffatcomp=='all' ) {
+		moffatcomp = 1:length(modellist$moffat$xcen)
 	}
 	if(pscomp=='all') {
 		pscomp = 1:length(modellist$pointsource$xcen)
@@ -135,6 +138,26 @@ profitMakeModel = function(modellist,
 		profiles$sersic[['rescale_flux']] = rep(rescaleflux, length(serscomp))
 	}
 
+	# Collect only the moffat profiles that the user specified
+	if( length(modellist$moffat) > 0 && length(moffatcomp) > 0 ) {
+
+		# Copy them
+		profiles$moffat = list()
+		for( name in names(modellist$moffat) ) {
+			profiles$moffat[[name]] = c(unlist(as.numeric(modellist$moffat[[name]][serscomp])))
+		}
+
+		# Fix X/Y center of the moffat profile as needed
+		profiles$moffat[['xcen']] = profiles$moffat[['xcen']] + psfpad[1]/finesample
+		profiles$moffat[['ycen']] = profiles$moffat[['ycen']] + psfpad[2]/finesample
+
+		# Down in libprofit these values are specified per-profile instead of globally,
+		# so we simply replicate them here
+		profiles$moffat[['rough']] = rep(as.integer(rough), length(serscomp))
+		profiles$moffat[['acc']] = rep(acc, length(serscomp))
+		profiles$moffat[['re_max']] = rep(remax, length(serscomp))
+	}
+
 	# pointsource profiles are generated in two different ways:
 	#
 	#  * If a PSF image was given, then we consider each of the
@@ -217,6 +240,8 @@ profitMakeModel = function(modellist,
 				profiles$psf[['xcen']] = profiles$psf[['xcen']] + psfpad[1]/finesample
 				profiles$psf[['ycen']] = profiles$psf[['ycen']] + psfpad[2]/finesample
 			}
+
+		  # Brute force convolve if a psf is given
 			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 				profiles[['sersic']][['convolve']] = rep(usebruteconv, length(serscomp))
 			}

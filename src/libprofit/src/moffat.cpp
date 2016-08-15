@@ -55,7 +55,8 @@ namespace profit
  * The moffat profile has this form:
  *
  * e^{-bn * (r_factor - 1)}
- * where r_factor = (r/Re)^{1/nser}
+ 
+ * where r_factor = (r/Re)^{1/con}
  *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
  *              b = box parameter
  *
@@ -81,162 +82,18 @@ namespace profit
  */
 
 /*
- * The nser parameter is a double; we need an enumeration of the known values
- * to optimize for to use in our templates
- */
-enum nser_t {
-	general,
-	pointfive,
-	one,
-	two,
-	three,
-	four,
-	eight,
-	sixteen
-};
-
-/*
- * r_factor calculation follows. Several template specializations avoid the
- * call to pow().
- * This first generic template will finally be called only with parameters
- * true/general because all the other combinations are already specialized.
- */
-
-/* "true" cases for r_factor */
-template<bool boxy, nser_t t>
-inline double _r_factor(double b, double invexp)
-{
-  return pow(b, 1/invexp);
-}
-
-template<> inline double _r_factor<true, pointfive>(double b, double invexp)
-{
-	return b*b;
-}
-
-template<> inline double _r_factor<true, one>(double b, double invexp)
-{
-	return b;
-}
-
-template<> inline double _r_factor<true, two>(double b, double invexp)
-{
-	return sqrt(b);
-}
-
-template<> inline double _r_factor<true, three>(double b, double invexp)
-{
-	return cbrt(b);
-}
-
-template<> inline double _r_factor<true, four>(double b, double invexp)
-{
-	return sqrt(sqrt(b));
-}
-
-template<> inline double _r_factor<true, eight>(double b, double invexp)
-{
-	return sqrt(sqrt(sqrt(b)));
-}
-
-template<> inline double _r_factor<true, sixteen>(double b, double invexp)
-{
-	return sqrt(sqrt(sqrt(sqrt(b))));
-}
-
-/* "false" cases for r_factor */
-template<> inline double _r_factor<false, general>(double b, double invexp)
-{
-	return pow(sqrt(b), 1/invexp);
-}
-
-template<> inline double _r_factor<false, pointfive>(double b, double invexp)
-{
-	return b;
-}
-
-template<> inline double _r_factor<false, one>(double b, double invexp)
-{
-	return sqrt(b);
-}
-
-template<> inline double _r_factor<false, two>(double b, double invexp)
-{
-	return sqrt(sqrt(b));
-}
-
-template<> inline double _r_factor<false, three>(double b, double invexp)
-{
-	return cbrt(sqrt(b));
-}
-
-template<> inline double _r_factor<false, four>(double b, double invexp)
-{
-	return sqrt(sqrt(sqrt(b)));
-}
-
-template<> inline double _r_factor<false, eight>(double b, double invexp)
-{
-	return sqrt(sqrt(sqrt(sqrt(b))));
-}
-
-template<> inline double _r_factor<false, sixteen>(double b, double invexp)
-{
-	return sqrt(sqrt(sqrt(sqrt(sqrt(b)))));
-}
-
-/*
- * The base component of r_factor
- */
-template<bool boxy>
-inline double _base(double x, double y, double re, double exponent)
-{
-	return pow(fabs(x/re), exponent) + pow(fabs(y/re), exponent);
-}
-
-template<>
-inline double _base<false>(double x, double y, double re, double exponent)
-{
-	return (x*x + y*y)/(re * re);
-}
-
-/*
- * The invexpt component of r_factor
- */
-template<bool boxy>
-inline double _invexp(const double nser, const double exponent)
-{
-  return nser*exponent;
-}
-
-template<>
-inline double _invexp<false>(const double nser, const double exponent)
-{
-  return nser;
-}
-
-
-/*
  * The main moffat evaluation function for a given X/Y coordinate
  */
-template <bool boxy, nser_t t>
 inline
 double _moffat_for_xy_r(MoffatProfile *sp,
                         double x, double y,
                         double r, bool reuse_r) {
 
-	double r_factor;
-	if( reuse_r && sp->box == 0. ){
-		r_factor = pow(r/sp->re, 1/sp->nser);
-	}
-	else {
-		double base;
-		double exponent = sp->box + 2;
-		base = _base<boxy>(x, y, sp->re, exponent);
-		r_factor = _r_factor<boxy,t>(base,_invexp<boxy>(sp->nser,exponent));
-	}
+    double r_factor = (sp->box == 0) ?
+               sqrt(x*x + y*y)/sp->_re :
+               (pow(pow(abs(x),2.+sp->box)+pow(abs(y),2.+sp->box),1./(2.+sp->box)) ) / sp->_re;
 
-	return 1/(pow(1+pow(r_factor,2),con));
+	return 1/(pow(1+pow(r_factor,2), sp->con));
 }
 
 static inline
@@ -248,7 +105,6 @@ void _image_to_moffat_coordinates(MoffatProfile *sp, double x, double y, double 
 	*y_ser /= sp->axrat;
 }
 
-template <bool boxy, nser_t t>
 double _moffat_sumpix(MoffatProfile *sp,
                       double x0, double x1, double y0, double y1,
                       unsigned int recur_level, unsigned int max_recursions,
@@ -273,16 +129,16 @@ double _moffat_sumpix(MoffatProfile *sp,
 			y += half_ybin;
 
 			_image_to_moffat_coordinates(sp, x, y, &x_ser, &y_ser);
-			subval = _moffat_for_xy_r<boxy, t>(sp, x_ser, y_ser, 0, false);
+			subval = _moffat_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _moffat_for_xy_r<boxy, t>(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
+				testval = _moffat_for_xy_r(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
 				if( abs(testval/subval - 1.0) > sp->acc ) {
-					subval = _moffat_sumpix<boxy, t>(sp,
-					                                 x - half_xbin, x + half_xbin,
-					                                 y - half_ybin, y + half_ybin,
-					                                 recur_level + 1, max_recursions,
-					                                 resolution);
+					subval = _moffat_sumpix(sp,
+                                            x - half_xbin, x + half_xbin,
+					                        y - half_ybin, y + half_ybin,
+					                        recur_level + 1, max_recursions,
+					                        resolution);
 				}
 			}
 
@@ -299,30 +155,28 @@ double _moffat_sumpix(MoffatProfile *sp,
 
 static inline
 double moffat_fluxfrac(MoffatProfile *sp, double fraction) {
-	double ratio = sp->_qgamma(fraction, 2*sp->nser) / sp->_bn;
-	return sp->re * pow(ratio, sp->nser);
+    return 1;
 }
 
 static inline
 void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 
-	double nser = sp->nser;
-	double re = sp->re;
+	double con = sp->con;
+	double fwhm = sp->fwhm;
 	double axrat = sp->axrat;
 	double mag = sp->mag;
 	double box = sp->box + 2;
 	double magzero = model->magzero;
-	double bn, angrad;
+	double angrad;
 
 	/*
 	 * Calculate the total luminosity used by the moffat profile, used
 	 * later to calculate the exact contribution of each pixel.
 	 * We save bn back into the profile because it's needed later.
 	 */
-	sp->_bn = bn = sp->_qgamma(0.5, 2*nser);
 	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
-	double gamma = sp->_gammafn(2*nser);
-	double lumtot = pow(re, 2) * 2 * M_PI * nser * gamma * axrat/Rbox * exp(bn)/pow(bn, 2*nser);
+    double re = sp->_re = fwhm/(2*sqrt(pow(2,(1/con))-1));
+    double lumtot = pow(re, 2) * 2 * M_PI * axrat/(con-1)/Rbox;
 	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
@@ -341,7 +195,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 		 * but don't let it become less than 1 pixel (means we do no worse than
 		 * GALFIT anywhere)
 		 */
-		re_switch = ceil(moffat_fluxfrac(sp, 1. - nser*nser/2e3));
+		re_switch = ceil(moffat_fluxfrac(sp, 1. - con*con/2e3));
 		re_switch = max(min(re_switch, 20.), 2.);
 
 		/*
@@ -363,16 +217,9 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 		if( sp->re_max == 0 ) {
 			sp->re_max = ceil(moffat_fluxfrac(sp, 0.9999));
 		}
-		sp->_rescale_factor = 1;
-		if( sp->rescale_flux ) {
-			double flux_r;
-			flux_r = bn * pow(sp->re_max/re, 1/nser);
-			flux_r = sp->_pgamma(flux_r, 2*nser);
-			sp->_rescale_factor = 1/flux_r;
-		}
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
-		double acc = 0.4 / nser;
+		double acc = 0.4 / con;
 		acc = max(0.1, acc) / axrat;
 		sp->acc = acc;
 
@@ -402,16 +249,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
  */
 void MoffatProfile::validate() {
 
-	if( !this->_pgamma ) {
-		throw invalid_parameter("Missing pgamma function on moffat profile");
-	}
-	if( !this->_qgamma ) {
-		throw invalid_parameter("Missing qgamma function on moffat profile");
-	}
-	if( !this->_gammafn ) {
-		throw invalid_parameter("Missing gamma function on moffat profile");
-	}
-	if( !this->_beta ) {
+if( !this->_beta ) {
 		throw invalid_parameter("Missing beta function on moffat profile");
 	}
 
@@ -420,8 +258,7 @@ void MoffatProfile::validate() {
 /**
  * The main moffat evaluation function
  */
-template <bool boxy, nser_t t>
-void _evaluate(MoffatProfile *sp, Model *model, double *image) {
+void MoffatProfile::evaluate(double *image) {
 
 	unsigned int i, j;
 	double x, y, pixel_val;
@@ -429,6 +266,11 @@ void _evaluate(MoffatProfile *sp, Model *model, double *image) {
 	double half_xbin = model->scale_x/2.;
 	double half_ybin = model->scale_x/2.;
 	double pixel_area = model->scale_x * model->scale_y;
+	
+	MoffatProfile *sp = this;
+
+    /* We never convolve */
+    this->convolve = false;
 
 	/*
 	 * All the pre-calculations needed by the moffat profile (Ie, cos/sin ang, etc)
@@ -439,9 +281,6 @@ void _evaluate(MoffatProfile *sp, Model *model, double *image) {
 	moffat_initial_calculations(sp, model);
 
 	double scale = pixel_area * sp->_ie;
-	if( sp->rescale_flux ) {
-		scale *= sp->_rescale_factor;
-	}
 
 	/* The middle X/Y value is used for each pixel */
 	y = 0;
@@ -464,11 +303,11 @@ void _evaluate(MoffatProfile *sp, Model *model, double *image) {
 			 * TODO: the radius calculation doesn't take into account boxing
 			 */
 			r_ser = sqrt(x_ser*x_ser + y_ser*y_ser);
-			if( sp->re_max > 0 && r_ser/sp->re > sp->re_max ) {
+			if( sp->re_max > 0 && r_ser/sp->_re > sp->re_max ) {
 				pixel_val = 0.;
 			}
-			else if( sp->rough || r_ser/sp->re > sp->re_switch ){
-				pixel_val = _moffat_for_xy_r<boxy, t>(sp, x_ser, y_ser, r_ser, true);
+			else if( sp->rough || r_ser/sp->_re > sp->re_switch ){
+				pixel_val = _moffat_for_xy_r(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
 
@@ -477,10 +316,10 @@ void _evaluate(MoffatProfile *sp, Model *model, double *image) {
 				unsigned int max_recursions = center ? 10 : sp->max_recursions;
 
 				/* Subsample and integrate */
-				pixel_val =  _moffat_sumpix<boxy, t>(sp,
-				                                     x - half_xbin, x + half_xbin,
-				                                     y - half_ybin, y + half_ybin,
-				                                     0, max_recursions, resolution);
+				pixel_val =  _moffat_sumpix(sp,
+				                           x - half_xbin, x + half_xbin,
+				                           y - half_ybin, y + half_ybin,
+				                           0, max_recursions, resolution);
 			}
 
 			image[i + j*model->width] = scale * pixel_val;
@@ -490,48 +329,6 @@ void _evaluate(MoffatProfile *sp, Model *model, double *image) {
 	}
 
 }
-
-void MoffatProfile::evaluate(double *image) {
-
-	Model *m = this->model;
-
-	if( this->box != 0 ) {
-		     if( this->nser == 0.5 ) _evaluate<true, pointfive>(this, m, image);
-		else if( this->nser == 1 )   _evaluate<true, one>(this, m, image);
-		else if( this->nser == 2 )   _evaluate<true, two>(this, m, image);
-		else if( this->nser == 3 )   _evaluate<true, three>(this, m, image);
-		else if( this->nser == 4 )   _evaluate<true, four>(this, m, image);
-		else if( this->nser == 8 )   _evaluate<true, eight>(this, m, image);
-		else if( this->nser == 16 )  _evaluate<true, sixteen>(this, m, image);
-		else                         _evaluate<true, general>(this, m, image);
-	}
-	else {
-		     if( this->nser == 0.5 ) _evaluate<false, pointfive>(this, m, image);
-		else if( this->nser == 1 )   _evaluate<false, one>(this, m, image);
-		else if( this->nser == 2 )   _evaluate<false, two>(this, m, image);
-		else if( this->nser == 3 )   _evaluate<false, three>(this, m, image);
-		else if( this->nser == 4 )   _evaluate<false, four>(this, m, image);
-		else if( this->nser == 8 )   _evaluate<false, eight>(this, m, image);
-		else if( this->nser == 16 )  _evaluate<false, sixteen>(this, m, image);
-		else                         _evaluate<false, general>(this, m, image);
-	}
-}
-
-#if defined(HAVE_GSL)
-double _gsl_qgamma_wrapper(double p, double shape) {
-	return gsl_cdf_gamma_Pinv(p, shape, 1);
-}
-double _gsl_pgamma_wrapper(double q, double shape) {
-	return gsl_cdf_gamma_P(q, shape, 1);
-}
-#elif defined(HAVE_R)
-double _Rf_qgamma_wrapper(double p, double shape) {
-	return Rf_qgamma(p, shape, 1, 1, 0);
-}
-double _Rf_pgamma_wrapper(double q, double shape) {
-	return Rf_pgamma(q, shape, 1, 1, 0);
-}
-#endif
 
 /**
  * The moffat creation function
@@ -560,26 +357,16 @@ MoffatProfile::MoffatProfile() :
 	p->adjust = true;
 
 	p->re_max = 0;
-	p->rescale_flux = false;
 
 	/*
 	 * Point to the corresponding implementation, or leave as NULL if not
 	 * possible. In that case the user will have to provide their own functions.
 	 */
 #if defined(HAVE_GSL)
-	p->_qgamma  = &_gsl_qgamma_wrapper;
-	p->_pgamma  = &_gsl_pgamma_wrapper;
-	p->_gammafn = &gsl_sf_gamma;
 	p->_beta    = &gsl_sf_beta;
 #elif defined(HAVE_R)
-	p->_qgamma  = &_Rf_qgamma_wrapper;
-	p->_pgamma  = &_Rf_pgamma_wrapper;
-	p->_gammafn = &Rf_gammafn;
 	p->_beta    = &Rf_beta;
 #else
-	p->_qgamma = NULL;
-	p->_pgamma = NULL;
-	p->_gammafn = NULL;
 	p->_beta = NULL;
 #endif
 

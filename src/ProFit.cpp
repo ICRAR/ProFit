@@ -149,7 +149,7 @@ NumericMatrix profitMakeMoffat(const double XCEN=0, const double YCEN=0, const d
   const double Rbox=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
   const double re = FWHM/(2*sqrt(pow(2,(1/CON))-1));
   const double lumtot = PI*pow(re,2)*AXRAT/(CON-1)/Rbox;
-  std::cout << Rbox << " " << re << " " << lumtot << std::endl;
+  //std::cout << Rbox << " " << re << " " << lumtot << std::endl;
   const double Ie=pow(10,(-0.4*(MAG-MAGZERO)))/lumtot;
   const double INVRE = 1./re;
   NumericMatrix mat(N(0), N(1));

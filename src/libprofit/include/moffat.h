@@ -1,12 +1,12 @@
 /**
- * Header file for sersic profile implementation
+ * Header file for moffat profile implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Rodrigo Tobar
+ * Contributed by Aaron Robotham
  *
  * This file is part of libprofit.
  *
@@ -60,6 +60,17 @@ public:
 
 	/* Used to avoid outer regions */
 	double re_max;
+
+    /* Gamma function and distribution to use */
+    double (*_beta)(double, double);
+    
+    /* These are internally calculated profile init */
+    double _ie;
+    double _cos_ang;
+    double _sin_ang;
+
+    /* re used to evaluate the profile */
+    double _re;
 
 };
 
