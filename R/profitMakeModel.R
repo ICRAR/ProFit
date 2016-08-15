@@ -1,6 +1,6 @@
 profitMakeModel = function(modellist,
                            magzero=0, psf=NULL, dim=c(100,100),
-                           serscomp='all', moffatcomp='all', pscomp='all',
+                           serscomp='all', moffatcomp='all', ferrercomp='all', pscomp='all',
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
@@ -19,6 +19,9 @@ profitMakeModel = function(modellist,
 	}
 	if( moffatcomp=='all' ) {
 		moffatcomp = 1:length(modellist$moffat$xcen)
+	}
+	if( ferrercomp=='all' ) {
+		ferrercomp = 1:length(modellist$ferrer$xcen)
 	}
 	if(pscomp=='all') {
 		pscomp = 1:length(modellist$pointsource$xcen)
@@ -156,6 +159,26 @@ profitMakeModel = function(modellist,
 		profiles$moffat[['rough']] = rep(as.integer(rough), length(serscomp))
 		profiles$moffat[['acc']] = rep(acc, length(serscomp))
 		profiles$moffat[['re_max']] = rep(remax, length(serscomp))
+	}
+	
+	# Collect only the ferrer profiles that the user specified
+	if( length(modellist$ferrer) > 0 && length(ferrercomp) > 0 ) {
+
+		# Copy them
+		profiles$ferrer = list()
+		for( name in names(modellist$ferrer) ) {
+			profiles$ferrer[[name]] = c(unlist(as.numeric(modellist$ferrer[[name]][serscomp])))
+		}
+
+		# Fix X/Y center of the ferrer profile as needed
+		profiles$ferrer[['xcen']] = profiles$ferrer[['xcen']] + psfpad[1]/finesample
+		profiles$ferrer[['ycen']] = profiles$ferrer[['ycen']] + psfpad[2]/finesample
+
+		# Down in libprofit these values are specified per-profile instead of globally,
+		# so we simply replicate them here
+		profiles$ferrer[['rough']] = rep(as.integer(rough), length(serscomp))
+		profiles$ferrer[['acc']] = rep(acc, length(serscomp))
+		profiles$ferrer[['re_max']] = rep(remax, length(serscomp))
 	}
 
 	# pointsource profiles are generated in two different ways:
