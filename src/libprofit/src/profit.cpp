@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "convolve.h"
+#include "moffat.h"
 #include "profit.h"
 #include "psf.h"
 #include "sersic.h"
@@ -92,6 +93,9 @@ Profile* Model::add_profile(string profile_name) {
 	}
 	else if ( profile_name == "sersic" ) {
 		profile = static_cast<Profile *>(new SersicProfile());
+	}
+	else if ( profile_name == "moffat" ) {
+		profile = static_cast<Profile *>(new MoffatProfile());
 	}
 	else if ( profile_name == "psf" ) {
 		profile = static_cast<Profile *>(new PsfProfile());

@@ -8,6 +8,7 @@
 #include <Rinternals.h>
 
 #include <convolve.h>
+#include <moffat.h>
 #include <profit.h>
 #include <sersic.h>
 #include <sky.h>
@@ -126,6 +127,28 @@ void list_to_sersic(SEXP sersic_list, Profile *p, unsigned int idx) {
 }
 
 static
+void list_to_moffat(SEXP moffat_list, Profile *p, unsigned int idx) {
+    MoffatProfile *sp = static_cast<MoffatProfile *>(p);
+    sp->adjust = true;
+    _read_real(moffat_list, "xcen",  idx, &(sp->xcen));
+    _read_real(moffat_list, "ycen",  idx, &(sp->ycen));
+    _read_real(moffat_list, "mag",   idx, &(sp->mag));
+    _read_real(moffat_list, "fwhm",  idx, &(sp->fwhm));
+    _read_real(moffat_list, "con",  idx, &(sp->con));
+    _read_real(moffat_list, "ang",   idx, &(sp->ang));
+    _read_real(moffat_list, "axrat", idx, &(sp->axrat));
+    _read_real(moffat_list, "box",   idx, &(sp->box));
+    
+    _read_bool(moffat_list, "rough",   idx, &(sp->rough));
+    _read_real(moffat_list, "acc",   idx, &(sp->acc));
+    _read_real(moffat_list, "re_switch",   idx, &(sp->re_switch));
+    _read_unsigned_int(moffat_list, "resolution",   idx, &(sp->resolution));
+    _read_unsigned_int(moffat_list, "max_recursions",   idx, &(sp->max_recursions));
+  
+    _read_real(moffat_list, "re_max", idx, &(sp->re_max));
+}
+
+static
 void list_to_sky(SEXP sky_list, Profile *p, unsigned int idx) {
 	SkyProfile *sp = static_cast<SkyProfile *>(p);
 	_read_real(sky_list, "bg",  idx, &(sp->bg));
@@ -172,6 +195,11 @@ void _read_profiles(Model &model, SEXP profiles_list,
 static
 void _read_sersic_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "sersic", "xcen", &list_to_sersic);
+}
+
+static
+void _read_moffat_profiles(Model &model, SEXP profiles_list) {
+    _read_profiles(model, profiles_list, "moffat", "xcen", &list_to_moffat);
 }
 
 static
@@ -253,8 +281,9 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	if( profiles == R_NilValue ) {
 		Rf_error("No profiles provided in the model\n");
 		return R_NilValue;
-	}
-	_read_sersic_profiles(m, profiles);
+    }
+    _read_sersic_profiles(m, profiles);
+    _read_moffat_profiles(m, profiles);
 	_read_sky_profiles(m, profiles);
 	_read_psf_profiles(m, profiles);
 	if( !m.profiles.size() ) {

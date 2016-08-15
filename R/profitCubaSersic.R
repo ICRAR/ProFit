@@ -6,12 +6,12 @@
 }
 
 
-.profitSersic=function(r=1, mag=15, re=1, nser=4, axrat=1, box=0, bn= qgamma(0.5, 2 * nser)){
+.profitSersic=function(r=1, re=1, nser=4, bn= qgamma(0.5, 2 * nser)){
     intenr = exp(-bn*(((r/re)^(1/nser)) - 1))
     return(intenr)
 }
 
-.profitSersicXY=function(args=c(0,0), xcen=0, ycen=0, mag=15, re=1, nser=4, ang=0, axrat=1, box=0, bn= qgamma(0.5, 2 * nser)){
+.profitSersicXY=function(args=c(0,0), xcen=0, ycen=0, re=1, nser=4, ang=0, axrat=1, box=0, bn= qgamma(0.5, 2 * nser)){
   rad=sqrt((args[1]-xcen)^2+(args[2]-ycen)^2)
   angrad=-ang*pi/180
   angmod=atan2((args[1]-xcen),(args[2]-ycen))-angrad
@@ -19,12 +19,12 @@
   ymod=rad*cos(angmod)
   xmod=xmod/axrat
   radmod=(abs(xmod)^(2+box)+abs(ymod)^(2+box))^(1/(2+box))
-  output=.profitSersic(radmod, mag=mag, re=re, nser=nser, axrat=axrat, box=box, bn=bn)
+  output=.profitSersic(radmod, re=re, nser=nser, bn=bn)
   return(output)
 }
 
-.profitSersicExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, mag=15, re=1, nser=4, ang=0, axrat=1, box=0, rel.tol=1e-3, abs.tol= 1e-10, bn= qgamma(0.5, 2 * nser)){
-return(cuhre(2, 1, .profitSersicXY, xcen=xcen, ycen=ycen, mag=mag, nser=nser, re=re, ang=ang, axrat=axrat, box=box, bn=bn, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
+.profitSersicExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, re=1, nser=4, ang=0, axrat=1, box=0, rel.tol=1e-3, abs.tol= 1e-10, bn= qgamma(0.5, 2 * nser)){
+return(cuhre(2, 1, .profitSersicXY, xcen=xcen, ycen=ycen, nser=nser, re=re, ang=ang, axrat=axrat, box=box, bn=bn, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
 }
 
 profitCubaSersic=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, re=1, nser=4, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
@@ -34,7 +34,7 @@ profitCubaSersic=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, re=1, nser=4, an
   pixgrid=expand.grid(xpix,ypix)
   pixval={}
   for(i in 1:length(pixgrid[,1])){
-    pixval=c(pixval, .profitSersicExactSumPix(c(pixgrid[i,1],pixgrid[i,1]+1), c(pixgrid[i,2],pixgrid[i,2]+1), xcen=xcen, ycen=ycen, mag=mag, re=re, nser=nser, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, bn=bn))
+    pixval=c(pixval, .profitSersicExactSumPix(c(pixgrid[i,1],pixgrid[i,1]+1), c(pixgrid[i,2],pixgrid[i,2]+1), xcen=xcen, ycen=ycen, re=re, nser=nser, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, bn=bn))
   }
   return=matrix(pixval*.profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, box=box, bn=bn),dim[1],dim[2])
 }
