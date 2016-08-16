@@ -55,7 +55,7 @@ Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitConvolvePSF}}, \code{\link{profitMakeModel}}, \code{\link{profitMakeSersic}}
+\code{\link{profitConvolvePSF}}, \code{\link{profitMakeModel}}
 }
 \examples{
 # Create a PSF with a suitable width:
