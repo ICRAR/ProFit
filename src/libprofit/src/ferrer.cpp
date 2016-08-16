@@ -157,9 +157,16 @@ void ferrer_initial_calculations(FerrerProfile *sp, Model *model) {
 	 * later to calculate the exact contribution of each pixel.
 	 * We save bn back into the profile because it's needed later.
 	 */
+	
+	/*
+	 * lumtot comes from Wolfram Alpha: "integrate between 0 and 1 x(1-x^c)^(a)"
+	 * replacement was then made using c=2-b
+	 * Further scaling by 2*pi*rout^2 required.
+	 * Further scaling by axrat and Rbox.
+	 */
 	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
-  double lumtot = 2 * pow(rout, 2) * M_PI * (sp->_gammafn(a+1)*sp->_gammafn((4-b)/(2-b))/
-                  (2*sp->_gammafn(sp->a+2/(2-b)+1))) * axrat/Rbox;
+  double lumtot = pow(rout, 2) * M_PI * (sp->_gammafn(a+1)*sp->_gammafn((4-b)/(2-b))/
+                  (sp->_gammafn(sp->a+2/(2-b)+1))) * axrat/Rbox;
 	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
