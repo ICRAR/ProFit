@@ -147,7 +147,7 @@ profitMakeModel = function(modellist,
 		# Copy them
 		profiles$moffat = list()
 		for( name in names(modellist$moffat) ) {
-			profiles$moffat[[name]] = c(unlist(as.numeric(modellist$moffat[[name]][serscomp])))
+			profiles$moffat[[name]] = c(unlist(as.numeric(modellist$moffat[[name]][moffatcomp])))
 		}
 
 		# Fix X/Y center of the moffat profile as needed
@@ -156,9 +156,9 @@ profitMakeModel = function(modellist,
 
 		# Down in libprofit these values are specified per-profile instead of globally,
 		# so we simply replicate them here
-		profiles$moffat[['rough']] = rep(as.integer(rough), length(serscomp))
-		profiles$moffat[['acc']] = rep(acc, length(serscomp))
-		profiles$moffat[['re_max']] = rep(remax, length(serscomp))
+		profiles$moffat[['rough']] = rep(as.integer(rough), length(moffatcomp))
+		profiles$moffat[['acc']] = rep(acc, length(moffatcomp))
+		profiles$moffat[['re_max']] = rep(remax, length(moffatcomp))
 	}
 	
 	# Collect only the ferrer profiles that the user specified
@@ -167,7 +167,7 @@ profitMakeModel = function(modellist,
 		# Copy them
 		profiles$ferrer = list()
 		for( name in names(modellist$ferrer) ) {
-			profiles$ferrer[[name]] = c(unlist(as.numeric(modellist$ferrer[[name]][serscomp])))
+			profiles$ferrer[[name]] = c(unlist(as.numeric(modellist$ferrer[[name]][ferrercomp])))
 		}
 
 		# Fix X/Y center of the ferrer profile as needed
@@ -176,9 +176,9 @@ profitMakeModel = function(modellist,
 
 		# Down in libprofit these values are specified per-profile instead of globally,
 		# so we simply replicate them here
-		profiles$ferrer[['rough']] = rep(as.integer(rough), length(serscomp))
-		profiles$ferrer[['acc']] = rep(acc, length(serscomp))
-		profiles$ferrer[['re_max']] = rep(remax, length(serscomp))
+		profiles$ferrer[['rough']] = rep(as.integer(rough), length(ferrercomp))
+		profiles$ferrer[['acc']] = rep(acc, length(ferrercomp))
+		profiles$ferrer[['re_max']] = rep(remax, length(ferrercomp))
 	}
 
 	# pointsource profiles are generated in two different ways:
@@ -267,6 +267,12 @@ profitMakeModel = function(modellist,
 		  # Brute force convolve if a psf is given
 			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
 				profiles[['sersic']][['convolve']] = rep(usebruteconv, length(serscomp))
+			}
+		  if( length(modellist$moffat) > 0 && length(moffatcomp) > 0 ) {
+				profiles[['moffat']][['convolve']] = rep(usebruteconv, length(moffatcomp))
+		  }
+		  if( length(modellist$ferrer) > 0 && length(ferrercomp) > 0 ) {
+				profiles[['ferrer']][['convolve']] = rep(usebruteconv, length(ferrercomp))
 			}
 		}
 	}
