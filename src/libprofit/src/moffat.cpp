@@ -318,7 +318,7 @@ MoffatProfile::MoffatProfile() :
 	p->xcen = 0;
 	p->ycen = 0;
 	p->mag = 15;
-	p->fwhm = 1;
+	p->fwhm = 3;
 	p->con= 2;
 	p->box = 0;
 	p->ang   = 0.0;

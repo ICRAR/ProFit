@@ -317,7 +317,7 @@ FerrerProfile::FerrerProfile() :
 	p->xcen = 0;
 	p->ycen = 0;
 	p->mag = 15;
-	p->rout= 1;
+	p->rout= 3;
 	p->a= 1;
 	p->b= 1;
 	p->box = 0;
