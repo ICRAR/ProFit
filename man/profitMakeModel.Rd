@@ -9,9 +9,9 @@ Create an astronomical image containing model galaxies or point sources, with or
 }
 \usage{
 profitMakeModel(modellist, magzero = 0, psf=NULL, dim = c(100, 100), serscomp = "all",
-pscomp = "all", rough = FALSE, acc = 0.1, finesample=1L, returnfine=FALSE, 
-returncrop=TRUE, calcregion, docalcregion=FALSE, magmu=FALSE,
-remax, rescaleflux = FALSE, convopt=list(method="Bruteconv"))
+moffatcomp = "all", ferrercomp = "all",pscomp = "all", rough = FALSE, acc = 0.1,
+finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion, docalcregion=FALSE,
+magmu=FALSE, remax, rescaleflux = FALSE, convopt=list(method="Bruteconv"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,7 +28,13 @@ The PSF matrix to use for the model. This will both be used to convolve the Sers
 The desired dimenions of the 2D image matrix. This should be a two element vector which specifies c(width,height) in the plotted image. This becomes c(rows,columns) in the matrix itself (see Details below).
 }
   \item{serscomp}{
-Which component of the Sersic list should be used to create the model image. This is useful if you want to visually see appearance of e.g. Sersic components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakeSersic}} for details.
+Which component of the Sersic list should be used to create the model image. This is useful if you want to visualise the appearance of e.g. Sersic components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakeSersic}} for details.
+}
+  \item{moffatcomp}{
+Which component of the Moffat list should be used to create the model image. This is useful if you want to isolate separate stars. The default "all" will show the total model with all components added.
+}
+  \item{ferrercomp}{
+Which component of the Ferrer list should be used to create the model image. This is useful if you want to isolate separate bar structures. The default "all" will show the total model with all components added.
 }
   \item{pscomp}{
 Which component of the PS list should be used to create the model image. This is useful if you want to visually see appearance of e.g. PS components 1 and 2 separately. The default "all" will show the total model with all components added. See \code{\link{profitMakePointSource}} for details.

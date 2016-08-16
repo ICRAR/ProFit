@@ -5,7 +5,7 @@
 Cubature 2D Moffat Model Image Creation
 }
 \description{
-This function computes the exact pixel integrals for a given model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}.
+This function computes the exact 2D pixel integrals for a given Moffat model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}.
 }
 \usage{
 profitCubaMoffat(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, fwhm = 3, con = 2, ang = 0,
@@ -44,7 +44,7 @@ The dimensions of the image to be generated. Typically this should be c(Nx,Ny). 
 The requested relative accuracy. Default, 0.001.
 }
   \item{abs.tol}{
-The requested absolute accuracy. The algorithm stops when either the relative or the absolute accuracies are met. Default, near 1e-10.  
+The requested absolute accuracy. The algorithm stops when either the relative or the absolute accuracies are met. Default, near 1e-10.
 }
 }
 \details{
@@ -64,7 +64,7 @@ Aaron Robotham
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}
+\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaFerrer}}
 }
 \examples{
 magimage(profitCubaMoffat())
