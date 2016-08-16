@@ -8,9 +8,10 @@
 #include <Rinternals.h>
 
 #include <convolve.h>
-#include <moffat.h>
 #include <profit.h>
 #include <sersic.h>
+#include <moffat.h>
+#include <ferrer.h>
 #include <sky.h>
 #include <psf.h>
 
@@ -149,6 +150,29 @@ void list_to_moffat(SEXP moffat_list, Profile *p, unsigned int idx) {
 }
 
 static
+void list_to_ferrer(SEXP ferrer_list, Profile *p, unsigned int idx) {
+    FerrerProfile *sp = static_cast<FerrerProfile *>(p);
+    sp->adjust = true;
+    _read_real(ferrer_list, "xcen",  idx, &(sp->xcen));
+    _read_real(ferrer_list, "ycen",  idx, &(sp->ycen));
+    _read_real(ferrer_list, "mag",   idx, &(sp->mag));
+    _read_real(ferrer_list, "rout",  idx, &(sp->rout));
+    _read_real(ferrer_list, "a",  idx, &(sp->a));
+    _read_real(ferrer_list, "b",  idx, &(sp->b));
+    _read_real(ferrer_list, "ang",   idx, &(sp->ang));
+    _read_real(ferrer_list, "axrat", idx, &(sp->axrat));
+    _read_real(ferrer_list, "box",   idx, &(sp->box));
+    
+    _read_bool(ferrer_list, "rough",   idx, &(sp->rough));
+    _read_real(ferrer_list, "acc",   idx, &(sp->acc));
+    _read_real(ferrer_list, "re_switch",   idx, &(sp->re_switch));
+    _read_unsigned_int(ferrer_list, "resolution",   idx, &(sp->resolution));
+    _read_unsigned_int(ferrer_list, "max_recursions",   idx, &(sp->max_recursions));
+  
+    _read_real(ferrer_list, "re_max", idx, &(sp->re_max));
+}
+
+static
 void list_to_sky(SEXP sky_list, Profile *p, unsigned int idx) {
 	SkyProfile *sp = static_cast<SkyProfile *>(p);
 	_read_real(sky_list, "bg",  idx, &(sp->bg));
@@ -200,6 +224,11 @@ void _read_sersic_profiles(Model &model, SEXP profiles_list) {
 static
 void _read_moffat_profiles(Model &model, SEXP profiles_list) {
     _read_profiles(model, profiles_list, "moffat", "xcen", &list_to_moffat);
+}
+
+static
+void _read_ferrer_profiles(Model &model, SEXP profiles_list) {
+    _read_profiles(model, profiles_list, "ferrer", "xcen", &list_to_ferrer);
 }
 
 static
@@ -281,9 +310,10 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	if( profiles == R_NilValue ) {
 		Rf_error("No profiles provided in the model\n");
 		return R_NilValue;
-    }
-    _read_sersic_profiles(m, profiles);
-    _read_moffat_profiles(m, profiles);
+  }
+  _read_sersic_profiles(m, profiles);
+  _read_moffat_profiles(m, profiles);
+  _read_ferrer_profiles(m, profiles);
 	_read_sky_profiles(m, profiles);
 	_read_psf_profiles(m, profiles);
 	if( !m.profiles.size() ) {

@@ -68,10 +68,11 @@ magimage(profitConvolvePSF(image=model.image, psf=profitMakePointSource()))
 
 # Comparison of convolution types:
 
-image=profitMakeSersic(re=10,nser=4,axrat=0.3,ang=30,dim=c(1e3,1e3),remax=Inf)$z
+image=profitMakeModel(list(sersic=list(xcen=500,ycen=500,re=10,nser=4,axrat=0.3,ang=30)), 
+dim=c(1e3,1e3), remax=Inf)$z
 psf=profitMakeGaussianPSF(10,75)
 
-# Get the becnhmarks:
+# Get the benchmarks:
 
 bench=profitBenchmarkConv(image,psf,nbench = 1L)
 

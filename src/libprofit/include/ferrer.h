@@ -1,5 +1,5 @@
 /**
- * Header file for moffat profile implementation
+ * Header file for ferrer profile implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -23,19 +23,19 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _MOFFAT_H_
-#define _MOFFAT_H_
+#ifndef _FERRER_H_
+#define _FERRER_H_
 
 #include "profit.h"
 
 namespace profit
 {
 
-class MoffatProfile : public Profile {
+class FerrerProfile : public Profile {
 
 public:
 
-	MoffatProfile();
+	FerrerProfile();
 
 	void validate();
 	void evaluate(double *image);
@@ -44,8 +44,9 @@ public:
 	double xcen;
 	double ycen;
 	double mag;
-	double fwhm;
-	double con;
+	double rout;
+	double a;
+	double b;
 	double ang;
 	double axrat;
 	double box;
@@ -61,19 +62,17 @@ public:
 	/* Used to avoid outer regions */
 	double re_max;
 
-    /* Gamma function and distribution to use */
-    double (*_beta)(double, double);
+	/* Gamma function and distribution to use */
+	double (*_gammafn)(double);
+	double (*_beta)(double, double);
 
-    /* These are internally calculated profile init */
-    double _ie;
-    double _cos_ang;
-    double _sin_ang;
-
-    /* re used to evaluate the profile */
-    double _re;
+	/* These are internally calculated profile init */
+	double _ie;
+	double _cos_ang;
+	double _sin_ang;
 
 };
 
 } /* namespace profit */
 
-#endif /* _MOFFAT_H_ */
+#endif /* _FERRER_H_ */

@@ -27,7 +27,7 @@ library(ProFit)
 It is possible to use the fast low level interface to the Rcpp `profitMaekSersic` function directly. The example below will generate a 200x200 image matrix, and will run in ~10 microseconds:
 
 ```{r}
-ExampleImage0=profitMakeSersic(re=4, nser=4, ang=30, axrat=0.5)
+ExampleImage0=profitMakeModel(list(sersic=list(xcen=50, ycen=50, re=4, nser=4, ang=30, axrat=0.5)))
 str(ExampleImage0)
 ```
 
@@ -43,7 +43,7 @@ We can make a *much* better image of this model easily using `magimage`, which c
 magimage(ExampleImage0)
 ```
 
-Whilst sometimes useful to use directly, `profitMakeSersic` is limited because you can only create one Sersic model at a time. To make more complex image structures we should use `profitMakeModel` instead.
+We are not limited to simpel single Sersic profiles, highly complex multi-component systems can also be constructed.
 
 ## A Multi-Component Structure
 
@@ -80,8 +80,6 @@ With this structure we can make a simple model using `profitMakeModel`:
 ExampleImage1=profitMakeModel(model=model1, dim=c(200,200))
 str(ExampleImage1)
 ```
-
-Notice the structure is now more complex than when we used the lower level `profitMakeSersic` function. It also took a bit longer to run (~80 ms rather than ~2 ms for the simple `profitmakeSersic` image).
 
 Next we can make a greyscale image of our requested model structure:
 
@@ -185,7 +183,7 @@ system.time(ExampleImagePSF2<-profitMakeModel(model=model2, psf=ExamplePSF, dim=
 magimage(ExampleImagePSF2)
 ```
 
-We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~3 seconds). However, this is much faster than the naive 1x(1000/200)^2=25 seconds that we might expect. This is because the lower level `profitMakeSersic` Rcpp routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
+We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~3 seconds). However, this is much faster than the naive 1x(1000/200)^2=25 seconds that we might expect. This is because the lower level C++ routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
 
 ```{r, fig.width=5, fig.height=5}
 model3 = list(

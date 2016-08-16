@@ -1,5 +1,5 @@
 /**
- * Moffat profile implementation
+ * Ferrer profile implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -29,7 +29,7 @@
 
 /*
  * We use either GSL or Rmath to provide the low-level
- * beta, gamma and qgamma_inv functions needed by the moffat profile.
+ * beta, gamma and qgamma_inv functions needed by the ferrer profile.
  * If neither is given, the user will have to feed the profiles with
  * the appropriate function pointers after creating them.
  */
@@ -40,7 +40,7 @@
 #include <Rmath.h>
 #endif
 
-#include "moffat.h"
+#include "ferrer.h"
 
 using namespace std;
 
@@ -48,37 +48,49 @@ namespace profit
 {
 
 /*
- * The evaluation of the moffat profile at moffat coordinates (x,y).
+ * The evaluation of the ferrer profile at ferrer coordinates (x,y).
  *
- * The moffat profile has this form:
+ * The ferrer profile has this form:
  *
- * (1+r_factor^2)^(-c)
+ * (1-r_factor)^(a)
  *
- * where r_factor = (r/re)
- *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
- *              b = box parameter
- *
- * Reducing:
- *  r_factor = ((x/re)^{2+b} + (y/re)^{2+b})^{1/(2+b)}
+ * where r_factor = (r/re)^(2-b)
+ *              r = (x^{2+B} + y^{2+B})^{1/(2+B)}
+ *              B = box parameter
  */
 
+
 /*
- * The main moffat evaluation function for a given X/Y coordinate
+ * The main ferrer evaluation function for a given X/Y coordinate
  */
-inline
-double _moffat_for_xy_r(MoffatProfile *sp,
+static inline
+double _ferrer_for_xy_r(FerrerProfile *sp,
                         double x, double y,
                         double r, bool reuse_r) {
 
-    double r_factor = (sp->box == 0) ?
-               sqrt(x*x + y*y)/sp->_re :
-               (pow(pow(abs(x),2.+sp->box)+pow(abs(y),2.+sp->box),1./(2.+sp->box)) ) / sp->_re;
+	double r_factor;
+	if( reuse_r && sp->box == 0 ) {
+		r_factor = r;
+	}
+	else if( sp->box == 0 ) {
+		r_factor = sqrt(x*x + y*y);
+	}
+	else {
+		double box = sp->box + 2.;
+		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
+	}
 
-	return 1/(pow(1+pow(r_factor,2), sp->con));
+	r_factor /= sp->rout;
+	if( r_factor < 1 ) {
+		return pow(1 - pow(r_factor, 2 - sp->b), sp->a);
+	}
+	else {
+		return 0;
+	}
 }
 
 static inline
-void _image_to_moffat_coordinates(MoffatProfile *sp, double x, double y, double *x_ser, double *y_ser) {
+void _image_to_ferrer_coordinates(FerrerProfile *sp, double x, double y, double *x_ser, double *y_ser) {
 	x -= sp->xcen;
 	y -= sp->ycen;
 	*x_ser =  x * sp->_cos_ang + y * sp->_sin_ang;
@@ -86,8 +98,7 @@ void _image_to_moffat_coordinates(MoffatProfile *sp, double x, double y, double 
 	*y_ser /= sp->axrat;
 }
 
-static inline
-double _moffat_sumpix(MoffatProfile *sp,
+double _ferrer_sumpix(FerrerProfile *sp,
                       double x0, double x1, double y0, double y1,
                       unsigned int recur_level, unsigned int max_recursions,
                       unsigned int resolution) {
@@ -110,14 +121,14 @@ double _moffat_sumpix(MoffatProfile *sp,
 		for(j=0; j < resolution; j++) {
 			y += half_ybin;
 
-			_image_to_moffat_coordinates(sp, x, y, &x_ser, &y_ser);
-			subval = _moffat_for_xy_r(sp, x_ser, y_ser, 0, false);
+			_image_to_ferrer_coordinates(sp, x, y, &x_ser, &y_ser);
+			subval = _ferrer_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
 				double delta_y_ser = (-xbin*sp->_sin_ang + ybin*sp->_cos_ang)/sp->axrat;
-				testval = _moffat_for_xy_r(sp, abs(x_ser), abs(y_ser) + abs(delta_y_ser), 0, false);
+				testval = _ferrer_for_xy_r(sp, abs(x_ser), abs(y_ser) + abs(delta_y_ser), 0, false);
 				if( abs(testval/subval - 1.0) > sp->acc ) {
-					subval = _moffat_sumpix(sp,
+					subval = _ferrer_sumpix(sp,
 					                        x - half_xbin, x + half_xbin,
 					                        y - half_ybin, y + half_ybin,
 					                        recur_level + 1, max_recursions,
@@ -137,10 +148,11 @@ double _moffat_sumpix(MoffatProfile *sp,
 }
 
 static inline
-void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
+void ferrer_initial_calculations(FerrerProfile *sp, Model *model) {
 
-	double con = sp->con;
-	double fwhm = sp->fwhm;
+	double rout = sp->rout;
+	double a = sp->a;
+	double b = sp->b;
 	double axrat = sp->axrat;
 	double mag = sp->mag;
 	double box = sp->box + 2;
@@ -148,13 +160,20 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 	double angrad;
 
 	/*
-	 * Calculate the total luminosity used by the moffat profile, used
+	 * Calculate the total luminosity used by the ferrer profile, used
 	 * later to calculate the exact contribution of each pixel.
 	 * We save bn back into the profile because it's needed later.
 	 */
+
+	/*
+	 * lumtot comes from Wolfram Alpha: "integrate between 0 and 1 x(1-x^c)^(a)"
+	 * replacement was then made using c=2-b
+	 * Further scaling by 2*pi*rout^2 required.
+	 * Further scaling by axrat and Rbox.
+	 */
 	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
-	double re = sp->_re = fwhm/(2*sqrt(pow(2,(1/con))-1));
-	double lumtot = pow(re, 2) * M_PI * axrat/(con-1)/Rbox;
+	double lumtot = pow(rout, 2) * M_PI * (sp->_gammafn(a+1)*sp->_gammafn((4-b)/(2-b))/
+	                (sp->_gammafn(sp->a+2/(2-b)+1))) * axrat/Rbox;
 	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
@@ -164,28 +183,17 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 	 */
 	if( sp->adjust ) {
 
-		double re_switch;
 		unsigned int resolution;
-
-		/*
-		 * Find the point at which we capture most of the flux (sensible place
-		 * for upscaling). We make sure upscaling doesn't go beyond 20 pixels,
-		 * but don't let it become less than 1 pixel (means we do no worse than
-		 * GALFIT anywhere)
-		 */
-		re_switch = sp->fwhm*4;
-		re_switch = max(min(re_switch, 20.), 2.);
-
 		/*
 		 * Calculate a bound, adaptive upscale; if re is large then we don't need
 		 * so much upscaling
 		 */
-		resolution = (unsigned int)ceil(160 / re_switch);
+		resolution = (unsigned int)ceil(160 / sp->rout);
 		resolution += resolution%2;
 		resolution = resolution > 16 ? 16 : resolution;
 		resolution = resolution <  4 ?  4 : resolution;
 
-		sp->re_switch = re_switch / re;
+		sp->re_switch = sp->rout;
 		sp->resolution = resolution;
 
 		/*
@@ -193,7 +201,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 		 * %99.99 of the flux
 		 */
 		if( sp->re_max == 0 ) {
-			sp->re_max = sp->fwhm*8;
+			sp->re_max = sp->rout;
 		}
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
@@ -204,7 +212,7 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 	/*
 	 * Get the rotation angle in radians and calculate the coefficients
 	 * that will fill the rotation matrix we'll use later to transform
-	 * from image coordinates into moffat coordinates.
+	 * from image coordinates into ferrer coordinates.
 	 *
 	 * In galfit the angle started from the Y image axis.
 	 */
@@ -221,20 +229,20 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 }
 
 /**
- * The moffat validation function
+ * The ferrer validation function
  */
-void MoffatProfile::validate() {
+void FerrerProfile::validate() {
 
 if( !this->_beta ) {
-		throw invalid_parameter("Missing beta function on moffat profile");
+		throw invalid_parameter("Missing beta function on ferrer profile");
 	}
 
 }
 
 /**
- * The main moffat evaluation function
+ * The main ferrer evaluation function
  */
-void MoffatProfile::evaluate(double *image) {
+void FerrerProfile::evaluate(double *image) {
 
 	unsigned int i, j;
 	double x, y, pixel_val;
@@ -243,18 +251,15 @@ void MoffatProfile::evaluate(double *image) {
 	double half_ybin = model->scale_x/2.;
 	double pixel_area = model->scale_x * model->scale_y;
 
-	MoffatProfile *sp = this;
-
-	/* We never convolve */
-	this->convolve = false;
+	FerrerProfile *sp = this;
 
 	/*
-	 * All the pre-calculations needed by the moffat profile (Ie, cos/sin ang, etc)
+	 * All the pre-calculations needed by the ferrer profile (Ie, cos/sin ang, etc)
 	 * We store these profile-global results in the profile structure itself
 	 * (it contains extra members to store these values) to avoid passing a long
 	 * list of values around every method call.
 	 */
-	moffat_initial_calculations(sp, model);
+	ferrer_initial_calculations(sp, model);
 
 	double scale = pixel_area * sp->_ie;
 
@@ -272,18 +277,18 @@ void MoffatProfile::evaluate(double *image) {
 				continue;
 			}
 
-			_image_to_moffat_coordinates(sp, x, y, &x_ser, &y_ser);
+			_image_to_ferrer_coordinates(sp, x, y, &x_ser, &y_ser);
 
 			/*
-			 * No need for further refinement, return moffat profile
+			 * No need for further refinement, return ferrer profile
 			 * TODO: the radius calculation doesn't take into account boxing
 			 */
 			r_ser = sqrt(x_ser*x_ser + y_ser*y_ser);
-			if( sp->re_max > 0 && r_ser/sp->_re > sp->re_max ) {
+			if(r_ser > sp->re_max ) {
 				pixel_val = 0.;
 			}
-			else if( sp->rough || r_ser/sp->_re > sp->re_switch ){
-				pixel_val = _moffat_for_xy_r(sp, x_ser, y_ser, r_ser, true);
+			else if( sp->rough || r_ser/sp->rout > sp->re_switch ){
+				pixel_val = _ferrer_for_xy_r(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
 
@@ -292,7 +297,7 @@ void MoffatProfile::evaluate(double *image) {
 				unsigned int max_recursions = center ? 10 : sp->max_recursions;
 
 				/* Subsample and integrate */
-				pixel_val =  _moffat_sumpix(sp,
+				pixel_val =  _ferrer_sumpix(sp,
 				                           x - half_xbin, x + half_xbin,
 				                           y - half_ybin, y + half_ybin,
 				                           0, max_recursions, resolution);
@@ -307,20 +312,21 @@ void MoffatProfile::evaluate(double *image) {
 }
 
 /**
- * The moffat creation function
+ * The ferrer creation function
  */
-MoffatProfile::MoffatProfile() :
+FerrerProfile::FerrerProfile() :
 	Profile()
 {
 
-	MoffatProfile *p = this;
+	FerrerProfile *p = this;
 
 	/* Sane defaults */
 	p->xcen = 0;
 	p->ycen = 0;
 	p->mag = 15;
-	p->fwhm = 3;
-	p->con= 2;
+	p->rout= 3;
+	p->a= 1;
+	p->b= 1;
 	p->box = 0;
 	p->ang   = 0.0;
 	p->axrat = 1.;
@@ -339,10 +345,13 @@ MoffatProfile::MoffatProfile() :
 	 * possible. In that case the user will have to provide their own functions.
 	 */
 #if defined(HAVE_GSL)
+	p->_gammafn = &gsl_sf_gamma;
 	p->_beta    = &gsl_sf_beta;
 #elif defined(HAVE_R)
+	p->_gammafn = &Rf_gammafn;
 	p->_beta    = &Rf_beta;
 #else
+	p->_gammafn = NULL;
 	p->_beta = NULL;
 #endif
 

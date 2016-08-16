@@ -9,6 +9,7 @@ OBJECTS = libprofit/src/profit.o \
           libprofit/src/convolve.o \
           libprofit/src/utils.o \
           libprofit/src/moffat.o \
+          libprofit/src/ferrer.o \
           r_profit.o \
           ProFit.o \
           RcppExports.o \

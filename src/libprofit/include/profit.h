@@ -27,6 +27,12 @@
 #ifndef _PROFIT_H_
 #define _PROFIT_H_
 
+/* M_PI is not part of C/C++, but usually there */
+#include <cmath>
+#ifndef M_PI
+#  define M_PI 3.14159265358979323846
+#endif
+
 #include <exception>
 #include <string>
 #include <vector>
