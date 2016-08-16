@@ -24,7 +24,6 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <algorithm>
 
@@ -35,7 +34,6 @@
  * the appropriate function pointers after creating them.
  */
 #if defined(HAVE_GSL)
-#include <gsl/gsl_cdf.h>
 #include <gsl/gsl_sf_gamma.h>
 #elif defined(HAVE_R)
 #define R_NO_REMAP
@@ -54,33 +52,41 @@ namespace profit
  *
  * The ferrer profile has this form:
  *
- * (1-r_factor^(2-b))^(a)
- 
- * where r_factor = (r/re)
- *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
- *              b = box parameter
+ * (1-r_factor)^(a)
  *
- * Reducing:
- *  r_factor = ((x/re)^{2+b} + (y/re)^{2+b})^{1/(2+b)}
+ * where r_factor = (r/re)^(2-b)
+ *              r = (x^{2+B} + y^{2+B})^{1/(2+B)}
+ *              B = box parameter
  */
- 
+
 
 /*
  * The main ferrer evaluation function for a given X/Y coordinate
  */
-inline
+static inline
 double _ferrer_for_xy_r(FerrerProfile *sp,
                         double x, double y,
                         double r, bool reuse_r) {
 
-    double r_factor = (sp->box == 0) ?
-               sqrt(x*x + y*y)/sp->rout :
-               (pow(pow(abs(x),2.+sp->box)+pow(abs(y),2.+sp->box),1./(2.+sp->box)) ) / sp->rout;
-    if(r_factor<1){
-      return pow(1-pow(r_factor,2-sp->b),sp->a);
-    }else{
-      return 0;
-    }
+	double r_factor;
+	if( reuse_r && sp->box == 0 ) {
+		r_factor = r;
+	}
+	else if( sp->box == 0 ) {
+		r_factor = sqrt(x*x + y*y);
+	}
+	else {
+		double box = sp->box + 2.;
+		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
+	}
+
+	r_factor /= sp->rout;
+	if( r_factor < 1 ) {
+		return pow(1 - pow(r_factor, 2 - sp->b), sp->a);
+	}
+	else {
+		return 0;
+	}
 }
 
 static inline
@@ -119,10 +125,11 @@ double _ferrer_sumpix(FerrerProfile *sp,
 			subval = _ferrer_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _ferrer_for_xy_r(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
+				double delta_y_ser = (-xbin*sp->_sin_ang + ybin*sp->_cos_ang)/sp->axrat;
+				testval = _ferrer_for_xy_r(sp, abs(x_ser), abs(y_ser) + abs(delta_y_ser), 0, false);
 				if( abs(testval/subval - 1.0) > sp->acc ) {
 					subval = _ferrer_sumpix(sp,
-                                  x - half_xbin, x + half_xbin,
+					                        x - half_xbin, x + half_xbin,
 					                        y - half_ybin, y + half_ybin,
 					                        recur_level + 1, max_recursions,
 					                        resolution);
@@ -143,7 +150,7 @@ double _ferrer_sumpix(FerrerProfile *sp,
 static inline
 void ferrer_initial_calculations(FerrerProfile *sp, Model *model) {
 
-  double rout = sp->rout;
+	double rout = sp->rout;
 	double a = sp->a;
 	double b = sp->b;
 	double axrat = sp->axrat;
@@ -157,7 +164,7 @@ void ferrer_initial_calculations(FerrerProfile *sp, Model *model) {
 	 * later to calculate the exact contribution of each pixel.
 	 * We save bn back into the profile because it's needed later.
 	 */
-	
+
 	/*
 	 * lumtot comes from Wolfram Alpha: "integrate between 0 and 1 x(1-x^c)^(a)"
 	 * replacement was then made using c=2-b
@@ -165,8 +172,8 @@ void ferrer_initial_calculations(FerrerProfile *sp, Model *model) {
 	 * Further scaling by axrat and Rbox.
 	 */
 	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
-  double lumtot = pow(rout, 2) * M_PI * (sp->_gammafn(a+1)*sp->_gammafn((4-b)/(2-b))/
-                  (sp->_gammafn(sp->a+2/(2-b)+1))) * axrat/Rbox;
+	double lumtot = pow(rout, 2) * M_PI * (sp->_gammafn(a+1)*sp->_gammafn((4-b)/(2-b))/
+	                (sp->_gammafn(sp->a+2/(2-b)+1))) * axrat/Rbox;
 	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
@@ -243,7 +250,7 @@ void FerrerProfile::evaluate(double *image) {
 	double half_xbin = model->scale_x/2.;
 	double half_ybin = model->scale_x/2.;
 	double pixel_area = model->scale_x * model->scale_y;
-	
+
 	FerrerProfile *sp = this;
 
 	/*

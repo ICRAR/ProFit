@@ -24,7 +24,6 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <algorithm>
 
@@ -276,7 +275,8 @@ double _sersic_sumpix(SersicProfile *sp,
 			subval = _sersic_for_xy_r<boxy, t>(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _sersic_for_xy_r<boxy, t>(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
+				double delta_y_ser = (-xbin*sp->_sin_ang + ybin*sp->_cos_ang)/sp->axrat;
+				testval = _sersic_for_xy_r<boxy, t>(sp, abs(x_ser), abs(y_ser) + abs(delta_y_ser), 0, false);
 				if( abs(testval/subval - 1.0) > sp->acc ) {
 					subval = _sersic_sumpix<boxy, t>(sp,
 					                                 x - half_xbin, x + half_xbin,

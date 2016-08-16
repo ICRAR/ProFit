@@ -30,11 +30,11 @@
 #include <vector>
 
 #include "convolve.h"
+#include "ferrer.h"
+#include "moffat.h"
 #include "profit.h"
 #include "psf.h"
 #include "sersic.h"
-#include "moffat.h"
-#include "ferrer.h"
 #include "sky.h"
 #include "utils.h"
 

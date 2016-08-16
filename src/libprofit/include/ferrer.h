@@ -62,14 +62,14 @@ public:
 	/* Used to avoid outer regions */
 	double re_max;
 
-    /* Gamma function and distribution to use */
-    double (*_gammafn)(double);
-    double (*_beta)(double, double);
-    
-    /* These are internally calculated profile init */
-    double _ie;
-    double _cos_ang;
-    double _sin_ang;
+	/* Gamma function and distribution to use */
+	double (*_gammafn)(double);
+	double (*_beta)(double, double);
+
+	/* These are internally calculated profile init */
+	double _ie;
+	double _cos_ang;
+	double _sin_ang;
 
 };
 

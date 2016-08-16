@@ -24,7 +24,6 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <algorithm>
 
@@ -35,7 +34,7 @@
  * the appropriate function pointers after creating them.
  */
 #if defined(HAVE_GSL)
-#include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sf_gamma.h>
 #elif defined(HAVE_R)
 #define R_NO_REMAP
 #include <Rmath.h>
@@ -54,7 +53,7 @@ namespace profit
  * The moffat profile has this form:
  *
  * (1+r_factor^2)^(-c)
- 
+ *
  * where r_factor = (r/re)
  *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
  *              b = box parameter
@@ -87,6 +86,7 @@ void _image_to_moffat_coordinates(MoffatProfile *sp, double x, double y, double 
 	*y_ser /= sp->axrat;
 }
 
+static inline
 double _moffat_sumpix(MoffatProfile *sp,
                       double x0, double x1, double y0, double y1,
                       unsigned int recur_level, unsigned int max_recursions,
@@ -114,10 +114,11 @@ double _moffat_sumpix(MoffatProfile *sp,
 			subval = _moffat_for_xy_r(sp, x_ser, y_ser, 0, false);
 
 			if( recurse ) {
-				testval = _moffat_for_xy_r(sp, x_ser, abs(y_ser) + abs(ybin*sp->_cos_ang/sp->axrat), 0, false);
+				double delta_y_ser = (-xbin*sp->_sin_ang + ybin*sp->_cos_ang)/sp->axrat;
+				testval = _moffat_for_xy_r(sp, abs(x_ser), abs(y_ser) + abs(delta_y_ser), 0, false);
 				if( abs(testval/subval - 1.0) > sp->acc ) {
 					subval = _moffat_sumpix(sp,
-                                  x - half_xbin, x + half_xbin,
+					                        x - half_xbin, x + half_xbin,
 					                        y - half_ybin, y + half_ybin,
 					                        recur_level + 1, max_recursions,
 					                        resolution);
@@ -152,8 +153,8 @@ void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
 	 * We save bn back into the profile because it's needed later.
 	 */
 	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
-    double re = sp->_re = fwhm/(2*sqrt(pow(2,(1/con))-1));
-    double lumtot = pow(re, 2) * M_PI * axrat/(con-1)/Rbox;
+	double re = sp->_re = fwhm/(2*sqrt(pow(2,(1/con))-1));
+	double lumtot = pow(re, 2) * M_PI * axrat/(con-1)/Rbox;
 	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
 
 	/*
@@ -241,11 +242,11 @@ void MoffatProfile::evaluate(double *image) {
 	double half_xbin = model->scale_x/2.;
 	double half_ybin = model->scale_x/2.;
 	double pixel_area = model->scale_x * model->scale_y;
-	
+
 	MoffatProfile *sp = this;
 
-    /* We never convolve */
-    this->convolve = false;
+	/* We never convolve */
+	this->convolve = false;
 
 	/*
 	 * All the pre-calculations needed by the moffat profile (Ie, cos/sin ang, etc)
