@@ -24,6 +24,7 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <algorithm>
 
@@ -372,10 +373,9 @@ void sersic_initial_calculations(SersicProfile *sp, Model *model) {
 		}
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
-		double acc = 0.4 / nser;
+		double acc = 0.2 / nser;
 		acc = max(0.1, acc) / axrat;
 		sp->acc = acc;
-
 	}
 
 	/*
@@ -471,11 +471,11 @@ void _evaluate(SersicProfile *sp, Model *model, double *image) {
 				pixel_val = _sersic_for_xy_r<boxy, t>(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
-
-				bool center = abs(x - sp->xcen) < 1. && abs(y - sp->ycen) < 1.;
-				unsigned int resolution = center ? 8 : sp->resolution;
-				unsigned int max_recursions = center ? 10 : sp->max_recursions;
-
+        if( sp->nser > 1 ) {
+				  bool center = abs(x - sp->xcen) < 1. && abs(y - sp->ycen) < 1.;
+				  unsigned int resolution = center ? 8 : sp->resolution;
+				  unsigned int max_recursions = center ? 10 : sp->max_recursions;
+        }
 				/* Subsample and integrate */
 				pixel_val =  _sersic_sumpix<boxy, t>(sp,
 				                                     x - half_xbin, x + half_xbin,

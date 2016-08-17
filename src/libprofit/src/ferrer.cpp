@@ -205,7 +205,7 @@ void ferrer_initial_calculations(FerrerProfile *sp, Model *model) {
 		}
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
-		sp->acc = 0.1/axrat;
+		// sp->acc = 0.1/axrat;
 
 	}
 
@@ -291,11 +291,6 @@ void FerrerProfile::evaluate(double *image) {
 				pixel_val = _ferrer_for_xy_r(sp, x_ser, y_ser, r_ser, true);
 			}
 			else {
-
-				bool center = abs(x - sp->xcen) < 1. && abs(y - sp->ycen) < 1.;
-				unsigned int resolution = center ? 8 : sp->resolution;
-				unsigned int max_recursions = center ? 10 : sp->max_recursions;
-
 				/* Subsample and integrate */
 				pixel_val =  _ferrer_sumpix(sp,
 				                           x - half_xbin, x + half_xbin,
@@ -332,7 +327,7 @@ FerrerProfile::FerrerProfile() :
 	p->axrat = 1.;
 	p->rough = false;
 
-	p->acc = 0.1;
+	p->acc = 1;
 	p->re_switch = 1.;
 	p->resolution = 9;
 	p->max_recursions = 2;
