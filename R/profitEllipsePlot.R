@@ -8,6 +8,7 @@ profitEllipse=function(x, y, flux, xcen=0, ycen=0, ang=0, axrat=1, box=0){
     y=temp[,2]
     flux=as.numeric(z)
   }
+  if(!is.numeric(box)) box = 0
   rad=sqrt((x-xcen)^2+(y-ycen)^2)
   angrad=-ang*pi/180
   angmod=atan2((x-xcen),(y-ycen))-angrad
