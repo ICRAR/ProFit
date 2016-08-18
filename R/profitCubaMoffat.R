@@ -9,7 +9,7 @@
 
 .profitMoffat=function(r=1, fwhm=3, con=2){
   rd = fwhm/(2*sqrt(2^(1/con)-1))
-  intenr = 1/((1+(r/rd)^2)^con)
+  intenr = (1+(r/rd)^2)^-con
   return(intenr)
 }
 
