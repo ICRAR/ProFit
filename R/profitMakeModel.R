@@ -17,9 +17,7 @@ profitMakeModel = function(modellist,
   profilenames = c("sersic","moffat","ferrer")
   componentnames = c(profilenames,"pointsource")
   for(wcname in componentnames) {
-    if(is.null(whichcomponents[[wcname]])) {
-      whichcomponents[[wcname]] = c()
-    } else if(whichcomponents[[wcname]] == "all") {
+    if(is.null(whichcomponents[[wcname]]) || (whichcomponents[[wcname]] == "all")) {
       whichcomponents[[wcname]] = 1:length(modellist[[wcname]]$xcen)
     }
   }
@@ -114,7 +112,7 @@ profitMakeModel = function(modellist,
 	# Collect the profiles that the user specified
 	for(cname in profilenames) {
 	  ncomponents = 0
-	  if(!is.null(modellist[[cname]])) ncomponents = length(modellist[[cname]])
+	  if(!is.null(modellist[[cname]])) ncomponents = length(modellist[[cname]]$xcen)
 	  ncomptodo = length(whichcomponents[[cname]])
 	  if((ncomponents > 0) && (ncomptodo > 0)) {
 	    stopifnot((max(whichcomponents[[cname]]) <= ncomponents) && (min(whichcomponents[[cname]]) >= 1))

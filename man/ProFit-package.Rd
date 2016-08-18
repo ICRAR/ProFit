@@ -239,9 +239,9 @@ optimfit$par
 
 # Check it out:
 
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
 modeloptim=profitRemakeModelList(optimfit$par,Data$model,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
@@ -259,9 +259,9 @@ LAfit$Summary1[,1]
 
 # Check it out:
 
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
 modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$model,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
@@ -284,7 +284,7 @@ cmafit$par
 
 # The fit plots:
 
-profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(cmafit$par,Data,makeplots=TRUE)
 
 # Now we can try a LaplacesDemon fit:
 
@@ -313,9 +313,9 @@ BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
 
 # We can now check our final fit:
 
-profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=1)
-profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=2)
-profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
 modeloptim=profitRemakeModelList(BestLD,Data$model,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)

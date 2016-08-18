@@ -232,9 +232,9 @@ optimfit$par
 Check it out:
 
 ```{r, eval=FALSE}
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=1)
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp=2)
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 ```
 
 ```{r, eval=FALSE}
@@ -260,9 +260,9 @@ LAfit$Summary1[,1]
 Check it out:
 
 ```{r, eval=FALSE}
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=1)
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp=2)
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
 modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$model,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
@@ -288,7 +288,7 @@ cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
 cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
   fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
   diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
-profitLikeModel(cmafit$par,Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(cmafit$par,Data,makeplots=TRUE)
 ```
 
 `CMA-ES` sometimes takes longer than `LaplaceApproximation` - depending on the convergence criterion specified by `stop.tolx` - but it usually finds a better fit, and can be run many times to avoid becoming trapped in local minima. Alternately, you may wish to use the faster `LaplaceApproximation` first, redefine your priors, and then run `CMA-ES` to search around the `LaplaceApproximation` best fit.
@@ -331,9 +331,9 @@ BestLD=magtri(LDfit$Posterior1, samples=1000, samptype='end')
 We can now check our final fit:
 
 ```{r, eval=FALSE}
-profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=1)
-profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp=2)
-profitLikeModel(BestLD,Data,makeplots=TRUE,serscomp='all')
+profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
 modeloptim=profitRemakeModelList(BestLD,Data$model,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
@@ -354,7 +354,7 @@ Note that profitSetupData automagically fine-sampled the PSF by interpolation. U
 Let's check to see how the fine-sampled model looks:
 
 ```{r, eval=FALSE}
-profitLikeModel(BestLD,Dataf,makeplots=TRUE,serscomp='all')
+profitLikeModel(BestLD,Dataf,makeplots=TRUE,whichcomponents=list(sersic='all'))
 ```
 
 That doesn't look so different, but let's run `LaplaceApproximation` again to see how the best-fit parameters changed:
@@ -368,7 +368,7 @@ LAfitf=LaplaceApproximation(profitLikeModel, parm=LAfit$Summary1[,1], Data=Dataf
 Does the new best fit look slightly better? It should:
 
 ```{r, eval=FALSE}
-profitLikeModel(LAfitf$Summary1[,1],Dataf,makeplots=TRUE,serscomp='all')
+profitLikeModel(LAfitf$Summary1[,1],Dataf,makeplots=TRUE)
 ```
 
 Now run `LaplacesDemon` again, with fewer iterations to begin with (as it's slower to convolve):
@@ -387,5 +387,5 @@ LDfit$Summary2
 LDfitf$Summary2
 
 BestLDf=magtri(LDfit$Posterior1, samptype='end')
-profitLikeModel(BestLDf,Dataf,makeplots=TRUE,serscomp='all')
+profitLikeModel(BestLDf,Dataf,makeplots=TRUE)
 ```
