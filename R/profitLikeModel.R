@@ -94,21 +94,27 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   }
   
   #Force like.func to be lower case:
-  Data$like.func=tolower(Data$like.func)
+  Data$like.func=profitParseLikefunc(tolower(Data$like.func))
   
   #Various allowed likelihoods:
-  cutsig=(cutim-cutmod)/cutsig
-  vardata = var(cutsig)
-  dof=2*vardata/(vardata-1)
-  if(Data$like.func=="norm" | Data$like.func=="normal"){
+  isnorm = Data$like.func == "norm"
+  ischisq = Data$like.func == "chisq"
+  ist = Data$like.func == "t"
+  dof = 1
+  if(isnorm || ischisq || ist) {
+    cutsig=(cutim-cutmod)/cutsig
+  }
+  if(isnorm){
     LL=sum(dnorm(cutsig, log=TRUE))
-  } else if(Data$like.func=="chisq" | Data$like.func=="chi-sq") {
+  } else if(ischisq) {
     ndata = length(cutim)
     LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
-  } else if(Data$like.func=="t" | Data$like.func=='student' | Data$like.func=='student-t') {
+  } else if(ist) {
+    vardata = var(cutsig)
+    dof=2*vardata/(vardata-1)
     dof=interval(dof,0,Inf)
     LL=sum(dt(cutsig,dof,log=TRUE))
-  } else if(Data$like.func=="pois" | Data$like.func=="poisson" | Data$like.func=="cash" | Data$like.func=="c") {
+  } else if(Data$like.func=="pois") {
     scale=max(abs(Data$image)/abs(Data$sigma)^2)
     if(scale<0.1 | scale>10){
       cutmod=cutmod*scale
@@ -125,11 +131,12 @@ profitLikeModel=function(parm, Data, makeplots=FALSE, serscomp='all', pscomp='al
   
   LP=as.numeric(LL+priorsum)
   parm = unlist(parm)
-  if(Data$verbose){print(c(parm,LP))}
+  if(Data$verbose){print(c(parm,LP),digits = 5)}
   if(Data$algo.func=='') return(list(model=model,psf=psf))
   if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}
   if(Data$algo.func=='LA' | Data$algo.func=='LD'){
-    out=list(LP=LP,Dev=-2*LL,Monitor=c(LL=LL,LP=LP,dof=dof),yhat=1,parm=parm)
+    if(ischisq) Monitor=c(LL=LL,LP=LP,dof=dof) else Monitor=c(LL=LL,LP=LP)
+    out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
   }
   return(out)
 }
