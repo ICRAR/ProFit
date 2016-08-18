@@ -1,6 +1,6 @@
 profitMakeModel = function(modellist,
                            magzero=0, psf=NULL, dim=c(100,100),
-                           serscomp='all', moffatcomp='all', ferrercomp='all', pscomp='all',
+                           whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"),
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
@@ -11,24 +11,21 @@ profitMakeModel = function(modellist,
 
   if(length(dim)==1){dim=rep(dim,2)}
 
-	# Some defaults...
-	rough = rough == TRUE
-	stopifnot(is.logical(rough) && length(rough) == 1)
-	if( serscomp=='all' ) {
-		serscomp = 1:length(modellist$sersic$xcen)
-	}
-	if( moffatcomp=='all' ) {
-		moffatcomp = 1:length(modellist$moffat$xcen)
-	}
-	if( ferrercomp=='all' ) {
-		ferrercomp = 1:length(modellist$ferrer$xcen)
-	}
-	if(pscomp=='all') {
-		pscomp = 1:length(modellist$pointsource$xcen)
-	}
-	if( missing(remax) ) {
-		remax = 0
-	}
+  # Some defaults...
+  rough = rough == TRUE
+  stopifnot(is.logical(rough) && length(rough) == 1)
+  profilenames = c("sersic","moffat","ferrer")
+  componentnames = c(profilenames,"pointsource")
+  for(wcname in componentnames) {
+    if(is.null(whichcomponents[[wcname]])) {
+      whichcomponents[[wcname]] = c()
+    } else if(whichcomponents[[wcname]] == "all") {
+      whichcomponents[[wcname]] = 1:length(modellist[[wcname]]$xcen)
+    }
+  }
+  if( missing(remax) ) {
+    remax = 0
+  }
 
 	# Regarding "psfpad" and "returncrop"
 	# ===================================
@@ -114,71 +111,38 @@ profitMakeModel = function(modellist,
 	stopifnot(!is.null(convopt$method) && is.character(convopt$method))
 	usebruteconv = convopt$method == "Bruteconv"
 
-	# Collect only the sersic profiles that the user specified
-	if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
-
-		# Copy them
-		profiles$sersic = list()
-		for( name in names(modellist$sersic) ) {
-			profiles$sersic[[name]] = c(unlist(as.numeric(modellist$sersic[[name]][serscomp])))
-		}
-
-		# Fix their magnitude if necessary
-		if( magmu & length(profiles$sersic[['mag']]) > 0 ) {
-			mag = profitMu2Mag(mu=profiles$sersic[['mag']], re=profiles$sersic[['re']], axrat=profiles$sersic[['axrat']])
-			profiles$sersic[['mag']] = mag
-		}
-
-		# Fix X/Y center of the sersic profile as needed
-		profiles$sersic[['xcen']] = profiles$sersic[['xcen']] + psfpad[1]/finesample
-		profiles$sersic[['ycen']] = profiles$sersic[['ycen']] + psfpad[2]/finesample
-
-		# Down in libprofit these values are specified per-profile instead of globally,
-		# so we simply replicate them here
-		profiles$sersic[['rough']] = rep(as.integer(rough), length(serscomp))
-		profiles$sersic[['acc']] = rep(acc, length(serscomp))
-		profiles$sersic[['re_max']] = rep(remax, length(serscomp))
-		profiles$sersic[['rescale_flux']] = rep(rescaleflux, length(serscomp))
-	}
-
-	# Collect only the moffat profiles that the user specified
-	if( length(modellist$moffat) > 0 && length(moffatcomp) > 0 ) {
-
-		# Copy them
-		profiles$moffat = list()
-		for( name in names(modellist$moffat) ) {
-			profiles$moffat[[name]] = c(unlist(as.numeric(modellist$moffat[[name]][moffatcomp])))
-		}
-
-		# Fix X/Y center of the moffat profile as needed
-		profiles$moffat[['xcen']] = profiles$moffat[['xcen']] + psfpad[1]/finesample
-		profiles$moffat[['ycen']] = profiles$moffat[['ycen']] + psfpad[2]/finesample
-
-		# Down in libprofit these values are specified per-profile instead of globally,
-		# so we simply replicate them here
-		profiles$moffat[['rough']] = rep(as.integer(rough), length(moffatcomp))
-		profiles$moffat[['acc']] = rep(acc, length(moffatcomp))
-		profiles$moffat[['re_max']] = rep(remax, length(moffatcomp))
-	}
-	
-	# Collect only the ferrer profiles that the user specified
-	if( length(modellist$ferrer) > 0 && length(ferrercomp) > 0 ) {
-
-		# Copy them
-		profiles$ferrer = list()
-		for( name in names(modellist$ferrer) ) {
-			profiles$ferrer[[name]] = c(unlist(as.numeric(modellist$ferrer[[name]][ferrercomp])))
-		}
-
-		# Fix X/Y center of the ferrer profile as needed
-		profiles$ferrer[['xcen']] = profiles$ferrer[['xcen']] + psfpad[1]/finesample
-		profiles$ferrer[['ycen']] = profiles$ferrer[['ycen']] + psfpad[2]/finesample
-
-		# Down in libprofit these values are specified per-profile instead of globally,
-		# so we simply replicate them here
-		profiles$ferrer[['rough']] = rep(as.integer(rough), length(ferrercomp))
-		profiles$ferrer[['acc']] = rep(acc, length(ferrercomp))
-		profiles$ferrer[['re_max']] = rep(remax, length(ferrercomp))
+	# Collect the profiles that the user specified
+	for(cname in profilenames) {
+	  ncomponents = 0
+	  if(!is.null(modellist[[cname]])) ncomponents = length(modellist[[cname]])
+	  ncomptodo = length(whichcomponents[[cname]])
+	  if((ncomponents > 0) && (ncomptodo > 0)) {
+	    stopifnot((max(whichcomponents[[cname]]) <= ncomponents) && (min(whichcomponents[[cname]]) >= 1))
+	    # Copy them
+	    profiles[[cname]] = list()
+	    for( name in names(modellist[[cname]]) ) {
+	      profiles[[cname]][[name]] = c(unlist(as.numeric(modellist[[cname]][[name]][whichcomponents[[cname]]])))
+	    }
+	    
+	    if(cname == "sersic") {
+	      # Convert mu to magnitude if necessary
+	      if( magmu & length(profiles$sersic[['mag']]) > 0 ) {
+	        mag = profitMu2Mag(mu=profiles$sersic[['mag']], re=profiles$sersic[['re']], axrat=profiles$sersic[['axrat']])
+	        profiles$sersic[['mag']] = mag
+	      }
+	    }
+	    # Adjust the X/Y center of the profile for padding and finesampling
+	    profiles[[cname]][['xcen']] = profiles[[cname]][['xcen']] + psfpad[1]/finesample
+	    profiles[[cname]][['ycen']] = profiles[[cname]][['ycen']] + psfpad[2]/finesample
+	    # Down in libprofit these values are specified per-profile instead of globally,
+	    # so we simply replicate them here
+	    profiles[[cname]][['rough']] = rep(as.integer(rough), ncomptodo)
+	    profiles[[cname]][['acc']] = rep(acc, ncomptodo)
+	    if(cname == "sersic") {
+	      profiles[[cname]][['rescale_flux']] = rep(rescaleflux, ncomptodo)
+	      profiles[[cname]][['re_max']] = rep(remax, ncomptodo)
+	    }
+	  }
 	}
 
 	# pointsource profiles are generated in two different ways:
@@ -200,7 +164,7 @@ profitMakeModel = function(modellist,
 
 		if( haspsfmodel ) {
 
-			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
+		  if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
 
 				submodel = modellist$psf
 				for(i in 1:length(modellist$pointsource)) {
@@ -234,14 +198,18 @@ profitMakeModel = function(modellist,
 							}
 							return(new_profiles)
 						}
-						if( comp == 'sersic' ) {
-							new_profiles = add_defaults(new_profiles, 'box', 0)
-							new_profiles = add_defaults(new_profiles, 'rough', F)
-							new_profiles = add_defaults(new_profiles, 'acc', acc)
-							new_profiles = add_defaults(new_profiles, 're_max', 0)
-							new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
+						if( comp %in% profilenames ) {
+						  new_profiles = add_defaults(new_profiles, 'ang', 0)
+						  new_profiles = add_defaults(new_profiles, 'axrat', 1)
+						  new_profiles = add_defaults(new_profiles, 'box', 0)
+						  new_profiles = add_defaults(new_profiles, 'rough', F)
+						  new_profiles = add_defaults(new_profiles, 'acc', acc)
+						  if(comp == "sersic") {
+						    new_profiles = add_defaults(new_profiles, 're_max', 0)
+						    new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
+						  }
 						}
-
+						
 						# Merge into the main list of profiles
 						for(name in c(names(modellist$comp), names(new_profiles))) {
 							profiles[[comp]][[name]] = c(profiles[[comp]][[name]], new_profiles[[name]])
@@ -252,11 +220,11 @@ profitMakeModel = function(modellist,
 		}
 
 		else {
-			if( length(modellist$pointsource) > 0 && length(pscomp) > 0 ) {
+		  if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
 
 				# Copy the values
 				for( name in names(modellist$pointsource) ) {
-					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][pscomp]))
+				  profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][whichcomponents$pointsource]))
 				}
 
 				# Fix X/Y center of the pointsource profile as needed
@@ -265,15 +233,12 @@ profitMakeModel = function(modellist,
 			}
 
 		  # Brute force convolve if a psf is given
-			if( length(modellist$sersic) > 0 && length(serscomp) > 0 ) {
-				profiles[['sersic']][['convolve']] = rep(usebruteconv, length(serscomp))
-			}
-		  if( length(modellist$moffat) > 0 && length(moffatcomp) > 0 ) {
-				profiles[['moffat']][['convolve']] = rep(usebruteconv, length(moffatcomp))
+		  for(pname in profilenames) {
+		    ncomp = length(whichcomponents[[pname]])
+		    if(length(modellist[[pname]]) > 0 && (ncomp > 0)) {
+		      profiles[[pname]][['convolve']] = rep(usebruteconv, ncomp)
+		    }
 		  }
-		  if( length(modellist$ferrer) > 0 && length(ferrercomp) > 0 ) {
-				profiles[['ferrer']][['convolve']] = rep(usebruteconv, length(ferrercomp))
-			}
 		}
 	}
 
