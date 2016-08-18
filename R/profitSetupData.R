@@ -48,12 +48,10 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
     newregion = matrix(0,dimcr[1]+2*psfpad[1],dimcr[2]+2*psfpad[2])
     newregion[(1+psfpad[1]):(dimcr[1]+psfpad[1]),(1+psfpad[2]):(dimcr[2]+psfpad[2])] = calcregion
     calcregion=profitConvolvePSF(newregion,psf+1)
-  } else {
-    calcregion = image
+    calcregion=calcregion>0
   }
   fitpsf = psftype == "analytical" && any(unlist(tofit$psf))
-  calcregion=calcregion>0
-  usecalcregion=TRUE
+  usecalcregion=haspsf
   
   if(haspsf & nbenchmark>0)
   {
