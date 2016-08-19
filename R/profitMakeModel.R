@@ -121,7 +121,7 @@ profitMakeModel = function(modellist,
 	    for( name in names(modellist[[cname]]) ) {
 	      profiles[[cname]][[name]] = c(unlist(as.numeric(modellist[[cname]][[name]][whichcomponents[[cname]]])))
 	    }
-	    
+
 	    if(cname == "sersic") {
 	      # Convert mu to magnitude if necessary
 	      if( magmu & length(profiles$sersic[['mag']]) > 0 ) {
@@ -207,7 +207,7 @@ profitMakeModel = function(modellist,
 						    new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
 						  }
 						}
-						
+
 						# Merge into the main list of profiles
 						for(name in c(names(modellist$comp), names(new_profiles))) {
 							profiles[[comp]][[name]] = c(profiles[[comp]][[name]], new_profiles[[name]])
