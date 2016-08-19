@@ -27,8 +27,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "psf.h"
-#include "utils.h"
+#include "profit/psf.h"
+#include "profit/utils.h"
 
 namespace profit
 {

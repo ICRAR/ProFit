@@ -24,7 +24,7 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "sky.h"
+#include "profit/sky.h"
 
 namespace profit {
 

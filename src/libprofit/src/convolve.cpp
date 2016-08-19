@@ -26,8 +26,6 @@
 
 #include <cstring>
 
-#include "convolve.h"
-
 namespace profit
 {
 

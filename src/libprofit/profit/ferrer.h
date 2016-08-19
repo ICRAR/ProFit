@@ -6,7 +6,7 @@
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Aaron Robotham
+ * Contributed by Aaron Robotham and Rodrigo Tobar
  *
  * This file is part of libprofit.
  *
@@ -26,50 +26,64 @@
 #ifndef _FERRER_H_
 #define _FERRER_H_
 
-#include "profit.h"
+#include "profit/radial.h"
 
 namespace profit
 {
 
-class FerrerProfile : public Profile {
+/**
+ * A Ferrer profile
+ *
+ * The ferrer profile has parameters ``rout``, ``a`` and ``b`` and is
+ * calculated as follows for coordinates x/y::
+ *
+ *    (1-r_factor)^(a)
+ *
+ * with::
+ *
+ *    r_factor = (r/rout)^(2-b)
+ *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
+ *           B = box parameter
+ */
+class FerrerProfile : public RadialProfile {
+
+protected:
+
+	/* All these are inherited from RadialProfile */
+	double get_lumtot(double r_box);
+	double get_rscale();
+	double adjust_acc();
+	double adjust_rscale_switch();
+	double adjust_rscale_max();
+	eval_function_t get_evaluation_function();
 
 public:
 
+	/**
+	 * Constructor
+	 */
 	FerrerProfile();
 
-	void validate();
-	void evaluate(double *image);
+	/*
+	 * -------------------------
+	 * Profile parameters follow
+	 * -------------------------
+	 */
 
-	/* General parameters */
-	double xcen;
-	double ycen;
-	double mag;
+	/**
+	 * The outer truncation radius
+	 */
 	double rout;
+
+	/**
+	 * The global power-law slope to the profile center
+	 */
 	double a;
+
+	/**
+	 * The strength of the truncation as the radius approaches ``rout``.
+	 */
 	double b;
-	double ang;
-	double axrat;
-	double box;
-
-	/* Used to control the subsampling */
-	bool rough;
-	double acc;
-	double re_switch;
-	unsigned int resolution;
-	unsigned int max_recursions;
-	bool adjust;
-
-	/* Used to avoid outer regions */
-	double re_max;
-
-	/* Gamma function and distribution to use */
-	double (*_gammafn)(double);
-	double (*_beta)(double, double);
-
-	/* These are internally calculated profile init */
-	double _ie;
-	double _cos_ang;
-	double _sin_ang;
 
 };
 
