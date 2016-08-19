@@ -5,7 +5,7 @@
 Check for Fine Sampling
 }
 \description{
-A simple convenience function. Probably not useful to the user, but used by multiple functions so it shoudl not be hidden.
+A simple convenience function. Probably not useful to the user, but used by multiple functions so it should not be hidden.
 }
 \usage{
 profitCheckFinesample(finesample)

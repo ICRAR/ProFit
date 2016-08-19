@@ -5,20 +5,21 @@ profitCheckFinesample <- function(finesample)
 
 profitParseLikefunc <- function(funcname)
 {
-  if(Data$like.func=="norm" | Data$like.func=="normal")
+  if(funcname=="norm" | funcname=="normal")
   {
     return("norm")
   }
-  else if(Data$like.func=="chisq" | Data$like.func=="chi-sq")
+  else if(funcname=="chisq" | funcname=="chi-sq")
   {
     return("chisq")
   }
-  else if(Data$like.func=="t" | Data$like.func=='student' | Data$like.func=='student-t') {
+  else if(funcname=="t" | funcname=='student' | funcname=='student-t') {
     return("t")
-  } else if(Data$like.func=="pois" | Data$like.func=="poisson" | Data$like.func=="cash" | Data$like.func=="c")
-  {
+  }
+  else if(funcname=="pois" | funcname=="poisson" | funcname=="cash" | funcname=="c") {
     return("pois")
-  } else {
+  }
+  else {
     stop(paste0("Error: unknown likelihood function: '",funcname,"'"))
   }
 }
