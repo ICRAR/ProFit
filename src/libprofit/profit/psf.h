@@ -1,12 +1,12 @@
 /**
- * Header file for moffat profile implementation
+ * Header file for PSF profile implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Aaron Robotham
+ * Contributed by Rodrigo Tobar
  *
  * This file is part of libprofit.
  *
@@ -23,57 +23,28 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _MOFFAT_H_
-#define _MOFFAT_H_
+#ifndef _PSF_H_
+#define _PSF_H_
 
-#include "profit.h"
+#include "profit/profit.h"
 
 namespace profit
 {
 
-class MoffatProfile : public Profile {
+class PsfProfile : public Profile {
 
 public:
-
-	MoffatProfile();
-
+	PsfProfile();
 	void validate();
 	void evaluate(double *image);
-
-	/* General parameters */
 	double xcen;
 	double ycen;
 	double mag;
-	double fwhm;
-	double con;
-	double ang;
-	double axrat;
-	double box;
 
-	/* Used to control the subsampling */
-	bool rough;
-	double acc;
-	double re_switch;
-	unsigned int resolution;
-	unsigned int max_recursions;
-	bool adjust;
-
-	/* Used to avoid outer regions */
-	double re_max;
-
-    /* Gamma function and distribution to use */
-    double (*_beta)(double, double);
-
-    /* These are internally calculated profile init */
-    double _ie;
-    double _cos_ang;
-    double _sin_ang;
-
-    /* re used to evaluate the profile */
-    double _re;
-
+	/* This is calculated from mag */
+	double scale;
 };
 
 } /* namespace profit */
 
-#endif /* _MOFFAT_H_ */
+#endif /* _PSF_H_ */

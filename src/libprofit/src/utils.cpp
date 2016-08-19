@@ -24,6 +24,21 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * We use either GSL or R to provide the low-level
+ * beta, gamma and pgamma and qgamma functions needed by some profiles.
+ * If neither is given the compilation should fail
+ */
+#if defined(HAVE_GSL)
+	#include <gsl/gsl_cdf.h>
+	#include <gsl/gsl_sf_gamma.h>
+#elif defined(HAVE_R)
+	#define R_NO_REMAP
+	#include <Rmath.h>
+#else
+	#error("No high-level library (GSL or R) provided")
+#endif
+
 namespace profit {
 
 void add_images(double *dest, double *src,
@@ -89,5 +104,48 @@ void normalize(double *image, unsigned int img_width, unsigned int img_height) {
 	}
 
 }
+
+/* GSL-based functions */
+#if defined(HAVE_GSL)
+double qgamma(double p, double shape) {
+	return gsl_cdf_gamma_Pinv(p, shape, 1);
+}
+
+double pgamma(double q, double shape) {
+	return gsl_cdf_gamma_P(q, shape, 1);
+}
+
+double gammafn(double x) {
+	return gsl_sf_gamma(x);
+}
+
+double beta(double a, double b) {
+	return gsl_sf_beta(a, b);
+}
+
+/* R-based functions -- get rid of simple R-exported names first */
+#elif defined(HAVE_R)
+#undef qgamma
+#undef pgamma
+#undef gammafn
+#undef beta
+
+double qgamma(double p, double shape) {
+	return ::Rf_qgamma(p, shape, 1, 1, 0);
+}
+
+double pgamma(double q, double shape) {
+	return ::Rf_pgamma(q, shape, 1, 1, 0);
+}
+
+double gammafn(double x) {
+	return ::Rf_gammafn(x);
+}
+
+double beta(double a, double b) {
+	return ::Rf_beta(a, b);
+}
+
+#endif
 
 } /* namespace profit */

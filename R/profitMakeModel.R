@@ -136,9 +136,9 @@ profitMakeModel = function(modellist,
 	    # so we simply replicate them here
 	    profiles[[cname]][['rough']] = rep(as.integer(rough), ncomptodo)
 	    profiles[[cname]][['acc']] = rep(acc, ncomptodo)
+	    profiles[[cname]][['rscale_max']] = rep(remax, ncomptodo)
 	    if(cname == "sersic") {
 	      profiles[[cname]][['rescale_flux']] = rep(rescaleflux, ncomptodo)
-	      profiles[[cname]][['re_max']] = rep(remax, ncomptodo)
 	    }
 	  }
 	}
@@ -202,8 +202,8 @@ profitMakeModel = function(modellist,
 						  new_profiles = add_defaults(new_profiles, 'box', 0)
 						  new_profiles = add_defaults(new_profiles, 'rough', F)
 						  new_profiles = add_defaults(new_profiles, 'acc', acc)
+						  new_profiles = add_defaults(new_profiles, 'rscale_max', 0)
 						  if(comp == "sersic") {
-						    new_profiles = add_defaults(new_profiles, 're_max', 0)
 						    new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
 						  }
 						}

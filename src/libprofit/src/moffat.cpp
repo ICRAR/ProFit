@@ -27,20 +27,7 @@
 #include <cmath>
 #include <algorithm>
 
-/*
- * We use either GSL or Rmath to provide the low-level
- * beta, gamma and qgamma_inv functions needed by the moffat profile.
- * If neither is given, the user will have to feed the profiles with
- * the appropriate function pointers after creating them.
- */
-#if defined(HAVE_GSL)
-#include <gsl/gsl_sf_gamma.h>
-#elif defined(HAVE_R)
-#define R_NO_REMAP
-#include <Rmath.h>
-#endif
-
-#include "moffat.h"
+#include "profit/moffat.h"
 
 using namespace std;
 
@@ -54,293 +41,65 @@ namespace profit
  *
  * (1+r_factor^2)^(-c)
  *
- * where r_factor = (r/re)
+ * where r_factor = (r/rscale)
  *              r = (x^{2+b} + y^{2+b})^{1/(2+b)}
  *              b = box parameter
  *
  * Reducing:
- *  r_factor = ((x/re)^{2+b} + (y/re)^{2+b})^{1/(2+b)}
+ *  r_factor = ((x/rscale)^{2+b} + (y/rscale)^{2+b})^{1/(2+b)}
  */
-
-/*
- * The main moffat evaluation function for a given X/Y coordinate
- */
-inline
-double _moffat_for_xy_r(MoffatProfile *sp,
+static
+double _moffat_for_xy_r(RadialProfile *sp,
                         double x, double y,
                         double r, bool reuse_r) {
 
-    double r_factor = (sp->box == 0) ?
-               sqrt(x*x + y*y)/sp->_re :
-               (pow(pow(abs(x),2.+sp->box)+pow(abs(y),2.+sp->box),1./(2.+sp->box)) ) / sp->_re;
-
-	return 1/(pow(1+pow(r_factor,2), sp->con));
-}
-
-static inline
-void _image_to_moffat_coordinates(MoffatProfile *sp, double x, double y, double *x_ser, double *y_ser) {
-	x -= sp->xcen;
-	y -= sp->ycen;
-	*x_ser =  x * sp->_cos_ang + y * sp->_sin_ang;
-	*y_ser = -x * sp->_sin_ang + y * sp->_cos_ang;
-	*y_ser /= sp->axrat;
-}
-
-static inline
-double _moffat_sumpix(MoffatProfile *sp,
-                      double x0, double x1, double y0, double y1,
-                      unsigned int recur_level, unsigned int max_recursions,
-                      unsigned int resolution) {
-
-	double xbin = (x1-x0) / resolution;
-	double ybin = (y1-y0) / resolution;
-	double half_xbin = xbin/2.;
-	double half_ybin = ybin/2.;
-	double total = 0, subval, testval;
-	double x , y, x_ser, y_ser;
-	unsigned int i, j;
-
-	bool recurse = resolution > 1 && recur_level < max_recursions;
-
-	/* The middle X/Y value is used for each pixel */
-	x = x0;
-	for(i=0; i < resolution; i++) {
-		x += half_xbin;
-		y = y0;
-		for(j=0; j < resolution; j++) {
-			y += half_ybin;
-
-			_image_to_moffat_coordinates(sp, x, y, &x_ser, &y_ser);
-			subval = _moffat_for_xy_r(sp, x_ser, y_ser, 0, false);
-
-			if( recurse ) {
-				double delta_y_ser = (-xbin*sp->_sin_ang + ybin*sp->_cos_ang)/sp->axrat;
-				testval = _moffat_for_xy_r(sp, abs(x_ser), abs(y_ser) + abs(delta_y_ser), 0, false);
-				if( abs(testval/subval - 1.0) > sp->acc ) {
-					subval = _moffat_sumpix(sp,
-					                        x - half_xbin, x + half_xbin,
-					                        y - half_ybin, y + half_ybin,
-					                        recur_level + 1, max_recursions,
-					                        resolution);
-				}
-			}
-
-			total += subval;
-			y += half_ybin;
-		}
-
-		x += half_xbin;
+	MoffatProfile *mp = static_cast<MoffatProfile *>(sp);
+	double r_factor;
+	if( mp->box == 0 ) {
+		r_factor = sqrt(x*x + y*y);
+	}
+	else {
+		double box = 2 + mp->box;
+		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./(box));
 	}
 
-	/* Average and return */
-	return total / (resolution * resolution);
+	r_factor /= mp->rscale;
+	return pow(1 + r_factor*r_factor, -mp->con);
 }
 
-static inline
-void moffat_initial_calculations(MoffatProfile *sp, Model *model) {
-
-	double con = sp->con;
-	double fwhm = sp->fwhm;
-	double axrat = sp->axrat;
-	double mag = sp->mag;
-	double box = sp->box + 2;
-	double magzero = model->magzero;
-	double angrad;
-
-	/*
-	 * Calculate the total luminosity used by the moffat profile, used
-	 * later to calculate the exact contribution of each pixel.
-	 * We save bn back into the profile because it's needed later.
-	 */
-	double Rbox = M_PI * box / (4*sp->_beta(1/box, 1 + 1/box));
-	double re = sp->_re = fwhm/(2*sqrt(pow(2,(1/con))-1));
-	double lumtot = pow(re, 2) * M_PI * axrat/(con-1)/Rbox;
-	sp->_ie = pow(10, -0.4*(mag - magzero))/lumtot;
-
-	/*
-	 * Optionally adjust the user-given re_switch (totally) and resolution
-	 * (partially) parameters to more sensible values that will result in faster
-	 * profile calculations.
-	 */
-	if( sp->adjust ) {
-
-		double re_switch;
-		unsigned int resolution;
-
-		/*
-		 * Find the point at which we capture most of the flux (sensible place
-		 * for upscaling). We make sure upscaling doesn't go beyond 20 pixels,
-		 * but don't let it become less than 1 pixel (means we do no worse than
-		 * GALFIT anywhere)
-		 */
-		re_switch = sp->fwhm*4;
-		re_switch = max(min(re_switch, 20.), 2.);
-
-		/*
-		 * Calculate a bound, adaptive upscale; if re is large then we don't need
-		 * so much upscaling
-		 */
-		resolution = (unsigned int)ceil(160 / re_switch);
-		resolution += resolution%2;
-		resolution = resolution > 16 ? 16 : resolution;
-		resolution = resolution <  4 ?  4 : resolution;
-
-		sp->re_switch = re_switch / re;
-		sp->resolution = resolution;
-
-		/*
-		 * If the user didn't give a re_max we calculate one that covers
-		 * %99.99 of the flux
-		 */
-		if( sp->re_max == 0 ) {
-			sp->re_max = sp->fwhm*8;
-		}
-
-		/* Adjust the accuracy we'll use for sub-pixel integration */
-		sp->acc = 0.1/axrat;
-
-	}
-
-	/*
-	 * Get the rotation angle in radians and calculate the coefficients
-	 * that will fill the rotation matrix we'll use later to transform
-	 * from image coordinates into moffat coordinates.
-	 *
-	 * In galfit the angle started from the Y image axis.
-	 */
-	angrad = fmod(sp->ang + 90, 360.) * M_PI / 180.;
-	sp->_cos_ang = cos(angrad);
-	sp->_sin_ang = sin(angrad);
-
-	/* Other way to get sin is doing: cos^2 + sin^2 = 1
-	 * sp->_sin_ang = sqrt(1. - cos_ang * cos_ang) * (angrad < M_PI ? -1. : 1.);
-	 * The performance seems pretty similar (measured on a x64 Linux with gcc and clang)
-	 * and doing sin() is more readable.
-	 */
-
+eval_function_t MoffatProfile::get_evaluation_function() {
+	return &_moffat_for_xy_r;
 }
 
-/**
- * The moffat validation function
- */
-void MoffatProfile::validate() {
-
-if( !this->_beta ) {
-		throw invalid_parameter("Missing beta function on moffat profile");
-	}
-
+double MoffatProfile::get_lumtot(double r_box) {
+	double con = this->con;
+	return pow(this->rscale, 2) * M_PI * axrat/(con-1)/r_box;
 }
 
-/**
- * The main moffat evaluation function
- */
-void MoffatProfile::evaluate(double *image) {
-
-	unsigned int i, j;
-	double x, y, pixel_val;
-	double x_ser, y_ser, r_ser;
-	double half_xbin = model->scale_x/2.;
-	double half_ybin = model->scale_x/2.;
-	double pixel_area = model->scale_x * model->scale_y;
-
-	MoffatProfile *sp = this;
-
-	/* We never convolve */
-	this->convolve = false;
-
-	/*
-	 * All the pre-calculations needed by the moffat profile (Ie, cos/sin ang, etc)
-	 * We store these profile-global results in the profile structure itself
-	 * (it contains extra members to store these values) to avoid passing a long
-	 * list of values around every method call.
-	 */
-	moffat_initial_calculations(sp, model);
-
-	double scale = pixel_area * sp->_ie;
-
-	/* The middle X/Y value is used for each pixel */
-	y = 0;
-	for(j=0; j < model->height; j++) {
-		y += half_ybin;
-		x = 0;
-		for(i=0; i < model->width; i++) {
-			x += half_xbin;
-
-			/* We were instructed to ignore this pixel */
-			if( model->calcmask && !model->calcmask[i + j*model->width] ) {
-				x += half_xbin;
-				continue;
-			}
-
-			_image_to_moffat_coordinates(sp, x, y, &x_ser, &y_ser);
-
-			/*
-			 * No need for further refinement, return moffat profile
-			 * TODO: the radius calculation doesn't take into account boxing
-			 */
-			r_ser = sqrt(x_ser*x_ser + y_ser*y_ser);
-			if( sp->re_max > 0 && r_ser/sp->_re > sp->re_max ) {
-				pixel_val = 0.;
-			}
-			else if( sp->rough || r_ser/sp->_re > sp->re_switch ){
-				pixel_val = _moffat_for_xy_r(sp, x_ser, y_ser, r_ser, true);
-			}
-			else {
-				/* Subsample and integrate */
-				pixel_val =  _moffat_sumpix(sp,
-				                           x - half_xbin, x + half_xbin,
-				                           y - half_ybin, y + half_ybin,
-				                           0, max_recursions, resolution);
-			}
-
-			image[i + j*model->width] = scale * pixel_val;
-			x += half_xbin;
-		}
-		y += half_ybin;
-	}
-
+double MoffatProfile::get_rscale() {
+	return fwhm/(2*sqrt(pow(2,(1/con))-1));
 }
 
-/**
- * The moffat creation function
- */
+double MoffatProfile::adjust_rscale_switch() {
+	double rscale_switch = this->fwhm*4;
+	rscale_switch = max(min(rscale_switch, 20.), 2.);
+	return rscale_switch / this->rscale;
+}
+
+double MoffatProfile::adjust_rscale_max() {
+	return this->fwhm*8;
+}
+
+double MoffatProfile::adjust_acc() {
+	return 0.1/axrat;
+}
+
+
 MoffatProfile::MoffatProfile() :
-	Profile()
+	RadialProfile(),
+	fwhm(3), con(2)
 {
-
-	MoffatProfile *p = this;
-
-	/* Sane defaults */
-	p->xcen = 0;
-	p->ycen = 0;
-	p->mag = 15;
-	p->fwhm = 3;
-	p->con= 2;
-	p->box = 0;
-	p->ang   = 0.0;
-	p->axrat = 1.;
-	p->rough = false;
-
-	p->acc = 0.1;
-	p->re_switch = 1.;
-	p->resolution = 9;
-	p->max_recursions = 2;
-	p->adjust = true;
-
-	p->re_max = 0;
-
-	/*
-	 * Point to the corresponding implementation, or leave as NULL if not
-	 * possible. In that case the user will have to provide their own functions.
-	 */
-#if defined(HAVE_GSL)
-	p->_beta    = &gsl_sf_beta;
-#elif defined(HAVE_R)
-	p->_beta    = &Rf_beta;
-#else
-	p->_beta = NULL;
-#endif
-
+	// no-op
 }
 
 } /* namespace profit */

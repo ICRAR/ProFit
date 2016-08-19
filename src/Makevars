@@ -1,15 +1,16 @@
 CXX_STD = CXX11
 
-PKG_CPPFLAGS = -Ilibprofit/include  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R
+PKG_CPPFLAGS = -Ilibprofit  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R
 
-OBJECTS = libprofit/src/profit.o \
+OBJECTS = libprofit/src/convolve.o \
+          libprofit/src/ferrer.o \
+          libprofit/src/moffat.o \
+          libprofit/src/profit.o \
+          libprofit/src/psf.o \
+          libprofit/src/radial.o \
           libprofit/src/sersic.o \
           libprofit/src/sky.o \
-          libprofit/src/psf.o \
-          libprofit/src/convolve.o \
           libprofit/src/utils.o \
-          libprofit/src/moffat.o \
-          libprofit/src/ferrer.o \
           r_profit.o \
           ProFit.o \
           RcppExports.o \

@@ -26,53 +26,71 @@
 #ifndef _SERSIC_H_
 #define _SERSIC_H_
 
-#include "profit.h"
+#include "profit/radial.h"
 
 namespace profit
 {
 
-class SersicProfile : public Profile {
+/**
+ * A Sersic profile
+ *
+ * The ferrer profile has parameters ``nser`` and ``re`` and is calculated as
+ * follows for coordinates x/y::
+ *
+ *   e^{-bn * (r_factor - 1)}
+ *
+ * with::
+ *  r_factor = (r/re)^{1/nser}
+ *         r = (x^{2+b} + y^{2+b})^{1/(2+b)}
+ *         b = box parameter
+ *        bn = qgamma(0.5, 2*nser)
+ */
+class SersicProfile : public RadialProfile {
+
+protected:
+
+	/* All these are inherited from RadialProfile */
+	void initial_calculations();
+	void subsampling_params(double x, double y, unsigned int &res, unsigned int &max_rec);
+	double get_pixel_scale();
+
+	double get_lumtot(double r_box);
+	double get_rscale();
+	double adjust_acc();
+	double adjust_rscale_switch();
+	double adjust_rscale_max();
+	eval_function_t get_evaluation_function();
 
 public:
 
+	/**
+	 * Constructor
+	 */
 	SersicProfile();
 
-	void validate();
-	void evaluate(double *image);
+	/*
+	 * -------------------------
+	 * Profile parameters follow
+	 * -------------------------
+	 */
 
-	/* General parameters */
-	double xcen;
-	double ycen;
-	double mag;
+	/**
+	 * The effective radius
+	 */
 	double re;
+
+	/**
+	 * The sersic index
+	 */
 	double nser;
-	double ang;
-	double axrat;
-	double box;
 
-	/* Used to control the subsampling */
-	bool rough;
-	double acc;
-	double re_switch;
-	unsigned int resolution;
-	unsigned int max_recursions;
-	bool adjust;
-
-	/* Used to avoid outer regions */
-	double re_max;
+	/**
+	 * Rescale flux up to rscale_max or not
+	 */
 	bool rescale_flux;
 
-	/* Gamma function and distribution to use */
-	double (*_qgamma)(double p, double shape);
-	double (*_pgamma)(double q, double shape);
-	double (*_gammafn)(double);
-	double (*_beta)(double, double);
-
 	/* These are internally calculated profile init */
-	double _ie;
 	double _bn;
-	double _cos_ang;
-	double _sin_ang;
 	double _rescale_factor;
 
 };

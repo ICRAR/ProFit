@@ -29,14 +29,14 @@
 #include <string>
 #include <vector>
 
-#include "convolve.h"
-#include "ferrer.h"
-#include "moffat.h"
-#include "profit.h"
-#include "psf.h"
-#include "sersic.h"
-#include "sky.h"
-#include "utils.h"
+#include "profit/convolve.h"
+#include "profit/ferrer.h"
+#include "profit/moffat.h"
+#include "profit/profit.h"
+#include "profit/psf.h"
+#include "profit/sersic.h"
+#include "profit/sky.h"
+#include "profit/utils.h"
 
 using namespace std;
 

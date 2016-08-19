@@ -7,13 +7,13 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
-#include <convolve.h>
-#include <profit.h>
-#include <sersic.h>
-#include <moffat.h>
-#include <ferrer.h>
-#include <sky.h>
-#include <psf.h>
+#include <profit/convolve.h>
+#include <profit/ferrer.h>
+#include <profit/moffat.h>
+#include <profit/profit.h>
+#include <profit/psf.h>
+#include <profit/sersic.h>
+#include <profit/sky.h>
 
 using namespace profit;
 using namespace std;
@@ -119,12 +119,12 @@ void list_to_sersic(SEXP sersic_list, Profile *p, unsigned int idx) {
 
 	_read_bool(sersic_list, "rough",   idx, &(sp->rough));
 	_read_real(sersic_list, "acc",   idx, &(sp->acc));
-	_read_real(sersic_list, "re_switch",   idx, &(sp->re_switch));
+	_read_real(sersic_list, "rscale_switch",   idx, &(sp->rscale_switch));
 	_read_unsigned_int(sersic_list, "resolution",   idx, &(sp->resolution));
 	_read_unsigned_int(sersic_list, "max_recursions",   idx, &(sp->max_recursions));
 
 	_read_bool(sersic_list, "rescale_flux", idx, &(sp->rescale_flux));
-	_read_real(sersic_list, "re_max", idx, &(sp->re_max));
+	_read_real(sersic_list, "rscale_max", idx, &(sp->rscale_max));
 }
 
 static
@@ -142,11 +142,11 @@ void list_to_moffat(SEXP moffat_list, Profile *p, unsigned int idx) {
     
     _read_bool(moffat_list, "rough",   idx, &(sp->rough));
     _read_real(moffat_list, "acc",   idx, &(sp->acc));
-    _read_real(moffat_list, "re_switch",   idx, &(sp->re_switch));
+    _read_real(moffat_list, "rscale_switch",   idx, &(sp->rscale_switch));
     _read_unsigned_int(moffat_list, "resolution",   idx, &(sp->resolution));
     _read_unsigned_int(moffat_list, "max_recursions",   idx, &(sp->max_recursions));
   
-    _read_real(moffat_list, "re_max", idx, &(sp->re_max));
+    _read_real(moffat_list, "rscale_max", idx, &(sp->rscale_max));
 }
 
 static
@@ -165,11 +165,11 @@ void list_to_ferrer(SEXP ferrer_list, Profile *p, unsigned int idx) {
     
     _read_bool(ferrer_list, "rough",   idx, &(sp->rough));
     _read_real(ferrer_list, "acc",   idx, &(sp->acc));
-    _read_real(ferrer_list, "re_switch",   idx, &(sp->re_switch));
+    _read_real(ferrer_list, "rscale_switch",   idx, &(sp->rscale_switch));
     _read_unsigned_int(ferrer_list, "resolution",   idx, &(sp->resolution));
     _read_unsigned_int(ferrer_list, "max_recursions",   idx, &(sp->max_recursions));
   
-    _read_real(ferrer_list, "re_max", idx, &(sp->re_max));
+    _read_real(ferrer_list, "rscale_max", idx, &(sp->rscale_max));
 }
 
 static
