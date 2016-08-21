@@ -265,7 +265,7 @@ RadialProfile::RadialProfile() :
 	Profile(),
 	xcen(0), ycen(0),
 	mag(15), ang(0),
-	axrat(0), box(1),
+	axrat(1), box(0),
 	rough(false), acc(0.1),
 	rscale_switch(1), resolution(9),
 	max_recursions(2), adjust(true),

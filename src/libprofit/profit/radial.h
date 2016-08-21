@@ -62,7 +62,7 @@ protected:
 	 * evaluation phase. Subclasses might want to override this method to add
 	 * their own initialization steps.
 	 */
-	void initial_calculations();
+	virtual void initial_calculations();
 
 	/**
 	 * Calculates the ``res`` and ``max_rec`` subsampling parameters used for
@@ -70,7 +70,7 @@ protected:
 	 * Subclasses might want to override this method to provide different
 	 * initial subsampling logic.
 	 */
-	void subsampling_params(double x, double y, unsigned int &res, unsigned int &max_rec);
+	virtual void subsampling_params(double x, double y, unsigned int &res, unsigned int &max_rec);
 
 	/**
 	 * Returns the factor by which each resulting image pixel value must be
@@ -78,7 +78,7 @@ protected:
 	 * returns the pixel area multiplied by Ie, but subclasses might need to
 	 * rescale this.
 	 */
-	double get_pixel_scale();
+	virtual double get_pixel_scale();
 
 	/*
 	 * ------------------------------------------
