@@ -9,8 +9,8 @@
 
 .profitMoffat=function(r=1, fwhm=3, con=2){
   rd = fwhm/(2*sqrt(2^(1/con)-1))
-  intenr = (1+(r/rd)^2)^-con
-  return(intenr)
+  inten = (1+(r/rd)^2)^-con
+  return(inten)
 }
 
 .profitMoffatXY=function(args=c(0,0), xcen=0, ycen=0, fwhm=3, con=2, ang=0, axrat=1, box=0){

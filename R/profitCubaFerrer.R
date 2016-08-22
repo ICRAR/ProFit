@@ -7,9 +7,9 @@
 
 
 .profitFerrer=function(r=1, rout=3, a=1, b=1){
-  intenr = (1-(r/rout)^(2-b))^a
-  intenr[r>rout]=0
-  return(intenr)
+  inten = (1-(r/rout)^(2-b))^a
+  inten[r>rout]=0
+  return(inten)
 }
 
 .profitFerrerXY=function(args=c(0,0), xcen=0, ycen=0, rout=3, a=1, b=1, ang=0, axrat=1, box=0){
