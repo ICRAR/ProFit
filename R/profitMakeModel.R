@@ -18,7 +18,11 @@ profitMakeModel = function(modellist,
   componentnames = c(profilenames,"pointsource")
   for(wcname in componentnames) {
     if(is.null(whichcomponents[[wcname]]) || (whichcomponents[[wcname]] == "all")) {
-      whichcomponents[[wcname]] = 1:length(modellist[[wcname]]$xcen)
+      if(length(modellist[[wcname]]) > 0){
+        whichcomponents[[wcname]] = 1:length(modellist[[wcname]][[1]])
+      }else{
+        whichcomponents[[wcname]] = 0
+      }
     }
   }
   if( missing(remax) ) {
@@ -238,6 +242,10 @@ profitMakeModel = function(modellist,
 		    }
 		  }
 		}
+	}
+	
+	if ( length(modellist$sky) > 0 ){
+	  profiles[['sky']]=modellist$sky
 	}
 
 	# Build the top-level model structure
