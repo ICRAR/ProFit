@@ -12,7 +12,8 @@ Moffat Ferrer Functions
 This function computes the exact 2D pixel integrals for a given Ferrer model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialFerrer} computes the 1D radial flux intensity of the Ferrer profile along the major axis of the profile.
 }
 \usage{
-profitCubaFerrer(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, rout = 3, a = 1, b = 1, ang = 0, axrat = 1, box = 0, dim = c(25, 25), rel.tol = 0.001, abs.tol = 1e-10)
+profitCubaFerrer(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, rout = 3, a = 1, b = 1,
+ang = 0, axrat = 1, box = 0, dim = c(25, 25), rel.tol = 0.001, abs.tol = 1e-10)
 profitRadialFerrer(r = 1, mag = 15, rout = 3, a = 1, b = 1, ang = 0, axrat = 1, box = 0)
 }
 %- maybe also 'usage' for other objects documented here.
