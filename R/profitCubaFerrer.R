@@ -28,6 +28,11 @@
 return(cuhre(2, 1, .profitFerrerXY, xcen=xcen, ycen=ycen, rout=rout, a=a, b=b, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
 }
 
+profitRadialFerrer=function(r=1, mag=15, rout=3, a=1, b=1, ang=0, axrat=1, box=0){
+  return= .profitFerrer(r, rout=rout, a=a, b=b)*
+          .profitFerrerScale(mag=mag, rout=rout, a=a, b=b, axrat=axrat, box=box)
+}
+
 profitCubaFerrer=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rout=3, a=1, b=1, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
   if(length(dim)==1){dim=rep(dim,2)}
   xpix=0:(dim[1]-1)

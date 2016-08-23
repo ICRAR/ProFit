@@ -27,6 +27,12 @@
 return(cuhre(2, 1, .profitSersicXY, xcen=xcen, ycen=ycen, re=re, nser=nser, ang=ang, axrat=axrat, box=box, bn=bn, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
 }
 
+profitRadialSersic=function(r=1, mag=15, re=1, nser=4, ang=0, axrat=1, box=0){
+  bn= qgamma(0.5, 2 * nser)
+  return= .profitSersic(r, re=re, nser=nser, bn=bn)*
+          .profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, box=box, bn=bn)
+}
+
 profitCubaSersic=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, re=1, nser=4, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
   bn= qgamma(0.5, 2 * nser)
   xpix=0:(dim[1]-1)

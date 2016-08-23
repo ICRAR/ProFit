@@ -13,5 +13,5 @@ importFrom("graphics", "abline", "axis", "box", "contour", "hist",
              "layout", "legend", "lines", "par", "plot", "polygon")
 importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
              "median", "predict", "qgamma", "residuals", "rnorm",
-             "smooth.spline", "var")
+             "smooth.spline", "var", "integrate")
 importFrom("utils", "relist")

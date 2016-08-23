@@ -29,6 +29,11 @@
 return(cuhre(2, 1, .profitMoffatXY, xcen=xcen, ycen=ycen, fwhm=fwhm, con=con, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
 }
 
+profitRadialMoffat=function(r=1, mag=15, fwhm=3, con=2, ang=0, axrat=1, box=0){
+  return= .profitMoffat(r, fwhm=fwhm, con=con)*
+          .profitMoffatScale(mag=mag, fwhm=fwhm, con=con, axrat=axrat, box=box)
+}
+
 profitCubaMoffat=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, fwhm=3, con=2, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
   if(length(dim)==1){dim=rep(dim,2)}
   xpix=0:(dim[1]-1)
