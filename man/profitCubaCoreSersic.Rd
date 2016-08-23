@@ -2,6 +2,10 @@
 \alias{profitCoreSersic}
 \alias{profitCubaCoreSersic}
 \alias{profitRadialCoreSersic}
+\alias{Core-Sersic}
+\alias{CoreSersic}
+\alias{core-sersic}
+\alias{coresersic}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Core-Sersic Specific Functions

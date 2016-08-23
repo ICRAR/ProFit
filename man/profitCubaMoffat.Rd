@@ -2,6 +2,8 @@
 \alias{profitMoffat}
 \alias{profitCubaMoffat}
 \alias{profitRadialMoffat}
+\alias{Moffat}
+\alias{moffat}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Moffat Specific Functions

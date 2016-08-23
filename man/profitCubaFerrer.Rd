@@ -1,6 +1,9 @@
 \name{profitFerrer}
+\alias{profitFerrer}
 \alias{profitCubaFerrer}
 \alias{profitRadialFerrer}
+\alias{Ferrer}
+\alias{ferrer}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Moffat Ferrer Functions

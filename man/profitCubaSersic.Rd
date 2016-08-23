@@ -1,6 +1,9 @@
 \name{profitSersic}
+\alias{profitSersic}
 \alias{profitCubaSersic}
 \alias{profitRadialSersic}
+\alias{Sersic}
+\alias{sersic}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Sersic Specific Functions
