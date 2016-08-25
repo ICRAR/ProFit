@@ -246,6 +246,8 @@ profitMakeModel = function(modellist,
 	
 	if ( length(modellist$sky) > 0 ){
 	  profiles[['sky']]=modellist$sky
+	  # libprofit doesn't finesample the sky brightness at the moment
+	  if(finesample > 1) profiles$sky$bg = profiles$sky$bg/finesample^2
 	}
 
 	# Build the top-level model structure
@@ -263,21 +265,30 @@ profitMakeModel = function(modellist,
 
 	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)
 	# TODO: Remove this after adding FFTW convolution to libprofit. R's built-in FFT never seems to be faster so it can go
-	if(!usebruteconv) model$profiles$psf = NULL
+	if(!usebruteconv) {
+	  model$profiles$psf = NULL
+	  model$profiles$sky = NULL
+	}
 
 	# Go, go, go!
-	image = .Call("R_profit_make_model",model)
-	if( is.null(image) ) {
+	basemat = .Call("R_profit_make_model",model)
+	if( is.null(basemat) ) {
 		return(NULL)
 	}
+	dim(basemat) = dimbase
 	if(!usebruteconv) {
-	  if(!is.null(profiles$psf)) {
-	    model$profiles = list(psf=profiles$psf)
-	    image = image + .Call("R_profit_make_model",model)
-	  }
-	  image = profitConvolvePSF(image, psf, calcregion, docalcregion, options = convopt)
+    basemat = profitConvolvePSF(basemat, psf, calcregion, docalcregion, options = convopt)
+    # Re-add point sources/sky if they exist
+    model$profiles = list()
+    model$psf = NULL
+    if(!is.null(profiles$psf)) model$profiles$psf = profiles$psf
+    if(!is.null(profiles$sky)) model$profiles$sky = profiles$sky
+    if(length(model$profiles) > 0) {
+      # Work-around for now until this is fixed in libprofit
+      model$calcregion = T | calcregion
+      basemat = basemat + .Call("R_profit_make_model",model)
+    }
 	}
-	basemat = matrix(image, ncol=dimbase[2], byrow=F)
 
 	# Up to this point basemat has been convolved already
 	# That means that we're explicitly ignoring the convopt parameter
