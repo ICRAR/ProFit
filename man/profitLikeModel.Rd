@@ -10,7 +10,7 @@ This is the work-horse log-likelihood that we can use to assess the current fit.
 \usage{
 profitLikeModel(parm, Data, makeplots = FALSE,
 whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"),
-rough = FALSE, cmap = rev(colorRampPalette(brewer.pal(9,"RdYlBu"))(200)),
+rough = FALSE, cmap = rev(colorRampPalette(brewer.pal(9,"RdYlBu"))(100)),
 errcmap = cmap, plotchisq = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.

@@ -39,8 +39,9 @@
 }
 
 # Benchmarks convolution and covariance functions
-profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
-  imagedim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL, maxfftwplaneffort=0)
+profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10L,
+  methods = c("Bruteconv","FFTconv","FFTWconv"), imagedim=NULL, psfdim=NULL, 
+  refftpsf=FALSE, fftwplan=NULL,  maxfftwplaneffort=0)
 {
   data = .profitBenchmarkPrepData(image,psf,calcregion,imagedim,psfdim)
   imagedim = dim(data$image$z)
@@ -50,12 +51,12 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   cropimage = floor(imagedim/2)
   
   benchi = 1:nbench
-  nbenchibc2 = 10
-  benchibc2 = 1:nbenchibc2
-  benchibc2all = c()
-  if(nbench > 10) benchibc2all = 11:nbench
-  
-  names = c("Bruteconv","FFTconv","FFTWconv")
+  allmethods = c("Bruteconv","FFTconv","FFTWconv")
+  names = c()
+  for(method in methods) {
+    if(method %in% allmethods) names = c(names,method)
+  }
+  if(length(names) == 0) names=allmethods
   
   npsfpad = floor((imagedim - psfdim)/2)
   psfranges = list()
@@ -89,38 +90,41 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   bmi = 1
   times = numeric()
   times[bmi] = proc.time()[['elapsed']]
+  if("Bruteconv" %in% names) {
+    docalcregion = !is.null(calcregion)
+    for(i in benchi) imagebrutec1 = profitBruteConv(data$image$z,data$psf$z,data$calcregion,docalcregion)
   
-  docalcregion = !is.null(calcregion)
-  for(i in benchi) imagebrutec1 = profitBruteConv(data$image$z,data$psf$z,data$calcregion,docalcregion)
+    bmi = bmi + 1
+    times[bmi] = proc.time()[['elapsed']]
+  }
 
-  bmi = bmi + 1
-  times[bmi] = proc.time()[['elapsed']]
-
-  for(i in benchi)
-  {
-    if(refftpsf) psffftr = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=FALSE)
-    rimagepad = matrix(0,padimagedim[1],padimagedim[2])
-    rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
-    imagefftr = fft(rimagepad) * psffftr
-    imagefftr = Re(fft(imagefftr,inverse = TRUE)[cropx,cropy])/npadimage
+  if("FFTconv" %in% names) {
+    for(i in benchi)
+    {
+      if(refftpsf) psffftr = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=FALSE)
+      rimagepad = matrix(0,padimagedim[1],padimagedim[2])
+      rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
+      imagefftr = fft(rimagepad) * psffftr
+      imagefftr = Re(fft(imagefftr,inverse = TRUE)[cropx,cropy])/npadimage
+    }
+    bmi = bmi + 1
+    times[bmi] = proc.time()[['elapsed']]
   }
   
-  bmi = bmi + 1
-  times[bmi] = proc.time()[['elapsed']]
-  
-  for(i in benchi)
-  {
-    if(refftpsf) psffftw = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=TRUE,fftwplan = fftwplan)
-    rimagepad = matrix(0,padimagedim[1],padimagedim[2])
-    rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
-    imagefftw = FFT(rimagepad, plan=fftwplan) * psffftw
-    imagefftw = IFFT(imagefftw,plan=fftwplan)
-    dim(imagefftw) = padimagedim
-    imagefftw = Re(imagefftw[cropx,cropy])
+  if("FFTWconv" %in% names) {
+    for(i in benchi)
+    {
+      if(refftpsf) psffftw = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=TRUE,fftwplan = fftwplan)
+      rimagepad = matrix(0,padimagedim[1],padimagedim[2])
+      rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
+      imagefftw = FFT(rimagepad, plan=fftwplan) * psffftw
+      imagefftw = IFFT(imagefftw,plan=fftwplan)
+      dim(imagefftw) = padimagedim
+      imagefftw = Re(imagefftw[cropx,cropy])
+    }
+    bmi = bmi + 1
+    times[bmi] = proc.time()[['elapsed']]
   }
-      
-  bmi = bmi + 1
-  times[bmi] = proc.time()[['elapsed']]
   
   ntimes = length(times)
   tinms = 1000*(times[2:ntimes] - times[1:(ntimes-1)])/nbench
