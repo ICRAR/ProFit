@@ -10,6 +10,7 @@
 #include <profit/convolve.h>
 #include <profit/coresersic.h>
 #include <profit/ferrer.h>
+#include <profit/king.h>
 #include <profit/moffat.h>
 #include <profit/profit.h>
 #include <profit/psf.h>
@@ -199,6 +200,29 @@ void list_to_coresersic(SEXP coresersic_list, Profile *p, unsigned int idx) {
 }
 
 static
+void list_to_king(SEXP king_list, Profile *p, unsigned int idx) {
+	KingProfile *sp = static_cast<KingProfile *>(p);
+	sp->adjust = true;
+	_read_real(king_list, "xcen",  idx, &(sp->xcen));
+	_read_real(king_list, "ycen",  idx, &(sp->ycen));
+	_read_real(king_list, "mag",   idx, &(sp->mag));
+	_read_real(king_list, "rc",    idx, &(sp->rc));
+	_read_real(king_list, "rt",    idx, &(sp->rt));
+	_read_real(king_list, "a",  idx, &(sp->a));
+	_read_real(king_list, "ang",   idx, &(sp->ang));
+	_read_real(king_list, "axrat", idx, &(sp->axrat));
+	_read_real(king_list, "box",   idx, &(sp->box));
+
+	_read_bool(king_list, "rough",   idx, &(sp->rough));
+	_read_real(king_list, "acc",   idx, &(sp->acc));
+	_read_real(king_list, "rscale_switch",   idx, &(sp->rscale_switch));
+	_read_unsigned_int(king_list, "resolution",   idx, &(sp->resolution));
+	_read_unsigned_int(king_list, "max_recursions",   idx, &(sp->max_recursions));
+
+	_read_real(king_list, "rscale_max", idx, &(sp->rscale_max));
+}
+
+static
 void list_to_sky(SEXP sky_list, Profile *p, unsigned int idx) {
 	SkyProfile *sp = static_cast<SkyProfile *>(p);
 	_read_real(sky_list, "bg",  idx, &(sp->bg));
@@ -260,6 +284,11 @@ void _read_ferrer_profiles(Model &model, SEXP profiles_list) {
 static
 void _read_coresersic_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "coresersic", "xcen", &list_to_coresersic);
+}
+
+static
+void _read_king_profiles(Model &model, SEXP profiles_list) {
+	_read_profiles(model, profiles_list, "king", "xcen", &list_to_king);
 }
 
 static
@@ -346,6 +375,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
   _read_moffat_profiles(m, profiles);
   _read_ferrer_profiles(m, profiles);
   _read_coresersic_profiles(m, profiles);
+  _read_king_profiles(m, profiles);
 	_read_sky_profiles(m, profiles);
 	_read_psf_profiles(m, profiles);
 	if( !m.profiles.size() ) {
