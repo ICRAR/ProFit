@@ -1,20 +1,20 @@
-\name{profitFerrer}
-\alias{profitFerrer}
-\alias{profitCubaFerrer}
-\alias{profitRadialFerrer}
-\alias{Ferrer}
-\alias{ferrer}
+\name{profitKing}
+\alias{profitKing}
+\alias{profitCubaKing}
+\alias{profitRadialKing}
+\alias{King}
+\alias{king}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Ferrer Profile Specific Functions
+King Profile Specific Functions
 }
 \description{
-This function computes the exact 2D pixel integrals for a given Ferrer model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialFerrer} computes the 1D radial flux intensity of the Ferrer profile along the major axis of the profile.
+This function computes the exact 2D pixel integrals for a given King model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialKing} computes the 1D radial flux intensity of the King profile along the major axis of the profile.
 }
 \usage{
-profitCubaFerrer(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, rout = 3, a = 1, b = 1,
+profitCubaKing(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, rc = 1, rt = 3, a = 2,
 ang = 0, axrat = 1, box = 0, dim = c(25, 25), rel.tol = 0.001, abs.tol = 1e-10)
-profitRadialFerrer(r = 1, mag = 15, rout = 3, a = 1, b = 1, ang = 0, axrat = 1, box = 0)
+profitRadialKing(r=1, mag=15, rc=1, rt=3, a=2, ang=0, axrat=1, box=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,19 +25,19 @@ Scalar; x centre of the 2D Sersic profile (can be fractional pixel positions).
 Scalar; y centre of the 2D Sersic profile (can be fractional pixel positions).
 }
   \item{r}{
-Vector; the radius along the major axis at which to evalutate the flux intensity.  
+Vector; the radius along the major axis at which to evalutate the flux intensity.
 }
   \item{mag}{
-Scalar; total magnitude of the 2D Ferrer profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
+Scalar; total magnitude of the 2D King profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
 }
-  \item{rout}{
-Scalar; the outer limit of the Ferrer profile. Beyond this radius the profile is evaluated as zero.
+  \item{rc}{
+Scalar; the core radius of the King profile.
+}
+  \item{rt}{
+Scalar; the truncation radius of the King profile. Beyond this radius the profile is evaluated as zero.
 }
   \item{a}{
-Scalar; the global profile power-law slope. 0 would mean a flat top, and +ve increases in intensity towards the centre.
-}
-  \item{b}{
-Scalar; the strength of the profile truncation as it approaches \option{rout}. Must be less than 2. \option{b}=2 is a soft truncation, and \option{b}<2 (including -ve) is increasingly sharp.
+Scalar, the power-law of the King profile.
 }
   \item{ang}{
 Scalar; the orientation of the major axis of the Sersic profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang.
@@ -49,7 +49,7 @@ Scalar; axial ratio of the Sersic profile defined as minor-axis/major-axis, i.e.
 Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{dim}{
-Vector; the dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
+Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{rel.tol}{
 Scalar; the requested relative accuracy. Default, 0.001.
@@ -66,10 +66,10 @@ By ProFit convention the bottom-left part of the bottom-left pixel when plotting
 To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument refers to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
-\code{profitCubaFerrer}:
+\code{profitCubaKing}:
 Matrix; contains the flux values of the specified model image. Dimensions \option{dim}.
 
-\code{profitRadialFerrer}:
+\code{profitRadialKing}:
 Vector; same length as input \option{r}, specifying the flux intensity of the profile along the major axis.
 }
 \author{
@@ -79,13 +79,13 @@ Aaron Robotham
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaCoreSersic}}, \code{\link{profitCubaKing}}
+\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaCoreSersic}}, \code{\link{profitCubaFerrer}}
 }
 \examples{
-magimage(profitCubaFerrer())
-magimage(profitCubaFerrer(axrat=0.7, ang=30))
+magimage(profitCubaKing())
+magimage(profitCubaKing(axrat=0.7, ang=30))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ cubature }% use one of  RShowDoc("KEYWORDS")
-\keyword{ moffat }% __ONLY ONE__ keyword per line
+\keyword{ king }% __ONLY ONE__ keyword per line

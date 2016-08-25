@@ -5,16 +5,16 @@
   return(1/(10^(0.4 * (mag - magtot))))
 }
 
-.profitCoreSersicR=function(r=1, re=1, rb=1, nser=4, a=1, b=1, bn= qgamma(0.5, 2 * nser)){
-  inten.r=r*(1+(r/rb)^(-a))^(b/a)*
-        exp(-bn*(((r^a+rb^a)/re^a))^(1/(nser*a)))
-    return(inten.r)
-}
-
 .profitCoreSersic=function(r=1, re=1, rb=1, nser=4, a=1, b=1, bn= qgamma(0.5, 2 * nser)){
   inten=(1+(r/rb)^(-a))^(b/a)*
         exp(-bn*(((r^a+rb^a)/re^a))^(1/(nser*a)))
     return(inten)
+}
+
+.profitCoreSersicR=function(r=1, re=1, rb=1, nser=4, a=1, b=1, bn= qgamma(0.5, 2 * nser)){
+  inten=(1+(r/rb)^(-a))^(b/a)*
+        exp(-bn*(((r^a+rb^a)/re^a))^(1/(nser*a)))
+    return(r*inten)
 }
 
 .profitCoreSersicXY=function(args=c(0,0), xcen=0, ycen=0, re=1, rb=1, nser=4, a=1, b=1, ang=0, axrat=1, box=0, bn= qgamma(0.5, 2 * nser)){
