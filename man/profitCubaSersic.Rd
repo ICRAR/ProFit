@@ -6,7 +6,7 @@
 \alias{sersic}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Sersic Specific Functions
+Sersic Profile Specific Functions
 }
 \description{
 Useful functions related to the Moffat profile. \code{profitCubaSersic} computes the exact 2D pixel integrals for a given Sersic model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialSersic} computes the 1D radial flux intensity of the Sersic profile along the major axis of the profile.
@@ -64,7 +64,7 @@ To confuse things a bit, when R plots an image of a matrix it is transposed and 
 }
 \value{
 \code{profitCubaSersic}:
-Matrix; contains the flux values of the specified model image. Dimensions dim.
+Matrix; contains the flux values of the specified model image. Dimensions \option{dim}.
 
 \code{profitRadialSersic}:
 Vector; same length as input \option{r}, specifying the flux intensity of the profile along the major axis.
@@ -74,7 +74,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}
+\code{\link{profitMakeModel}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaCoreSersic}}, \code{\link{profitCubaKing}}
 }
 \examples{
 model = list(

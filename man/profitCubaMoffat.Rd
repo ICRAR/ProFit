@@ -6,7 +6,7 @@
 \alias{moffat}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Moffat Specific Functions
+Moffat Profile Specific Functions
 }
 \description{
 Useful functions related to the Moffat profile. \code{profitCubaMoffat} computes the exact 2D pixel integrals for a given Moffat model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialMoffat} computes the 1D radial flux intensity of the Moffat profile along the major axis of the profile.
@@ -28,7 +28,7 @@ Scalar; y centre of the 2D Sersic profile (can be fractional pixel positions).
 Vector; the radius along the major axis at which to evalutate the flux intensity.  
 }
   \item{mag}{
-Scalar;  total magnitude of the 2D Sersic profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
+Scalar;  total magnitude of the 2D Moffat profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
 }
   \item{fwhm}{
 Scalar; full width half max of the Moffat function.
@@ -64,7 +64,7 @@ To confuse things a bit, when R plots an image of a matrix it is transposed and 
 }
 \value{
 \code{profitCubaMoffat}:
-Matrix; contains the flux values of the specified model image. Dimensions dim.
+Matrix; contains the flux values of the specified model image. Dimensions \option{dim}.
 
 \code{profitRadialMoffat}:
 Vector; same length as input \option{r}, specifying the flux intensity of the profile along the major axis.
@@ -76,7 +76,7 @@ Aaron Robotham
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaCoreSersic}}
+\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaCoreSersic}}, \code{\link{profitCubaKing}}
 }
 \examples{
 magimage(profitCubaMoffat())

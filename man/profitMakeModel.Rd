@@ -9,9 +9,9 @@ Create an astronomical image containing model galaxies or point sources, with or
 }
 \usage{
 profitMakeModel(modellist, magzero = 0, psf=NULL, dim = c(100, 100),
-whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"),
-rough = FALSE, acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, 
-calcregion, docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE, 
+whichcomponents=list(sersic="all", moffat="all", ferrer="all" ,coresersic="all",
+pointsource="all"), rough = FALSE, acc = 0.1, finesample=1L, returnfine=FALSE,
+returncrop=TRUE, calcregion, docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE, 
 convopt=list(method="Bruteconv"))
 }
 %- maybe also 'usage' for other objects documented here.
