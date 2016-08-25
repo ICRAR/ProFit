@@ -37,7 +37,7 @@ Scalar; the outer limit of the Ferrer profile. Beyond this radius the profile is
 Scalar; the global profile power-law slope. 0 would mean a flat top, and +ve increases in intensity towards the centre.
 }
   \item{b}{
-Scalar; the strength of the profile truncation as it approaches \option{rout}.
+Scalar; the strength of the profile truncation as it approaches \option{rout}. Must be less than 2. \option{b}=2 is a soft truncation, and \option{b}<2 (including -ve) is increasingly sharp.
 }
   \item{ang}{
 Scalar; the orientation of the major axis of the Sersic profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang.
