@@ -8,9 +8,9 @@ Benchmark convolution of an image with a point spread function (PSF).
 This function will benchmark convolution of an image with a point spread function (PSF), returning results as well as a list of data stored by \code{\link{profitSetupData}} for optimizing calls to \code{\link{profitConvolvePSF}}.
 }
 \usage{
-profitBenchmarkConv(image=NULL, psf=NULL, calcregion=NULL, nbench=10L, 
-  imagedim=NULL, psfdim=NULL, refftpsf=FALSE, fftwplan=NULL, 
-  maxfftwplaneffort=0)
+profitBenchmarkConv(image=NULL, psf=NULL, calcregion=NULL, nbench=10L,
+  methods = c("Bruteconv","FFTconv","FFTWconv"), imagedim=NULL, psfdim=NULL, 
+  refftpsf=FALSE, fftwplan=NULL,  maxfftwplaneffort=0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,6 +25,9 @@ A logical matrix specifying regions of the image to avoid computing convolution 
 }
   \item{nbench}{
 Integer; the number of times to benchmark each method. Repeated convolutions can vary in running time for all kinds of reasons, so \option{nbench} >= 10 is recommended.
+}
+  \item{methods}{
+List of strings specifying which methods to test. Valid methods are Bruteconv", "FFTconv", and "FFTWconv". FFTconv is rarely fastest.
 }
   \item{imagedim}{
 Vector of dimensions of the image to create, if \option{image} is not provided.

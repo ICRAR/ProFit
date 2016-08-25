@@ -8,9 +8,10 @@ Setup ProFit Data
 This is a utility function to get the user inputs in the format required for model optimisation / fitting. It will format the PSF (if supplied) and benchmark the available convolution methods, caching any data required for efficient convolution (such as the PSF FFT). This function does all of the book-keeping required to convert the user data into the format required by ProFit.
 }
 \usage{
-profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals,
-psf=NULL, finesample=1L, magzero=0, algo.func='LA', like.func="student-t", verbose=FALSE,
-magmu=FALSE, nbenchmark=0L)
+profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals, psf=NULL,
+  finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t",
+  magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"),
+  verbose=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -45,7 +46,10 @@ Function list, using a similar list structure to \option{model}. These functions
 An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{model}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
 }
   \item{finesample}{
-An integer factor to determine how much finer of a grid the model image and PSF should be evaluated on. Because the PSF is discretized, convolution introduces additional discretization of the model, diminishing the accuracy of the convolved model. If this parameter is set to an integer greater than one, the model and PSF will be upsampled prior to convolution, and then downsampled after convolution. The fine sampling factor must be an integer to avoid non-integral re-binning artifacts when downsampling. Large finesample factors will significantly increase convolution time and accuracy, while moderately increasing model generation time and accuracy, so it is recommended to set \option{nbenchmark} to at least 10 when using this option and preferably 100.
+An integer factor to determine how much finer of a grid the model image and PSF should be evaluated on. Because the PSF is discretized, convolution introduces additional discretization of the model, diminishing the accuracy of the convolved model. If this parameter is set to an integer greater than one, the model and PSF (but see \option{psffinesampled}) will be upsampled prior to convolution, and then downsampled after convolution. The fine sampling factor must be an integer to avoid non-integral re-binning artifacts when downsampling. Large finesample factors will significantly increase convolution time and accuracy, while moderately increasing model generation time and accuracy, so it is recommended to set \option{nbenchmark} to at least a few when using this option.
+}
+  \item{psffinesampled}{
+  Logical, is the provided PSF already fine-sampled? If this flag is set and an empirical PSF is provided, it will not be interpolated even if \option{finesample} is greater than unity.
 }
   \item{magzero}{
 The magntiude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
@@ -54,16 +58,19 @@ The magntiude zero point, where values become scaled by the standard scale=10^(-
 Character string; the fitting functions being used. Allowed options are "optim", "CMA", "LA" and "LD". \code{profitLikeModel} uses the value of algo.func in the profit.data object to determine the type of output generated  for fitting purposes (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a single value. If set to "LA" or "LD" then a more complex structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algortithms available within R. In practice the user must ensure that this option is set correctly for the higher level function used to fit the image data.
 }
   \item{like.func}{
-Character string specifying the likelihood distribution function to use. Chi-Squared "chisq", Normal "norm", Poisson "pois" and Student-T "t" (default) are the currently supported options. Poisson uses the Cash (or C) statistic, and can be accessed identically using "cash" (or "c"). The default choice of the Student-T is probably sensible in the regime where the model is not a perfect reflection of the data- i.e. there are assymetric or spiral features that the models in ProFit will never be able to reproduce. These can cause high tension when using Normal statistics, but the use of the Student-T (with more mass in the distant wings) reduces the dominance of poorly fitting and un-fittable regions. The degrees of freedom (DoF) for the Student-T are evaluated from the data and model directly so as to maximise the likelihood. As such, in the regime of Normal statistics (where the data is truly Normal and well fitted by the model) the Student-T reduces to Normal likelihoods.
-}
-  \item{verbose}{
-Logical; if TRUE then the value of parameters currently being assessed will be printed to screen. Useful for prototyping, but typically this produces a lot of screen output and can slow the fitting process down significantly.
+Character string specifying the likelihood distribution function to use. Chi-Squared "chisq", Normal "norm", Poisson "pois" and Student-T "t" (default) are the currently supported options. Poisson uses the Cash (or C) statistic, and can be accessed identically using "cash" (or "c"). The default choice of the Student-T is probably sensible in the regime where the model is not a perfect reflection of the data- i.e. there are asymmetric or spiral features that the models in ProFit will never be able to reproduce. These can cause high tension when using Normal statistics, but the use of the Student-T (with more mass in the distant wings) reduces the dominance of poorly fitting and un-fittable regions. The degrees of freedom (DoF) for the Student-T are evaluated from the data and model directly so as to maximise the likelihood. As such, in the regime of Normal statistics (where the data is truly Normal and well fitted by the model) the Student-T reduces to Normal likelihoods.
 }
   \item{magmu}{
 Logical vector. If TRUE then the mag parameter in the input \option{model} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
 }
-  \item{nbenchmark}{
+  \item{nbenchmarkconv}{
   Integer; the number of times to benchmark the speed of the available convolution methods. The results of this benchmarking are saved, along with the optimal benchmarking method and any additional data required for efficient convolution (such as the FFT of the PSF, if it is not variable). Default 0 means no benchmarking is done, and brute force convolution is always used.
+  }
+  \item{benchmarkconvmethods}{
+  List of strings specifying which convolution methods to benchmark. See \code{profitBenchmarkConv} for details.
+}
+  \item{verbose}{
+  Logical; if TRUE then the value of parameters currently being assessed will be printed to screen. Useful for prototyping, but typically this produces a lot of screen output and can slow down the fitting process.
   }
 }
 \details{

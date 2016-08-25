@@ -1,7 +1,9 @@
 profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,intervals,psf=NULL,
-  finesample=1L,magzero=0, algo.func='LA', like.func="student-t", verbose=FALSE, magmu=FALSE, nbenchmark=0L){
+  finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", 
+  magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), 
+  verbose=FALSE) {
   profitCheckFinesample(finesample)
-  stopifnot(is.integer(nbenchmark) && nbenchmark >= 0L)
+  stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
   imagedim = dim(image)
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
   region = segim==segimkeep
@@ -28,7 +30,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
     {
       xeven = dimpsf[1]%%2==0
       yeven = dimpsf[2]%%2==0
-      if(finesample > 1L || xeven || yeven)
+      if(((finesample > 1L) && !psffinesampled)  || xeven || yeven)
       {
         xrange = seq(0.5*(1+xeven),dimpsf[1]-0.5*(1+xeven),1/finesample)
         yrange = seq(0.5*(1+yeven),dimpsf[2]-0.5*(1+yeven),1/finesample)
@@ -53,7 +55,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
   fitpsf = psftype == "analytical" && any(unlist(tofit$psf))
   usecalcregion=haspsf
   
-  if(haspsf & nbenchmark>0)
+  if(haspsf & nbenchmarkconv>0)
   {
     dimmodel = dim(modelimg$z)
     dimregion = dim(calcregion)
@@ -66,8 +68,10 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
       benchregion = calcregion
     }
     
-    benchcalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmark, calcregion = benchregion, refftpsf = fitpsf)
-    benchnocalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmark, fftwplan = benchcalc$fftwplan, refftpsf = fitpsf)
+    benchcalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmarkconv, calcregion = benchregion, 
+      refftpsf = fitpsf, methods = benchmarkconvmethods)
+    benchnocalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmarkconv, fftwplan = benchcalc$fftwplan, 
+      refftpsf = fitpsf, methods = benchmarkconvmethods)
     
     convopt = list()
     convusecalcregion = benchcalc$best$time < benchnocalc$best$time
@@ -93,12 +97,14 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
   init=init[which(unlist(tofit))]
   
   parm.names=names(init)
+  mon.names=c("LL","LP")
+  if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
   
   profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, model=model, psf=psf, psftype=psftype, fitpsf=fitpsf,
-                   algo.func=algo.func, mon.names=c("LL","LP","dof"), parm.names=parm.names, N=length(which(as.logical(region))), region=region,
+                   algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))), region=region,
                    calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
                    tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, like.func = like.func,
                    magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu)
   class(profit.data)="profit.data"
-  return=profit.data
+  return(profit.data)
 }
