@@ -341,12 +341,12 @@ profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 
 In the previous examples, the resolution of the convolved model was limited by the size of the pixels, since convolution can only spread flux from pixel-to-pixel. We can do better by sampling the model and PSF on a finer grid than the pixel scale ("fine-sampling"), through interpolation for empirical PSFs.
 
-To test this, set up the data again. This time we will fine-sample the model and PSF by a factor of 3, and take a few minutes to benchmark convolution methods:
+To test this, set up the data again. This time we will fine-sample the model and PSF by a factor of 3, taking a minute to benchmark convolution methods:
 
 ```{r,eval=FALSE}
 Dataf=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
   model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=10L, finesample=3L)
+  magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=3L, finesample=3L)
 ```
 
 Note that profitSetupData automagically fine-sampled the PSF by interpolation. Usually, brute-force convolution is faster than an FFT (which requires 2x padding to avoid artifacts), but it scales as finesample^4, so FFT is often faster with large images and/or PSFs.
