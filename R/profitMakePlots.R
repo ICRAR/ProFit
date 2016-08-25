@@ -37,7 +37,8 @@
 }
 
 profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE,
-  cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(200)), errcmap=cmap,
+  cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), 
+  errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
   plotchisq=FALSE, dofs) {
   Data = list(x=1:dim(image)[1],y=1:dim(image)[2],z=image)
   residual = image - modelimage
@@ -74,6 +75,7 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
   }
   else
   {
+    maxsigma = 5
     if(missing(dofs)){ndofs=0}else{ndofs = length(dofs)}
     if(ndofs>0) stopifnot(length(dofs) <= 2)
 
@@ -117,7 +119,9 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     errmap[!region & (errmap>maxerr)] = maxerr
     minerr = -maxerr
     errmap[!region & (errmap<minerr)] = minerr
-    magimage(errmap,magmap=FALSE,zlim=c(-3,3),col=errcmap)
+    errmap[errmap > maxsigma] = maxsigma
+    errmap[errmap < -maxsigma] = -maxsigma
+    magimage(errmap,magmap=FALSE,zlim=c(-maxsigma,maxsigma),col=errcmap)
     contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     legend('topleft',legend=bquote(chi*"=(Data-Model)"/sigma))
     
@@ -125,8 +129,8 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     pady=1
     breaks = seq(-maximg,maximg, length.out=length(cmap)+1)
     .profitImageScale(zlim=range(residuals), col=cmap, breaks = breaks, axis.pos=2, axis.padj=pady)
-    breaks = seq(-3, 3, length.out=length(cmap)+1)
-    .profitImageScale(zlim=c(-3,3), col=errcmap, breaks = breaks, axis.pos=2, axis.padj=pady)
+    breaks = seq(-maxsigma, maxsigma, length.out=length(cmap)+1)
+    .profitImageScale(zlim=c(-maxsigma,maxsigma), col=errcmap, breaks = breaks, axis.pos=2, axis.padj=pady)
     
     par(mar=parmar2)
     ndat = sum(region)

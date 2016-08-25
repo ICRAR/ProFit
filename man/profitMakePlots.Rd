@@ -9,7 +9,8 @@ Plots appropriately scaled data and model images, along with a residual (data-mo
 }
 \usage{
 profitMakePlots(image, modelimage, region, sigma, errischisq = FALSE, 
-cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(200)), errcmap = cmap, 
+cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)), 
+errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
 plotchisq = FALSE, dofs)
 }
 %- maybe also 'usage' for other objects documented here.
