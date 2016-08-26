@@ -35,21 +35,19 @@ void SkyProfile::validate() {
 
 void SkyProfile::evaluate(double *image) {
 
-	Model *model = this->model;
-
 	/* Setup a pointer to iterate over the calcmask, if any */
-	bool *mask_ptr = model->calcmask;
+	bool *mask_ptr = model.calcmask;
 	if( mask_ptr ) {
 		mask_ptr -= 1;
 	}
 
-	unsigned int i, size = model->width * model->height;
+	unsigned int i, size = model.width * model.height;
 
 	/* Fill the image with the background value */
 	for(i=0; i!=size; i++) {
 
 		/* Check the calculation mask and avoid pixel if necessary  */
-		if( model->calcmask ) {
+		if( model.calcmask ) {
 			mask_ptr++;
 			if( !*mask_ptr ) {
 				continue;
@@ -61,8 +59,8 @@ void SkyProfile::evaluate(double *image) {
 	}
 }
 
-SkyProfile::SkyProfile() :
-	Profile(),
+SkyProfile::SkyProfile(const Model &model) :
+	Profile(model),
 	bg(0.)
 {
 	// no-op

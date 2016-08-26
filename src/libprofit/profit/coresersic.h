@@ -55,15 +55,17 @@ protected:
 	double adjust_acc();
 	double adjust_rscale_switch();
 	double adjust_rscale_max();
-  void initial_calculations();
+	void initial_calculations();
 	eval_function_t get_evaluation_function();
 
 public:
 
 	/**
 	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
 	 */
-	CoreSersicProfile();
+	CoreSersicProfile(const Model &model);
 
 	/*
 	 * -------------------------
@@ -75,12 +77,12 @@ public:
 	 * The effective radius of the Sersic component
 	 */
 	double re;
-	
+
 	/**
 	 * The transition radius of the Sersic profile
 	 */
 	double rb;
-	
+
 	/**
 	 * The Sersic index of the Sersic profile
 	 */
@@ -95,7 +97,7 @@ public:
 	 * The inner power-law of the Core-Sersic.
 	 */
 	double b;
-	
+
 	/**
 	 * The Sersic bn.
 	 */

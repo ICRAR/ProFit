@@ -72,6 +72,38 @@ double gammafn(double x);
  */
 double beta(double a, double b);
 
+/**
+ * A function that can be integrated
+ *
+ * @param x The domain value used to evaluate the function
+ * @param params Additional parameters used to calculate the function
+ * @return The value of the integration function at `x`.
+ */
+typedef double (*integration_func_t)(double x, void *params);
+
+/**
+ * Integrates the function `f` on the semi-infinite interval (a, +Inf) using the
+ * QAG algorithm (originally from QUADPACK).
+ *
+ * @param f The function to integrate
+ * @param a The beginning of the integration interval
+ * @param params A void pointer to any extra data needed by `f`
+ * @return The integration result
+ */
+double integrate_qagi(integration_func_t f, double a, void *params);
+
+/**
+ * Integrates the function `f` on the defined interval (a, b) using the
+ * QAG algorithm (originally from QUADPACK).
+ *
+ * @param f The function to integrate
+ * @param a The beginning of the integration interval
+ * @param b The end of the integration interval
+ * @param params A void pointer to any extra data needed by `f`
+ * @return The integration result
+ */
+double integrate_qags(integration_func_t f, double a, double b, void *params);
+
 } /* namespace profit */
 
 #endif /* _UTILS_H_ */

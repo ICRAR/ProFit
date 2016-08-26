@@ -47,26 +47,26 @@ namespace profit
  *              B = box parameter
  */
 static
-double _ferrer_for_xy_r(RadialProfile *sp,
+double _ferrer_for_xy_r(const RadialProfile &sp,
                         double x, double y,
                         double r, bool reuse_r) {
 
-	FerrerProfile *fp = static_cast<FerrerProfile *>(sp);
+	const FerrerProfile &fp = static_cast<const FerrerProfile &>(sp);
 	double r_factor;
-	if( reuse_r && fp->box == 0 ) {
+	if( reuse_r && fp.box == 0 ) {
 		r_factor = r;
 	}
-	else if( fp->box == 0 ) {
+	else if( fp.box == 0 ) {
 		r_factor = sqrt(x*x + y*y);
 	}
 	else {
-		double box = fp->box + 2.;
+		double box = fp.box + 2.;
 		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	}
 
-	r_factor /= fp->rscale;
+	r_factor /= fp.rscale;
 	if( r_factor < 1 ) {
-		return pow(1 - pow(r_factor, 2 - fp->b), fp->a);
+		return pow(1 - pow(r_factor, 2 - fp.b), fp.a);
 	}
 	else {
 		return 0;
@@ -100,8 +100,8 @@ double FerrerProfile::adjust_acc() {
 	return this->acc;
 }
 
-FerrerProfile::FerrerProfile() :
-	RadialProfile(),
+FerrerProfile::FerrerProfile(const Model &model) :
+	RadialProfile(model),
 	rout(3), a(1), b(1)
 {
 	// this profile defaults to a different accuracy

@@ -65,8 +65,10 @@ public:
 
 	/**
 	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
 	 */
-	SersicProfile();
+	SersicProfile(const Model & model);
 
 	/*
 	 * -------------------------

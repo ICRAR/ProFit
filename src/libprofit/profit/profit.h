@@ -40,7 +40,7 @@
 namespace profit
 {
 
-/*
+/**
  * Exception class thrown when an invalid parameter has been supplied to either
  * a model or a specific profile.
  */
@@ -63,16 +63,21 @@ class Model;
 
 /**
  * The base profile class
- *
- * Specific profile structures *must* declare a profit_profile structure as its
- * first element, so the resulting memory can be addressed both as a generic
- * profit_profile or as the specific profile structure.
  */
 class Profile {
 
 public:
 
-	Profile();
+	/**
+	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
+	 */
+	Profile(const Model & model);
+
+	/**
+	 * Destructor
+	 */
 	virtual ~Profile() = 0;
 
 	/**
@@ -85,11 +90,18 @@ public:
 	/**
 	 * Performs the profile evaluation and saves the resulting image into
 	 * the given `image` array. This is the main function of the profile.
+	 *
+	 * @param image The array where image values need to be stored.
+	 *              Its size is `model->width` * `model->height`.
+	 *              The data is organized by rows first, columns later;
+	 *               i.e pixel (x,y) is accessed by `image[y*width + x]`
 	 */
 	virtual void evaluate(double *image) = 0;
 
-	/* A pointer to the model this profile belongs to */
-	Model *model;
+	/**
+	 * A (constant) reference to the model this profile belongs to
+	 */
+	const Model &model;
 
 	/**
 	 * Whether the resulting image of this profile should be convolved or not.
@@ -118,6 +130,7 @@ public:
 
 	/**
 	 * Constructor
+	 *
 	 * It creates a new model to which profiles can be added, and that can be
 	 * used to calculate an image.
 	 */
@@ -125,6 +138,7 @@ public:
 
 	/**
 	 * Destructor.
+	 *
 	 * It frees all the resources used by the given model, after which it cannot
 	 * be used anymore.
 	 */
@@ -134,8 +148,11 @@ public:
 	 * Creates a new profile for the given name and adds it to the given model.
 	 * On success, the new profile is created, added to the model,
 	 * and its reference is returned for further customization.
-	 * On failure (i.e., if a profile with the given name is not supported) NULL is
+	 * On failure (i.e., if a profile with the given name is not supported) `NULL` is
 	 * returned and no profile is added to the model.
+	 *
+	 * @param profile_name The name of the profile that should be created
+	 * @returns A new profile that corresponds to the given name; `NULL` otherwise.
 	 */
 	Profile *add_profile(std::string profile_name);
 
@@ -156,16 +173,18 @@ public:
 	unsigned int height;
 
 	/**
-	 * The horizontal scale used to convert pixels into image coordinates
+	 * The X scale; that is, the width of a single pixel in image coordinates
 	 */
 	double scale_x;
 
 	/**
-	 * The vertical scale used to convert pixels into image coordinates
+	 * The Y scale; that is, the height of a single pixel in image coordinates
 	 */
 	double scale_y;
 
-	/* The base magnitude applied to all models */
+	/**
+	 * The base magnitude applied to all models
+	 */
 	double magzero;
 
 	/**
@@ -184,17 +203,21 @@ public:
 	unsigned int psf_height;
 
 	/**
-	 * The horizontal scale used to convert psf pixels into image coordinates
+	 * The PSF's X scale; that is, the width of a single PSF pixel in image
+	 * coordinates
 	 */
 	double psf_scale_x;
 
 	/**
-	 * The vertical scale used to convert psf pixels into image coordinates
+	 * The PSF's Y scale; that is, the height of a single PSF pixel in image
+	 * coordinates
 	 */
 	double psf_scale_y;
 
-	/*
-	 * Used to limit the profile calculation only to a given area
+	/**
+	 * The calculation mask. If given it must be the same size of the expected
+	 * output image, and its values are used to limit the profile calculation
+	 * only to a given area (i.e., those cells where the value is ``true``).
 	 */
 	bool *calcmask;
 

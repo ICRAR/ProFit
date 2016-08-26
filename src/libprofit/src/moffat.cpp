@@ -49,22 +49,22 @@ namespace profit
  *  r_factor = ((x/rscale)^{2+b} + (y/rscale)^{2+b})^{1/(2+b)}
  */
 static
-double _moffat_for_xy_r(RadialProfile *sp,
+double _moffat_for_xy_r(const RadialProfile &sp,
                         double x, double y,
                         double r, bool reuse_r) {
 
-	MoffatProfile *mp = static_cast<MoffatProfile *>(sp);
+	const MoffatProfile &mp = static_cast<const MoffatProfile &>(sp);
 	double r_factor;
-	if( mp->box == 0 ) {
+	if( mp.box == 0 ) {
 		r_factor = sqrt(x*x + y*y);
 	}
 	else {
-		double box = 2 + mp->box;
+		double box = 2 + mp.box;
 		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./(box));
 	}
 
-	r_factor /= mp->rscale;
-	return pow(1 + r_factor*r_factor, -mp->con);
+	r_factor /= mp.rscale;
+	return pow(1 + r_factor*r_factor, -mp.con);
 }
 
 eval_function_t MoffatProfile::get_evaluation_function() {
@@ -95,8 +95,8 @@ double MoffatProfile::adjust_acc() {
 }
 
 
-MoffatProfile::MoffatProfile() :
-	RadialProfile(),
+MoffatProfile::MoffatProfile(const Model &model) :
+	RadialProfile(model),
 	fwhm(3), con(2)
 {
 	// no-op

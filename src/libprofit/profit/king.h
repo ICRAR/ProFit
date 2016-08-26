@@ -62,8 +62,10 @@ public:
 
 	/**
 	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
 	 */
-	KingProfile();
+	KingProfile(const Model &model);
 
 	/*
 	 * -------------------------
@@ -75,7 +77,7 @@ public:
 	 * The effective radius of the Sersic component
 	 */
 	double rc;
-	
+
 	/**
 	 * The transition radius of the Sersic profile
 	 */

@@ -37,7 +37,20 @@ namespace profit
 {
 
 class RadialProfile;
-typedef double (*eval_function_t)(RadialProfile *, double, double, double, bool);
+
+/**
+ * The signature that all evaluation functions must follow.
+ * Each profile uses a different evaluation function and provides it to the
+ * RadialProfile for evaluation.
+ *
+ * @param profile The profile to evaluate
+ * @param x The X profile coordinate to evaluate
+ * @param y The Y profile coordinate to evaluate
+ * @param r The pre-calculated radius of the profile for coordinate `(x,y)`
+ * @param reuse_r Whether the value of `r` is valid (and can be reused) or not.
+ * @return The value of the profile at the given point
+ */
+typedef double (*eval_function_t)(const RadialProfile &profile, double x, double y, double r, bool reuse_r);
 
 /**
  * The case class for radial profiles.
@@ -144,17 +157,103 @@ private:
 
 public:
 
-	RadialProfile();
+	/**
+	 * Constructor.
+	 *
+	 * @param model The model this profile belongs to
+	 */
+	RadialProfile(const Model &);
+
+	/*
+	 * ---------------------------------------------
+	 * Pure virtual functions implementations follow
+	 * ---------------------------------------------
+	 */
 	void validate();
 	void evaluate(double *image);
 
-	/* General parameters */
+	/*
+	 * -------------------------
+	 * Profile parameters follow
+	 * -------------------------
+	 */
+
+	/**
+	 * The X center of this profile, in image coordinates
+	 */
 	double xcen;
+
+	/**
+	 * The Y center of this profile, in image coordinates
+	 */
 	double ycen;
+
+	/**
+	 * The magnitude of this profile.
+	 */
 	double mag;
+
+	/**
+	 * The angle by which this profile is rotated. 0 is north, positive is
+	 * counterclockwise.
+	 */
 	double ang;
+
+	/**
+	 * The ratio between the two axes, expressed as minor/major.
+	 */
 	double axrat;
+
+	/**
+	 * The *boxiness* of this profile.
+	 */
 	double box;
+
+	/*
+	 * ---------------------------------------
+	 * Sub-pixel integration parameters follow
+	 * ---------------------------------------
+	 */
+
+	/**
+	 * Whether perform sub-pixel integration or not.
+	 */
+	bool rough;
+
+	/**
+	 * Target accuracy to achieve during sub-pixel integration
+	 */
+	double acc;
+
+	/**
+	 * Radius (relative to `rscale`) under which sub-pixel integration should
+	 * take place
+	 */
+	double rscale_switch;
+
+	/**
+	 * Resolution of the sub-pixel integration: each area to be sub-integrated
+	 * is divided in `resolution * resolution` cells.
+	 */
+	unsigned int resolution;
+
+	/**
+	 * Maximum number of recursions that the sub-pixel integration algorithm
+	 * should undertake.
+	 */
+	unsigned int max_recursions;
+
+	/**
+	 * Whether this profile should adjust the sub-pixel integration parameters
+	 * automatically based on the profile parameters
+	 */
+	bool adjust;
+
+	/**
+	 * Radius (relative to `rscale`) after which the profile is not evaluated
+	 * anymore
+	 */
+	double rscale_max;
 
 	/*
 	 * radius scale, profiles provide it in different ways
@@ -162,16 +261,6 @@ public:
 	 */
 	double rscale;
 
-	/* Used to control the subsampling */
-	bool rough;
-	double acc;
-	double rscale_switch;
-	unsigned int resolution;
-	unsigned int max_recursions;
-	bool adjust;
-
-	/* Used to avoid outer regions */
-	double rscale_max;
 
 #ifdef PROFIT_DEBUG
 	/* record of how many subintegrations we've done */

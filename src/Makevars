@@ -3,7 +3,7 @@ CXX_STD = CXX11
 PKG_CPPFLAGS = -Ilibprofit  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R
 
 OBJECTS = libprofit/src/convolve.o \
-					libprofit/src/coresersic.o \
+          libprofit/src/coresersic.o \
           libprofit/src/ferrer.o \
           libprofit/src/king.o \
           libprofit/src/moffat.o \

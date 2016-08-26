@@ -35,12 +35,13 @@ namespace profit
 
 void PsfProfile::validate()  {
 
-	if( !this->model->psf ) {
+	if( !this->model.psf ) {
 		throw invalid_parameter("No psf present in the model, cannot produce a psf profile");
 	}
 
 }
 
+static inline
 unsigned int bind(double value, unsigned int max) {
 	int intval = static_cast<int>(floor(value));
 	if( intval < 0 ) {
@@ -56,17 +57,17 @@ void PsfProfile::evaluate(double *image) {
 	unsigned int i, pix_x, pix_y;
 	double x, y, psf_x, psf_y;
 	double total = 0;
-	double scale = pow(10, -0.4*(this->mag - this->model->magzero));
+	double scale = pow(10, -0.4*(this->mag - this->model.magzero));
 
 	/* Making the code more readable */
-	double scale_x = model->scale_x;
-	double scale_y = model->scale_y;
-	double psf_scale_x = model->psf_scale_x;
-	double psf_scale_y = model->psf_scale_y;
-	unsigned int width = model->width;
-	unsigned int height = model->height;
-	unsigned int psf_width = model->psf_width;
-	unsigned int psf_height = model->psf_height;
+	double scale_x = model.scale_x;
+	double scale_y = model.scale_y;
+	double psf_scale_x = model.psf_scale_x;
+	double psf_scale_y = model.psf_scale_y;
+	unsigned int width = model.width;
+	unsigned int height = model.height;
+	unsigned int psf_width = model.psf_width;
+	unsigned int psf_height = model.psf_height;
 
 	/* Where we start/end applying the psf into the target image */
 	double origin_x = this->xcen - psf_width*psf_scale_x/2.;
@@ -125,7 +126,7 @@ void PsfProfile::evaluate(double *image) {
 					 */
 					double intersect_x = std::min(x + scale_x, psf_x + psf_scale_x) - std::max(x, psf_x);
 					double intersect_y = std::min(y + scale_y, psf_y + psf_scale_y) - std::max(y, psf_y);
-					val += model->psf[psf_pix_x + psf_pix_y*psf_width] * (intersect_x * intersect_y)/(psf_scale_x * psf_scale_y);
+					val += model.psf[psf_pix_x + psf_pix_y*psf_width] * (intersect_x * intersect_y)/(psf_scale_x * psf_scale_y);
 
 				}
 			}
@@ -148,8 +149,8 @@ void PsfProfile::evaluate(double *image) {
 
 }
 
-PsfProfile::PsfProfile() :
-	Profile(),
+PsfProfile::PsfProfile(const Model &model) :
+	Profile(model),
 	xcen(0),
 	ycen(0),
 	mag(0)
