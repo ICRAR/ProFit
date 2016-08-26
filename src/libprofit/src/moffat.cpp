@@ -87,7 +87,7 @@ double MoffatProfile::adjust_rscale_switch() {
 }
 
 double MoffatProfile::adjust_rscale_max() {
-	return this->fwhm*8;
+	return 8;
 }
 
 double MoffatProfile::adjust_acc() {

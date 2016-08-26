@@ -32,6 +32,7 @@
 #include "profit/convolve.h"
 #include "profit/coresersic.h"
 #include "profit/ferrer.h"
+#include "profit/king.h"
 #include "profit/moffat.h"
 #include "profit/profit.h"
 #include "profit/psf.h"
@@ -101,6 +102,9 @@ Profile* Model::add_profile(string profile_name) {
 	}
 	else if ( profile_name == "ferrer" ) {
 		profile = static_cast<Profile *>(new FerrerProfile());
+	}
+	else if ( profile_name == "king" ) {
+		profile = static_cast<Profile *>(new KingProfile());
 	}
 	else if ( profile_name == "coresersic" ) {
 		profile = static_cast<Profile *>(new CoreSersicProfile());

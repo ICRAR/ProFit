@@ -85,11 +85,11 @@ double FerrerProfile::get_lumtot(double r_box) {
 }
 
 double FerrerProfile::adjust_rscale_switch() {
-	return this->rout*4;
+	return 0.5;
 }
 
 double FerrerProfile::adjust_rscale_max() {
-	return this->rout;
+	return 1;
 }
 
 double FerrerProfile::get_rscale() {

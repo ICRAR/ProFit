@@ -116,7 +116,7 @@ double KingProfile::get_lumtot(double r_box) {
   int *iwork = new int[limit];
   double *work = new double[lenw];
   double result, abserr;
-  double a= 0, b= rt, epsabs = 1e-4, epsrel = 1e-4;
+  double a= 0, b= this->rt, epsabs = 1e-4, epsrel = 1e-4;
   ::Rdqags(&king_int, this, &a, &b,
             &epsabs, &epsrel, &result, &abserr, &neval, &ier,
             &limit, &lenw, &last,
@@ -128,11 +128,11 @@ double KingProfile::get_lumtot(double r_box) {
 }
 
 double KingProfile::adjust_rscale_switch() {
-	return this->rt*4;
+	return 0.5;
 }
 
 double KingProfile::adjust_rscale_max() {
-	return this->rt;
+	return 1;
 }
 
 double KingProfile::get_rscale() {

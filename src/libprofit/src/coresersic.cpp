@@ -131,11 +131,11 @@ void CoreSersicProfile::initial_calculations() {
 }
 
 double CoreSersicProfile::adjust_rscale_switch() {
-	return this->re*4;
+	return 1;
 }
 
 double CoreSersicProfile::adjust_rscale_max() {
-	return this->re*100;
+	return 100;
 }
 
 double CoreSersicProfile::get_rscale() {
