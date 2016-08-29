@@ -6,17 +6,13 @@
 }
 
 .profitKing=function(r=1, rc=1, rt=3, a=2){
-  temp=1/(1+(rt/rc)^2)^(1/a)
-  inten = (1-temp)^(-a)*
-          (1/(1+(r/rc)^2)^(1/a)-temp)^a
+  inten = (1/(1+(r/rc)^2)^(1/a)-1/(1+(rt/rc)^2)^(1/a))^a
   inten[r>rt]=0
   return(inten)
 }
 
 .profitKingR=function(r=1, rc=1, rt=3, a=2){
-  temp=1/(1+(rt/rc)^2)^(1/a)
-  inten = (1-temp)^(-a)*
-          (1/(1+(r/rc)^2)^(1/a)-temp)^a
+  inten = (1/(1+(r/rc)^2)^(1/a)-1/(1+(rt/rc)^2)^(1/a))^a
   inten[r>rt]=0
   return(r*inten)
 }

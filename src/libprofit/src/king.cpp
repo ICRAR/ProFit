@@ -66,8 +66,7 @@ double _king_for_xy_r(const RadialProfile &sp,
 	}
 
 	if( r_factor < kp.rt ) {
-		double temp = 1/pow(1 + pow(kp.rt/kp.rc, 2), 1/kp.a);
-		return pow(1-temp, -kp.a) * pow(1/pow(1 + pow(r_factor/kp.rc, 2), 1/kp.a) - temp, kp.a);
+		return pow(1/pow(1 + pow(r_factor/kp.rc, 2), 1/kp.a) - 1/pow(1 + pow(kp.rt/kp.rc, 2), 1/kp.a), kp.a);
 	}
 
 	return 0;
@@ -81,9 +80,7 @@ static
 double king_int(double r, void *ex) {
 	KingProfile *kp = (KingProfile *)ex;
 	if( r < kp->rt ) {
-		double temp = 1/pow(1 + pow(kp->rt/kp->rc,2), 1/kp->a);
-		return r*pow(1-temp,-kp->a)*
-		         pow(1/pow(1+pow(r/kp->rc,2),1/kp->a)-temp,kp->a);
+		return r * pow(1/pow(1 + pow(r/kp->rc, 2), 1/kp->a) - 1/pow(1 + pow(kp->rt/kp->rc, 2), 1/kp->a), kp->a);
 	}
 	return 0;
 }
@@ -102,7 +99,7 @@ double KingProfile::adjust_rscale_switch() {
 }
 
 double KingProfile::adjust_rscale_max() {
-	return 1;
+	return 1.5;
 }
 
 double KingProfile::get_rscale() {
