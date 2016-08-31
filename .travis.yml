@@ -27,3 +27,9 @@
 # This should do it, there's no need to specify anything else
 language: r
 cache: packages
+
+# ProFit needs fftw3
+addons:
+ apt:
+  packages:
+   - fftw-dev
