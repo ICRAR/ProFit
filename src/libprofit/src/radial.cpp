@@ -135,7 +135,7 @@ void RadialProfile::initial_calculations() {
 		 * Calculate a bound, adaptive upscale
 		 */
 		unsigned int resolution;
-		resolution = (unsigned int)ceil(160 / this->rscale_switch);
+		resolution = (unsigned int)ceil(160 / (this->rscale_switch * this->rscale));
 		resolution += resolution % 2;
 		resolution = max(4, min(16, (int)resolution));
 		this->resolution = resolution;
