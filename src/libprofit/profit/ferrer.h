@@ -50,12 +50,12 @@ class FerrerProfile : public RadialProfile {
 protected:
 
 	/* All these are inherited from RadialProfile */
-	double get_lumtot(double r_box);
-	double get_rscale();
-	double adjust_acc();
-	double adjust_rscale_switch();
-	double adjust_rscale_max();
-	eval_function_t get_evaluation_function();
+	double get_lumtot(double r_box) override;
+	double get_rscale() override;
+	double adjust_acc() override;
+	double adjust_rscale_switch() override;
+	double adjust_rscale_max() override;
+	eval_function_t get_evaluation_function() override;
 
 public:
 

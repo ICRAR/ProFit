@@ -30,19 +30,25 @@ namespace profit
 {
 
 /**
- * Convolves image src with the kernel krn.
- *
- * Both the source image and the kernel need to specify their width and height.
- * Depending on the value of the replace parameter, the same src image will be
- * used to store the convolution result (if replace != 0), or a new vector will
- * be allocated and filled instead.
+ * Brute-force convolves image `src` with the kernel `krn`.
  *
  * A mask parameter also controls which pixels from the original image should be
  * convolved. If NULL all pixels are convolved.
+
+ * @param src The source image
+ * @param src_width The source image's width
+ * @param src_height The source image's height
+ * @param krn The convolution kernel
+ * @param krn_width The kernel's width
+ * @param krn_height The kernel's height
+ * @param mask An optional boolean mask indicating which pixels of the resulting
+ *             image should be convolved
+ * @return The convolved image
  */
-double *convolve(double *src, unsigned int src_width, unsigned int src_height,
-                 double *krn, unsigned int krn_width, unsigned int krn_height,
-                 bool *mask, bool replace);
+std::vector<double>
+convolve(const std::vector<double> &src, unsigned int src_width, unsigned int src_height,
+         const std::vector<double> &krn, unsigned int krn_width, unsigned int krn_height,
+         const std::vector<bool> &mask);
 
 } /* namespace profit */
 

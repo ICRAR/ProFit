@@ -53,20 +53,17 @@ double _king_for_xy_r(const RadialProfile &sp,
                       double r, bool reuse_r) {
 
 	const KingProfile &kp = static_cast<const KingProfile &>(sp);
-	double r_factor;
-	if( reuse_r && kp.box == 0 ) {
-		r_factor = r;
+	if( !reuse_r && kp.box == 0 ) {
+		r = sqrt(x*x + y*y);
 	}
-	else if( kp.box == 0 ) {
-		r_factor = sqrt(x*x + y*y);
-	}
-	else {
+	else if( !reuse_r ) { // && kp.box != 0
 		double box = kp.box + 2.;
-		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
+		r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	}
+	// else reuse_r == true, so r is used as is
 
-	if( r_factor < kp.rt ) {
-		return pow(1/pow(1 + pow(r_factor/kp.rc, 2), 1/kp.a) - 1/pow(1 + pow(kp.rt/kp.rc, 2), 1/kp.a), kp.a);
+	if( r < kp.rt ) {
+		return pow(1/pow(1 + pow(r/kp.rc, 2), 1/kp.a) - 1/pow(1 + pow(kp.rt/kp.rc, 2), 1/kp.a), kp.a);
 	}
 
 	return 0;

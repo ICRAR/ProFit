@@ -24,7 +24,7 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstring>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -81,17 +81,20 @@ Model::Model() :
 	width(0), height(0),
 	scale_x(1), scale_y(1),
 	magzero(0),
-	psf(NULL), psf_width(0), psf_height(0),
+	psf(), psf_width(0), psf_height(0),
 	psf_scale_x(1), psf_scale_y(1),
-	calcmask(NULL), image(NULL),
-	profiles()
+	calcmask(), profiles()
 {
 	// no-op
 }
 
-Profile* Model::add_profile(string profile_name) {
+bool Model::has_profiles() const {
+	return this->profiles.size() > 0;
+}
 
-	Profile *profile = NULL;
+Profile &Model::add_profile(const string &profile_name) {
+
+	Profile * profile = nullptr;
 	if( profile_name == "sky" ) {
 		profile = static_cast<Profile *>(new SkyProfile(*this));
 	}
@@ -101,7 +104,7 @@ Profile* Model::add_profile(string profile_name) {
 	else if ( profile_name == "moffat" ) {
 		profile = static_cast<Profile *>(new MoffatProfile(*this));
 	}
-	else if ( profile_name == "ferrer" ) {
+	else if ( profile_name == "ferrer" || profile_name == "ferrers" ) {
 		profile = static_cast<Profile *>(new FerrerProfile(*this));
 	}
 	else if ( profile_name == "coresersic" ) {
@@ -113,22 +116,22 @@ Profile* Model::add_profile(string profile_name) {
 	else if ( profile_name == "psf" ) {
 		profile = static_cast<Profile *>(new PsfProfile(*this));
 	}
-
-	if( profile == NULL ) {
-		return NULL;
+	else {
+		ostringstream ss;
+		ss << "Unknown profile name: " << profile_name;
+		throw invalid_parameter(ss.str());
 	}
 
 	profile->name = profile_name;
 	this->profiles.push_back(profile);
-	return profile;
+	return *profile;
 }
 
-void Model::evaluate() {
+vector<double> Model::evaluate() {
 
 	/* Check limits */
 	if( !this->width ) {
 		throw invalid_parameter( "Model's width is 0");
-		return;
 	}
 	else if( !this->height ) {
 		throw invalid_parameter("Model's height is 0");
@@ -146,7 +149,7 @@ void Model::evaluate() {
 	 */
 	for(auto profile: this->profiles) {
 		if( profile->convolve ) {
-			if( !this->psf ) {
+			if( this->psf.empty() ) {
 				stringstream ss;
 				ss <<  "Profile " << profile->name << " requires convolution but no psf was provided";
 				throw invalid_parameter(ss.str());
@@ -161,8 +164,7 @@ void Model::evaluate() {
 		}
 	}
 
-	this->image = new double[this->width * this->height];
-	memset(this->image, 0, sizeof(double) * this->width * this->height);
+	vector<double> image(this->width * this->height, 0);
 
 	/*
 	 * Validate all profiles.
@@ -180,10 +182,9 @@ void Model::evaluate() {
 	 * probably we should study what is the best way to go here (e.g.,
 	 * parallelize only if we have more than 2 or 3 profiles)
 	 */
-	vector<double *> profile_images;
+	vector<vector<double>> profile_images;
 	for(auto profile: this->profiles) {
-		double *profile_image = new double[this->width * this->height];
-		memset(profile_image, 0, sizeof(double) * this->width * this->height);
+		vector<double> profile_image(this->width * this->height, 0);
 		profile->evaluate(profile_image);
 		profile_images.push_back(profile_image);
 	}
@@ -194,43 +195,36 @@ void Model::evaluate() {
 	 * We first sum up all images that need convolving, we convolve them
 	 * and after that we add up the remaining images.
 	 */
-	bool convolve = false;
-	vector<double *>::iterator it = profile_images.begin();
+	bool do_convolve = false;
+	auto it = profile_images.begin();
 	for(auto profile: this->profiles) {
 		if( profile->convolve ) {
-			convolve = true;
-			add_images(this->image, *it, this->width, this->height);
+			do_convolve = true;
+			add_images(image, *it);
 		}
 		it++;
 	}
-	if( convolve ) {
-		size_t psf_size = sizeof(double) * this->psf_width * this->psf_height;
-		double* psf = new double[psf_size];
-		memcpy(psf, this->psf, psf_size);
-		normalize(psf, this->psf_width, this->psf_height);
-		profit::convolve(this->image, this->width, this->height, psf, this->psf_width, this->psf_height, this->calcmask, true);
-		delete [] psf;
+	if( do_convolve ) {
+		vector<double> psf(this->psf);
+		normalize(psf);
+		image = convolve(image, this->width, this->height, psf, this->psf_width, this->psf_height, this->calcmask);
 	}
 	it = profile_images.begin();
 	for(auto profile: this->profiles) {
 		if( !profile->convolve ) {
-			add_images(this->image, *it, this->width, this->height);
+			add_images(image, *it);
 		}
-		delete [] *it;
 		it++;
 	}
 
 	/* Done! Good job :-) */
+	return image;
 }
 
 Model::~Model() {
-
 	for(auto profile: this->profiles) {
 		delete profile;
 	}
-	delete [] this->image;
-	delete [] this->psf;
-	delete [] this->calcmask;
 }
 
 } /* namespace profit */

@@ -54,8 +54,8 @@ public:
 	 * Pure virtual functions implementations follow
 	 * ---------------------------------------------
 	 */
-	void validate();
-	void evaluate(double *image);
+	void validate() override;
+	void evaluate(std::vector<double> &image) override;
 
 	/*
 	 * -------------------------

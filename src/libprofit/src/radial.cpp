@@ -24,8 +24,9 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <vector>
 
 #include "profit/radial.h"
 #include "profit/utils.h"
@@ -190,7 +191,7 @@ void RadialProfile::subsampling_params(double x, double y,
 /**
  * The main profile evaluation function
  */
-void RadialProfile::evaluate(double *image) {
+void RadialProfile::evaluate(vector<double> &image) {
 
 	unsigned int i, j;
 	double x, y, pixel_val;
@@ -220,7 +221,7 @@ void RadialProfile::evaluate(double *image) {
 			x += half_xbin;
 
 			/* We were instructed to ignore this pixel */
-			if( model.calcmask && !model.calcmask[i + j*model.width] ) {
+			if( !model.calcmask.empty() && !model.calcmask[i + j*model.width] ) {
 				x += half_xbin;
 				continue;
 			}

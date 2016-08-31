@@ -24,6 +24,10 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
+#include <functional>
+#include <vector>
+
 #include "profit/utils.h"
 
 /*
@@ -72,70 +76,20 @@
 	#error("No high-level library (GSL or R) provided")
 #endif
 
+using namespace std;
+
 namespace profit {
 
-void add_images(double *dest, double *src,
-                unsigned int width, unsigned int height) {
-
-	for(unsigned int i=0; i != width*height; i++, dest++, src++) {
-		*dest += *src;
-	}
-
+void add_images(vector<double> &dest, const vector<double> &src) {
+	transform(src.begin(), src.end(), dest.begin(), dest.begin(), std::plus<double>());
 }
 
-void copy_to(double *tgt_img, unsigned int tgt_w, unsigned int tgt_h,
-             double *src_img, unsigned int src_w, unsigned int src_h,
-             int pos_x, int pos_y) {
-
-	unsigned int i, j, tgt_x, tgt_y;
-
-	for(j=0; j!=src_h; j++) {
-
-		/* Don't draw outside the boundaries of the full image */
-		if( (int)j+pos_y < 0 ) {
-			continue;
-		}
-		tgt_y = j + (unsigned int)pos_y;
-		if( tgt_y >= tgt_h ) {
-			break;
-		}
-
-		for(i=0; i!=src_w; i++) {
-
-			/* Don't draw outside the boundaries of the full image */
-			if( (int)i+pos_x < 0 ) {
-				continue;
-			}
-			tgt_x = i + (unsigned int)pos_x;
-			if( tgt_x >= tgt_w ) {
-				break;
-			}
-
-			tgt_img[tgt_x + tgt_y*tgt_w] = src_img[i + j*src_w];
-		}
+void normalize(vector<double> &image) {
+	double sum = accumulate(image.begin(), image.end(), 0);
+	if( sum == 0 ) {
+		return;
 	}
-
-}
-
-
-void normalize(double *image, unsigned int img_width, unsigned int img_height) {
-
-	unsigned int i;
-	unsigned int size = img_width * img_height;
-	double sum = 0;
-
-	double *in = image;
-	for(i=0; i!=size; i++) {
-		sum += *in;
-		in++;
-	}
-
-	in = image;
-	for(i=0; i!=size; i++) {
-		*in /= sum;
-		in++;
-	}
-
+	transform(image.begin(), image.end(), image.begin(), [=](double x) {return x/sum;});
 }
 
 /*
@@ -230,8 +184,8 @@ double __r_integrate_qag(integration_func_t f, void *params,
 	int neval, ier, last;
 	int limit = 100;
 	int lenw = 4 * limit;
-	int *iwork = new int[limit];
-	double *work = new double[lenw];
+	vector<int> iwork(limit);
+	vector<double> work(lenw);
 	double result, abserr;
 	double epsabs = 1e-4, epsrel = 1e-4;
 	struct __r_integrator_args int_args = {f, params};
@@ -241,17 +195,14 @@ double __r_integrate_qag(integration_func_t f, void *params,
 		::Rdqagi(&__r_integrator, &int_args, &a, &inf,
 		         &epsabs, &epsrel, &result, &abserr, &neval, &ier,
 		         &limit, &lenw, &last,
-		         iwork, work);
+		         iwork.data(), work.data());
 	}
 	else {
 		::Rdqags(&__r_integrator, &int_args, &a, &b,
 		         &epsabs, &epsrel, &result, &abserr, &neval, &ier,
 		         &limit, &lenw, &last,
-		         iwork, work);
+		         iwork.data(), work.data());
 	}
-
-	delete [] iwork;
-	delete [] work;
 
 	return result;
 }

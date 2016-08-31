@@ -27,22 +27,16 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
+#include <vector>
+
 namespace profit
 {
 
-/*
+/**
  * Adds the individual values from `src` and `dest` and stores the result
- * in `dest`. Both images must have the same given width and height.
+ * in `dest`. Both images must have the same size.
  */
-void add_images(double *dest, double *src, unsigned int width, unsigned int height);
-
-/*
- * Copies the values from ``src_img`` into ``tgt_img`` at position ``pos_x``/``pos_y``.
- * The sizes of the source and target image are given by the rest of the arguments.
- */
-void copy_to(double *tgt_img, unsigned int tgt_w, unsigned int tgt_h,
-             double *src_img, unsigned int src_w, unsigned int src_h,
-             int pos_x, int pos_y);
+void add_images(std::vector<double> &dest, const std::vector<double> &src);
 
 /**
  * Normalizes the values of image so their total sum is 1.
@@ -50,7 +44,7 @@ void copy_to(double *tgt_img, unsigned int tgt_w, unsigned int tgt_h,
  * The values are written back into the image, so if the original needs to be retained
  * then a copy should be supplied.
  */
-void normalize(double *image, unsigned int img_width, unsigned int img_height);
+void normalize(std::vector<double> &image);
 
 /**
  * Computes the quantile of the gamma distribution for ``p`` and ``shape``
