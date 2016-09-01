@@ -28,6 +28,9 @@
 language: r
 cache: packages
 
+# To build the vignettes we need rmarkdown
+r_packages: rmarkdown
+
 # ProFit needs fftw3
 addons:
  apt:
