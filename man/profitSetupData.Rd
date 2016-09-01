@@ -8,10 +8,10 @@ Setup ProFit Data
 This is a utility function to get the user inputs in the format required for model optimisation / fitting. It will format the PSF (if supplied) and benchmark the available convolution methods, caching any data required for efficient convolution (such as the PSF FFT). This function does all of the book-keeping required to convert the user data into the format required by ProFit.
 }
 \usage{
-profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals, psf=NULL,
-  finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t",
-  magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"),
-  verbose=FALSE)
+profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals,
+psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
+like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
+benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
