@@ -32,4 +32,4 @@ cache: packages
 addons:
  apt:
   packages:
-   - fftw-dev
+   - libfftw3-dev
