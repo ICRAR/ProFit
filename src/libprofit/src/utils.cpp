@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <numeric>
 #include <vector>
 
 #include "profit/utils.h"
