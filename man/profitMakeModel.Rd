@@ -67,7 +67,7 @@ Logical; where the profile has been truncated via \option{remax} this specifies 
 }
 \details{
 
-A legal model list has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
+A legal model list has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
 
 The parameters that must be specified for \option{sersic} are:
 
@@ -77,6 +77,22 @@ The parameters that must be specified for \option{sersic} are:
   \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
   \item{re}{Vector; effective radii of the 2D Sersic profiles}
   \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+}
+
+The parameters that must be specified for \option{coresersic} are:
+
+\describe{
+  \item{xcen}{Vector; x centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{re}{Vector; effective radii of the 2D Sersic profiles}
+  \item{rb}{Vector; transition radius of the Sersic profile (from inner power-law to outer Sersic).}
+  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{a}{Vector; strength of transition from inner core to outer Sersic. Larger +ve means sharper.}
+  \item{b}{Vector; the inner power-law of the Core-Sersic. Less than 1 is an increasingly flat core.}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
   \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
   \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
@@ -95,7 +111,7 @@ The parameters that must be specified for \option{moffat} are:
   \item{box}{Vector; the boxiness of the Moffat profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
-The parameters that must be specified for \option{ferrer} are:
+The parameters that must be specified for \option{ferrer} or \option{ferrers} (either allowd) are:
 
 \describe{
   \item{xcen}{Vector; x centres of the 2D Ferrer profiles (can be fractional pixel positions).}
