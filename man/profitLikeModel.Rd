@@ -92,7 +92,7 @@ useloc=which(ExampleInit$CATAID==useIDnum)
 # the putative disk. We are going to attempt a fit where the disk is forced to have
 # nser=1 and the bulge has an axial ratio of 1.
 
-model=list(
+modellist=list(
   sersic=list(
     xcen= c(dim(image)[1]/2, dim(image)[1]/2),
     ycen= c(dim(image)[2]/2, dim(image)[2]/2),
@@ -107,13 +107,13 @@ model=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(model=model, dim=dim(image)))
+magimage(profitMakeModel(modellist=modellist, dim=dim(image)))
 
 # The original image:
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model=model, dim=dim(image)), psf=psf)
+magimage(profitMakeModel(modellist=modellist, dim=dim(image)), psf=psf)
 
 # What should we be fitting:
 
@@ -201,7 +201,7 @@ intervals=list(
 # Setup the data structure we need for optimisation:
 
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
 magzero=0, algo.func='optim', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting,

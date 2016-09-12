@@ -70,7 +70,7 @@ useloc=which(ExampleInit$CATAID==useIDnum)
 For our initial model we treat component 1 as the putative bulge and component 2 as the putative disk. We are going to attempt a fit where the disk is forced to have nser=1 and the bulge has an axial ratio of 1.
 
 ```{r}
-model=list(
+modellist=list(
   sersic=list(
     xcen= c(dim(image)[1]/2, dim(image)[1]/2),
     ycen= c(dim(image)[2]/2, dim(image)[2]/2),
@@ -83,13 +83,13 @@ model=list(
     box=c(0, 0)
   )
 )
-model
+modellist
 ```
 
 The pure model (no PSF):
 
 ```{r, fig.width=5, fig.height=5}
-magimage(profitMakeModel(model,dim=dim(image)))
+magimage(profitMakeModel(modellist,dim=dim(image)))
 ```
 
 The original image:
@@ -101,7 +101,7 @@ magimage(image)
 The convolved model (with PSF):
 
 ```{r, fig.width=5, fig.height=5}
-magimage(profitMakeModel(model,dim=dim(image),psf=psf))
+magimage(profitMakeModel(modellist,dim=dim(image),psf=psf))
 ```
 
 Next we define our list of what we want to fit (where TRUE means we will fit it later):
@@ -197,7 +197,7 @@ Setup the data structure we need for optimisation, taking a few seconds to find 
 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-  model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+  modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
   magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
 ```
 
@@ -217,7 +217,7 @@ profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
 ## Do some fitting
 
-First try `optim` BFGS:
+First try `optim` L-BFGS-B:
 
 ```{r, eval=FALSE}
 optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
@@ -225,7 +225,7 @@ lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 ```
 
-The best `optim` BFGS fit is given by:
+The best `optim` L-BFGS-B fit is given by:
 
 ```{r, eval=FALSE}
 optimfit$par
@@ -240,7 +240,7 @@ profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='al
 ```
 
 ```{r, eval=FALSE}
-modeloptim=profitRemakeModelList(optimfit$par,Data$model,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
@@ -266,7 +266,7 @@ profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sers
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$model,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
@@ -337,7 +337,7 @@ profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(BestLD,Data$model,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(BestLD,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
@@ -347,7 +347,7 @@ To test this, set up the data again. This time we will fine-sample the model and
 
 ```{r,eval=FALSE}
 Dataf=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-  model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+  modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
   magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=3L, finesample=3L)
 ```
 

@@ -1,6 +1,6 @@
 .profitFerrerScale=function(mag=15, rout=3, a=1, b=1, axrat=1, box=0){
   if(box!=0){Rbox=pi*(box+2)/(4*beta(1/(box+2),1+1/(box+2)))}else{Rbox=1}
-  lumtot = rout^2 * pi * (gamma(a+1)*gamma((4-b)/(2-b))/(gamma(a+2/(2-b)+1)))*axrat/Rbox;
+  lumtot = (a*beta(a,1+2/(2-b)))*rout^2 * pi *axrat/Rbox;
   magtot = -2.5 * log10(lumtot)
   return(1/(10^(0.4 * (mag - magtot))))
 }

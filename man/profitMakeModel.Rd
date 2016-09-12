@@ -5,7 +5,7 @@
 High-Level 2D Galaxy and Point Source Image Creation
 }
 \description{
-Create an astronomical image containing model galaxies or point sources, with or without convolution with the PSF. This is achieved by providing a model list that contains the main parameters that define the model.
+Create an astronomical image containing model galaxies or point sources, with or without convolution with the PSF. This is achieved by providing a model list (\option{modellist}) that contains the main parameters that define the model.
 }
 \usage{
 profitMakeModel(modellist, magzero = 0, psf=NULL, dim = c(100, 100),
@@ -38,13 +38,13 @@ Logical; should an approximate model image be created. If TRUE only one evalauti
 Desired minimum per pixel accuracy within the upscaling region defined by \option{RESWITCH}. \option{ACC} specifies the allowed fractional difference from adjacent pixels before recursion is triggered. Smaller (i.e. 0.01) means more accurate integration, but increased computation time. 
 }
   \item{finesample}{
-Integer specifying the number of times to subdivide the model image and therefore finely sample it (compared to the dimensions specified in \option{dim}), for more accurate PSF convolution. Must be one or higher. Note that the \option{psf} image and \option{model} PSF are not automatically fine sampled; this is only done by \code{\link{profitSetupData}}.
+Integer specifying the number of times to subdivide the model image and therefore finely sample it (compared to the dimensions specified in \option{dim}), for more accurate PSF convolution. Must be one or higher. Note that the \option{psf} image and \option{modellist} PSF are not automatically fine sampled; this is only done by \code{\link{profitSetupData}}.
 }
   \item{returnfine}{
   Logical flag to return the finely-sampled model instead of downsampling to the specified \option{dim}.
 }
   \item{returncrop}{
-  Logical flag to return the appropriately PSF-padded \option{model} instead of cropping to the specified \option{dim}.
+  Logical flag to return the appropriately PSF-padded \option{modellist} instead of cropping to the specified \option{dim}.
 }
   \item{calcregion}{
 Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
@@ -53,7 +53,7 @@ Matrix; logical image matrix the same size as the input \option{image} matrix. I
 Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
 }
   \item{magmu}{
-Logical vector. If TRUE then the mag parameter in the input \option{model} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
+Logical vector. If TRUE then the mag parameter in the input \option{modellist} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
 }
   \item{remax}{
 If provided the profile is computed out to this many times Re, after this point the values in the image are set to zero. If missing the profile is calculated out to the radius at which 99.99\% of flux is contained within the elliptical isocontour.
@@ -143,7 +143,7 @@ The parameter that must be specified for \option{sky} is:
   
 An example of a legal model structure is:
 
-model = list(\cr
+modellist = list(\cr
  sersic = list(\cr
 		xcen   = c(180.5, 50),\cr
 		ycen   = c(90, 50),\cr

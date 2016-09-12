@@ -33,7 +33,7 @@ Robotham A.S.G. et al., in prep
 \keyword{profile}
 
 \examples{
-model = list(
+modellist = list(
   sersic = list(
     xcen   = c(180, 60),
     ycen   = c(90, 10),
@@ -56,12 +56,12 @@ model = list(
 
 # Without a PSF provided only the extended sources are shown, with no convolution:
 
-magimage(profitMakeModel(model=model, dim=c(200,200)))
+magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(model=model, psf=profitMakePointSource(), dim=c(200,200)))
+magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
 
 ############### Full fit example ##############
 
@@ -102,7 +102,7 @@ useloc=which(ExampleInit$CATAID==useIDnum)
 # the putitive disk. We are going to attempt a fit where the disk is forced to have
 # nser=1 and the bulge has an axial ratio of 1.
 
-model=list(
+modellist=list(
   sersic=list(
     xcen= c(dim(image)[1]/2, dim(image)[1]/2),
     ycen= c(dim(image)[2]/2, dim(image)[2]/2),
@@ -117,13 +117,13 @@ model=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(model,dim=dim(image)))
+magimage(profitMakeModel(modellist,dim=dim(image)))
 
 # The original image:
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(image),psf=psf))
+magimage(profitMakeModel(modellist,dim=dim(image),psf=psf))
 
 # What should we be fitting:
 
@@ -211,7 +211,7 @@ intervals=list(
 # Setup the data structure we need for optimisation:
 
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
 magzero=0, algo.func='optim', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting,
@@ -227,13 +227,13 @@ Data$init
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
-# First try optim BFGS:
+# First try optim L-BFGS-B:
 
 optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
 lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 
-# The best optim BFGS fit is given by:
+# The best optim L-BFGS-B fit is given by:
 
 optimfit$par
 
@@ -243,7 +243,7 @@ profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(optimfit$par,Data$model,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 
 # Now we can try a LaplaceApproximation fit (should take a few minutes):
@@ -263,7 +263,7 @@ profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sers
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$model,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 
 # If we get CMAES we can try to fit using genetic algorithms:
@@ -317,16 +317,16 @@ profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(BestLD,Data$model,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(BestLD,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 
 # Better errors can be obtained by removing the spurious structure remaining:
 
-bestmodel=profitRemakeModelList(BestLD, Data$model, Data$tofit, Data$tolog)
+bestmodel=profitRemakeModelList(BestLD, Data$modellist, Data$tofit, Data$tolog)
 imagemod=profitMakeModel(bestmodel,magzero=Data$magzero,dim=Data$imagedim,psf=Data$psf)
 imagemod=imagemod$z+rnorm(length(Data$sigma),mean=0,sd=Data$sigma)
 Datamod=profitSetupData(image=imagemod, mask=mask, sigma=sigma, segim=segim, psf=psf,
-model=bestmodel, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+modellist=bestmodel, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
 magzero=0, algo.func='LD', verbose=FALSE)
 
 LDfitmod=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Datamod,

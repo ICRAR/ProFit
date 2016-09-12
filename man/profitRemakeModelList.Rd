@@ -8,25 +8,25 @@ Reconstruct an Image Model
 This is a convenience function that allows users to easily substitute into a legal image model results from an optimisation run. This can be parsed directly into \code{\link{profitMakeModel}}.
 }
 \usage{
-profitRemakeModelList(parm, model, tofit, tolog)
+profitRemakeModelList(parm, modellist, tofit, tolog)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{parm}{
-Vector of parameters that will be inserted into the \option{model} provided.
+Vector of parameters that will be inserted into the \option{modellist} provided.
 }
-  \item{model}{
+  \item{modellist}{
 Model list (see \code{\link{profitMakeModel}} for details).
 }
   \item{tofit}{
-List of elements that are being fitted, flagging which elements of \option{model} will be replaced with \option{parm} (see \code{\link{profitSetupData}} for details). 
+List of elements that are being fitted, flagging which elements of \option{modellist} will be replaced with \option{parm} (see \code{\link{profitSetupData}} for details). 
 }
   \item{tolog}{
-List of elements that are being fitted in log space, flagging which elements of \option{model} will be replaced with unlogged elements of \option{parm} (see \code{\link{profitSetupData}} for details). If missing then all parameters are assumed to be provided in native linear space.
+List of elements that are being fitted in log space, flagging which elements of \option{modellist} will be replaced with unlogged elements of \option{parm} (see \code{\link{profitSetupData}} for details). If missing then all parameters are assumed to be provided in native linear space.
 }
 }
 \value{
-A new model list with the same structure as \option{model}.
+A new model list with the same structure as \option{modellist}.
 }
 \author{
 Aaron Robotham
@@ -35,7 +35,7 @@ Aaron Robotham
 \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
-model = list(
+modellist = list(
   sersic = list(
     xcen   = c(50, 50),
     ycen   = c(50, 50),
@@ -48,7 +48,7 @@ model = list(
   )
 )
 
-magimage(profitMakeModel(model))
+magimage(profitMakeModel(modellist))
 
 tofit = list(
   sersic = list(
@@ -65,7 +65,7 @@ tofit = list(
 
 parm=c(60,60,11,10,1,4,1)
 
-magimage(profitMakeModel(profitRemakeModelList(parm, model, tofit)))
+magimage(profitMakeModel(profitRemakeModelList(parm, modellist, tofit)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
