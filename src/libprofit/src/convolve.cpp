@@ -48,7 +48,7 @@ convolve(const vector<double> &src, unsigned int src_width, unsigned int src_hei
 	double *out = convolution.data() - 1;
 	const double *srcPtr1 = src.data() - 1, *srcPtr2;
 	const double *krnPtr;
-	auto mask_it = mask.begin();
+	vector<bool>::const_iterator mask_it = mask.begin();
 
 	/* Convolve! */
 	/* Loop around the output image first... */
