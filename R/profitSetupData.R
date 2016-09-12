@@ -1,21 +1,32 @@
-profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,intervals,psf=NULL,
+profitSetupData=function(image,mask,sigma,segim,modellist,tofit,tolog,priors,intervals,psf=NULL,
   finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", 
   magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), 
   verbose=FALSE) {
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
+  
+  if(missing(image)){stop("User must supply an image matrix input!")}
+  if(missing(modellist)){stop("User must supply a modellist input!")}
   imagedim = dim(image)
+  
+  #What to do if missing things: sensible solutions here:
+  if(missing(mask)){mask=matrix(0,imagedim[1],imagedim[2])}
+  if(missing(sigma)){sigma=sqrt(abs(image))}
+  if(missing(segim)){segim=matrix(1,imagedim[1],imagedim[2])}
+  if(missing(tofit)){tofit=relist(rep(TRUE,length(unlist(modellist))),modellist)}
+  if(missing(tolog)){tolog=relist(rep(FALSE,length(unlist(modellist))),modellist)}
+  
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
-  region = segim==segimkeep
+  region = segim==segimkeep & mask!=1
   haspsf = length(psf) > 0
   if(haspsf)
   {
     psftype = "empirical"
-    if(!is.null(model$psf)) stop("Error! Cannot supply both empirical and analytic (model) PSF; please set one to NULL.")
-  } else if(!is.null(model$psf)) {
+    if(!is.null(modellist$psf)) stop("Error! Cannot supply both empirical and analytic (modellist) PSF; please set one to NULL.")
+  } else if(!is.null(modellist$psf)) {
     psftype = "analytical"
     haspsf = TRUE
-    psf = profitMakePointSource(model=model$psf,finesample=finesample)
+    psf = profitMakePointSource(modellist=modellist$psf,finesample=finesample)
   } else {
     psftype = "none"
   }
@@ -41,7 +52,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
     }
     psf = psf/sum(psf)
   }
-  modelimg = profitMakeModel(model,dim=dim(image),finesample=finesample,psf=psf,returnfine = TRUE, returncrop = FALSE)
+  modelimg = profitMakeModel(modellist,dim=dim(image),finesample=finesample,psf=psf,returnfine = TRUE, returncrop = FALSE)
   calcregion = profitUpsample(region,finesample)
   if(haspsf)
   {
@@ -92,7 +103,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
     convusecalcregion = TRUE
   }
   
-  init = unlist(model)
+  init = unlist(modellist)
   init[unlist(tolog)]=log10(init[unlist(tolog)])
   init=init[which(unlist(tofit))]
   
@@ -100,7 +111,7 @@ profitSetupData=function(image,mask,sigma,segim,model,tofit,tolog,priors,interva
   mon.names=c("LL","LP")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
   
-  profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, model=model, psf=psf, psftype=psftype, fitpsf=fitpsf,
+  profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist, psf=psf, psftype=psftype, fitpsf=fitpsf,
                    algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))), region=region,
                    calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
                    tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, like.func = like.func,

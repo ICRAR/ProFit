@@ -1,0 +1,216 @@
+---
+title: "ProFit: PSF Fitting Example"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFit Galaxy Fitting Example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prepare the test data
+
+It is worth checking that you have the latest version of `ProFit`:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('ICRAR/ProFit')
+```
+
+Next we load the libraries we need:
+
+```{r}
+library(knitr)
+library(ProFit)
+library(FITSio)
+```
+
+Next we load a table of data describing GAMA galaxies:
+
+```{r}
+data('ExampleInit', package="ProFit")
+kable(head(ExampleInit, 10))
+```
+
+Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
+
+```{r}
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/KiDS/',sep=''))
+ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
+ExampleIDs
+```
+
+There are 2 data source options: KiDS or SDSS (the galaxies are the same)
+
+```{r}
+datasource='SDSS'
+```
+
+There are 10 example galaxies included. Here we run example 1:
+
+```{r}
+useID=ExampleIDs[1]
+psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),package="ProFit"))$imDat
+psf=psf/sum(psf)
+psfsigma=sqrt(abs(psf))/200 #To get reasonable PSF errors
+```
+
+We can check the image of the PSF wiht magimage:
+
+```{r}
+temp=magimage(psf,lo=0,hi=1)
+contour(temp, add=T, col='red', drawlabels = FALSE)
+```
+
+To check the profile a few 1D plots can be useful:
+
+```{r}
+magplot(psf[13,],type='l')
+lines(psf[12,],lty=2,col='red')
+lines(psf[14,],lty=2,col='blue')
+lines(psf[11,],lty=3,col='red')
+lines(psf[15,],lty=3,col='blue')
+```
+
+Visually there is clear evidence of some amount of ellipticity since we can see asymmetry in the vertical cuts made either side of the peak (i.e. the blue lines are to the left of the red lines).
+
+## Setup the fitting data structures
+
+We can use ProFit to fit an analytic Moffat function to the PSF to properly characterise this.
+
+```{r}
+modellist=list(
+  moffat=list(
+    xcen=dim(psf)[1]/2,
+    ycen=dim(psf)[2]/2,
+    mag=0,
+    fwhm=2.5,
+    con=3,
+    ang=0,
+    axrat=0.9,
+    box=0
+  )
+)
+modellist
+```
+
+We can check what this default model looks like:
+
+```{r}
+psfmodel=profitMakeModel(modellist,dim=c(25,25))$z
+magimage(psfmodel)
+magimage(abs(psfmodel-psf)/psfmodel,zlim=c(0,1))
+```
+
+We will fit everything:
+
+```{r}
+tofit=list(
+  moffat=list(
+    xcen=TRUE,
+    ycen=TRUE,
+    mag=TRUE,
+    fwhm=TRUE,
+    con=TRUE,
+    ang=TRUE,
+    axrat=TRUE,
+    box=TRUE
+  )
+)
+```
+
+And choose sensible options for which parameters to fit in log-space:
+
+```{r}
+tolog=list(
+  moffat=list(
+    xcen=FALSE,
+    ycen=FALSE,
+    mag=FALSE,
+    fwhm=FALSE,
+    con=TRUE,
+    ang=FALSE,
+    axrat=TRUE,
+    box=TRUE
+  )
+)
+```
+
+The priors will be very un-informative:
+
+```{r}
+priors=list(
+  sersic=list(
+    xcen=list(function(x){dnorm(x,0,1,log=T)}), # should have tight constraints on x and y
+    ycen=list(function(x){dnorm(x,0,1,log=T)}), # should have tight constraints on x and y
+    mag=list(function(x){dnorm(x,0,0.1,log=T)}), # Sum should be very close to 1
+    fwhm=list(function(x){dnorm(x,0,2,log=T)}), # FWHM is roughly close to initial model
+    con=list(function(x){dnorm(x,0,2,log=T)}), # Try a broad range of concentration
+    ang=list(function(x){dunif(x,-360,360,log=T)}), # No idea re the initial angle
+    axrat=list(function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in axrat is the SD
+    box=list(function(x){dnorm(x,0,1,log=T)}) # i.e. 1 boxiness SD
+  )
+)
+```
+
+The intervals will be generous too:
+
+```{r}
+intervals=list(
+  sersic=list(
+    xcen=list(function(x){interval(x,0,25,reflect=F)}),
+    ycen=list(function(x){interval(x,0,25,reflect=F)}),
+    mag=list(function(x){interval(x,-1,1,reflect=F)}),
+    fwhm=list(function(x){interval(x,1,5,reflect=F)}),
+    con=list(function(x){interval(x,0,3,reflect=F)}),
+    ang=list(function(x){interval(x,-360,360,reflect=F)}),
+    axrat=list(function(x){interval(x,-2,0,reflect=F)}),
+    box=list(function(x){interval(x,-1,1,reflect=F)})
+  )
+  )
+```
+
+Now setup the Data structure we need for fitting, where we will use Normal likelihoods:
+
+```{r}
+Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, magzero=0, algo.func='optim', verbose=TRUE, like.func = 'norm')
+```
+
+Check our rough model:
+
+```{r,  fig.width=7, fig.height=3}
+profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
+```
+
+The initial rough model for the SDSS does not look great- clearly the PSD is much rounder than we guessed.
+
+To stop the guess-work we can now optimise the model:
+
+```{r, eval=FALSE}
+optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
+lower=c(0,0,-1,1,0,-360,-2,-1), upper=c(25,25,1,5,3,360,0,1),
+control=list(fnscale=-1,parscale=c(1,1,0.1,2,2,10,1,1)))
+```
+
+Check the final result:
+
+```{r, eval=FALSE}
+profitLikeModel(optimfit$par, Data,makeplots=TRUE, plotchisq=TRUE)
+```
+
+In the resultant fit we see that the FWHM is given as ~3, which given the SDSS pixel scale (0.339 asec/pix) is ~1 asec, which is pretty good for SDSS imaging. The PSF is preferred as being close to an axial ratio ~1 (or ~0 in log-space). We do find significant boxiness, so the PSF is not actually perfectly circular. We can see this visually in fact:
+
+```{r, eval=FALSE}
+psfmodel=profitMakeModel(profitRemakeModelList(optimfit$par, modellist, tofit=tofit, tolog=tolog), dim=c(25,25))
+contour(magimage(psfmodel), add=TRUE, col='red', drawlabels = FALSE)
+```
+
+We now have an analytic means of describing the SDSS PSF. We can use this for subsequent fitting.
+
+## Use the analytic PSF to fit a target galaxy
+

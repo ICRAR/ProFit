@@ -67,7 +67,7 @@ Logical; where the profile has been truncated via \option{remax} this specifies 
 }
 \details{
 
-A legal model list has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
+A legal model list (\option{modellist}) has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
 
 The parameters that must be specified for \option{sersic} are:
 
@@ -111,7 +111,7 @@ The parameters that must be specified for \option{moffat} are:
   \item{box}{Vector; the boxiness of the Moffat profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
-The parameters that must be specified for \option{ferrer} or \option{ferrers} (either allowd) are:
+The parameters that must be specified for \option{ferrer} or \option{ferrers} (either allowed) are:
 
 \describe{
   \item{xcen}{Vector; x centres of the 2D Ferrer profiles (can be fractional pixel positions).}
@@ -184,7 +184,7 @@ Aaron Robotham & Dan Taranu
 \code{\link{profitConvolvePSF}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}
 }
 \examples{
-model = list(
+modellist = list(
   sersic = list(
     xcen   = c(180, 60),
     ycen   = c(90, 10),
@@ -207,12 +207,12 @@ model = list(
 
 # Without a PSF provided only the extended sources are shown, with no convolution:
 
-magimage(profitMakeModel(model=model, dim=c(200,200)))
+magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(model=model, psf=profitMakePointSource(), dim=c(200,200)))
+magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

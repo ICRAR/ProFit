@@ -55,17 +55,23 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     tempmap=max(abs(tempmap))
     
     magimage(Data,stretchscale=1/median(abs(image[image>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=cmap,xlab='x/pix',ylab='y/pix')
-    tempcon=magimage(1-region,add=T,col=NA)#hsv(s=0,alpha=0.5)
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    if(all(Data$region)==FALSE){
+      tempcon=magimage(1-region,add=T,col=NA)#hsv(s=0,alpha=0.5)
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    }
     legend('topleft',legend='Data')
     
     magimage(modelimage,stretchscale=1/median(abs(image[image>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
-    legend('topleft',legend='Model')
+    if(all(Data$region)==FALSE){
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+      legend('topleft',legend='Model')
+    }
     
     magimage(residual,stretchscale=1/median(abs(image[image>0])),lo=-tempmap,hi=tempmap,type='num',zlim=c(0,1),col=errcmap,xlab='x/pix')
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
-    legend('topleft',legend='Data-Model')
+    if(all(Data$region)==FALSE){
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+      legend('topleft',legend='Data-Model')
+    }
     
     diff=residual[region]/error[region]
     hist(diff[!is.na(diff)],main='',breaks=100,axes=FALSE)
@@ -93,16 +99,22 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     stretchscale = 1/medimg
     
     magimage(Data,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
-    tempcon=magimage(1-region,add=T,col=NA)#hsv(s=0,alpha=0.5)
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    if(all(Data$region)==FALSE){
+      tempcon=magimage(1-region,add=T,col=NA)#hsv(s=0,alpha=0.5)
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    }
     legend('topleft',legend='Data')
     
     magimage(modelimage,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    if(all(Data$region)==FALSE){
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    }
     legend('topleft',legend='Model')
     
     magimage(residual,stretchscale=stretchscale,stretch=stretch,lo=-maximg,hi=maximg,zlim=zlims,type='num',col=cmap)
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    if(all(Data$region)==FALSE){
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+    }
     legend('topleft',legend='Data-Model')
       
     errsign = (-1)^(image > modelimage)
@@ -122,8 +134,10 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     errmap[errmap > maxsigma] = maxsigma
     errmap[errmap < -maxsigma] = -maxsigma
     magimage(errmap,magmap=FALSE,zlim=c(-maxsigma,maxsigma),col=errcmap)
-    contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
-    legend('topleft',legend=bquote(chi*"=(Data-Model)"/sigma))
+    if(all(Data$region)==FALSE){
+      contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
+      legend('topleft',legend=bquote(chi*"=(Data-Model)"/sigma))
+    }
     
     par(mar=parmar2 + c(0,0,0,1))
     pady=1

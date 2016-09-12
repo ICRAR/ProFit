@@ -30,7 +30,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   fitIDs=which(unlist(Data$tofit))
   parm=parm[1:length(fitIDs)]
-  paramsinit=.flattenlist(Data$model)
+  paramsinit=.flattenlist(Data$modellist)
   paramsnew=paramsinit
   paramsnew[fitIDs]=parm
   
@@ -57,13 +57,13 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   # Re-inherit unlogged parameters, just in case the user set inconsistent flags
   for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
   
-  paramsnew=.rrelist(paramsnew,Data$model)
+  paramsnew=.rrelist(paramsnew,Data$modellist)
   
   img = Data$image
   sigimg = Data$sigma
   
   if(Data$fitpsf) {
-    psf = profitMakePointSource(model=model$psf, finesample = finesample) 
+    psf = profitMakePointSource(modellist=model$psf, finesample = finesample) 
   } else {
     psf = Data$psf
   }
@@ -87,7 +87,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   }
   
   #Force like.func to be lower case:
-  Data$like.func=profitParseLikefunc(tolower(Data$like.func))
+  Data$like.func=profitParseLikefunc(Data$like.func)
   
   #Various allowed likelihoods:
   isnorm = Data$like.func == "norm"

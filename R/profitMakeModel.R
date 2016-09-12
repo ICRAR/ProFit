@@ -59,7 +59,7 @@ profitMakeModel = function(modellist,
 	haspsfmodel = !is.null(modellist$psf)
 	if( haspsfmodel && !haspsf ) {
 		haspsf = TRUE
-		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, model = modellist$psf)
+		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, modellist = modellist$psf)
 	}
 
 	if( haspsf ) {
@@ -158,7 +158,7 @@ profitMakeModel = function(modellist,
 	#    "subprofiles" and reproduce it for each of the pointsource
 	#    profiles, adjusting values as needed.
 	#
-	#    For example if we pass down a model$psf with two sersic profiles
+	#    For example if we pass down a modellist$psf with two sersic profiles
 	#    and a modellist with three pointsource profiles, we will add
 	#    three different versions of the two sersic profiles to the
 	#    global list of profiles of the model.

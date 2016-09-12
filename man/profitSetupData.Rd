@@ -8,7 +8,7 @@ Setup ProFit Data
 This is a utility function to get the user inputs in the format required for model optimisation / fitting. It will format the PSF (if supplied) and benchmark the available convolution methods, caching any data required for efficient convolution (such as the PSF FFT). This function does all of the book-keeping required to convert the user data into the format required by ProFit.
 }
 \usage{
-profitSetupData(image, mask, sigma,segim, model, tofit, tolog, priors, intervals,
+profitSetupData(image, mask, sigma, segim, modellist, tofit, tolog, priors, intervals,
 psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
 like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
 benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE)
@@ -27,7 +27,7 @@ sigma matrix; the measurement errors per pixel (expressed in terms of sigma). Th
   \item{segim}{
 segmentation matrix; the full segmentation map of the image. The value of the central pixel is used to select the segmented pixels of the galaxy we want to fit. The log-likelihood is then computed using only these pixels. This matrix *must* be the same dimensions as \option{image}.
 }
-  \item{model}{
+  \item{modellist}{
 The initial model list that describes the analytic model to be created. Can contain an analytical PSF model as well. See Details.
 }
   \item{tofit}{
@@ -74,7 +74,7 @@ Logical vector. If TRUE then the mag parameter in the input \option{model} list 
   }
 }
 \details{
-A legal model list has the structure of list(sersic, pointsource, psf, sky). At least one of sersic, pointsource or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All of these vectors should be the same length for each type of model structure.
+A legal model list (\option{modellist}) has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
 
 The parameters that must be specified for \option{sersic} are:
 
@@ -84,6 +84,22 @@ The parameters that must be specified for \option{sersic} are:
   \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
   \item{re}{Vector; effective radii of the 2D Sersic profiles}
   \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+}
+
+The parameters that must be specified for \option{coresersic} are:
+
+\describe{
+  \item{xcen}{Vector; x centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Sersic profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{re}{Vector; effective radii of the 2D Sersic profiles}
+  \item{rb}{Vector; transition radius of the Sersic profile (from inner power-law to outer Sersic).}
+  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{a}{Vector; strength of transition from inner core to outer Sersic. Larger +ve means sharper.}
+  \item{b}{Vector; the inner power-law of the Core-Sersic. Less than 1 is an increasingly flat core.}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
   \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
   \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
@@ -102,7 +118,7 @@ The parameters that must be specified for \option{moffat} are:
   \item{box}{Vector; the boxiness of the Moffat profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
-The parameters that must be specified for \option{ferrer} are:
+The parameters that must be specified for \option{ferrer} or \option{ferrers} (either allowed) are:
 
 \describe{
   \item{xcen}{Vector; x centres of the 2D Ferrer profiles (can be fractional pixel positions).}
@@ -116,25 +132,25 @@ The parameters that must be specified for \option{ferrer} are:
   \item{box}{Vector; the boxiness of the Ferrer profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
-The parameters that must be specified for a \option{pointsource} (see \code{\link{profitMakePointSource}} for details) are: 
+The parameters that must be specified for \option{pointsource} (see \code{\link{profitMakePointSource}} for details) are: 
 
 \describe{
-  \item{xcen}{Vector; x centres of the PSFs (can be fractional pixel positions).}
-  \item{ycen}{Vector; y centres of the PSFs (can be fractional pixel positions).}
-  \item{mag}{Vector; total magnitudes of the PSFs. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{xcen}{Vector of x centres of the PSFs (can be fractional pixel positions).}
+  \item{ycen}{Vectors of y centres of the PSFs (can be fractional pixel positions).}
+  \item{mag}{Vectors of total magnitudes of the PSFs. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
 }
 
-The parameters that may be specified for the \option{psf} must be a valid model themselves (see \code{\link{profitMakeModel}} for details). Using this option allows users to specify an analytic (e.g. Moffat) PSF.
+The parameters that may be specified for the \option{psf} must be a valid model themselves. Using this option allows users to specify an analytic (e.g. Moffat) PSF.
 
-The parameter that must be specified for the \option{sky} are:
+The parameter that must be specified for \option{sky} is:
 
 \describe{
-  \item{bg}{Scalar; value per pixel for the background. This should be the value as measured in the original image, i.e. there is no need to worry about the effect of \option{magzero}.}
+  \item{bg}{Value per pixel for the background. This should be the value as measured in the original image, i.e. there is no need to worry about the effect of \option{magzero}.}
 }
   
-An example of a legal model structure is:
+An example of a legal model list structure is:
 
-model = list(\cr
+modellist = list(\cr
  sersic = list(\cr
   	xcen   = c(180.5, 50),\cr
 		ycen   = c(90, 50),\cr
@@ -328,7 +344,7 @@ package="ProFit"))$imDat
 useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
 useloc=which(ExampleInit$CATAID==useIDnum)
 
-model=list(
+modellist=list(
   sersic=list(
     xcen= c(dim(image)[1]/2, dim(image)[1]/2),
     ycen= c(dim(image)[2]/2, dim(image)[2]/2),
@@ -343,13 +359,13 @@ model=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(model,dim=dim(image)))
+magimage(profitMakeModel(modellist,dim=dim(image)))
 
 # The original image:
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(model,dim=dim(image),psf=psf))
+magimage(profitMakeModel(modellist,dim=dim(image),psf=psf))
 
 # What should we be fitting:
 
@@ -437,7 +453,7 @@ intervals=list(
 # Setup the data structure we need for optimisation:
 
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-model=model, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
+modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
 magzero=0, algo.func='optim', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting,

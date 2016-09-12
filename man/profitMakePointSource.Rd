@@ -9,7 +9,7 @@ Create an image of a point source at an arbitrary location (can be fractional pi
 }
 \usage{
 profitMakePointSource(xcen,ycen,mag=0,magzero=0,
-  model=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
+  modellist=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
   psf=NULL,image=matrix(0,9,9),finesample=1L, add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -20,8 +20,8 @@ The x-axis center of the point source in image coordinates. If missing it will b
   \item{ycen}{
 The y-axis center of the point source in image coordinates. If missing it will be the mid-y location on the specified \option{image}.
 }
-  \item{model}{
-An optional list containing a valid model as described in \code{\link{profitMakeModel}}, which must be defined such that the integral of the model is unity (mag=0). One of \option{model} or \option{psf} (but not both) must be supplied.
+  \item{modellist}{
+An optional list containing a valid model as described in \code{\link{profitMakeModel}}, which must be defined such that the integral of the model is unity (mag=0). One of \option{modellist} or \option{psf} (but not both) must be supplied.
 }
   \item{mag}{
 The magntiude of the point source, defined such that (mag-magzero)=-2.5(log10(flux)).

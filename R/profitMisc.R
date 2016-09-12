@@ -5,6 +5,7 @@ profitCheckFinesample <- function(finesample)
 
 profitParseLikefunc <- function(funcname)
 {
+  funcname=tolower(funcname)
   if(funcname=="norm" | funcname=="normal")
   {
     return("norm")

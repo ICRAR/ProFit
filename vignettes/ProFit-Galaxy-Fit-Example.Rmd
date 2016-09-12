@@ -15,7 +15,7 @@ It is worth checking that you have the latest version of `ProFit`:
 
 ```{r, eval=FALSE}
 library(devtools)
-install_github('asgr/ProFit')
+install_github('ICRAR/ProFit')
 ```
 
 Next we load the libraries we need:
@@ -47,7 +47,7 @@ There are 2 data source options: KiDS or SDSS (the galaxies are the same)
 datasource='KiDS'
 ```
 
-There are 10 example galaxies included. Here we run example 1, explicitly re-normalizing the PSF:
+There are 10 example galaxies included. Here we run example 1:
 
 ```{r}
 useID=ExampleIDs[1]
@@ -64,6 +64,8 @@ Next we extract parameters for a very rough model (not meant to look too good ye
 useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
 useloc=which(ExampleInit$CATAID==useIDnum)
 ```
+
+## Setup the fitting data structures
 
 For our initial model we treat component 1 as the putative bulge and component 2 as the putative disk. We are going to attempt a fit where the disk is forced to have nser=1 and the bulge has an axial ratio of 1.
 
