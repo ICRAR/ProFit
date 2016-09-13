@@ -80,7 +80,25 @@ eval_function_t FerrerProfile::get_evaluation_function() {
 double FerrerProfile::get_lumtot(double r_box) {
 	double a = this->a;
 	double b = this->b;
-	double g_factor = gammafn(a+1) * gammafn((4-b)/(2-b)) / gammafn(a+2/(2-b)+1);
+
+	/*
+	 * Wolfram Alpha gave for g_factor:
+	 *
+	 *   G(a + 1) * G((4-b)/(2-b)) / G(a + 2/(2-b) + 1)
+	 *
+	 * But (4-b)/(2-b) == 1 + 2/(2-b), and G(a+1) == a*G(a)
+	 * Thus the expression above equals to:
+	 *
+	 *   a * G(a) * G(1 + 2/(2-b)) / G(a + 2/(2-b) + 1)
+	 *   a * B(a, 1+2/(2-b))
+	 *
+	 * Although the results are the same, high-level mathematical libs
+	 * like GSL and R handle calculation errors better than we do and
+	 * thus it's better to let them deal with intermediate results.
+	 * For example b=1.99 gives NaN with our gamma-based calculations,
+	 * but still converges using beta.
+	 */
+	double g_factor = a * beta(a, 1 + 2/(2-b));
 	return pow(rout, 2) * M_PI * g_factor * axrat/r_box;
 }
 
