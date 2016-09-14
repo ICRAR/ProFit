@@ -36,7 +36,7 @@ kable(head(ExampleInit, 10))
 Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
 
 ```{r}
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/KiDS/',sep=''))
+ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/inst/extdata/KiDS/',sep=''))
 ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 ExampleIDs
 ```
