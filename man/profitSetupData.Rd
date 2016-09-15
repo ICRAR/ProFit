@@ -315,14 +315,16 @@ One of the list outputs of \code{profitSetupData} is the calcregion logical matr
 \examples{
 # Load ProFit example data
 
-data('ExampleInit')
-ExampleFiles=list.files(paste(.libPaths()[1],'/ProFit/extdata/KiDS/',sep=''))
-ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
-print(ExampleIDs)
-
 # There are 2 data source options: KiDS or SDSS (the galaxies are the same)
 
 datasource='KiDS' 
+
+# Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
+
+data('ExampleInit')
+ExampleFiles=list.files(system.file("extdata",datasource,package="ProFit"))
+ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
+print(ExampleIDs)
 
 # There are 10 example galaxies included. Here we run example 1:
 
