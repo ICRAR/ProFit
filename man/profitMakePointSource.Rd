@@ -8,9 +8,9 @@ Create an image of a point source (PS) with an analytical or empirical point spr
 Create an image of a point source at an arbitrary location (can be fractional pixels) based on a user-defined point spread function (PSF) model, or by interpolating a user-defined empirical PSF image. Defaults to creating an empirical image of a Gaussian PSF.
 }
 \usage{
-profitMakePointSource(xcen,ycen,mag=0,magzero=0,
-  modellist=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
-  psf=NULL,image=matrix(0,9,9),finesample=1L, add=FALSE)
+profitMakePointSource(xcen, ycen, mag = 0, magzero = 0,
+  modellist = list(sersic = list(mag = 0, re = 1, nser = 0.5, axrat=1, ang=0)),
+  psf=NULL, image=matrix(0, 9, 9), finesample=1L, add=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

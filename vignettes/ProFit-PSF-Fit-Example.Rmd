@@ -37,10 +37,10 @@ data('ExampleInit', package="ProFit")
 kable(head(ExampleInit, 10))
 ```
 
-There are 2 data source options: KiDS or SDSS (the galaxies are the same)
+Here we will use an SDSS example:
 
 ```{r}
-datasource='KiDS'
+datasource='SDSS'
 ```
 
 Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
@@ -206,11 +206,15 @@ profitLikeModel(optimfit$par, Data,makeplots=TRUE, plotchisq=TRUE)
 In the resultant fit we see that the FWHM is given as ~3, which given the SDSS pixel scale (0.339 asec/pix) is ~1 asec, which is pretty good for SDSS imaging. The PSF is preferred as being close to an axial ratio ~1 (or ~0 in log-space). We do find significant boxiness, so the PSF is not actually perfectly circular. We can see this visually in fact:
 
 ```{r, eval=FALSE}
-psfmodel=profitMakeModel(profitRemakeModelList(optimfit$par, modellist, tofit=tofit, tolog=tolog), dim=c(25,25))$z
+PSFmodellist=profitRemakeModelList(optimfit$par, modellist, tofit=tofit, tolog=tolog)
+PSFmodellist$moffat$xcen=12.5
+PSFmodellist$moffat$xcen=12.5
+PSFmodellist$moffat$mag=0
+psfmodel=profitMakeModel(PSFmodellist, dim=c(25,25))$z
 contour(magimage(psfmodel), add=TRUE, col='red', drawlabels = FALSE)
 ```
 
-We now have an analytic means of describing the SDSS PSF. We can use this for subsequent fitting.
+Notice in the above we set a few parameters to be exactly where we want, e.g. the PSF should be in the middle of our 25x25 image matrix (the fit was at 12.51 and 12.51 rather than 12.5 and 12.5) and the magnitude should be exactly 0 (i.e. the integral of the PSF sums to 1). We now have an analytic means of describing the SDSS PSF. We can use this for subsequent fitting.
 
 ## Use the analytic PSF to fit a target galaxy
 
@@ -370,7 +374,7 @@ Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psfmo
 We will try `optim` L-BFGS-B:
 
 ```{r, eval=FALSE}
-optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
+optimfitMod=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
 lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 ```
@@ -378,23 +382,23 @@ control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 The best `optim` L-BFGS-B fit is given by:
 
 ```{r, eval=FALSE}
-optimfit$par
+optimfitMod$par
 ```
 
 Check it out:
 
 ```{r, eval=FALSE}
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
+profitLikeModel(optimfitMod$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(optimfitMod$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(optimfitMod$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 ```
 
 ```{r, eval=FALSE}
-modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(optimfitMod$par,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.339,FWHM=1,SBlim=26)
 ```
 
-Now we can try the empirical PSF instead:
+Now we can try the empirical PSF instead (for comparison):
 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
@@ -407,7 +411,7 @@ Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
 We will try `optim` L-BFGS-B:
 
 ```{r, eval=FALSE}
-optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
+optimfitEmp=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
 lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 ```
@@ -415,20 +419,20 @@ control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 The best `optim` L-BFGS-B fit is given by:
 
 ```{r, eval=FALSE}
-optimfit$par
+optimfitEmp$par
 ```
 
 Check it out:
 
 ```{r, eval=FALSE}
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
-profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
+profitLikeModel(optimfitEmp$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(optimfitEmp$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(optimfitEmp$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 ```
 
 ```{r, eval=FALSE}
-modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModelList(optimfitEmp$par,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.339,FWHM=1,SBlim=26)
 ```
 
-Fitting using the empirical PSF gives simialr results and best fit LL, but smaller bulge Re and a fainter bulge.
+Fitting using the empirical PSF gives similar results and best-fit LL (slightly better LL), but a smaller bulge Re and a fainter bulge magnitude. It makes sense the model versus empirical PSF would disagree most for bulge parameters- these are dominated by the core region where the resolution is barely above the PSF itself.
