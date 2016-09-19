@@ -115,7 +115,7 @@ void RadialProfile::initial_calculations() {
 	 * later to calculate the exact contribution of each pixel.
 	 */
 	double box = this->box + 2;
-	double r_box = M_PI * box / (4*beta(1/box, 1 + 1/box));
+	double r_box = M_PI * box / (2*beta(1/box, 1/box));
 	double lumtot = this->get_lumtot(r_box);
 	this->_ie = pow(10, -0.4*(this->mag - this->model.magzero))/lumtot;
 
