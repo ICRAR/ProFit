@@ -203,7 +203,22 @@ Check the final result:
 profitLikeModel(optimfit$par, Data,makeplots=TRUE, plotchisq=TRUE)
 ```
 
-In the resultant fit we see that the FWHM is given as ~3, which given the SDSS pixel scale (0.339 asec/pix) is ~1 asec, which is pretty good for SDSS imaging. The PSF is preferred as being close to an axial ratio ~1 (or ~0 in log-space). We do find significant boxiness, so the PSF is not actually perfectly circular. We can see this visually in fact:
+You can go even further with a full MCMC fit (I can assure you that in this case it is not worth the effort, but run if you must!):
+
+```{r, eval=FALSE}
+Data$algo.func = "LD"
+
+LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
+  Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
+```
+
+Check the final result:
+
+```{r, eval=FALSE}
+profitLikeModel(LDfit$Summary2[,1], Data,makeplots=TRUE, plotchisq=TRUE)
+```
+
+Since the full MCMC achieves the same fit (more or less) we will procede with the optim fit. In the resultant fit we see that the FWHM is given as ~3, which given the SDSS pixel scale (0.339 asec/pix) is ~1 asec, which is pretty good for SDSS imaging. The PSF is preferred as being close to an axial ratio ~1 (or ~0 in log-space). We do find significant boxiness, so the PSF is not actually perfectly circular. We can see this visually in fact:
 
 ```{r, eval=FALSE}
 PSFmodellist=profitRemakeModelList(optimfit$par, modellist, tofit=tofit, tolog=tolog)
