@@ -63,7 +63,7 @@ magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 
 magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
 
-############### Full fit example ##############
+############### Full L-BFGS-B fit example ##############
 
 \dontrun{
 
@@ -73,7 +73,8 @@ magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c
 
 datasource='KiDS' 
 
-# Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
+# Now we can extract out the example files we have available for fitting by checking the
+# contents of the directory containing the example FITS files:
 
 data('ExampleInit')
 ExampleFiles=list.files(system.file("extdata",datasource,package="ProFit"))
@@ -157,64 +158,29 @@ tolog=list(
   )
 )
 
-# The priors. If the parameters are to be sampled in log space (above) then the priors
-# will refer to dex not linear standard deviations. Priors should be specified in their
-# unlogged state- the logging is done internally.
-
-sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
-
-priors=list(
-  sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=TRUE)},function(x){dnorm(x,0,sigmas[2],
-    log=TRUE)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=TRUE)},function(x){dnorm(x,0,sigmas[4],
-    log=TRUE)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=TRUE)},function(x){dnorm(x,0,sigmas[6],
-    log=TRUE)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=TRUE)},function(x){dnorm(x,0,sigmas[8],
-    log=TRUE)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=TRUE)},function(x){dnorm(x,0,sigmas[10],
-    log=TRUE)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=TRUE)},function(x){dnorm(x,0,sigmas[12],
-    log=TRUE)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=TRUE)},function(x){dnorm(x,0,sigmas[14],
-    log=TRUE)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=TRUE)},function(x){dnorm(x,0,sigmas[16],
-    log=TRUE)})
-  )
-)
-
-# The hard intervals should also be specified in log space if relevant:
-
-lowers=c(0,0,0,0,10,10,0,0,-1,-1,-180,-180,-1,-1,-1,-1)
-uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
+# The hard interval limits to use when fitting. This is not strictly required, but without
+# this we cannot ensure the sampler does not enter unallowed values like negative sizes,
+# Sersic indices and axial ratios etc:
 
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=FALSE)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=FALSE)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=FALSE)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=FALSE)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=FALSE)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=FALSE)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=FALSE)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=FALSE)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=FALSE)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=FALSE)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=FALSE)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=FALSE)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=FALSE)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=FALSE)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=FALSE)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=FALSE)})
+    xcen=list(lim=c(0,300),lim=c(0,300)),
+    ycen=list(lim=c(0,300),lim=c(0,300)),
+    mag=list(lim=c(10,30),lim=c(10,30)),
+    re=list(lim=c(1,100),lim=c(1,100)),
+    nser=list(lim=c(0.5,20),lim=c(0.5,20)),
+    ang=list(lim=c(-180,360),lim=c(-180,360)),
+    axrat=list(lim=c(0.1,1),lim=c(0.1,1)),
+    box=list(lim=c(-1,1),lim=c(-1,1))
   )
 )
 
-# Setup the data structure we need for optimisation:
+# Setup the minimal data structure we need for optimisation. See vignettes for
+# more complex examples using priors, and constraints:
 
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-magzero=0, algo.func='optim', verbose=TRUE)
+modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0,
+algo.func='optim', verbose=TRUE)
 
 # This produces a fairly complex R object, but with all the bits we need for fitting,
 # e.g. (notice the tolog parameteres are now logged):
@@ -229,13 +195,12 @@ Data$init
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
-# First try optim L-BFGS-B:
+# Let us try optim BFGS:
 
-optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
-lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
-control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
+optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
+control=list(fnscale=-1))
 
-# The best optim L-BFGS-B fit is given by:
+# The best optim BFGS fit is given by:
 
 optimfit$par
 
@@ -247,94 +212,6 @@ profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='al
 
 modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
-
-# Now we can try a LaplaceApproximation fit (should take a few minutes):
-
-Data$algo.func = "LA"
-
-LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e4,
-Method='BFGS', CovEst='Identity', sir=FALSE)
-
-# The best LA BFGS fit is given by:
-
-LAfit$Summary1[,1]
-
-# Check it out:
-
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=1))
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=2))
-profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
-
-modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$modellist,Data$tofit,Data$tolog)
-profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
-
-# If we get CMAES we can try to fit using genetic algorithms:
-
-#library(devtools)
-#install_github('taranu/cmaeshpc')
-#library(cmaeshpc)
-
-Data$algo.func = "CMA"
-cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
-cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
-fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
-diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
-
-# The parameters:
-
-cmafit$par
-
-# The fit plots:
-
-profitLikeModel(cmafit$par,Data,makeplots=TRUE)
-
-# Now we can try a LaplacesDemon fit:
-
-Data$algo.func = "LD"
-
-LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
-Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
-
-# If it has converged well you will have a Summary2 structure using the ESS:
-
-LDfit$Summary2
-
-# If not you can still check Summary1:
-
-LDfit$Summary1
-
-# The global fit is very close to the initial LA fit on this occassion.
-
-# With any luck you have enough stationary samples to run:
-
-BestLD=magtri(LDfit$Posterior2, samples=500, samptype='ran')
-
-# Otherwise try:
-
-BestLD=magtri(LDfit$Posterior1, samples=500, samptype='end')
-
-# We can now check our final fit:
-
-profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
-profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
-profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
-
-modeloptim=profitRemakeModelList(BestLD,Data$modellist,Data$tofit,Data$tolog)
-profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
-
-# Better errors can be obtained by removing the spurious structure remaining:
-
-bestmodel=profitRemakeModelList(BestLD, Data$modellist, Data$tofit, Data$tolog)
-imagemod=profitMakeModel(bestmodel,magzero=Data$magzero,dim=Data$imagedim,psf=Data$psf)
-imagemod=imagemod$z+rnorm(length(Data$sigma),mean=0,sd=Data$sigma)
-Datamod=profitSetupData(image=imagemod, mask=mask, sigma=sigma, segim=segim, psf=psf,
-modellist=bestmodel, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-magzero=0, algo.func='LD', verbose=FALSE)
-
-LDfitmod=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Datamod,
-Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
-
-BestLDmod=magtri(LDfit$Posterior1, samples=500, samptype='end')
 }
 
 }

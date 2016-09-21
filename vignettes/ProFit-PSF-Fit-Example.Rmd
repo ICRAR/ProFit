@@ -136,49 +136,32 @@ tolog=list(
     con=TRUE,
     ang=FALSE,
     axrat=TRUE,
-    box=TRUE
+    box=FALSE
   )
 )
 ```
 
-The priors will be very un-informative:
-
-```{r}
-priors=list(
-  sersic=list(
-    xcen=list(function(x){dnorm(x,0,1,log=T)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,1,log=T)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,0.1,log=T)}), # Sum should be very close to 1
-    fwhm=list(function(x){dnorm(x,0,2,log=T)}), # FWHM is roughly close to initial model
-    con=list(function(x){dnorm(x,0,2,log=T)}), # Try a broad range of concentration
-    ang=list(function(x){dunif(x,-360,360,log=T)}), # No idea re the initial angle
-    axrat=list(function(x){dnorm(x,0,1,log=T)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,1,log=T)}) # i.e. 1 boxiness SD
-  )
-)
-```
-
-The intervals will be generous too:
+The intervals will be generous:
 
 ```{r}
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,0,25,reflect=F)}),
-    ycen=list(function(x){interval(x,0,25,reflect=F)}),
-    mag=list(function(x){interval(x,-1,1,reflect=F)}),
-    fwhm=list(function(x){interval(x,1,5,reflect=F)}),
-    con=list(function(x){interval(x,0,3,reflect=F)}),
-    ang=list(function(x){interval(x,-360,360,reflect=F)}),
-    axrat=list(function(x){interval(x,-2,0,reflect=F)}),
-    box=list(function(x){interval(x,-1,1,reflect=F)})
+    xcen=list(lim=c(0,25)),
+    ycen=list(lim=c(0,25)),
+    mag=list(lim=c(-1,1)),
+    fwhm=list(lim=c(0.1,10)),
+    con=list(lim=c(1,20)),
+    ang=list(lim=c(-180,360)),
+    axrat=list(lim=c(0.1,1)),
+    box=list(lim=c(-1,1))
   )
-  )
+)
 ```
 
 Now setup the Data structure we need for fitting, where we will use Normal likelihoods:
 
 ```{r}
-Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, magzero=0, algo.func='optim', verbose=TRUE, like.func = 'norm')
+Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0, algo.func='optim', verbose=TRUE, like.func = 'norm')
 ```
 
 Check our rough model:
@@ -187,14 +170,12 @@ Check our rough model:
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
-The initial rough model for the SDSS does not look great- clearly the PSD is much rounder than we guessed.
+The initial rough model for the SDSS does not look great- clearly the PSF is much rounder than we guessed.
 
-To stop the guess-work we can now optimise the model:
+To stop the guess-work we can now optimise the model with BFGS:
 
 ```{r, eval=FALSE}
-optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
-lower=c(0,0,-1,1,0,-360,-2,-1), upper=c(25,25,1,5,3,360,0,1),
-control=list(fnscale=-1,parscale=c(1,1,0.1,2,2,10,1,1)))
+optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data, control=list(fnscale=-1))
 ```
 
 Check the final result:
@@ -235,10 +216,10 @@ Notice in the above we set a few parameters to be exactly where we want, e.g. th
 
 ```{r}
 useID=ExampleIDs[1]
-image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),package="ProFit"))$imDat
+image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''), package="ProFit"))$imDat
+mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''), package="ProFit"))$imDat
+sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''), package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''), package="ProFit"))$imDat
 ```
 
 Next we extract parameters for a very rough model (not meant to look too good yet):
@@ -321,57 +302,19 @@ tolog=list(
 )
 ```
 
-Now we specify the prior functions. If the parameters are to be sampled in log space (above) then the priors will refer to dex not linear standard deviations. Priors should be specified in their unlogged state- the logging is done internally.
+The hard intervals should also be specified in linear space:
 
 ```{r}
-sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
-
-priors=list(
-  sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=T)},function(x){dnorm(x,0,sigmas[2],
-    log=T)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=T)},function(x){dnorm(x,0,sigmas[4],
-    log=T)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=T)},function(x){dnorm(x,0,sigmas[6],
-    log=T)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=T)},function(x){dnorm(x,0,sigmas[8],
-    log=T)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=T)},function(x){dnorm(x,0,sigmas[10],
-    log=T)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=T)},function(x){dnorm(x,0,sigmas[12],
-    log=T)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=T)},function(x){dnorm(x,0,sigmas[14],
-    log=T)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=T)},function(x){dnorm(x,0,sigmas[16],
-    log=T)})
-  )
-)
-```
-
-The hard intervals should also be specified in log space if relevant:
-
-```{r}
-lowers=c(0,0,0,0,10,10,0,0,-1,-1,-180,-180,-1,-1,-1,-1)
-uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
-
 intervals=list(
   sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=F)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=F)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=F)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=F)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=F)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=F)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=F)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=F)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=F)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=F)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=F)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=F)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=F)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=F)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=F)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=F)})
+    xcen=list(lim=c(0,300),lim=c(0,300)),
+    ycen=list(lim=c(0,300),lim=c(0,300)),
+    mag=list(lim=c(10,30),lim=c(10,30)),
+    re=list(lim=c(1,100),lim=c(1,100)),
+    nser=list(lim=c(0.5,20),lim=c(0.5,20)),
+    ang=list(lim=c(-180,360),lim=c(-180,360)),
+    axrat=list(lim=c(0.1,1),lim=c(0.1,1)),
+    box=list(lim=c(-1,1),lim=c(-1,1))
   )
 )
 ```
@@ -380,21 +323,20 @@ Setup the data structure we need for optimisation, taking a few seconds to find 
 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psfmodel,
-  modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
+                     modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals,
+                     magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
 ```
 
 ## Do some fitting with the new model PSF:
 
-We will try `optim` L-BFGS-B:
+We will try `optim` BFGS:
 
 ```{r, eval=FALSE}
-optimfitMod=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
-lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
-control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
+optimfitMod=optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
+                  control=list(fnscale=-1))
 ```
 
-The best `optim` L-BFGS-B fit is given by:
+The best `optim` BFGS fit is given by:
 
 ```{r, eval=FALSE}
 optimfitMod$par
@@ -417,18 +359,17 @@ Now we can try the empirical PSF instead (for comparison):
 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-  modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
+  modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0,
+  algo.func='optim', like.func = "t", verbose=TRUE)
 ```
 
 ## Do some fitting with the empirical model PSF:
 
-We will try `optim` L-BFGS-B:
+We will try `optim` BFGS:
 
 ```{r, eval=FALSE}
-optimfitEmp=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
-lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
-control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
+optimfitEmp=optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
+                  control=list(fnscale=-1))
 ```
 
 The best `optim` L-BFGS-B fit is given by:
@@ -450,4 +391,4 @@ modeloptim=profitRemakeModelList(optimfitEmp$par,Data$modellist,Data$tofit,Data$
 profitEllipsePlot(Data,modeloptim,pixscale=0.339,FWHM=1,SBlim=26)
 ```
 
-Fitting using the empirical PSF gives similar results and best-fit LL (slightly better LL), but a smaller bulge Re and a fainter bulge magnitude. It makes sense the model versus empirical PSF would disagree most for bulge parameters- these are dominated by the core region where the resolution is barely above the PSF itself.
+Fitting using the empirical PSF gives similar results and best-fit LL (slightly better LL), but a larger bulge Re and a brighter bulge magnitude. It makes sense the model versus empirical PSF would disagree most for bulge parameters- these are dominated by the core region where the resolution is barely above the PSF itself.

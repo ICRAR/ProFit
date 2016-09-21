@@ -1,23 +1,25 @@
 # Convenient function to flatten a list into another list and
 # avoid coercion into a single type (usually numeric/double)
-.renquote = function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, .renquote) else enquote(l)
-.flattenlist = function(ml) lapply(unlist(.renquote(ml)), eval)
-.rrelist = function(flesh, skeleton=attr(flesh, "skeleton")){
-  index = 1
-  result = skeleton
-  for (i in 1:length(skeleton)) {
-    size = length(unlist(result[[i]]))
-    if(is.list(result[[i]])) {
-      result[[i]] = .rrelist(flesh[index:(index + size - 1)], result[[i]])
-    } else if(size >1) {
-      result[[i]] = relist(flesh[index:(index + size - 1)], result[[i]])
-    } else {
-      result[[i]] = flesh[[index]]
-    }
-    index <- index + size
-  }
-  result
-}
+# Below is currently not used due to code simplification- might want to add back
+# in if modellist gain a variety of data types in the future.
+# .renquote = function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, .renquote) else enquote(l)
+# .flattenlist = function(ml) lapply(unlist(.renquote(ml)), eval)
+# .rrelist = function(flesh, skeleton=attr(flesh, "skeleton")){
+#   index = 1
+#   result = skeleton
+#   for (i in 1:length(skeleton)) {
+#     size = length(unlist(result[[i]]))
+#     if(is.list(result[[i]])) {
+#       result[[i]] = .rrelist(flesh[index:(index + size - 1)], result[[i]])
+#     } else if(size >1) {
+#       result[[i]] = relist(flesh[index:(index + size - 1)], result[[i]])
+#     } else {
+#       result[[i]] = flesh[[index]]
+#     }
+#     index <- index + size
+#   }
+#   result
+# }
 
 profitLikeModel=function(parm, Data, makeplots=FALSE, 
   whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"), rough=FALSE,
@@ -30,37 +32,50 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   fitIDs=which(unlist(Data$tofit))
   parm=parm[1:length(fitIDs)]
-  paramsinit=.flattenlist(Data$modellist)
+  paramsinit=unlist(Data$modellist)
   paramsnew=paramsinit
   paramsnew[fitIDs]=parm
-  
-  intervals = .flattenlist(Data$intervals)
-  for(i in fitIDs){
-    paramsnew[i]=intervals[[i]](paramsnew[[i]])
-  }
-  parm=paramsnew[fitIDs]
-  
-  inheritIDs=which(is.na(.flattenlist(Data$tofit)))
-  for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
-  
-  priors = .flattenlist(Data$priors)
-  priorsum=0
-  for(i in fitIDs){
-    priorsum=priorsum+priors[[i]](paramsinit[[i]]-paramsnew[[i]])
-  }
   
   # Flatten or unlist?
   tounlogIDs=which(unlist(Data$tolog) & unlist(Data$tofit))
   for(i in tounlogIDs){
-    paramsnew[i]=10^paramsnew[[i]]
+    paramsnew[i]=10^paramsnew[i]
   }
-  # Re-inherit unlogged parameters, just in case the user set inconsistent flags
+  # Inherit values for NA flags
+  inheritIDs=which(is.na(unlist(Data$tofit)))
   for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
   
-  paramsnew=.rrelist(paramsnew,Data$modellist)
+  # Speccify interval limits on the now linear data
+  if(length(Data$intervals)>0){
+    intervals = unlist(Data$intervals)
+    for(i in 1:length(paramsnew)){
+      paramsnew[i]=max(intervals[(i-1)*2+1], min(intervals[(i-1)*2+2], paramsnew[i], na.rm = FALSE), na.rm = FALSE)
+    }
+  }
   
-  img = Data$image
-  sigimg = Data$sigma
+  # Re-list the new linear modellist
+  modellistnew=relist(paramsnew,Data$modellist)
+  
+  # Apply constraints to the new linear modellist
+  if(length(Data$constraints)>0){
+    modellistnew=Data$constraints(modellistnew)
+  }
+  
+  # Calculate priors with the new versus old modellist
+  if(length(Data$priors)>0){
+    priorsum=Data$priors(modellistnew,Data$modellist)
+  }else{
+    priorsum=0
+  }
+  
+  # Unlist and extract the tofit elements and log where required
+  paramsnew=unlist(modellistnew)
+  for(i in tounlogIDs){
+    paramsnew[i]=log10(paramsnew[i])
+  }
+  
+  # Specify the new parm to be parsed back to the external optimisation function
+  parm=paramsnew[fitIDs]
   
   if(Data$fitpsf) {
     psf = profitMakePointSource(modellist=model$psf, finesample = finesample) 
@@ -69,20 +84,20 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   }
   
   if(Data$usecalcregion){
-    model = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
+    model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
       whichcomponents = whichcomponents, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
       magmu=Data$magmu,finesample=finesample, convopt=Data$convopt)
   }else{
-    model = profitMakeModel(modellist=paramsnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
+    model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
       whichcomponents = whichcomponents, rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt)
   }
   
   if(any(Data$region)) {
-    cutim=img[Data$region]
+    cutim=Data$image[Data$region]
     cutmod=model$z[Data$region]
-    cutsig=sigimg[Data$region] 
+    cutsig=Data$sigma[Data$region] 
   } else {
-    cutim=img
+    cutim=Data$image
     cutmod=model$z
   }
   
@@ -119,12 +134,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   if(makeplots){
     skylevel = 0
-    if(!is.null(paramsnew$sky) && !is.null(paramsnew$sky$bg) && is.numeric(paramsnew$sky$bg)) skylevel = paramsnew$sky$bg
-    profitMakePlots(img-skylevel,model$z-skylevel,Data$region, sigimg, cmap=cmap, errcmap=errcmap,plotchisq=plotchisq)
+    if(!is.null(modellistnew$sky) && !is.null(modellistnew$sky$bg) && is.numeric(modellistnew$sky$bg)) skylevel = modellistnew$sky$bg
+    profitMakePlots(Data$image-skylevel,model$z-skylevel,Data$region, Data$sigma, cmap=cmap, errcmap=errcmap,plotchisq=plotchisq)
   }
   
   LP=as.numeric(LL+priorsum)
-  parm = unlist(parm)
   if(Data$verbose){print(c(parm,LP),digits = 5)}
   if(Data$algo.func=='') return(list(model=model,psf=psf))
   if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}

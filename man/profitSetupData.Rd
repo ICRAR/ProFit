@@ -9,7 +9,7 @@ This is a utility function to get the user inputs in the format required for mod
 }
 \usage{
 profitSetupData(image, mask, sigma, segim, modellist, tofit, tolog, priors, intervals,
-psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
+constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
 like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
 benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE)
 }
@@ -37,10 +37,13 @@ Logical list, using exactly the same list structure as \option{modellist}. This 
 Logical list, using exactly the same list structure as \option{modellist}. This flags which parameters of the model list should be fitted in log space (i.e. only relevant to set this if the parameter is being fitted). Parameters like size (re) and axial ratio (axrat) are more naturally explored in log-space, so these should typically be set to true. See Details.
 }
   \item{priors}{
-Function list, using a similar list structure to \option{modellist}. Instead of a vector of values the user should provide a list of prior functions. If priors are not desired then this can be made as simple as function(x){0}. Any density function available within R is an appropriate input to use, but the evaluation is made using the output \option{init} parameter vector, i.e. it is centred around init. Prior functions are only required if the parameter is being fit, but in practice the list structure needs to have the same shape, so at the least filler values or dummy prior functions must be provided for missing parameters unless the model is not being used for fitting at all (e.g. you are not fitting any PSFs or the sky). If \option{tolog}=TRUE, then the prior functions will be evaluated in log-space, i.e. SD=1 means 1 dex offset. See Details.
+Function; that takes the initial \option{modellist} and the new trial \option{modellist} and returns the log-likehood of the priors. As long as the returned output if a single summed log-likehood, there is no restriction on what happens internally to the function. This very simple or very complex conditional priors can be specified using R functions. See vignettes for an example. If left empty priors will not be used when computing likelihoods.
 }
   \item{intervals}{
-Function list, using a similar list structure to \option{modellist}. These functions should specify what action to take when the paramater goes beyond sensible search limits. Using the \code{\link{interval}} function is sensible because it covers two obvious scenarios: the value should be set to the limit, or it should be reflected back over the limit. If the parameter is being fitted in log-space then the limits should also be defined in log-space, i.e. for re limit=2 means 100 (10^2). See Details.
+List; of interval limits for each parameter, using a similar list structure to \option{modellist}. The limits should be specified as length 2 vectors: c(low, high) in linear parameter space (no matter if tolog is TRUE for this parameter). See Vignettes and Details.
+}
+  \item{constraints}{
+Function, that takes the new trial \option{modellist} and returns a list with exactly the same structure. This exists for the purpose of allowing complex relationships between parameters. A simple example is given in the Vignettes of not allowing the bulge Re to become larger than the disk Re. You could also use it to specify the offset of, e.g., a Ferrer profile to be linked to that of the Sersic bulge. Your imagination is the limit, as long as the basic structure returns has the same skeleton as \option{modellist}.
 }
   \item{psf}{
 An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{modellist}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
@@ -74,7 +77,7 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
   }
 }
 \details{
-A legal model list (\option{modellist}) has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
+A legal model list (\option{modellist}) has the structure of, e.g., list(sersic, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, king, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
 
 The parameters that must be specified for \option{sersic} are:
 
@@ -127,6 +130,20 @@ The parameters that must be specified for \option{ferrer} or \option{ferrers} (e
   \item{rout}{Vector; the outer limit of the Ferrer profile. Beyond this radius the profile is evaluated as zero.}
   \item{a}{Vector; the global profile power-law slope. 0 would mean a flat top, and +ve increases in intensity towards the centre.}
   \item{b}{Vector; the strength of the profile truncation as it approaches \option{rout}.}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of Ferrer profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Ferrer profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+}
+
+The parameters that must be specified for \option{king} are:
+
+\describe{
+  \item{xcen}{Vector; x centres of the 2D Ferrer profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Ferrer profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Ferrer profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{rc}{Vector; the core radius of the King profile.}
+  \item{rt}{Vector, the truncation radius of the King profile. Beyond this radius the profile is evaluated as zero.}
+  \item{a}{Vector; the power-law of the King profile.}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
   \item{axrat}{Vector; axial ratios of Ferrer profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
   \item{box}{Vector; the boxiness of the Ferrer profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
@@ -232,35 +249,43 @@ tolog=list(\cr
   ),
 )\cr
 
-ProFit will only look for prior functions for parameters being fitted, so below we do not provide prior functions for pointsource, psf or sky. These are otherwise provided in a similar format to above (notice the means are all 0 since the evaluation is made using current-init, i.e. it is centred around init):
+ProFit will only only use the priors function if specified:
 
-priors=list(\cr
-  sersic=list(\cr
-    xcen=list(function(x){dnorm(x,0,2,log=TRUE)},function(x){dnorm(x,0,2,log=TRUE)}), # should have tight constraints on x\cr
-    ycen=list(function(x){dnorm(x,0,2,log=TRUE)},function(x){dnorm(x,0,2,log=TRUE)}), # should have tight constraints on y\cr
-    mag=list(function(x){dnorm(x,0,5,log=TRUE)},function(x){dnorm(x,0,5,log=TRUE)}), # 5 mag SD\cr
-    re=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}), # i.e. 1 dex in re is the SD\cr
-    nser=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}), # i.e. 1 dex in nser is the SD\cr
-    ang=list(function(x){dnorm(x,0,30,log=TRUE)},function(x){dnorm(x,0,30,log=TRUE)}), # very broad 30 deg ang SD\cr
-    axrat=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}), # i.e. 1 dex in axrat is the SD\cr
-    box=list(function(x){dnorm(x,0,1,log=TRUE)},function(x){dnorm(x,0,1,log=TRUE)}) # 1 boxiness SD\cr
+priors=function(modellist,modellistinit,sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)){\cr
+  LL=sum(\cr
+      dnorm(modellist$sersic$xcen,modellist$sersic$xcen,sigmas[1:2],log=TRUE),\cr
+      dnorm(modellist$sersic$ycen,modellist$sersic$ycen,sigmas[3:4],log=TRUE),\cr
+      dnorm(modellist$sersic$mag,modellist$sersic$mag,sigmas[5:6],log=TRUE),\cr
+      dnorm(log10(modellist$sersic$re),log10(modellist$sersic$re),sigmas[7:8],log=TRUE),\cr
+      dnorm(log10(modellist$sersic$nser),log10(modellist$sersic$nser),sigmas[9:10],log=TRUE),\cr
+      dnorm(log10(modellist$sersic$axrat),log10(modellist$sersic$axrat),sigmas[13:14],log=TRUE)\cr
   )\cr
-)\cr
+  return=LL\cr
+}\cr
 
-ProFit will only look for interval functions for parameters being fitted, so below we do not provide prior functions for pointsource, psf or sky.
+ProFit will only only use the intervals list if specified:
 
 intervals=list(\cr
   sersic=list(\cr
-    xcen=list(function(x){interval(x,0,200,reflect=FALSE)},function(x){interval(x,0,200,reflect=FALSE)}),\cr
-    ycen=list(function(x){interval(x,0,200,reflect=FALSE)},function(x){interval(x,0,200,reflect=FALSE)}),\cr
-    mag=list(function(x){interval(x,0,40,reflect=FALSE)},function(x){interval(x,0,40,reflect=FALSE)}),\cr
-    re=list(function(x){interval(x,-1,2,reflect=FALSE)},function(x){interval(x,-1,2,reflect=FALSE)}),\cr
-    nser=list(function(x){interval(x,-1,2,reflect=FALSE)},function(x){interval(x,-1,2,reflect=FALSE)}),\cr
-    ang=list(function(x){interval(x,-180,360,reflect=FALSE)},function(x){interval(x,-180,360,reflect=FALSE)}),\cr
-    axrat=list(function(x){interval(x,-2,0,reflect=FALSE)},function(x){interval(x,-2,0,reflect=FALSE)}),\cr
-    box=list(function(x){interval(x,-1,1,reflect=FALSE)},function(x){interval(x,-1,1,reflect=FALSE)})\cr
+    xcen=list(lim=c(0,300),lim=c(0,300)),\cr
+    ycen=list(lim=c(0,300),lim=c(0,300)),\cr
+    mag=list(lim=c(10,30),lim=c(10,30)),\cr
+    re=list(lim=c(1,100),lim=c(1,100)),\cr
+    nser=list(lim=c(0.5,20),lim=c(0.5,20)),\cr
+    ang=list(lim=c(-180,360),lim=c(-180,360)),\cr
+    axrat=list(lim=c(0.1,1),lim=c(0.1,1)),\cr
+    box=list(lim=c(-1,1),lim=c(-1,1))\cr
   )\cr
 )\cr
+
+ProFit will only only use the constraints function if specified:
+
+constraints=function(modellist){\cr
+  if(modellist$sersic$re[1]>modellist$sersic$re[2]){\cr
+    modellist$sersic$re[1]=modellist$sersic$re[2]\cr
+  }\cr
+  return=modellist\cr
+}\cr
 
 By ProFit convention the bottom-left part of the bottom-left pixel when plotting the image matrix is c(0,0) and the top-right part of the bottom-left pixel is c(1,1), i.e. the mid-point of pixels are half integer values in x and y.
 
@@ -279,7 +304,6 @@ List; complex structure  of class profit.data containing:
 \item{psftype}{The type of PSF - "analytical" if supplied in \option{modellist}, "empirical" if supplied in \option{psf}, or "none".}
 \item{fitpsf}{Logical flag specifying whether the \option{modellist} PSF has any parameters \option{tofit}.}
 \item{algo.func}{The specified \option{algo.func} flag.}
-\item{likefunc}{The specified \option{likefunc} flag.}
 \item{mask}{The specified \option{mask} matrix.}
 \item{mon.names}{Character vector of parameters to be passed when using the LA/LD algorithms. Defaults to c("LL","LP","dof").}
 \item{parm.names}{Character vector of parameter names to be passed when using the LA/LD algorithms.}
@@ -291,10 +315,11 @@ List; complex structure  of class profit.data containing:
 \item{convopt}{List specifying the preferred convolution method (Bruteconv, FFTconv, FFTWconv) and additional items to aid future convolution calculations (only relevant for FFTconv and FFTWconv). When \option{nbenchmark}=0L then the default of Bruteconv is assumed.}
 \item{tofit}{The specified \option{tofit} list.}
 \item{tolog}{The specified \option{tolog} list.}
-\item{priors}{The specified \option{priors} list.}
+\item{priors}{The specified \option{priors} function.}
 \item{intervals}{The specified \option{intervals} list.}
+\item{constraints}{The specified \option{constraints} function.}
+\item{like.func}{The specified \option{like.func} flag.}
 \item{magzero}{The specified \option{magzero} scalar.}
-\item{convolve}{A list of options to be passed to \code{\link{profitConvolvePSF}}.}
 \item{finesample}{The specified \option{finesample} factor.}
 \item{imagedim}{The dimensions of the \option{image} matrix.}
 \item{verbose}{The specified \option{verbose} logical.}
@@ -310,7 +335,7 @@ One of the list outputs of \code{profitSetupData} is the calcregion logical matr
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitConvolvePSF}}
+\code{\link{profitMakeModel}}, \code{\link{profitSersic}}, \code{\link{profitCoreSersic}}, \code{\link{profitMoffat}}, \code{\link{profitFerrer}}, \code{\link{profitKing}}, \code{\link{profitConvolvePSF}}
 }
 \examples{
 # Load ProFit example data
@@ -319,7 +344,8 @@ One of the list outputs of \code{profitSetupData} is the calcregion logical matr
 
 datasource='KiDS' 
 
-# Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
+# Now we can extract out the example files we have available for fitting by checking the
+# contents of the directory containing the example FITS files:
 
 data('ExampleInit')
 ExampleFiles=list.files(system.file("extdata",datasource,package="ProFit"))
@@ -341,10 +367,14 @@ package="ProFit"))$imDat
 psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
 package="ProFit"))$imDat
 
-#Very rough model (not meant to look too good yet):
+# Very rough model (not meant to look too good yet):
 
 useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
 useloc=which(ExampleInit$CATAID==useIDnum)
+
+# For our initial model we treat component 1 as the putitive bulge and componet 2 as
+# the putitive disk. We are going to attempt a fit where the disk is forced to have
+# nser=1 and the bulge has an axial ratio of 1.
 
 modellist=list(
   sersic=list(
@@ -399,75 +429,12 @@ tolog=list(
   )
 )
 
-# The priors. If the parameters are to be sampled in log space (above) then the priors
-# will refer to dex not linear standard deviations. Priors should be specified in their
-# unlogged state- the logging is done internally.
-
-sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
-
-priors=list(
-  sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=TRUE)},function(x){dnorm(x,0,sigmas[2],
-    log=TRUE)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=TRUE)},function(x){dnorm(x,0,sigmas[4],
-    log=TRUE)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=TRUE)},function(x){dnorm(x,0,sigmas[6],
-    log=TRUE)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=TRUE)},function(x){dnorm(x,0,sigmas[8],
-    log=TRUE)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=TRUE)},function(x){dnorm(x,0,sigmas[10],
-    log=TRUE)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=TRUE)},function(x){dnorm(x,0,sigmas[12],
-    log=TRUE)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=TRUE)},function(x){dnorm(x,0,sigmas[14],
-    log=TRUE)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=TRUE)},function(x){dnorm(x,0,sigmas[16],
-    log=TRUE)})
-  )
-)
-
-# The hard intervals should also be specified in log space if relevant:
-
-lowers=c(0,0,0,0,10,10,0,0,-1,-1,-180,-180,-1,-1,-1,-1)
-uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
-
-intervals=list(
-  sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=FALSE)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=FALSE)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=FALSE)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=FALSE)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=FALSE)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=FALSE)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=FALSE)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=FALSE)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=FALSE)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=FALSE)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=FALSE)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=FALSE)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=FALSE)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=FALSE)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=FALSE)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=FALSE)})
-  )
-)
-
-# Setup the data structure we need for optimisation:
+# Setup the minimal data structure we need for likelihood.
 
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-magzero=0, algo.func='optim', verbose=TRUE)
+modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE)
 
-# This produces a fairly complex R object, but with all the bits we need for fitting,
-# e.g. (notice the tolog parameteres are now logged):
-
-Data$init
-
-# These are the parameters we wish to fit for, and we take the initial guesses from the
-# model list we provided before.
-
-# We can test how things currently look (we get an output because we set verbose=TRUE
-# earlier):
+# Finally, calcualte the likelihood and make a plot:
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 }

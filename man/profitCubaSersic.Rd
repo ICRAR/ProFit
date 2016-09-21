@@ -74,7 +74,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaCoreSersic}}, \code{\link{profitCubaKing}}
+\code{\link{profitMakeModel}}, \code{\link{profitMoffat}}, \code{\link{profitFerrer}}, \code{\link{profitCoreSersic}}, \code{\link{profitKing}}
 }
 \examples{
 model = list(

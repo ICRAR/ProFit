@@ -79,7 +79,7 @@ Aaron Robotham
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaCoreSersic}}, \code{\link{profitCubaKing}}
+\code{\link{profitMakeModel}}, \code{\link{profitSersic}}, \code{\link{profitMoffat}}, \code{\link{profitCoreSersic}}, \code{\link{profitKing}}
 }
 \examples{
 magimage(profitCubaFerrer())

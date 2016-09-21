@@ -1,12 +1,10 @@
-profitSetupData=function(image,mask,sigma,segim,modellist,tofit,tolog,priors,intervals,psf=NULL,
-  finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", 
-  magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), 
-  verbose=FALSE) {
+profitSetupData=function(image, mask, sigma, segim, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE) {
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
   
   if(missing(image)){stop("User must supply an image matrix input!")}
   if(missing(modellist)){stop("User must supply a modellist input!")}
+  
   imagedim = dim(image)
   
   #What to do if missing things: sensible solutions here:
@@ -15,6 +13,9 @@ profitSetupData=function(image,mask,sigma,segim,modellist,tofit,tolog,priors,int
   if(missing(segim)){segim=matrix(1,imagedim[1],imagedim[2])}
   if(missing(tofit)){tofit=relist(rep(TRUE,length(unlist(modellist))),modellist)}
   if(missing(tolog)){tolog=relist(rep(FALSE,length(unlist(modellist))),modellist)}
+  if(missing(priors)){priors={}}
+  if(missing(intervals)){intervals={}}
+  if(missing(constraints)){constraints={}}
   
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
   region = segim==segimkeep & mask!=1
@@ -114,7 +115,7 @@ profitSetupData=function(image,mask,sigma,segim,modellist,tofit,tolog,priors,int
   profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist, psf=psf, psftype=psftype, fitpsf=fitpsf,
                    algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))), region=region,
                    calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
-                   tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, like.func = like.func,
+                   tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints, like.func = like.func,
                    magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu)
   class(profit.data)="profit.data"
   return(profit.data)

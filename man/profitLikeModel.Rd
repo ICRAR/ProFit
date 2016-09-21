@@ -63,7 +63,8 @@ Aaron Robotham & Dan Taranu
 
 datasource='KiDS' 
 
-# Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
+# Now we can extract out the example files we have available for fitting by checking the
+# contents of the directory containing the example FITS files:
 
 data('ExampleInit')
 ExampleFiles=list.files(system.file("extdata",datasource,package="ProFit"))
@@ -90,8 +91,8 @@ package="ProFit"))$imDat
 useIDnum=as.integer(strsplit(useID,'G')[[1]][2])
 useloc=which(ExampleInit$CATAID==useIDnum)
 
-# For our initial model we treat component 1 as the putative bulge and component 2 as
-# the putative disk. We are going to attempt a fit where the disk is forced to have
+# For our initial model we treat component 1 as the putitive bulge and componet 2 as
+# the putitive disk. We are going to attempt a fit where the disk is forced to have
 # nser=1 and the bulge has an axial ratio of 1.
 
 modellist=list(
@@ -109,13 +110,13 @@ modellist=list(
 )
 
 # The pure model (no PSF):
-magimage(profitMakeModel(modellist=modellist, dim=dim(image)))
+magimage(profitMakeModel(modellist,dim=dim(image)))
 
 # The original image:
 magimage(image)
 
 # The convolved model (with PSF):
-magimage(profitMakeModel(modellist=modellist, dim=dim(image)), psf=psf)
+magimage(profitMakeModel(modellist,dim=dim(image),psf=psf))
 
 # What should we be fitting:
 
@@ -147,75 +148,12 @@ tolog=list(
   )
 )
 
-# The priors. If the parameters are to be sampled in log space (above) then the priors
-# will refer to dex not linear standard deviations. Priors should be specified in their
-# unlogged state- the logging is done internally.
-
-sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3,0.3,0.3)
-
-priors=list(
-  sersic=list(
-    xcen=list(function(x){dnorm(x,0,sigmas[1],log=TRUE)},function(x){dnorm(x,0,sigmas[2],
-    log=TRUE)}), # should have tight constraints on x and y
-    ycen=list(function(x){dnorm(x,0,sigmas[3],log=TRUE)},function(x){dnorm(x,0,sigmas[4],
-    log=TRUE)}), # should have tight constraints on x and y
-    mag=list(function(x){dnorm(x,0,sigmas[5],log=TRUE)},function(x){dnorm(x,0,sigmas[6],
-    log=TRUE)}), # 5 mag SD
-    re=list(function(x){dnorm(x,0,sigmas[7],log=TRUE)},function(x){dnorm(x,0,sigmas[8],
-    log=TRUE)}), # i.e. 1 dex in re is the SD
-    nser=list(function(x){dnorm(x,0,sigmas[9],log=TRUE)},function(x){dnorm(x,0,sigmas[10],
-    log=TRUE)}), # i.e. 1 dex in nser is the SD
-    ang=list(function(x){dnorm(x,0,sigmas[11],log=TRUE)},function(x){dnorm(x,0,sigmas[12],
-    log=TRUE)}), # very broad 30 deg ang SD
-    axrat=list(function(x){dnorm(x,0,sigmas[13],log=TRUE)},function(x){dnorm(x,0,sigmas[14],
-    log=TRUE)}), # i.e. 1 dex in axrat is the SD
-    box=list(function(x){dnorm(x,0,sigmas[15],log=TRUE)},function(x){dnorm(x,0,sigmas[16],
-    log=TRUE)})
-  )
-)
-
-#the hard intervals should also be specified in log space if relevant:
-
-lowers=c(0,0,0,0,10,10,0,0,-1,-1,-180,-180,-1,-1,-1,-1)
-uppers=c(1e3,1e3,1e3,1e3,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
-
-intervals=list(
-  sersic=list(
-    xcen=list(function(x){interval(x,lowers[1],uppers[1],reflect=FALSE)},
-    function(x){interval(x,lowers[2],uppers[2],reflect=FALSE)}),
-    ycen=list(function(x){interval(x,lowers[3],uppers[3],reflect=FALSE)},
-    function(x){interval(x,lowers[4],uppers[4],reflect=FALSE)}),
-    mag=list(function(x){interval(x,lowers[5],uppers[5],reflect=FALSE)},
-    function(x){interval(x,lowers[6],uppers[6],reflect=FALSE)}),
-    re=list(function(x){interval(x,lowers[7],uppers[7],reflect=FALSE)},
-    function(x){interval(x,lowers[8],uppers[8],reflect=FALSE)}),
-    nser=list(function(x){interval(x,lowers[9],uppers[9],reflect=FALSE)},
-    function(x){interval(x,lowers[10],uppers[10],reflect=FALSE)}),
-    ang=list(function(x){interval(x,lowers[11],uppers[11],reflect=FALSE)},
-    function(x){interval(x,lowers[12],uppers[12],reflect=FALSE)}),
-    axrat=list(function(x){interval(x,lowers[13],uppers[13],reflect=FALSE)},
-    function(x){interval(x,lowers[14],uppers[14],reflect=FALSE)}),
-    box=list(function(x){interval(x,lowers[15],uppers[15],reflect=FALSE)},
-    function(x){interval(x,lowers[16],uppers[16],reflect=FALSE)})
-  )
-)
-
-# Setup the data structure we need for optimisation:
+# Setup the minimal data structure we need for likelihood.
 
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-magzero=0, algo.func='optim', verbose=TRUE)
+modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE)
 
-# This produces a fairly complex R object, but with all the bits we need for fitting,
-# e.g. (notice the tolog parameteres are now logged):
-
-Data$init
-
-# These are the parameters we wish to fit for, and we take the initial guesses from the
-# model list we provided before.
-
-# We can test how things currently look (we get an output because we set verbose=TRUE
-# earlier):
+# Finally, calcualte the likelihood and make a plot:
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 }

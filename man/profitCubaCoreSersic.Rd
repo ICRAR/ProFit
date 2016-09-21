@@ -91,7 +91,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaKing}}
+\code{\link{profitMakeModel}}, \code{\link{profitSersic}}, \code{\link{profitMoffat}}, \code{\link{profitFerrer}}, \code{\link{profitKing}}
 }
 \examples{
 magimage(profitCubaCoreSersic())
