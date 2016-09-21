@@ -143,14 +143,14 @@ Now we specify the priors object The priors object is really a function that tak
 The elements you access within the modellist structure must really exist or ProFit will stop with an error. The modellist used internally will be the linear (un-logged version), so logging must be made within the function if, e.g., log-normal distributions are required. You do not have to apply priors to each parameter- notice below a few are left out.
 
 ```{r}
-priors=function(modellist,modellistinit,sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)){
+priors=function(new,init,sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)){
   LL=sum(
-      dnorm(modellist$sersic$xcen,modellist$sersic$xcen,sigmas[1:2],log=TRUE),
-      dnorm(modellist$sersic$ycen,modellist$sersic$ycen,sigmas[3:4],log=TRUE),
-      dnorm(modellist$sersic$mag,modellist$sersic$mag,sigmas[5:6],log=TRUE),
-      dnorm(log10(modellist$sersic$re),log10(modellist$sersic$re),sigmas[7:8],log=TRUE),
-      dnorm(log10(modellist$sersic$nser),log10(modellist$sersic$nser),sigmas[9:10],log=TRUE),
-      dnorm(log10(modellist$sersic$axrat),log10(modellist$sersic$axrat),sigmas[13:14],log=TRUE)
+      dnorm(new$sersic$xcen,init$sersic$xcen,sigmas[1:2],log=TRUE),
+      dnorm(new$sersic$ycen,init$sersic$ycen,sigmas[3:4],log=TRUE),
+      dnorm(new$sersic$mag,init$sersic$mag,sigmas[5:6],log=TRUE),
+      dnorm(log10(new$sersic$re),log10(init$sersic$re),sigmas[7:8],log=TRUE),
+      dnorm(log10(new$sersic$nser),log10(init$sersic$nser),sigmas[9:10],log=TRUE),
+      dnorm(log10(new$sersic$axrat),log10(init$sersic$axrat),sigmas[13:14],log=TRUE)
   )
   return=LL
 }
@@ -179,23 +179,13 @@ The constraint object is really a function that takes modellist as an input and 
 
 The elements you access within the modellist structure must really exist or ProFit will stop with an error. All constraints manipulations happen internally to the model in linear (un-logged) form.
 
-Using constraints it is possible to force relative sizes between componenets etc. Here we do not want the bulge Re to become larger than the disk Re.
-
-```{r}
-constraints=function(modellist){
-  if(modellist$sersic$re[1]>modellist$sersic$re[2]){
-    modellist$sersic$re[1]=modellist$sersic$re[2]
-  }
-  return=modellist
-}
-```
-
 Setup the data structure we need for optimisation, taking a few seconds to find the optimal convolution method:
 
 ```{r}
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
-  modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
-  constraints=constraints, magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
+                     modellist=modellist, tofit=tofit, tolog=tolog, priors=priors,
+                     intervals=intervals,magzero=0, algo.func='optim', like.func = "t",
+                     verbose=TRUE)
 ```
 
 This produces a fairly complex R object, but with all the bits we need for fitting, e.g. (notice the tolog parameteres are now logged):
@@ -214,18 +204,15 @@ profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
 ## Do some fitting
 
-First try `optim` L-BFGS-B. If we use the lower and upper limits then these will need to be logged where appropriate (i.e. where specified in the tolog structure). This is because optim only ever sees the logged form of the relevant parameters, the linearisation happens within profitLikeModel.
+First we will try `optim` BFGS.
 
 ```{r, eval=FALSE}
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
-lowers=c(0,0,0,0,10,10,0,0,-0.3,-0.3,-180,-180,-1,-1,-1,-1)
-uppers=c(300,300,300,300,30,30,2,2,1.3,1.3,360,360,0,0,1,1)
-optimfit=optim(Data$init, profitLikeModel, method='L-BFGS-B', Data=Data, rough=TRUE,
-lower=lowers[which(unlist(tofit))], upper=uppers[which(unlist(tofit))],
+optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
 ```
 
-The best `optim` L-BFGS-B fit is given by:
+The best `optim` BFGS fit is given by:
 
 ```{r, eval=FALSE}
 optimfit$par
@@ -244,16 +231,28 @@ modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tol
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
-Now we can try a `LaplaceApproximation` fit. This should take a few minutes and might stall briefly when computing models near the intervals defined above:
+Using constraints it is possible to force relative sizes between componenets etc. Here we do not want the bulge Re to become larger than the disk Re. We make the function and then put it in the Data list manually. You cannot properly use constraints using R's optim function, but you can using LaplaceApproximation and LaplacesDemon because they receive modifications to the input parameters.
+
+```{r}
+constraints=function(modellist){
+  if(modellist$sersic$re[1]>modellist$sersic$re[2]){
+    modellist$sersic$re[1]=modellist$sersic$re[2]
+  }
+  return=modellist
+}
+Data$constraints=constraints
+```
+
+Now we can try a `LaplaceApproximation` LM fit. This should take a few minutes:
 
 ```{r, eval=FALSE}
 library(LaplacesDemon)
 Data$algo.func = "LA"
-LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e4,
-Method='BFGS', CovEst='Identity', sir=FALSE)
+LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
+                           Method='LM', CovEst='Identity', sir=FALSE)
 ```
 
-The best LA BFGS fit is given by:
+The best LA LM fit is given by:
 
 ```{r, eval=FALSE}
 LAfit$Summary1[,1]

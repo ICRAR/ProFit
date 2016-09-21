@@ -24,7 +24,7 @@ Next we load the libraries we need:
 library(ProFit)
 ```
 
-It is possible to use the fast low level interface to the Rcpp `profitMaekSersic` function directly. The example below will generate a 200x200 image matrix, and will run in ~10 microseconds:
+It is possible to use the fast low level interface to the Rcpp `profitMaekSersic` function directly. The example below will generate a 100x100 image matrix, and will run in ~5 microseconds:
 
 ```{r}
 ExampleImage0=profitMakeModel(list(sersic=list(xcen=50, ycen=50, re=4, nser=4, ang=30, axrat=0.5)))
