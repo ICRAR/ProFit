@@ -70,8 +70,8 @@ public:
 	 */
 	SersicProfile(const Model & model);
 
-  void validate() override;
-  
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
