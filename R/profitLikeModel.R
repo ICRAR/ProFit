@@ -45,20 +45,23 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   inheritIDs=which(is.na(unlist(Data$tofit)))
   for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
   
-  # Speccify interval limits on the now linear data
-  if(length(Data$intervals)>0){
-    intervals = unlist(Data$intervals)
-    for(i in 1:length(paramsnew)){
-      paramsnew[i]=max(intervals[(i-1)*2+1], min(intervals[(i-1)*2+2], paramsnew[i], na.rm = FALSE), na.rm = FALSE)
-    }
-  }
-  
   # Re-list the new linear modellist
   modellistnew=relist(paramsnew,Data$modellist)
   
   # Apply constraints to the new linear modellist
   if(length(Data$constraints)>0){
     modellistnew=Data$constraints(modellistnew)
+  }
+  
+  # Specify interval limits on the now linear data
+  if(length(Data$intervals)>0){
+    paramsnew = unlist(modellistnew)
+    intervals = unlist(Data$intervals)
+    for(i in 1:length(paramsnew)){
+      paramsnew[i]=max(intervals[(i-1)*2+1], min(intervals[(i-1)*2+2], paramsnew[i], na.rm = FALSE), na.rm = FALSE)
+    }
+    # Re-list the new linear modellist
+    modellistnew=relist(paramsnew,Data$modellist)
   }
   
   # Calculate priors with the new versus old modellist
