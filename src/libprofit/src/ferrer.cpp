@@ -74,10 +74,10 @@ double _ferrer_for_xy_r(const RadialProfile &sp,
 }
 
 void FerrerProfile::validate() {
-	double rout = this->rout;
-	double a = this->a;
-	double b = this->b;
-  if ( rout <= 0 ) {
+
+	RadialProfile::validate();
+
+	if ( rout <= 0 ) {
 		throw invalid_parameter("rout <= 0, must have rout >= 0");
 	}
 	if ( a < 0 ) {
@@ -86,7 +86,7 @@ void FerrerProfile::validate() {
 	if ( b > 2 ) {
 		throw invalid_parameter("b > 2, must have b <= 2");
 	}
-	return;
+
 }
 
 eval_function_t FerrerProfile::get_evaluation_function() {

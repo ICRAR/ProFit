@@ -66,8 +66,8 @@ public:
 	 */
 	MoffatProfile(const Model &);
 
-  void validate() override;
-  
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow

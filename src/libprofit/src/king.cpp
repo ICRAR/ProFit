@@ -70,10 +70,10 @@ double _king_for_xy_r(const RadialProfile &sp,
 }
 
 void KingProfile::validate() {
-	double rc = this->rc;
-	double rt = this->rt;
-	double a = this->a;
-  if ( rc <= 0 ) {
+
+	RadialProfile::validate();
+
+	if ( rc <= 0 ) {
 		throw invalid_parameter("rc <= 0, must have rc > 0");
 	}
 	if ( rt <= 0 ) {
@@ -82,7 +82,7 @@ void KingProfile::validate() {
 	if ( a < 0 ) {
 		throw invalid_parameter("a < 0, must have a >=0");
 	}
-	return;
+
 }
 
 eval_function_t KingProfile::get_evaluation_function() {

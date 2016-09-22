@@ -48,8 +48,8 @@ namespace profit
  */
 static
 double _brokenexponential_for_xy_r(const RadialProfile &sp,
-                      double x, double y,
-                      double r, bool reuse_r) {
+                                   double x, double y,
+                                   double r, bool reuse_r) {
 
 	const BrokenExponentialProfile &bep = static_cast<const BrokenExponentialProfile &>(sp);
 	if( !reuse_r && bep.box == 0 ) {
@@ -66,23 +66,22 @@ double _brokenexponential_for_xy_r(const RadialProfile &sp,
 }
 
 void BrokenExponentialProfile::validate() {
-	double h1 = this->h1;
-  double h2 = this->h2;
-	double rb = this->rb;
-	double a = this->a;
-  if ( h1 <= 0 ) {
+
+	RadialProfile::validate();
+
+	if ( h1 <= 0 ) {
 		throw invalid_parameter("h1 <= 0, must have h1 > 0");
 	}
-  if ( h2 <= 0 ) {
+	if ( h2 <= 0 ) {
 		throw invalid_parameter("h2 <= 0, must have h2 > 0");
 	}
-  if ( rb <= 0 ) {
+	if ( rb <= 0 ) {
 		throw invalid_parameter("rb <= 0, must have rb > 0");
 	}
-  if ( h2 > h1 ) {
+	if ( h2 > h1 ) {
 		throw invalid_parameter("h2 > h1, must have h2 <= h1");
 	}
-	return;
+
 }
 
 eval_function_t BrokenExponentialProfile::get_evaluation_function() {

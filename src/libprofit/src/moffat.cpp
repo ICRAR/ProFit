@@ -68,15 +68,16 @@ double _moffat_for_xy_r(const RadialProfile &sp,
 }
 
 void MoffatProfile::validate() {
-	double fwhm = this->fwhm;
-	double con = this->con;
-  if ( fwhm <= 0 ) {
+
+	RadialProfile::validate();
+
+	if ( fwhm <= 0 ) {
 		throw invalid_parameter("fwhm <= 0, must have fwhm > 0");
 	}
 	if ( con < 0 ) {
 		throw invalid_parameter("con < 0, must have con >= 0");
 	}
-	return;
+
 }
 
 eval_function_t MoffatProfile::get_evaluation_function() {

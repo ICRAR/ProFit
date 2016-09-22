@@ -66,8 +66,8 @@ public:
 	 */
 	BrokenExponentialProfile(const Model &model);
 
-  void validate() override;
-  
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
@@ -83,12 +83,12 @@ public:
 	 * The outer exponential effective radius (must be equal to or less than ``h1``).
 	 */
 	double h2;
-  
-  /**
+
+	/**
 	 * The break radius.
 	 */
 	double rb;
-	
+
 	/**
 	 * The strength of the truncation as the radius approaches ``rb``.
 	 */

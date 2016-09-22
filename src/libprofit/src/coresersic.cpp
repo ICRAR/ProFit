@@ -80,15 +80,13 @@ eval_function_t CoreSersicProfile::get_evaluation_function() {
 }
 
 void CoreSersicProfile::validate() {
-	double re = this->re;
-  double rb = this->rb;
-	double nser = this->nser;
-	double a = this->a;
-	double b = this->b;
-  if ( re <= 0 ) {
+
+	RadialProfile::validate();
+
+	if ( re <= 0 ) {
 		throw invalid_parameter("re <= 0, must have re > 0");
 	}
-  if ( rb <= 0 ) {
+	if ( rb <= 0 ) {
 		throw invalid_parameter("rb <= 0, must have rb > 0");
 	}
 	if ( nser <= 0 ) {
@@ -100,7 +98,7 @@ void CoreSersicProfile::validate() {
 	if ( b > 1.999 ) {
 		throw invalid_parameter("b > 1.999, must have b < 1.999");
 	}
-	return;
+
 }
 
 static
