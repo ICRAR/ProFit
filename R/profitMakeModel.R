@@ -1,6 +1,6 @@
 profitMakeModel = function(modellist,
                            magzero=0, psf=NULL, dim=c(100,100),
-                           whichcomponents=list(sersic="all", moffat="all", ferrer="all", coresersic="all", king="all", pointsource="all"),
+                           whichcomponents=list(sersic="all", moffat="all", ferrer="all", ferrers="all", coresersic="all", king="all", brokenexp="all", pointsource="all"),
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
@@ -14,7 +14,7 @@ profitMakeModel = function(modellist,
   # Some defaults...
   rough = rough == TRUE
   stopifnot(is.logical(rough) && length(rough) == 1)
-  profilenames = c("sersic","moffat","ferrer","coresersic","king")
+  profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
   componentnames = c(profilenames,"pointsource")
   for(wcname in componentnames) {
     if(is.null(whichcomponents[[wcname]]) || (whichcomponents[[wcname]] == "all")) {
@@ -322,5 +322,5 @@ profitMakeModel = function(modellist,
 	rval$y = seq(pixdim/2,dim[2]-pixdim/2,by=pixdim)
 	rval$z = basemat
 
-	return(rval)
+	return=rval
 }

@@ -29,6 +29,7 @@
 #include <string>
 #include <vector>
 
+#include "profit/brokenexponential.h"
 #include "profit/convolve.h"
 #include "profit/coresersic.h"
 #include "profit/ferrer.h"
@@ -112,6 +113,9 @@ Profile &Model::add_profile(const string &profile_name) {
 	}
 	else if ( profile_name == "king" ) {
 		profile = static_cast<Profile *>(new KingProfile(*this));
+	}
+	else if ( profile_name == "brokenexp" ) {
+		profile = static_cast<Profile *>(new BrokenExponentialProfile(*this));
 	}
 	else if ( profile_name == "psf" ) {
 		profile = static_cast<Profile *>(new PsfProfile(*this));

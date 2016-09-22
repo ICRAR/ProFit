@@ -72,6 +72,9 @@ Matrix; contains the flux values of the specified model image. Dimensions \optio
 \code{profitRadialKing}:
 Vector; same length as input \option{r}, specifying the flux intensity of the profile along the major axis.
 }
+\references{
+King I., AJ, 1962, 71, 64
+}
 \author{
 Aaron Robotham
 }

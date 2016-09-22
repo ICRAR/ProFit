@@ -9,9 +9,10 @@ Create an astronomical image containing model galaxies or point sources, with or
 }
 \usage{
 profitMakeModel(modellist, magzero = 0, psf=NULL, dim = c(100, 100),
-whichcomponents=list(sersic="all", moffat="all", ferrer="all" ,coresersic="all",
-king="all", pointsource="all"), rough = FALSE, acc = 0.1, finesample=1L, returnfine=FALSE,
-returncrop=TRUE, calcregion, docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
+whichcomponents=list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "all", 
+coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
+acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion,
+docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
 convopt=list(method="Bruteconv"))
 }
 %- maybe also 'usage' for other objects documented here.
@@ -85,17 +86,17 @@ The parameters that must be specified for \option{sersic} are:
 The parameters that must be specified for \option{coresersic} are:
 
 \describe{
-  \item{xcen}{Vector; x centres of the 2D Sersic profiles (can be fractional pixel positions).}
-  \item{ycen}{Vector; y centres of the 2D Sersic profiles (can be fractional pixel positions).}
-  \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
-  \item{re}{Vector; effective radii of the 2D Sersic profiles}
-  \item{rb}{Vector; transition radius of the Sersic profile (from inner power-law to outer Sersic).}
-  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
-  \item{a}{Vector; strength of transition from inner core to outer Sersic. Larger +ve means sharper.}
-  \item{b}{Vector; the inner power-law of the Core-Sersic. Less than 1 is an increasingly flat core.}
+  \item{xcen}{Vector; x centres of the 2D Core-Sersic profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Core-Sersic profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Core-Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{re}{Vector; effective radius of the Sersic components of the Core-Sersic profiles.}
+  \item{rb}{Vector; transition radius of the Core-Sersic profiles (from inner power-law to outer Sersic).}
+  \item{nser}{Vector; Sersic indices of the Core-Sersic profiles.}
+  \item{a}{Vector; strength of transitions from inner cores to outer Sersics. Larger +ve means sharper.}
+  \item{b}{Vector; the inner power-law of the Core-Sersic profiles. Less than 1 is an increasingly flat core.}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
-  \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
-  \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+  \item{axrat}{Vector; axial ratios of Core-Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Core-Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
 The parameters that must be specified for \option{moffat} are:
@@ -123,6 +124,35 @@ The parameters that must be specified for \option{ferrer} or \option{ferrers} (e
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
   \item{axrat}{Vector; axial ratios of Ferrer profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
   \item{box}{Vector; the boxiness of the Ferrer profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+}
+
+The parameters that must be specified for \option{king} are:
+
+\describe{
+  \item{xcen}{Vector; x centres of the 2D King profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D King profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D King profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{rc}{Vector; the core radius of the King profile.}
+  \item{rt}{Vector; the truncation radius of the King profile. Beyond this radius the profile is evaluated as zero.}
+  \item{a}{Vector; the power-law of the King profile.}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of King profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the King profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
+}
+
+The parameters that must be specified for \option{brokenexp} are:
+
+\describe{
+  \item{xcen}{Vector; x centres of the 2D Broken-Exponential profiles (can be fractional pixel positions).}
+  \item{ycen}{Vector; y centres of the 2D Broken-Exponential profiles (can be fractional pixel positions).}
+  \item{mag}{Vector; total magnitudes of the 2D Ferrer profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
+  \item{h1}{Vector; effective radius of the inner Broken-Exponential profile.}
+  \item{h2}{Vector; effective radius of the outer Broken-Exponential profile.}
+  \item{rb}{Vector; break (or truncation) radius of the Broken-Exponential profile.}
+  \item{a}{Vector; strength of transition from inner core to outer Broken-Exponential. Larger +ve means sharper.}
+  \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
+  \item{axrat}{Vector; axial ratios of Broken-Exponential profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
+  \item{box}{Vector; the boxiness of the Broken-Exponential profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
 }
 
 The parameters that must be specified for \option{pointsource} (see \code{\link{profitMakePointSource}} for details) are: 

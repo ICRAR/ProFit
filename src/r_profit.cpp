@@ -8,6 +8,7 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
+#include <profit/brokenexponential.h>
 #include <profit/convolve.h>
 #include <profit/coresersic.h>
 #include <profit/ferrer.h>
@@ -160,6 +161,16 @@ void list_to_king(SEXP king_list, Profile &p, unsigned int idx) {
 }
 
 static
+void list_to_brokenexponential(SEXP brokenexponential_list, Profile &p, unsigned int idx) {
+	list_to_radial(brokenexponential_list, p, idx);
+	BrokenExponentialProfile &bep = static_cast<BrokenExponentialProfile &>(p);
+	_read_real(brokenexponential_list, "h1", idx, bep.h1);
+	_read_real(brokenexponential_list, "h2", idx, bep.h2);
+	_read_real(brokenexponential_list, "rb", idx, bep.rb);
+	_read_real(brokenexponential_list, "a", idx, bep.a);
+}
+
+static
 void list_to_sky(SEXP sky_list, Profile &p, unsigned int idx) {
 	SkyProfile &sp = static_cast<SkyProfile &>(p);
 	_read_real(sky_list, "bg", idx, sp.bg);
@@ -221,6 +232,7 @@ void _read_moffat_profiles(Model &model, SEXP profiles_list) {
 static
 void _read_ferrer_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "ferrer", "xcen", &list_to_ferrer);
+  _read_profiles(model, profiles_list, "ferrers", "xcen", &list_to_ferrer);
 }
 
 static
@@ -231,6 +243,11 @@ void _read_coresersic_profiles(Model &model, SEXP profiles_list) {
 static
 void _read_king_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "king", "xcen", &list_to_king);
+}
+
+static
+void _read_brokenexponential_profiles(Model &model, SEXP profiles_list) {
+	_read_profiles(model, profiles_list, "brokenexp", "xcen", &list_to_brokenexponential);
 }
 
 static
@@ -312,6 +329,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	_read_ferrer_profiles(m, profiles);
 	_read_coresersic_profiles(m, profiles);
 	_read_king_profiles(m, profiles);
+	_read_brokenexponential_profiles(m, profiles);
 	_read_sky_profiles(m, profiles);
 	_read_psf_profiles(m, profiles);
 	if( !m.has_profiles() ) {

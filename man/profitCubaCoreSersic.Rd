@@ -23,32 +23,31 @@ axrat = 1, box = 0)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{xcen}{
-Scalar; x centre of the 2D Sersic profile (can be fractional pixel positions).
+Scalar; x centre of the 2D Core-Sersic profile (can be fractional pixel positions).
 }
   \item{ycen}{
-Scalar; y centre of the 2D Sersic profile (can be fractional pixel positions).
+Scalar; y centre of the 2D Core-Sersic profile (can be fractional pixel positions).
 }
   \item{r}{
 Vector; the radius along the major axis at which to evalutate the flux intensity.  
 }
   \item{mag}{
-Scalar; total magnitude of the 2D Sersic profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
+Scalar; total magnitude of the 2D Core-Sersic profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
 }
   \item{re}{
 Scalar; effective radius of the Sersic component of the Core-Sersic profile.
 }
-
   \item{rb}{
-Scalar; transition radius of the Sersic profile (from inner power-law to outer Sersic).
+Scalar; transition radius of the Core-Sersic profile (from inner power-law to outer Sersic).
 }
   \item{nser}{
-Scalar; Sersic index of the Sersic profile.
+Scalar; Sersic index of the Core-Sersic profile.
 }
   \item{a}{
 Scalar; strength of transition from inner core to outer Sersic. Larger +ve means sharper.
 }
   \item{b}{
-Scalar; the inner power-law of the Core-Sersic. Less than 1 is an increasingly flat core.
+Scalar; the inner power-law of the Core-Sersic profile. Less than 1 is an increasingly flat core.
 }
   \item{ang}{
 Scalar; the orientation of the major axis of the Sersic profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang.

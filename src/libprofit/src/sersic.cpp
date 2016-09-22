@@ -225,6 +225,18 @@ double _sersic_for_xy_r(const RadialProfile &slp,
 	return exp(-sp._bn * (r_factor - 1));
 }
 
+void SersicProfile::validate() {
+	double re = this->re;
+	double nser = this->nser;
+  if ( re <= 0 ) {
+		throw invalid_parameter("re <= 0, must have re > 0");
+	}
+	if ( nser <= 0 ) {
+		throw invalid_parameter("nser <= 0, must have nser > 0");
+	}
+	return;
+}
+
 eval_function_t SersicProfile::get_evaluation_function() {
 
 	if( this->box != 0 ) {

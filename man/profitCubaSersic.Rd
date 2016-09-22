@@ -9,7 +9,7 @@
 Sersic Profile Specific Functions
 }
 \description{
-Useful functions related to the Moffat profile. \code{profitCubaSersic} computes the exact 2D pixel integrals for a given Sersic model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialSersic} computes the 1D radial flux intensity of the Sersic profile along the major axis of the profile.
+Useful functions related to the Sersic profile. \code{profitCubaSersic} computes the exact 2D pixel integrals for a given Sersic model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialSersic} computes the 1D radial flux intensity of the Sersic profile along the major axis of the profile.
 }
 \usage{
 profitCubaSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 4, ang = 0,
@@ -69,6 +69,9 @@ Matrix; contains the flux values of the specified model image. Dimensions \optio
 \code{profitRadialSersic}:
 Vector; same length as input \option{r}, specifying the flux intensity of the profile along the major axis.
 }
+\references{
+Sersic J. L., 1963, Boletin de la Asociacion Argentina de Astronomia La Plata Argentina, 6, 41
+}
 \author{
 Aaron Robotham
 }
@@ -78,15 +81,15 @@ Aaron Robotham
 }
 \examples{
 model = list(
-	sersic = list(
-		xcen = 10,
-		ycen = 10,
-		mag = 15,
-		re = 2,
-		nser = 4,
-		ang = 30,
-		axrat = 0.5,
-		box = 0
+  sersic = list(
+    xcen = 10,
+    ycen = 10,
+    mag = 15,
+    re = 2,
+    nser = 4,
+    ang = 30,
+    axrat = 0.5,
+    box = 0
 	)
 )
 
@@ -97,8 +100,9 @@ mag=model$sersic$mag, re=model$sersic$re, nser=model$sersic$nser, ang=model$sers
 axrat=model$sersic$axrat, box=model$sersic$box, dim=dim)
 tempProFit=profitMakeModel(model, dim=dim)$z
 
-#The relative differences between the exact and approximate ProFit model image:
-magimage((tempExact-tempProFit)/tempExact, magmap=FALSE, zlim=c(-1,1))
+#The relative differences between the exact and approximate ProFit model image.
+#This is scaled to show 1\% differences as extremes:
+magimage((tempExact-tempProFit)/tempExact, magmap=FALSE, zlim=c(-0.01,0.01))
 #They differ by no more the 1\% in flux for any pixel, and in general much less than that:
 hist((tempExact-tempProFit)/tempExact)
 }

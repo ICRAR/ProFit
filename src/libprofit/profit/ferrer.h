@@ -65,7 +65,9 @@ public:
 	 * @param model The model this profile belongs to
 	 */
 	FerrerProfile(const Model & model);
-
+  
+  void validate() override;
+  
 	/*
 	 * -------------------------
 	 * Profile parameters follow

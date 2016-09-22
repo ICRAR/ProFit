@@ -69,6 +69,9 @@ Matrix; contains the flux values of the specified model image. Dimensions \optio
 \code{profitRadialMoffat}:
 Vector; same length as input \option{r}, specifying the flux intensity of the profile along the major axis.
 }
+\references{
+Moffat A. F. J., 1969, A\&A, 3, 455
+}
 \author{
 Aaron Robotham
 }
