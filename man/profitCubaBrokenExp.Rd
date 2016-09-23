@@ -33,10 +33,10 @@ Vector; the radius along the major axis at which to evalutate the flux intensity
 Scalar; total magnitude of the 2D Broken-Exponential profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
 }
   \item{h1}{
-Scalar; effective radius of the inner Broken-Exponential profile.
+Scalar; scale length of the inner Broken-Exponential profile.
 }
   \item{h2}{
-Scalar; effective radius of the outer Broken-Exponential profile.
+Scalar; scale length of the outer Broken-Exponential profile.
 }
   \item{rb}{
 Scalar; break (or truncation) radius of the Broken-Exponential profile.

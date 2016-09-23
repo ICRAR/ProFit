@@ -75,12 +75,12 @@ public:
 	 */
 
 	/**
-	 * The inner exponential effective radius.
+	 * The inner exponential scale length.
 	 */
 	double h1;
 
 	/**
-	 * The outer exponential effective radius (must be equal to or less than ``h1``).
+	 * The outer exponential scale length (must be equal to or less than ``h1``).
 	 */
 	double h2;
 

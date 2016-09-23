@@ -146,8 +146,8 @@ The parameters that must be specified for \option{brokenexp} are:
   \item{xcen}{Vector; x centres of the 2D Broken-Exponential profiles (can be fractional pixel positions).}
   \item{ycen}{Vector; y centres of the 2D Broken-Exponential profiles (can be fractional pixel positions).}
   \item{mag}{Vector; total magnitudes of the 2D Ferrer profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
-  \item{h1}{Vector; effective radius of the inner Broken-Exponential profile.}
-  \item{h2}{Vector; effective radius of the outer Broken-Exponential profile.}
+  \item{h1}{Vector; scale length of the inner Broken-Exponential profile.}
+  \item{h2}{Vector; scale length of the outer Broken-Exponential profile.}
   \item{rb}{Vector; break (or truncation) radius of the Broken-Exponential profile.}
   \item{a}{Vector; strength of transition from inner core to outer Broken-Exponential. Larger +ve means sharper.}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
