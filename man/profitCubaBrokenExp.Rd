@@ -11,7 +11,7 @@
 Broken-Exponential Profile Specific Functions
 }
 \description{
-Useful functions related to the Broken-Exponential profile. \code{profitCubaSersic} computes the exact 2D pixel integrals for a given Broken-Exponential model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialSersic} computes the 1D radial flux intensity of the Broken-Exponential profile along the major axis of the profile.
+Useful functions related to the broken-exponential profile. \code{profitCubaSersic} computes the exact 2D pixel integrals for a given broken-exponential model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialSersic} computes the 1D radial flux intensity of the broken-exponential profile along the major axis of the profile.
 }
 \usage{
 profitCubaBrokenExp(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, h1 = 1, h2 = h1, rb = h1, a = 1, ang = 0, axrat = 1, box = 0, dim = c(25, 25), rel.tol = 0.001, abs.tol = 1e-10)
@@ -21,28 +21,28 @@ box = 0)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{xcen}{
-Scalar; x centre of the 2D Broken-Exponential profile (can be fractional pixel positions).
+Scalar; x centre of the 2D broken-exponential profile (can be fractional pixel positions).
 }
   \item{ycen}{
-Scalar; y centre of the 2D Broken-Exponential profile (can be fractional pixel positions).
+Scalar; y centre of the 2D broken-exponential profile (can be fractional pixel positions).
 }
   \item{r}{
 Vector; the radius along the major axis at which to evalutate the flux intensity.  
 }
   \item{mag}{
-Scalar; total magnitude of the 2D Broken-Exponential profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
+Scalar; total magnitude of the 2D broken-exponential profile. Converted to flux using flux=10^(-0.4*(mag-magzero)).
 }
   \item{h1}{
-Scalar; scale length of the inner Broken-Exponential profile.
+Scalar; scale length of the inner broken-exponential profile.
 }
   \item{h2}{
-Scalar; scale length of the outer Broken-Exponential profile.
+Scalar; scale length of the outer broken-exponential profile.
 }
   \item{rb}{
-Scalar; break (or truncation) radius of the Broken-Exponential profile.
+Scalar; break (or truncation) radius of the broken-exponential profile.
 }
   \item{a}{
-Scalar; strength of transition from inner core to outer Broken-Exponential. Larger +ve means sharper.
+Scalar; strength of transition from inner core to outer broken-exponential. Larger +ve means sharper.
 }
   \item{ang}{
 Scalar; the orientation of the major axis of the Sersic profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang.
