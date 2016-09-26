@@ -34,7 +34,7 @@ Scalar;  total magnitude of the 2D Moffat profile. Converted to flux using flux=
 Scalar; full width half max of the Moffat function.
 }
   \item{con}{
-Scalar; concentration parameter for Moffat functions. Must be larger than 1.
+Scalar; concentration parameter for Moffat functions. Must be larger than 1. con=1 is pure Lorentzian and con=Inf is pure Normal. In practice con>5 starts to look very close to Normal.
 }
   \item{ang}{
 Scalar; the orientation of the major axis of the Sersic profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang.

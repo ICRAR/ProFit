@@ -14,9 +14,10 @@ Broken-Exponential Profile Specific Functions
 Useful functions related to the broken-exponential profile. \code{profitCubaSersic} computes the exact 2D pixel integrals for a given broken-exponential model image. This is very slow compared to \code{\link{profitMakeModel}}, but it is useful for checking model creation tuning (i.e. the degree to which speed can be increased without overly harming accuracy). Tests with this function were used to tune \code{\link{profitMakeModel}}. \code{profitRadialSersic} computes the 1D radial flux intensity of the broken-exponential profile along the major axis of the profile.
 }
 \usage{
-profitCubaBrokenExp(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, h1 = 1, h2 = h1, rb = h1, a = 1, ang = 0, axrat = 1, box = 0, dim = c(25, 25), rel.tol = 0.001, abs.tol = 1e-10)
-profitRadialBrokenExp(r = 1, mag = 15, h1 = 1, h2 = h1, rb = h1, a = 1, ang = 0, axrat = 1,
-box = 0)
+profitCubaBrokenExp(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, h1 = 1, h2 = h1, rb = h1,
+a = 1, ang = 0, axrat = 1, box = 0, dim = c(25, 25), rel.tol = 0.001, abs.tol = 1e-10)
+profitRadialBrokenExp(r = 1, mag = 15, h1 = 1, h2 = h1, rb = h1, a = 1, ang = 0,
+axrat = 1, box = 0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

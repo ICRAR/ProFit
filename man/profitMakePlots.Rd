@@ -71,7 +71,8 @@ TBD.
 
 datasource='KiDS' 
 
-# Now we can extract out the example files we have available for fitting by checking the contents of the directory containing the example FITS files:
+# Now we can extract out the example files we have available for fitting by checking the
+# contents of the directory containing the example FITS files:
 
 data('ExampleInit')
 ExampleFiles=list.files(system.file("extdata",datasource,package="ProFit"))
