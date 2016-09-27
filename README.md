@@ -8,6 +8,7 @@ ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation l
 
 ## Code Example
 
+```R
 modellist = list(
   sersic = list(
     xcen   = c(180, 60),
@@ -32,6 +33,7 @@ modellist = list(
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 
 magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
+```
 
 ## Motivation
 
