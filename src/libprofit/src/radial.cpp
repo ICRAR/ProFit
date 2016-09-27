@@ -170,9 +170,6 @@ void RadialProfile::initial_calculations() {
  * The profile validation function
  */
 void RadialProfile::validate() {
-	double ang = this->ang;
-	double axrat = this->axrat;
-	double box = this->box;
 	if ( axrat <= 0 ) {
 		throw invalid_parameter("axrat <= 0, must have axrat > 0");
 	}
@@ -182,7 +179,6 @@ void RadialProfile::validate() {
 	if ( box <= -2 ) {
 		throw invalid_parameter("box <= -2, must have box > -2");
 	}
-	return;
 }
 
 /**
