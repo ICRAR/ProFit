@@ -43,6 +43,12 @@ With a PSF provided the PSFs are displayed and the extended sources are convolve
 magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
 ```
 
+To find more long-form examples, including complicated fitting use-cases, please check the vignettes provided. You can browse these with:
+
+```R
+browseVignettes('ProFit')
+```
+
 ## Motivation
 
 This package is designed to offer a fulyl featured Bayesian interface to galaxy model fitting (also called profiling). It uses the same standard inputs as other popular codes (e.g. GALFIT) but can use complex priors and a number of likelihoods.
