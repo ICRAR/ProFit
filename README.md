@@ -6,6 +6,13 @@ Get data / Define model / ??? / ProFit!
 
 ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation library and a flexible interface to a large number of likelihood samplers.
 
+## Installation
+
+install.packages('devtools')
+library(devtools)
+install_github("ICRAR/ProFit")
+library(ProFit)
+
 ## Code Example
 
 ```R
@@ -51,14 +58,7 @@ browseVignettes('ProFit')
 
 ## Motivation
 
-This package is designed to offer a fulyl featured Bayesian interface to galaxy model fitting (also called profiling). It uses the same standard inputs as other popular codes (e.g. GALFIT) but can use complex priors and a number of likelihoods.
-
-## Installation
-
-install.packages('devtools')
-library(devtools)
-install_github("ICRAR/ProFit")
-library(ProFit)
+This package is designed to offer a fully featured Bayesian interface to galaxy model fitting (also called profiling). It uses the same standard inputs as other popular codes (e.g. GALFIT) but can use complex priors and a number of likelihoods.
 
 ## Contributors
 
