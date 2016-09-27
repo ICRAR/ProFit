@@ -29,9 +29,17 @@ modellist = list(
     bg = 3e-12
   )
 )
+```
 
+Without a PSF provided only the extended sources are shown, with no convolution:
+
+```R
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
+```
 
+With a PSF provided the PSFs are displayed and the extended sources are convolved with the PSF:
+
+```R
 magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
 ```
 
