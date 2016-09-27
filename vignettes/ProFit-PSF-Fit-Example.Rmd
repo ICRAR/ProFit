@@ -4,7 +4,7 @@ author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ProFit Galaxy Fitting Example}
+  %\VignetteIndexEntry{ProFit: PSF Fitting Example}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
