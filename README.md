@@ -8,10 +8,14 @@ ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation l
 
 ## Installation
 
+Within R you can run a few simple commands to get the latest and greatest version of ProFit directly from GitHub:
+
+```R
 install.packages('devtools')
 library(devtools)
 install_github("ICRAR/ProFit")
 library(ProFit)
+```
 
 ## Code Example
 
