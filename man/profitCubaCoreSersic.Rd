@@ -93,7 +93,6 @@ Aaron Robotham
 \code{\link{profitMakeModel}}, \code{\link{profitSersic}}, \code{\link{profitMoffat}}, \code{\link{profitFerrer}}, \code{\link{profitKing}}
 }
 \examples{
-magimage(profitCubaCoreSersic())
 magimage(profitCubaCoreSersic(axrat=0.7, ang=30))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

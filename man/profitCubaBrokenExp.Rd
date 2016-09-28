@@ -89,7 +89,6 @@ Aaron Robotham
 \code{\link{profitMakeModel}}, \code{\link{profitSersic}}, \code{\link{profitMoffat}}, \code{\link{profitFerrer}}, \code{\link{profitKing}}
 }
 \examples{
-magimage(profitCubaBrokenExp())
 magimage(profitCubaBrokenExp(axrat=0.7, ang=30, h1=6, h2=3, rb=4, a=1))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

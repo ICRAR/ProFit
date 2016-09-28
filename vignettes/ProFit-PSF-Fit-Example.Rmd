@@ -15,14 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Prepare the test data
 
-It is worth checking that you have the latest version of `ProFit`:
-
-```{r, eval=FALSE}
-library(devtools)
-install_github('ICRAR/ProFit')
-```
-
-Next we load the libraries we need:
+First load the libraries we need:
 
 ```{r}
 library(knitr)
