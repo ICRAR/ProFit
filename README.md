@@ -62,7 +62,7 @@ browseVignettes('ProFit')
 
 ## Motivation
 
-This package is designed to offer a fully featured Bayesian interface to galaxy model fitting (also called profiling). It uses the same standard inputs as other popular codes (e.g. GALFIT) but can use complex priors and a number of likelihoods.
+This package is designed to offer a fully featured Bayesian interface to galaxy model fitting (also called profiling). It mostly uses the same standard inputs as other popular codes (e.g. GALFIT) but can use complex priors and a number of likelihoods.
 
 ## Contributors
 
