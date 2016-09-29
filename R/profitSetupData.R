@@ -7,14 +7,62 @@ profitSetupData=function(image, mask, sigma, segim, modellist, tofit, tolog, pri
   
   imagedim = dim(image)
   
-  #What to do if missing things: sensible solutions here:
+  #What to do if missing or have partial things: sensible solutions here:
+  
   if(missing(mask)){mask=matrix(0,imagedim[1],imagedim[2])}
   if(missing(sigma)){sigma=sqrt(abs(image))}
   if(missing(segim)){segim=matrix(1,imagedim[1],imagedim[2])}
-  if(missing(tofit)){tofit=relist(rep(TRUE,length(unlist(modellist))),modellist)}
-  if(missing(tolog)){tolog=relist(rep(FALSE,length(unlist(modellist))),modellist)}
+  
+  if(missing(tofit)){
+    tofit=relist(rep(TRUE,length(unlist(modellist))),modellist)
+  }else{
+    if(length(unlist(tofit)) != length(unlist(modellist))){
+      tofit_temp=relist(rep(TRUE,length(unlist(modellist))),modellist)
+      compnames=names(tofit)
+      for(i in compnames){
+        subnames=names(tofit[[i]])
+        for(j in subnames){
+          subsubnames=names(tofit[[i]][[j]])
+          if(is.null(subsubnames)){
+            tofit_temp[[i]][[j]]=tofit[[i]][[j]]
+          }else{
+            for (k in subsubnames){
+              tofit_temp[[i]][[j]][[k]]=tofit[[i]][[j]][[k]]
+            }
+          }
+        }
+      }
+      tofit=tofit_temp
+    }
+  }
+  
+  if(missing(tolog)){
+    tolog=relist(rep(FALSE,length(unlist(modellist))),modellist)
+  }else{
+    if(length(unlist(tolog)) != length(unlist(modellist))){
+      tolog_temp=relist(rep(FALSE,length(unlist(modellist))),modellist)
+      compnames=names(tolog)
+      for(i in compnames){
+        subnames=names(tolog[[i]])
+        for(j in subnames){
+          subsubnames=names(tolog[[i]][[j]])
+          if(is.null(subsubnames)){
+            tolog_temp[[i]][[j]]=tolog[[i]][[j]]
+          }else{
+            for (k in subsubnames){
+              tolog_temp[[i]][[j]][[k]]=tolog[[i]][[j]][[k]]
+            }
+          }
+        }
+      }
+      tolog=tolog_temp
+    }
+  }
+
   if(missing(priors)){priors={}}
+  
   if(missing(intervals)){intervals={}}
+  
   if(missing(constraints)){constraints={}}
   
   segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]

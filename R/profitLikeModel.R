@@ -20,6 +20,12 @@
 #   }
 #   result
 # }
+# On stack overflow this solution was offered:
+# relist2 = function(x, like, relist.vectors=F) {
+#    if (! relist.vectors) 
+#        like = rapply(a, function(f) NA, how='replace')
+#    lapply(relist(x, skeleton=like), function(e) unlist(e, recursive=F))
+# }
 
 profitLikeModel=function(parm, Data, makeplots=FALSE, 
   whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"), rough=FALSE,
@@ -55,13 +61,25 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   # Specify interval limits on the now linear data
   if(length(Data$intervals)>0){
-    paramsnew = unlist(modellistnew)
-    intervals = unlist(Data$intervals)
-    for(i in 1:length(paramsnew)){
-      paramsnew[i]=max(intervals[(i-1)*2+1], min(intervals[(i-1)*2+2], paramsnew[i], na.rm = FALSE), na.rm = FALSE)
-    }
-    # Re-list the new linear modellist
-    modellistnew=relist(paramsnew,Data$modellist)
+    #paramsnew = unlist(modellistnew)
+    #intervals = unlist(Data$intervals)
+    #for(i in 1:length(paramsnew)){
+    #  paramsnew[i]=max(intervals[(i-1)*2+1], min(intervals[(i-1)*2+2], paramsnew[i], na.rm = FALSE), na.rm = FALSE)
+    #}
+    ## Re-list the new linear modellist
+    #modellistnew=relist(paramsnew,Data$modellist)
+    #New approach, to deal with partial interval limits:
+    compnames=names(Data$intervals)
+      for(i in compnames){
+        subnames=names(Data$intervals[[i]])
+        for(j in subnames){
+          subsublength=length(modellistnew[[i]][[j]])
+          for(k in 1:subsublength){
+          modellistnew[[i]][[j]][k]=max(Data$intervals[[i]][[j]][[k]][1], min(Data$intervals[[i]][[j]][[k]][2], modellistnew[[i]][[j]][k], na.rm = FALSE), na.rm = FALSE)
+          }
+        }
+      }
+    
   }
   
   # Calculate priors with the new versus old modellist

@@ -1,3 +1,5 @@
+
+
 ---
 title: "ProFit: PSF Fitting Example"
 author: "Aaron Robotham"
@@ -138,7 +140,7 @@ The intervals will be generous:
 
 ```{r}
 intervals=list(
-  sersic=list(
+  moffat=list(
     xcen=list(lim=c(0,25)),
     ycen=list(lim=c(0,25)),
     mag=list(lim=c(-1,1)),
