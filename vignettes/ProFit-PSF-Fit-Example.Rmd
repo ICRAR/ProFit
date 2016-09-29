@@ -57,14 +57,14 @@ psfsigma=sqrt(abs(psf))/200 #To get reasonable PSF errors
 
 We can check the image of the PSF wiht magimage:
 
-```{r}
+```{r, fig.width=5, fig.height=5}
 temp=magimage(psf,lo=0,hi=1)
 contour(temp, add=T, col='red', drawlabels = FALSE)
 ```
 
 To check the profile a few 1D plots can be useful:
 
-```{r}
+```{r, fig.width=5, fig.height=5}
 magplot(psf[13,],type='l')
 lines(psf[12,],lty=2,col='red')
 lines(psf[14,],lty=2,col='blue')
@@ -96,7 +96,7 @@ modellist
 
 We can check what this default model looks like:
 
-```{r}
+```{r, fig.width=5, fig.height=5}
 psfmodel=profitMakeModel(modellist,dim=c(25,25))$z
 magimage(psfmodel)
 magimage(abs(psfmodel-psf)/psfmodel,zlim=c(0,1))
@@ -161,7 +161,7 @@ Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modelli
 
 Check our rough model:
 
-```{r,  fig.width=7, fig.height=3}
+```{r,  fig.width=7, fig.height=5}
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
@@ -169,13 +169,13 @@ The initial rough model for the SDSS does not look great- clearly the PSF is muc
 
 To stop the guess-work we can now optimise the model with BFGS:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, fig.width=5, fig.height=5}
 optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data, control=list(fnscale=-1))
 ```
 
 Check the final result:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, fig.width=5, fig.height=5}
 profitLikeModel(optimfit$par, Data,makeplots=TRUE, plotchisq=TRUE)
 ```
 
@@ -196,7 +196,7 @@ profitLikeModel(LDfit$Summary2[,1], Data,makeplots=TRUE, plotchisq=TRUE)
 
 Since the full MCMC achieves the same fit (more or less) we will procede with the optim fit. In the resultant fit we see that the FWHM is given as ~3, which given the SDSS pixel scale (0.339 asec/pix) is ~1 asec, which is pretty good for SDSS imaging. The PSF is preferred as being close to an axial ratio ~1 (or ~0 in log-space). We do find significant boxiness, so the PSF is not actually perfectly circular. We can see this visually in fact:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, fig.width=5, fig.height=5}
 PSFmodellist=profitRemakeModelList(optimfit$par, modellist, tofit=tofit, tolog=tolog)
 PSFmodellist$moffat$xcen=12.5
 PSFmodellist$moffat$xcen=12.5
@@ -375,13 +375,13 @@ optimfitEmp$par
 
 Check it out:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, fig.width=5, fig.height=5}
 profitLikeModel(optimfitEmp$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(optimfitEmp$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(optimfitEmp$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 ```
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, fig.width=5, fig.height=5}
 modeloptim=profitRemakeModelList(optimfitEmp$par,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.339,FWHM=1,SBlim=26)
 ```
