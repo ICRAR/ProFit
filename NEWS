@@ -1,0 +1,13 @@
+v1.0
+
+Released on CRAN
+
+v1.0.1
+
+On GitHub
+
+Fixed Solaris issue with gauss.cpp (removed it for now since we do not use it)
+
+TO DO:
+
+FFTW integration within libprofit

@@ -3,6 +3,9 @@
 using namespace Rcpp;
 
 /*
+  Note: This causes build errors on Solaris due to "ambiguous and overloaded" pow calls.
+  These issues will need fixing before any integration into libprofit
+ 
   Author: Dan Taranu
  
   Semi-analytic integration for a Gaussian profile.

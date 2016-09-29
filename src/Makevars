@@ -17,4 +17,3 @@ OBJECTS = libprofit/src/brokenexponential.o \
           r_profit.o \
           ProFit.o \
           RcppExports.o \
-          gauss.o
