@@ -2,7 +2,7 @@
 \alias{profitMakePlots}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Plot images of an image, a model, and residuals.
+Plot Image, Model and Residuals
 }
 \description{
 Plots appropriately scaled data and model images, along with a residual (data-model) image, and histograms of the residuals.
@@ -16,31 +16,31 @@ plotchisq = FALSE, dofs)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-  Numeric matrix containing an image to plot (usually the data).
+  Numeric matrix; containing an image to plot (usually the data).
 }
   \item{modelimage}{
-  Numeric matrix containing another image to plot and compare to (usually the model).
+  Numeric matrix; containing another image to plot and compare to (usually the model).
 }
   \item{region}{
-  Logical matrix defining the region of the data that the model was actually fit to.
+  Logical matrix; defining the region of the data that the model was actually fit to.
 }
   \item{sigma}{
-  Numeric matrix containing errors on the data (assumed to be the Gaussian sigma).
+  Numeric matrix; containing errors on the data (assumed to be the Gaussian sigma).
 }
   \item{errischisq}{
-  Logical flag to be set if \option{error} specifies the chi-squared statistic in each pixel rather than sigma.
+  Logical flag; to be set if \option{error} specifies the chi-squared statistic in each pixel rather than sigma.
 }
   \item{cmap}{
-  Optional color map to use for plots of the \option{image}, \option{model}, and \option{error}.
+  Optional vector; color map to use for plots of the \option{image}, \option{model}, and \option{error}.
 }
   \item{errcmap}{
-  Optional color map to use for plots of the chi-squared residuals (see \option{errischisq}).
+  Optional vector; color map to use for plots of the chi-squared residuals (see \option{errischisq}).
 }
   \item{plotchisq}{
-  Logical flag to determine if the function should plot a map and a histogram of chi squared = (((\option{image}-option{model})/option{error})[/option{region}])^2.
+  Logical flag; to determine if the function should plot a map and a histogram of chi squared = (((\option{image}-option{model})/option{error})[/option{region}])^2.
 }
   \item{dofs}{
-  Numeric vector of degrees-of-freedom (up to length 2), used only if \option{plotchisq} is set.
+  Numeric vector; of degrees-of-freedom (up to length 2), used only if \option{plotchisq} is set.
 }
 }
 \details{
