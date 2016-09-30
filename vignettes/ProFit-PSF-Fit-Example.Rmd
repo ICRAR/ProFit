@@ -317,7 +317,7 @@ intervals=list(
 Setup the data structure we need for optimisation, taking a few seconds to find the optimal convolution method:
 
 ```{r}
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psfmodel,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psfmodel,
                      modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals,
                      magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
 ```
@@ -353,7 +353,7 @@ profitEllipsePlot(Data,modeloptim,pixscale=0.339,FWHM=1,SBlim=26)
 Now we can try the empirical PSF instead (for comparison):
 
 ```{r}
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
   modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0,
   algo.func='optim', like.func = "t", verbose=TRUE)
 ```

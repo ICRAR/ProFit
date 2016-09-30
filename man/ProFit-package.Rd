@@ -178,7 +178,7 @@ intervals=list(
 # Setup the minimal data structure we need for optimisation. See vignettes for
 # more complex examples using priors, and constraints:
 
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0,
 algo.func='optim', verbose=TRUE)
 

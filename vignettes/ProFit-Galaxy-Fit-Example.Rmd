@@ -175,7 +175,7 @@ The elements you access within the modellist structure must really exist or ProF
 Setup the data structure we need for optimisation, taking a few seconds to find the optimal convolution method:
 
 ```{r}
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
                      modellist=modellist, tofit=tofit, tolog=tolog, priors=priors,
                      intervals=intervals,magzero=0, algo.func='optim', like.func = "t",
                      verbose=TRUE)
@@ -339,7 +339,7 @@ In the previous examples, the resolution of the convolved model was limited by t
 To test this, set up the data again. This time we will fine-sample the model and PSF by a factor of 3, taking a minute to benchmark convolution methods:
 
 ```{r,eval=FALSE}
-Dataf=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Dataf=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
   modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
   magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=3L, finesample=3L)
 ```

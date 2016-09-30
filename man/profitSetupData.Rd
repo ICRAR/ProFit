@@ -8,42 +8,45 @@ Setup ProFit Data
 This is a utility function to get the user inputs in the format required for model optimisation / fitting. It will format the PSF (if supplied) and benchmark the available convolution methods, caching any data required for efficient convolution (such as the PSF FFT). This function does all of the book-keeping required to convert the user data into the format required by ProFit.
 }
 \usage{
-profitSetupData(image, mask, sigma, segim, modellist, tofit, tolog, priors, intervals,
-constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
-like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
+profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, priors,
+intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0,
+algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
 benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-image matrix; the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
+Image matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
 }
-  \item{mask}{
-logical matrix; non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. This matrix *must* be the same dimensions as \option{image}.
+  \item{region}{
+Logical matrix; optional, specifying the parts of the image to be used for fitting this will override the combination of \option{segim} and \option{mask} that is used otherwise. If provided this matrix *must* be the same dimensions as \option{image}.
 }
   \item{sigma}{
-sigma matrix; the measurement errors per pixel (expressed in terms of sigma). This matrix *must* be the same dimensions as \option{image}.
+Sigma matrix; optional, the measurement errors per pixel (expressed in terms of sigma). This matrix *must* be the same dimensions as \option{image}.
 }
   \item{segim}{
-segmentation matrix; the full segmentation map of the image. The value of the central pixel is used to select the segmented pixels of the galaxy we want to fit. The log-likelihood is then computed using only these pixels. This matrix *must* be the same dimensions as \option{image}.
+Segmentation matrix; optional, the full segmentation map of the image. If \option{region} is not provided then value of the central pixel is used to select the segmented pixels of the galaxy we want to fit. The log-likelihood is then computed using only these pixels. This matrix *must* be the same dimensions as \option{image}.
+}
+  \item{mask}{
+Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If \option{region} is not provided then 0 values are used to define the common area to sue for fitting. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{modellist}{
-The initial model list that describes the analytic model to be created. Can contain an analytical PSF model as well. See Details.
+List; required, the initial model list that describes the analytic model to be created. Can contain an analytical PSF model as well. See Details.
 }
   \item{tofit}{
-Logical list, using exactly the same list structure as \option{modellist}. This flags which parameters of the model list should be fitted. Parameters which are not fitted will inherit their values from \option{modellist}. NA values mean the parameter will inherit the value of the previous parameter. In practice this is used to force one parameter (like xcen) to be inherited by multiple Sersic profiles, i.e. we want them to share the same centre, which we fit. The first element of the vector should be TRUE in this case, with the joined profiles set to NA. See Details.
+Logical list, optional, using exactly the same list structure as \option{modellist}. This flags which parameters of the model list should be fitted. Parameters which are not fitted will inherit their values from \option{modellist}. NA values mean the parameter will inherit the value of the previous parameter. In practice this is used to force one parameter (like xcen) to be inherited by multiple Sersic profiles, i.e. we want them to share the same centre, which we fit. The first element of the vector should be TRUE in this case, with the joined profiles set to NA. See Details.
 }
   \item{tolog}{
-Logical list, using exactly the same list structure as \option{modellist}. This flags which parameters of the model list should be fitted in log space (i.e. only relevant to set this if the parameter is being fitted). Parameters like size (re) and axial ratio (axrat) are more naturally explored in log-space, so these should typically be set to true. See Details.
+Logical list; optional, using exactly the same list structure as \option{modellist}. This flags which parameters of the model list should be fitted in log space (i.e. only relevant to set this if the parameter is being fitted). Parameters like size (re) and axial ratio (axrat) are more naturally explored in log-space, so these should typically be set to true. See Details.
 }
   \item{priors}{
-Function; that takes the initial \option{modellist} and the new trial \option{modellist} and returns the log-likehood of the priors. As long as the returned output if a single summed log-likehood, there is no restriction on what happens internally to the function. This very simple or very complex conditional priors can be specified using R functions. See vignettes for an example. If left empty priors will not be used when computing likelihoods.
+Function; optional, that takes the initial \option{modellist} and the new trial \option{modellist} and returns the log-likehood of the priors. As long as the returned output if a single summed log-likehood, there is no restriction on what happens internally to the function. This very simple or very complex conditional priors can be specified using R functions. See vignettes for an example. If left empty priors will not be used when computing likelihoods.
 }
   \item{intervals}{
-List; of interval limits for each parameter, using a similar list structure to \option{modellist}. The limits should be specified as length 2 vectors: c(low, high) in linear parameter space (no matter if tolog is TRUE for this parameter). See Vignettes and Details.
+List; optional, interval limits for each parameter, using a similar list structure to \option{modellist}. The limits should be specified as length 2 vectors: c(low, high) in linear parameter space (no matter if tolog is TRUE for this parameter). See Vignettes and Details.
 }
   \item{constraints}{
-Function; that takes the new trial \option{modellist} and returns a list with exactly the same structure. This exists for the purpose of allowing complex relationships between parameters. A simple example is given in the Vignettes of not allowing the bulge Re to become larger than the disk Re. You could also use it to specify the offset of, e.g., a Ferrer profile to be linked to that of the Sersic bulge. Your imagination is the limit, as long as the basic structure returns has the same skeleton as \option{modellist}.
+Function; optional, takes the new trial \option{modellist} and returns a list with exactly the same structure. This exists for the purpose of allowing complex relationships between parameters. A simple example is given in the Vignettes of not allowing the bulge Re to become larger than the disk Re. You could also use it to specify the offset of, e.g., a Ferrer profile to be linked to that of the Sersic bulge. Your imagination is the limit, as long as the basic structure returns has the same skeleton as \option{modellist}.
 }
   \item{psf}{
 An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{modellist}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
@@ -431,7 +434,7 @@ tolog=list(
 
 # Setup the minimal data structure we need for likelihood.
 
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE)
 
 # Finally, calcualte the likelihood and make a plot:

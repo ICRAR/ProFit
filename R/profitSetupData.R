@@ -1,4 +1,4 @@
-profitSetupData=function(image, mask, sigma, segim, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE) {
+profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE) {
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
   
@@ -65,8 +65,11 @@ profitSetupData=function(image, mask, sigma, segim, modellist, tofit, tolog, pri
   
   if(missing(constraints)){constraints={}}
   
-  segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
-  region = segim==segimkeep & mask!=1
+  if(missing(region)){
+    segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
+    region = segim==segimkeep & mask!=1
+  }
+  
   haspsf = length(psf) > 0
   if(haspsf)
   {
