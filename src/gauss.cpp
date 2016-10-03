@@ -5,7 +5,6 @@ using namespace Rcpp;
 /*
   Note: This causes build errors on Solaris due to "ambiguous and overloaded" pow calls.
   These issues will need fixing before any integration into libprofit
- 
   Author: Dan Taranu
  
   Semi-analytic integration for a Gaussian profile.
@@ -89,12 +88,14 @@ class Profit2DGaussianIntegrator{
       double c2 = c*c;
       double d2 = d*d;
       double cd = c*d;
+      double c4 = c2*c2;
+      double d4 = d2*d2;
       am1tcd = (-1 + a)*cd;
       c2pad2 = c2+a*d2;
       d2pac2 = d2+a*c2;
       isqc2pad2 = 1.0/sqrt(c2pad2);
       isqd2pac2 = 1.0/sqrt(d2pac2);
-      y2fac = (ab*pow(c,4) + 2*ab*c2*d2 + ab*pow(d,4));
+      y2fac = (ab*c4 + 2*ab*c2*d2 + ab*d4);
       x2fac = y2fac/d2pac2;
       y2fac /= c2pad2;
       yintfac = sqrt(M_PI)*isqc2pad2/(2.*sqb);
@@ -179,6 +180,7 @@ const std::vector<double> & Profit2DGaussianIntegrator::integral(
   return rval;
 }
 
+// // [[Rcpp::export]]
 NumericMatrix profitMakeGaussian(
     const double XCEN, const double YCEN, const double MAG, const double RE, 
     const double ANG, const double AXRAT, const double BOX, const double MAGZERO, 
@@ -187,7 +189,7 @@ NumericMatrix profitMakeGaussian(
   //const double BN=R::qgamma(0.5, 2 * NSER,1,1,0);  
   const double BN = 0.69314718055994528623;
   const double RBOX=PI*(BOX+2.)/(4.*R::beta(1./(BOX+2.),1+1./(BOX+2.)));
-  const double LUMTOT = pow(10,(-0.4*(MAG-MAGZERO)));
+  const double LUMTOT = pow(10.,(-0.4*(MAG-MAGZERO)));
   // TODO: Figure out why this empirical factor of 2*exp(1) is required to normalize properly
   const double Ie=2.*exp(1.)*LUMTOT/(RE*RE*AXRAT*PI*((exp(BN))/BN)*R::gammafn(1)/RBOX);
   const double INVRE = 1.0/RE;
@@ -200,7 +202,7 @@ NumericMatrix profitMakeGaussian(
   angmod = std::fmod(ANG+90.,360.);
   if(angmod > 180.) angmod -= 180.;
   const double PX = cos(angmod*M_PI/180.);
-  const double INVREY = sin(angmod*M_PI/180.)*INVRE*pow(-1,angmod < PI);
+  const double INVREY = sin(angmod*M_PI/180.)*INVRE*pow(-1.,angmod < PI);
   const double INVREX = PX*INVRE;
   const double INVAXRAT = 1.0/AXRAT;
   Profit2DGaussianIntegrator gauss2(BN, INVREX, INVREY, INVAXRAT);
