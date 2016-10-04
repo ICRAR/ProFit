@@ -5,24 +5,30 @@
 Reconstruct an Image Model
 }
 \description{
-This is a convenience function that allows users to easily substitute into a legal image model results from an optimisation run. This can be parsed directly into \code{\link{profitMakeModel}}.
+This is a convenience function that allows users to easily substitute into a legal image model results from an optimisation run. This can be parsed directly into \code{\link{profitMakeModel}}. It uses the same conversion functions in the same manner as \code{\link{profitLikeModel}} so you can create an image model that is fully consistent. These consistent model lists can be used for other analysis, e.g. \code{\link{profitEllipsePlot}}.
 }
 \usage{
-profitRemakeModelList(parm, modellist, tofit, tolog)
+profitRemakeModelList(parm, modellist, tofit, tolog, intervals, constraints)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{parm}{
-Vector of parameters that will be inserted into the \option{modellist} provided.
+Vector; required, of parameters that will be inserted into the \option{modellist} provided.
 }
   \item{modellist}{
-Model list (see \code{\link{profitMakeModel}} for details).
+List; required, the basic model list that describes the structure of the object (see \code{\link{profitMakeModel}} for details).
 }
   \item{tofit}{
-List of elements that are being fitted, flagging which elements of \option{modellist} will be replaced with \option{parm} (see \code{\link{profitSetupData}} for details). 
+List; required, of elements that are being fitted, flagging which elements of \option{modellist} will be replaced with \option{parm} (see \code{\link{profitSetupData}} for details). 
 }
   \item{tolog}{
-List of elements that are being fitted in log space, flagging which elements of \option{modellist} will be replaced with unlogged elements of \option{parm} (see \code{\link{profitSetupData}} for details). If missing then all parameters are assumed to be provided in native linear space.
+List; optional, of elements that are being fitted in log space, flagging which elements of \option{modellist} will be replaced with unlogged elements of \option{parm} (see \code{\link{profitSetupData}} for details). If missing then all parameters are assumed to be provided in native linear space.
+}
+  \item{intervals}{
+List; optional, interval limits for each parameter, using a similar list structure to \option{modellist} (see \code{\link{profitSetupData}} for details). If missing then no interval limits are applied.
+}
+  \item{constraints}{
+Function; optional, takes the \option{modellist} and returns a list with exactly the same structure (see \code{\link{profitSetupData}} for details). If missing then no constraints are applied.
 }
 }
 \value{
@@ -32,7 +38,7 @@ A new model list with the same structure as \option{modellist}.
 Aaron Robotham
 }
 \seealso{
-\code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
+\code{\link{profitMakeModel}}, \code{\link{profitSetupData}}, \code{\link{profitLikeModel}}, \code{\link{profitEllipsePlot}}
 }
 \examples{
 modellist = list(

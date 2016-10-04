@@ -70,16 +70,36 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     #modellistnew=relist(paramsnew,Data$modellist)
     #New approach, to deal with partial interval limits:
     compnames=names(Data$intervals)
-      for(i in compnames){
+    for(i in compnames){
+      #For the more typical non-PSF case
+      if(i != "psf"){
         subnames=names(Data$intervals[[i]])
         for(j in subnames){
           subsublength=length(modellistnew[[i]][[j]])
           for(k in 1:subsublength){
-          modellistnew[[i]][[j]][k]=max(Data$intervals[[i]][[j]][[k]][1], min(Data$intervals[[i]][[j]][[k]][2], modellistnew[[i]][[j]][k], na.rm = FALSE), na.rm = FALSE)
+            intervalmin=Data$intervals[[i]][[j]][[k]][1]
+            intervalmax=Data$intervals[[i]][[j]][[k]][2]
+            currentval=modellistnew[[i]][[j]][k]
+            modellistnew[[i]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = FALSE), na.rm = FALSE)
+          }
+        }
+      }else{
+        #For the deeper PSF case:
+        subnames=names(Data$intervals[[i]])
+        for(j in subnames){
+          subsubnames=Data$intervals[[i]][[j]]
+          for(k in subsubnames){
+            subsubsublength=length(modellistnew[[i]][[j]][[k]])
+            for(l in 1:subsublength){
+              intervalmin=Data$intervals[[i]][[j]][[k]][[l]][1]
+              intervalmax=Data$intervals[[i]][[j]][[k]][[l]][2]
+              currentval=modellistnew[[i]][[j]][[k]][l]
+              modellistnew[[i]][[j]][[k]][l]=max(intervalmin, min(intervalmax, currentval, na.rm = FALSE), na.rm = FALSE)
+            }
           }
         }
       }
-    
+    }
   }
   
   # Calculate priors with the new versus old modellist
