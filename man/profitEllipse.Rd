@@ -60,7 +60,7 @@ Projecting data back to 1D profiles is a knowingly imperfect process, but it can
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitEllipsePlot}}
+\code{\link{profitEllipsePlot}}, \code{\link{profitRemakeModellist}}
 }
 \examples{
 

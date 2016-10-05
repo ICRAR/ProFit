@@ -220,7 +220,7 @@ profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='al
 ```
 
 ```{r, eval=FALSE}
-modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModellist(parm=optimfit$par, Data=Data)$modellist
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
@@ -258,7 +258,7 @@ profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sers
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(LAfit$Summary1[,1],Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(LAfit$Summary1[,1],Data$modellist,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModellist(LAfit$Summary1[,1],Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
@@ -330,7 +330,7 @@ profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(BestLD,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(BestLD,Data$modellist,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModellist(BestLD,Data$modellist,Data$tofit,Data$tolog)
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 

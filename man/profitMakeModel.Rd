@@ -211,7 +211,7 @@ Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitConvolvePSF}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}
+\code{\link{profitConvolvePSF}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaCoreSersic}} \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaKing}}, \code{\link{profitCubaBrokenExp}}, \code{\link{profitRemakeModellist}}
 }
 \examples{
 modellist = list(
