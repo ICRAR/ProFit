@@ -26,6 +26,8 @@
 #ifndef _CONVOLUTION_H_
 #define _CONVOLUTION_H_
 
+#include <vector>
+
 namespace profit
 {
 

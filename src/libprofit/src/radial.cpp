@@ -28,8 +28,12 @@
 #include <cmath>
 #include <vector>
 
+#include "profit/common.h"
+#include "profit/exceptions.h"
+#include "profit/model.h"
 #include "profit/radial.h"
 #include "profit/utils.h"
+
 
 using namespace std;
 
@@ -270,8 +274,8 @@ void RadialProfile::evaluate(vector<double> &image) {
 /**
  * Constructor with sane defaults
  */
-RadialProfile::RadialProfile(const Model &model) :
-	Profile(model),
+RadialProfile::RadialProfile(const Model &model, const string &name) :
+	Profile(model, name),
 	xcen(0), ycen(0),
 	mag(15), ang(0),
 	axrat(1), box(0),
@@ -281,6 +285,58 @@ RadialProfile::RadialProfile(const Model &model) :
 	rscale_max(0)
 {
 	// no-op
+}
+
+bool RadialProfile::parameter_impl(const string &name, bool value) {
+
+	if( Profile::parameter_impl(name, value) ) {
+		return true;
+	}
+
+	if( name == "rough" )              { rough = value; }
+	else if( name == "adjust" )        { adjust = value; }
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool RadialProfile::parameter_impl(const string &name, double value) {
+
+	if( Profile::parameter_impl(name, value) ) {
+		return true;
+	}
+
+	if( name == "xcen" )               { xcen = value; }
+	else if( name == "ycen" )          { ycen = value; }
+	else if( name == "mag" )           { mag = value; }
+	else if( name == "ang" )           { ang = value; }
+	else if( name == "axrat" )         { axrat = value; }
+	else if( name == "box" )           { box = value; }
+	else if( name == "acc" )           { acc = value; }
+	else if( name == "rscale_switch" ) { rscale_switch = value; }
+	else if( name == "rscale_max" )    { rscale_max = value; }
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool RadialProfile::parameter_impl(const string &name, unsigned int value) {
+
+	if( Profile::parameter_impl(name, value) ) {
+		return true;
+	}
+
+	if( name == "max_recursions" )  { max_recursions = value; }
+	else if( name == "resolution" ) { resolution = value; }
+	else {
+		return false;
+	}
+
+	return true;
 }
 
 } /* namespace profit */

@@ -57,12 +57,26 @@ double qgamma(double p, double shape);
 double pgamma(double q, double shape);
 
 /**
- * Computes the gamma function for ``x``
+ * Computes the gamma function for ``x``.
+ *
+ * @param x The parameter of the gamma function
+ * @returns The value of `gamma(x)`. If `x` is a negative integer
+ * `NaN` is returned. If underflow occurs, `0` is returned.
+ * If x is positive and overflow occurs, `+Inf` is returned.
  */
 double gammafn(double x);
 
 /**
- * Computes the beta function for ``a`` and ``b``
+ * Computes the beta function for ``a`` and ``b``.
+ * This function follows R's beta function semantics;
+ * that is, the result is undefined if either is negative,
+ * and +Inf if either parameter is zero.
+ *
+ * @param a The first parameter of the beta function
+ * @param b The second parameter of the beta function
+ * @returns The value of `beta(a,b)`.
+ * If either is negative `NaN` is returned. If either is 0,
+ * `+Inf` is returned.
  */
 double beta(double a, double b);
 

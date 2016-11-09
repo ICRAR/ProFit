@@ -31,10 +31,12 @@
 #endif
 
 
-#include "profit/profit.h"
+#include "profit/profile.h"
 
 namespace profit
 {
+
+/** @defgroup Parameters */
 
 class RadialProfile;
 
@@ -53,22 +55,49 @@ class RadialProfile;
 typedef double (*eval_function_t)(const RadialProfile &profile, double x, double y, double r, bool reuse_r);
 
 /**
- * The case class for radial profiles.
+ * The base class for radial profiles.
  *
  * This class implements the common aspects of all radial profiles, namely:
  *  * High-level evaluation logic
  *  * Region masking
- *  * Translation, rotation, axis ratio and boxing
+ *  * Translation, rotation, axis ratio and boxing handling
  *  * Pixel subsampling
  *
- * Subclasses are expected to implement a handfull of methods that convey
+ * Subclasses are expected to implement a handful of methods that convey
  * profile-specific information, such as the evaluation function for an given
  * x/y profile coordinate and the calculation of the total luminosity of the
  * profile, among others.
  */
 class RadialProfile : public Profile {
 
+public:
+
+	/**
+	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
+	 */
+	RadialProfile(const Model &model, const std::string &name);
+
+	/*
+	 * ---------------------------------------------
+	 * Pure virtual functions implementations follow
+	 * ---------------------------------------------
+	 */
+	void validate() override;
+	void evaluate(std::vector<double> &image) override;
+
 protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	virtual bool parameter_impl(const std::string &name, bool value) override;
+	virtual bool parameter_impl(const std::string &name, double value) override;
+	virtual bool parameter_impl(const std::string &name, unsigned int value) override;
 
 	/**
 	 * Performs the initial calculations needed by this profile during the
@@ -139,45 +168,14 @@ protected:
 	 */
 	virtual eval_function_t get_evaluation_function() = 0;
 
-	/* These are internally calculated at profile evaluation time */
-	double _ie;
-	double _cos_ang;
-	double _sin_ang;
-	eval_function_t _eval_function;
-
-private:
-
-	void _image_to_profile_coordinates(double x, double y, double &x_prof, double &y_prof);
-
-	double subsample_pixel(double x0, double x1,
-	                       double y0, double y1,
-	                       unsigned int recur_level,
-	                       unsigned int max_recursions,
-	                       unsigned int resolution);
-
-public:
-
-	/**
-	 * Constructor.
-	 *
-	 * @param model The model this profile belongs to
-	 */
-	RadialProfile(const Model &);
-
-	/*
-	 * ---------------------------------------------
-	 * Pure virtual functions implementations follow
-	 * ---------------------------------------------
-	 */
-	void validate() override;
-	void evaluate(std::vector<double> &image) override;
-
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The X center of this profile, in image coordinates
 	 */
@@ -254,6 +252,7 @@ public:
 	 * anymore
 	 */
 	double rscale_max;
+	// @}
 
 	/*
 	 * radius scale, profiles provide it in different ways
@@ -261,11 +260,26 @@ public:
 	 */
 	double rscale;
 
-
 #ifdef PROFIT_DEBUG
 	/* record of how many subintegrations we've done */
 	std::map<int,int> n_integrations;
 #endif
+
+	/* These are internally calculated at profile evaluation time */
+	double _ie;
+	double _cos_ang;
+	double _sin_ang;
+	eval_function_t _eval_function;
+
+private:
+
+	void _image_to_profile_coordinates(double x, double y, double &x_prof, double &y_prof);
+
+	double subsample_pixel(double x0, double x1,
+	                       double y0, double y1,
+	                       unsigned int recur_level,
+	                       unsigned int max_recursions,
+	                       unsigned int resolution);
 
 };
 

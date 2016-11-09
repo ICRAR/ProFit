@@ -30,6 +30,7 @@
 #include <numeric>
 #include <vector>
 
+#include "profit/common.h"
 #include "profit/utils.h"
 
 /*
@@ -38,6 +39,7 @@
  * If neither is given the compilation should fail
  */
 #if defined(HAVE_GSL)
+	#include <gsl/gsl_errno.h>
 	#include <gsl/gsl_cdf.h>
 	#include <gsl/gsl_sf_gamma.h>
 	#include <gsl/gsl_integration.h>
@@ -78,12 +80,13 @@
 	#error("No high-level library (GSL or R) provided")
 #endif
 
+
 using namespace std;
 
 namespace profit {
 
 void add_images(vector<double> &dest, const vector<double> &src) {
-	transform(src.begin(), src.end(), dest.begin(), dest.begin(), std::plus<double>());
+	transform(src.begin(), src.end(), dest.begin(), dest.begin(), plus<double>());
 }
 
 void normalize(vector<double> &image) {
@@ -107,14 +110,41 @@ double pgamma(double q, double shape) {
 }
 
 double gammafn(double x) {
-	if( x > GSL_SF_GAMMA_XMAX ) {
-		return numeric_limits<double>::infinity();
+
+	gsl_sf_result result;
+	int status = gsl_sf_gamma_e(x, &result);
+	if( status ) {
+		if( status == GSL_EUNDRFLW ) {
+			return 0.;
+		}
+		else if( status == GSL_EOVRFLW && x > 0 ) {
+			return numeric_limits<double>::infinity();
+		}
+		return numeric_limits<double>::quiet_NaN();
 	}
-	return gsl_sf_gamma(x);
+
+	return result.val;
 }
 
 double beta(double a, double b) {
-	return gsl_sf_beta(a, b);
+
+	if( a < 0. || b < 0. ) {
+		return numeric_limits<double>::quiet_NaN();
+	}
+	if( a == 0. || b == 0. ) {
+		return numeric_limits<double>::infinity();
+	}
+
+	gsl_sf_result result;
+	int status = gsl_sf_beta_e(a, b, &result);
+	if( status ) {
+		if( status == GSL_EUNDRFLW ) {
+			return 0.;
+		}
+		return numeric_limits<double>::quiet_NaN();
+	}
+
+	return result.val;
 }
 
 static

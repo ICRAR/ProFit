@@ -26,7 +26,7 @@
 #ifndef _PSF_H_
 #define _PSF_H_
 
-#include "profit/profit.h"
+#include "profit/profile.h"
 
 namespace profit
 {
@@ -45,8 +45,9 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	PsfProfile(const Model &);
+	PsfProfile(const Model &model, const std::string &name);
 
 	/*
 	 * ---------------------------------------------
@@ -56,12 +57,23 @@ public:
 	void validate() override;
 	void evaluate(std::vector<double> &image) override;
 
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double value) override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The X center of this profile
 	 */
@@ -76,6 +88,7 @@ public:
 	 * The magnitude of this profile, based on the model's magnitude
 	 */
 	double mag;
+	// @}
 
 };
 

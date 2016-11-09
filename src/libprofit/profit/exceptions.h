@@ -1,5 +1,5 @@
 /**
- * Header file with public definitions to use libprofit
+ * Header file with exception classes definitions for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -24,13 +24,32 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PROFIT_H_
-#define _PROFIT_H_
+#ifndef _EXCEPTIONS_H_
+#define _EXCEPTIONS_H_
 
-#include "profit/common.h"
-#include "profit/convolve.h"
-#include "profit/exceptions.h"
-#include "profit/model.h"
-#include "profit/profile.h"
+#include <exception>
+#include <string>
+
+namespace profit
+{
+
+/**
+ * Exception class thrown when an invalid parameter has been supplied to either
+ * a model or a specific profile.
+ */
+class invalid_parameter : public std::exception
+{
+
+public:
+	invalid_parameter(const std::string &what);
+	~invalid_parameter() throw();
+	const char *what() const throw();
+
+private:
+	std::string m_what;
+
+};
+
+} /* namespace profit */
 
 #endif /* _PROFIT_H_ */

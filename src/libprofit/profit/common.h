@@ -1,5 +1,5 @@
 /**
- * Header file with public definitions to use libprofit
+ * Header file with common definitions for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -24,13 +24,18 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PROFIT_H_
-#define _PROFIT_H_
+#ifndef _COMMON_H_
+#define _COMMON_H_
 
-#include "profit/common.h"
-#include "profit/convolve.h"
-#include "profit/exceptions.h"
-#include "profit/model.h"
-#include "profit/profile.h"
+/* M_PI is not part of C/C++, but usually there */
+#include <cmath>
+#ifndef M_PI
+#  define M_PI 3.14159265358979323846
+#endif
 
-#endif /* _PROFIT_H_ */
+/* The override keyword is not supported until gcc 4.7 */
+#if defined(__GNUG__) && (__GNUC__ <= 4) && (__GNUC_MINOR__ < 7)
+#define override
+#endif
+
+#endif /* _COMMON_H_ */
