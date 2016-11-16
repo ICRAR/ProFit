@@ -34,41 +34,22 @@ namespace profit
 /**
  * A Ferrer profile
  *
- * The ferrer profile has parameters `rout`, `a` and `b` and is
- * calculated as follows at radius `r`:
+ * The ferrer profile has parameters ``rout``, ``a`` and ``b`` and is
+ * calculated as follows for coordinates x/y::
  *
- * @f[
- *    \left[ 1 - \left(\frac{r}{r_{out}}\right)^{(2-b)} \right]^{a}
- * @f]
+ *    (1-r_factor)^(a)
+ *
+ * with::
+ *
+ *    r_factor = (r/rout)^(2-b)
+ *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
+ *           B = box parameter
  */
 class FerrerProfile : public RadialProfile {
 
-public:
-
-	/**
-	 * Constructor
-	 *
-	 * @param model The model this profile belongs to
-	 * @param name The name of this profile
-	 */
-	FerrerProfile(const Model &model, const std::string &name);
-
-	void validate() override;
-
 protected:
 
-	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double val) override;
-
-	/*
-	 * ----------------------------
-	 * Inherited from RadialProfile
-	 * ----------------------------
-	 */
+	/* All these are inherited from RadialProfile */
 	double get_lumtot(double r_box) override;
 	double get_rscale() override;
 	double adjust_acc() override;
@@ -76,14 +57,23 @@ protected:
 	double adjust_rscale_max() override;
 	eval_function_t get_evaluation_function() override;
 
+public:
+
+	/**
+	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
+	 */
+	FerrerProfile(const Model & model);
+
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
-	/** @name Profile Parameters */
-	// @{
 	/**
 	 * The outer truncation radius
 	 */
@@ -98,11 +88,6 @@ protected:
 	 * The strength of the truncation as the radius approaches ``rout``.
 	 */
 	double b;
-	// @}
-
-private:
-
-	double evaluate_at(double x, double y, double r, bool reuse_r) const;
 
 };
 

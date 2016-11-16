@@ -8,7 +8,16 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
+#include <profit/brokenexponential.h>
+#include <profit/convolve.h>
+#include <profit/coresersic.h>
+#include <profit/ferrer.h>
+#include <profit/king.h>
+#include <profit/moffat.h>
 #include <profit/profit.h>
+#include <profit/psf.h>
+#include <profit/sersic.h>
+#include <profit/sky.h>
 
 using namespace profit;
 using namespace std;
@@ -43,14 +52,14 @@ SEXP _get_list_element(SEXP list, const char *name) {
 }
 
 static
-void _read_bool(Profile &p, SEXP list, const char *name, unsigned int idx) {
+void _read_bool(SEXP list, const char *name, unsigned int idx, bool &target) {
 	SEXP element = _get_list_element(list, name);
 	if( element != R_NilValue ) {
 		if( TYPEOF(element) == LGLSXP ) {
-			p.parameter(name, (bool)LOGICAL(element)[idx]);
+			target = (bool)LOGICAL(element)[idx];
 		}
 		else if( TYPEOF(element) == INTSXP ) {
-			p.parameter(name, (bool)INTEGER(element)[idx]);
+			target = (bool)INTEGER(element)[idx];
 		}
 		else {
 			Rf_error("Parameter %s[%u] should be of boolean or integer type", name, idx);
@@ -59,17 +68,17 @@ void _read_bool(Profile &p, SEXP list, const char *name, unsigned int idx) {
 }
 
 static
-void _read_uint(Profile &p, SEXP list, const char *name, unsigned int idx) {
+void _read_uint(SEXP list, const char *name, unsigned int idx, unsigned int &target) {
 	SEXP element = _get_list_element(list, name);
 	if( element != R_NilValue ) {
 		if( TYPEOF(element) == INTSXP ) {
-			p.parameter(name, (unsigned int)INTEGER(element)[idx]);
+			target = (unsigned int)INTEGER(element)[idx];
 		}
 		else if( TYPEOF(element) == LGLSXP ) {
-			p.parameter(name, (unsigned int)LOGICAL(element)[idx]);
+			target = (unsigned int)LOGICAL(element)[idx];
 		}
 		else if( TYPEOF(element) == REALSXP ) {
-			p.parameter(name, (unsigned int)REAL(element)[idx]);
+			target = (unsigned int)REAL(element)[idx];
 		}
 		else {
 			Rf_error("Parameter %s[%u] should be of numeric type", name, idx);
@@ -78,92 +87,101 @@ void _read_uint(Profile &p, SEXP list, const char *name, unsigned int idx) {
 }
 
 static
-void _read_real(Profile &p, SEXP list, const char *name, unsigned int idx) {
+void _read_real(SEXP list, const char *name, unsigned int idx, double &target) {
 	SEXP element = _get_list_element(list, name);
 	if( element != R_NilValue ) {
-		p.parameter(name, REAL(element)[idx]);
+		target = REAL(element)[idx];
 	}
 }
 
 static
 void list_to_radial(SEXP radial_list, Profile &p, unsigned int idx) {
-	p.parameter("adjust", true);
-	_read_real(p, radial_list, "xcen",  idx);
-	_read_real(p, radial_list, "ycen",  idx);
-	_read_real(p, radial_list, "mag",   idx);
-	_read_real(p, radial_list, "ang",   idx);
-	_read_real(p, radial_list, "axrat", idx);
-	_read_real(p, radial_list, "box",   idx);
+	RadialProfile &rp = static_cast<RadialProfile &>(p);
+	rp.adjust = true;
+	_read_real(radial_list, "xcen",  idx, rp.xcen);
+	_read_real(radial_list, "ycen",  idx, rp.ycen);
+	_read_real(radial_list, "mag",   idx, rp.mag);
+	_read_real(radial_list, "ang",   idx, rp.ang);
+	_read_real(radial_list, "axrat", idx, rp.axrat);
+	_read_real(radial_list, "box",   idx, rp.box);
 
-	_read_bool(p, radial_list, "rough",          idx);
-	_read_real(p, radial_list, "acc",            idx);
-	_read_real(p, radial_list, "rscale_switch",  idx);
-	_read_uint(p, radial_list, "resolution",     idx);
-	_read_uint(p, radial_list, "max_recursions", idx);
+	_read_bool(radial_list, "rough",          idx, rp.rough);
+	_read_real(radial_list, "acc",            idx, rp.acc);
+	_read_real(radial_list, "rscale_switch",  idx, rp.rscale_switch);
+	_read_uint(radial_list, "resolution",     idx, rp.resolution);
+	_read_uint(radial_list, "max_recursions", idx, rp.max_recursions);
 
-	_read_real(p, radial_list, "rscale_max", idx);
+	_read_real(radial_list, "rscale_max", idx, rp.rscale_max);
 }
 
 static
 void list_to_sersic(SEXP sersic_list, Profile &p, unsigned int idx) {
 	list_to_radial(sersic_list, p, idx);
-	_read_real(p, sersic_list, "re",           idx);
-	_read_real(p, sersic_list, "nser",         idx);
-	_read_bool(p, sersic_list, "rescale_flux", idx);
+	SersicProfile &sp = static_cast<SersicProfile &>(p);
+	_read_real(sersic_list, "re",           idx, sp.re);
+	_read_real(sersic_list, "nser",         idx, sp.nser);
+	_read_bool(sersic_list, "rescale_flux", idx, sp.rescale_flux);
 }
 
 static
 void list_to_moffat(SEXP moffat_list, Profile &p, unsigned int idx) {
 	list_to_radial(moffat_list, p, idx);
-	_read_real(p, moffat_list, "fwhm", idx);
-	_read_real(p, moffat_list, "con",  idx);
+	MoffatProfile &mp = static_cast<MoffatProfile &>(p);
+	_read_real(moffat_list, "fwhm", idx, mp.fwhm);
+	_read_real(moffat_list, "con",  idx, mp.con);
 }
 
 static
 void list_to_ferrer(SEXP ferrer_list, Profile &p, unsigned int idx) {
 	list_to_radial(ferrer_list, p, idx);
-	_read_real(p, ferrer_list, "rout",  idx);
-	_read_real(p, ferrer_list, "a",     idx);
-	_read_real(p, ferrer_list, "b",     idx);
+	FerrerProfile &fp = static_cast<FerrerProfile &>(p);
+	_read_real(ferrer_list, "rout",  idx, fp.rout);
+	_read_real(ferrer_list, "a",     idx, fp.a);
+	_read_real(ferrer_list, "b",     idx, fp.b);
 }
 
 static
 void list_to_coresersic(SEXP coresersic_list, Profile &p, unsigned int idx) {
 	list_to_radial(coresersic_list, p, idx);
-	_read_real(p, coresersic_list, "re",   idx);
-	_read_real(p, coresersic_list, "rb",   idx);
-	_read_real(p, coresersic_list, "nser", idx);
-	_read_real(p, coresersic_list, "a",    idx);
-	_read_real(p, coresersic_list, "b",    idx);
+	CoreSersicProfile &csp = static_cast<CoreSersicProfile &>(p);
+	_read_real(coresersic_list, "re",   idx, csp.re);
+	_read_real(coresersic_list, "rb",   idx, csp.rb);
+	_read_real(coresersic_list, "nser", idx, csp.nser);
+	_read_real(coresersic_list, "a",    idx, csp.a);
+	_read_real(coresersic_list, "b",    idx, csp.b);
 }
 
 static
 void list_to_king(SEXP king_list, Profile &p, unsigned int idx) {
 	list_to_radial(king_list, p, idx);
-	_read_real(p, king_list, "rc", idx);
-	_read_real(p, king_list, "rt", idx);
-	_read_real(p, king_list, "a",  idx);
+	KingProfile &kp = static_cast<KingProfile &>(p);
+	_read_real(king_list, "rc", idx, kp.rc);
+	_read_real(king_list, "rt", idx, kp.rt);
+	_read_real(king_list, "a",  idx, kp.a);
 }
 
 static
 void list_to_brokenexponential(SEXP brokenexponential_list, Profile &p, unsigned int idx) {
 	list_to_radial(brokenexponential_list, p, idx);
-	_read_real(p, brokenexponential_list, "h1", idx);
-	_read_real(p, brokenexponential_list, "h2", idx);
-	_read_real(p, brokenexponential_list, "rb", idx);
-	_read_real(p, brokenexponential_list, "a", idx);
+	BrokenExponentialProfile &bep = static_cast<BrokenExponentialProfile &>(p);
+	_read_real(brokenexponential_list, "h1", idx, bep.h1);
+	_read_real(brokenexponential_list, "h2", idx, bep.h2);
+	_read_real(brokenexponential_list, "rb", idx, bep.rb);
+	_read_real(brokenexponential_list, "a", idx, bep.a);
 }
 
 static
 void list_to_sky(SEXP sky_list, Profile &p, unsigned int idx) {
-	_read_real(p, sky_list, "bg", idx);
+	SkyProfile &sp = static_cast<SkyProfile &>(p);
+	_read_real(sky_list, "bg", idx, sp.bg);
 }
 
 static
 void list_to_psf(SEXP psf_list, Profile &p, unsigned int idx) {
-	_read_real(p, psf_list, "xcen",  idx);
-	_read_real(p, psf_list, "ycen",  idx);
-	_read_real(p, psf_list, "mag",   idx);
+	PsfProfile &psf = static_cast<PsfProfile &>(p);
+	_read_real(psf_list, "xcen",  idx, psf.xcen);
+	_read_real(psf_list, "ycen",  idx, psf.ycen);
+	_read_real(psf_list, "mag",   idx, psf.mag);
 }
 
 
@@ -191,7 +209,7 @@ void _read_profiles(Model &model, SEXP profiles_list,
 	for(i=0; i!=count; i++) {
 		try {
 			Profile &p = model.add_profile(profile_name);
-			_read_bool(p, profile_list, "convolve", i);
+			_read_bool(profile_list, "convolve", i, p.convolve);
 			list_to_profile(profile_list, p, i);
 		} catch (invalid_parameter &e) {
 			ostringstream os;

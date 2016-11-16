@@ -26,11 +26,8 @@
 
 #include <cmath>
 
-#include "profit/common.h"
 #include "profit/coresersic.h"
-#include "profit/exceptions.h"
 #include "profit/utils.h"
-
 
 using namespace std;
 
@@ -50,27 +47,36 @@ namespace profit
  *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
  *           B = box parameter
  */
-double CoreSersicProfile::evaluate_at(double x, double y, double r, bool reuse_r) const {
+static
+double _coresersic_for_xy_r(const RadialProfile &sp,
+                            double x, double y,
+                            double r, bool reuse_r) {
 
-	if( box == 0 && !reuse_r ) {
+	const CoreSersicProfile &csp = static_cast<const CoreSersicProfile &>(sp);
+
+	if( csp.box == 0 && !reuse_r ) {
 		r = sqrt(x*x + y*y);
 	}
-	else if( box != 0 ){
-		double box = this->box + 2.;
+	else if( csp.box != 0 ){
+		double box = csp.box + 2.;
 		r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	}
 	// else csp.box == 0 && reuse_r, so we leave r untouched
 
+	double rb = csp.rb;
+	double a = csp.a;
+	double b = csp.b;
+	double bn = csp._bn;
+	double re = csp.re;
+	double nser = csp.nser;
+
 	return pow(1 + pow(r/rb,-a), b/a) *
-	       exp(-_bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
+	       exp(-bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
 
 }
 
 eval_function_t CoreSersicProfile::get_evaluation_function() {
-	return [](const RadialProfile &rp, double x, double y, double r, bool reuse_r) -> double {
-		auto &csp = static_cast<const CoreSersicProfile &>(rp);
-		return csp.evaluate_at(x, y, r, reuse_r);
-	};
+	return &_coresersic_for_xy_r;
 }
 
 void CoreSersicProfile::validate() {
@@ -95,10 +101,19 @@ void CoreSersicProfile::validate() {
 
 }
 
-double CoreSersicProfile::integrate_at(double r) const {
+static
+double coresersic_int(double r, void *ex) {
+	CoreSersicProfile *csp = (CoreSersicProfile *)ex;
+	double rb = csp->rb;
+	double a = csp->a;
+	double b = csp->b;
+	double bn = csp->_bn;
+	double re = csp->re;
+	double nser = csp->nser;
 	return r * pow(1 + pow(r/rb,-a), b/a) *
-	       exp(-_bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
+	       exp(-bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
 }
+
 
 double CoreSersicProfile::get_lumtot(double r_box) {
 
@@ -106,11 +121,7 @@ double CoreSersicProfile::get_lumtot(double r_box) {
 	 * We numerically integrate r from 0 to infinity
 	 * to get the total luminosity
 	 */
-	auto int_f = [](double r, void *ctx){
-		CoreSersicProfile *p = reinterpret_cast<CoreSersicProfile *>(ctx);
-		return p->integrate_at(r);
-	};
-	double magtot = integrate_qagi(int_f, 0, this);
+	double magtot = integrate_qagi(&coresersic_int, 0, this);
 	return 2 * M_PI * axrat * magtot/r_box;
 }
 
@@ -143,27 +154,11 @@ double CoreSersicProfile::adjust_acc() {
 	return this->acc;
 }
 
-CoreSersicProfile::CoreSersicProfile(const Model &model, const string &name) :
-	RadialProfile(model, name),
+CoreSersicProfile::CoreSersicProfile(const Model &model) :
+	RadialProfile(model),
 	re(1), rb(1), nser(4), a(1), b(1)
 {
 	// no-op
 }
-bool CoreSersicProfile::parameter_impl(const string &name, double val) {
 
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "re" )        { re = val; }
-	else if( name == "rb" )   { rb = val; }
-	else if( name == "nser" ) { nser = val; }
-	else if( name == "a" )    { a = val; }
-	else if( name == "b" )    { b = val; }
-	else {
-		return false;
-	}
-
-	return true;
-}
 } /* namespace profit */

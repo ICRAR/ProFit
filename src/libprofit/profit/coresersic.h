@@ -34,43 +34,22 @@ namespace profit
 /**
  * A CoreSersic profile
  *
- * The CoreSersic profile has parameters `re`, `rb`, `nser`, `a` and `b` and is
- * calculated as follows at radius `r`:
+ * The CoreSersic profile has parameters ``re``, ``rb``, ``nser``, ``a`` and ``b`` and is
+ * calculated as follows for coordinates x/y::
  *
- * @f[
- *    \left[1+\left(\frac{r}{r_b}\right)^{-a}\right]^{\frac{b}{a}}
- *        \exp \left[ -b_n \left( \frac{r^a+{r_b}^a}{{r_e}^a}\right)^{\frac{1}{a n_{ser}}} \right]
- * @f]
+ *    (1+(r/rb)^(-a))^(b/a)*
+ *        exp(-bn*(((r^a+rb^a)/re^a))^(1/(nser*a)))
  *
+ * with::
+ *
+ *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
+ *           B = box parameter
  */
 class CoreSersicProfile : public RadialProfile {
 
-public:
-
-	/**
-	 * Constructor
-	 *
-	 * @param model The model this profile belongs to
-	 * @param name The name of this profile
-	 */
-	CoreSersicProfile(const Model &model, const std::string &name);
-
-	void validate() override;
-
 protected:
 
-	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double val) override;
-
-	/*
-	 * ----------------------------
-	 * Inherited from RadialProfile
-	 * ----------------------------
-	 */
+	/* All these are inherited from RadialProfile */
 	double get_lumtot(double r_box) override;
 	double get_rscale() override;
 	double adjust_acc() override;
@@ -79,14 +58,23 @@ protected:
 	void initial_calculations() override;
 	eval_function_t get_evaluation_function() override;
 
+public:
+
+	/**
+	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
+	 */
+	CoreSersicProfile(const Model &model);
+
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
-	/** @name Profile Parameters */
-	// @{
 	/**
 	 * The effective radius of the Sersic component
 	 */
@@ -111,15 +99,11 @@ protected:
 	 * The inner power-law of the Core-Sersic.
 	 */
 	double b;
-	// @}
 
-	/* internally calculated when the profile is evaluated */
+	/**
+	 * The Sersic bn.
+	 */
 	double _bn;
-
-private:
-
-	double integrate_at(double r) const;
-	double evaluate_at(double x, double y, double r, bool reuse_r) const;
 
 };
 

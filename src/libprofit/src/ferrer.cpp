@@ -27,11 +27,8 @@
 #include <cmath>
 #include <algorithm>
 
-#include "profit/common.h"
-#include "profit/exceptions.h"
 #include "profit/ferrer.h"
 #include "profit/utils.h"
-
 
 using namespace std;
 
@@ -49,25 +46,31 @@ namespace profit
  *              r = (x^{2+B} + y^{2+B})^{1/(2+B)}
  *              B = box parameter
  */
-double FerrerProfile::evaluate_at(double x, double y, double r, bool reuse_r) const {
+static
+double _ferrer_for_xy_r(const RadialProfile &sp,
+                        double x, double y,
+                        double r, bool reuse_r) {
 
+	const FerrerProfile &fp = static_cast<const FerrerProfile &>(sp);
 	double r_factor;
-	if( reuse_r && box == 0 ) {
+	if( reuse_r && fp.box == 0 ) {
 		r_factor = r;
 	}
-	else if( box == 0 ) {
+	else if( fp.box == 0 ) {
 		r_factor = sqrt(x*x + y*y);
 	}
 	else {
-		double box = this->box + 2.;
+		double box = fp.box + 2.;
 		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	}
 
-	r_factor /= rscale;
+	r_factor /= fp.rscale;
 	if( r_factor < 1 ) {
-		return pow(1 - pow(r_factor, 2 - b), a);
+		return pow(1 - pow(r_factor, 2 - fp.b), fp.a);
 	}
-	return 0;
+	else {
+		return 0;
+	}
 }
 
 void FerrerProfile::validate() {
@@ -87,13 +90,12 @@ void FerrerProfile::validate() {
 }
 
 eval_function_t FerrerProfile::get_evaluation_function() {
-	return [](const RadialProfile &rp, double x, double y, double r, bool reuse_r) -> double {
-		auto fp = static_cast<const FerrerProfile &>(rp);
-		return fp.evaluate_at(x, y, r, reuse_r);
-	};
+	return &_ferrer_for_xy_r;
 }
 
 double FerrerProfile::get_lumtot(double r_box) {
+	double a = this->a;
+	double b = this->b;
 
 	/*
 	 * Wolfram Alpha gave for g_factor:
@@ -132,27 +134,12 @@ double FerrerProfile::adjust_acc() {
 	return this->acc;
 }
 
-FerrerProfile::FerrerProfile(const Model &model, const string &name) :
-	RadialProfile(model, name),
+FerrerProfile::FerrerProfile(const Model &model) :
+	RadialProfile(model),
 	rout(3), a(1), b(1)
 {
 	// this profile defaults to a different accuracy
 	this->acc = 1;
 }
 
-bool FerrerProfile::parameter_impl(const string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "rout" )   { rout = val; }
-	else if( name == "a" ) { a = val; }
-	else if( name == "b" ) { b = val; }
-	else {
-		return false;
-	}
-
-	return true;
-}
 } /* namespace profit */

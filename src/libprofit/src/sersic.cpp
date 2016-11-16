@@ -27,12 +27,8 @@
 #include <cmath>
 #include <algorithm>
 
-#include "profit/common.h"
-#include "profit/exceptions.h"
-#include "profit/model.h"
 #include "profit/sersic.h"
 #include "profit/utils.h"
-
 
 using namespace std;
 
@@ -71,6 +67,21 @@ namespace profit
  */
 
 /*
+ * The nser parameter is a double; we need an enumeration of the known values
+ * to optimize for to use in our templates
+ */
+enum nser_t {
+	general,
+	pointfive,
+	one,
+	two,
+	three,
+	four,
+	eight,
+	sixteen
+};
+
+/*
  * r_factor calculation follows. Several template specializations avoid the
  * call to pow().
  * This first generic template will finally be called only with parameters
@@ -78,84 +89,84 @@ namespace profit
  */
 
 /* "true" cases for r_factor */
-template<bool boxy, SersicProfile::nser_t t>
+template<bool boxy, nser_t t>
 inline double _r_factor(double b, double invexp)
 {
   return pow(b, 1/invexp);
 }
 
-template<> inline double _r_factor<true, SersicProfile::pointfive>(double b, double invexp)
+template<> inline double _r_factor<true, pointfive>(double b, double invexp)
 {
 	return b*b;
 }
 
-template<> inline double _r_factor<true, SersicProfile::one>(double b, double invexp)
+template<> inline double _r_factor<true, one>(double b, double invexp)
 {
 	return b;
 }
 
-template<> inline double _r_factor<true, SersicProfile::two>(double b, double invexp)
+template<> inline double _r_factor<true, two>(double b, double invexp)
 {
 	return sqrt(b);
 }
 
-template<> inline double _r_factor<true, SersicProfile::three>(double b, double invexp)
+template<> inline double _r_factor<true, three>(double b, double invexp)
 {
 	return cbrt(b);
 }
 
-template<> inline double _r_factor<true, SersicProfile::four>(double b, double invexp)
+template<> inline double _r_factor<true, four>(double b, double invexp)
 {
 	return sqrt(sqrt(b));
 }
 
-template<> inline double _r_factor<true, SersicProfile::eight>(double b, double invexp)
+template<> inline double _r_factor<true, eight>(double b, double invexp)
 {
 	return sqrt(sqrt(sqrt(b)));
 }
 
-template<> inline double _r_factor<true, SersicProfile::sixteen>(double b, double invexp)
+template<> inline double _r_factor<true, sixteen>(double b, double invexp)
 {
 	return sqrt(sqrt(sqrt(sqrt(b))));
 }
 
 /* "false" cases for r_factor */
-template<> inline double _r_factor<false, SersicProfile::general>(double b, double invexp)
+template<> inline double _r_factor<false, general>(double b, double invexp)
 {
 	return pow(sqrt(b), 1/invexp);
 }
 
-template<> inline double _r_factor<false, SersicProfile::pointfive>(double b, double invexp)
+template<> inline double _r_factor<false, pointfive>(double b, double invexp)
 {
 	return b;
 }
 
-template<> inline double _r_factor<false, SersicProfile::one>(double b, double invexp)
+template<> inline double _r_factor<false, one>(double b, double invexp)
 {
 	return sqrt(b);
 }
 
-template<> inline double _r_factor<false, SersicProfile::two>(double b, double invexp)
+template<> inline double _r_factor<false, two>(double b, double invexp)
 {
 	return sqrt(sqrt(b));
 }
 
-template<> inline double _r_factor<false, SersicProfile::three>(double b, double invexp)
+template<> inline double _r_factor<false, three>(double b, double invexp)
 {
 	return cbrt(sqrt(b));
 }
 
-template<> inline double _r_factor<false, SersicProfile::four>(double b, double invexp)
+template<> inline double _r_factor<false, four>(double b, double invexp)
 {
 	return sqrt(sqrt(sqrt(b)));
 }
 
-template<> inline double _r_factor<false, SersicProfile::eight>(double b, double invexp)
+template<> inline double _r_factor<false, eight>(double b, double invexp)
 {
 	return sqrt(sqrt(sqrt(sqrt(b))));
 }
 
-template<> inline double _r_factor<false, SersicProfile::sixteen>(double b, double invexp)
+template<> inline double _r_factor<false, sixteen>(double b, double invexp)
 {
 	return sqrt(sqrt(sqrt(sqrt(sqrt(b)))));
 }
@@ -194,21 +205,24 @@ inline double _invexp<false>(const double nser, const double exponent)
 /*
  * The main sersic evaluation function for a given X/Y coordinate
  */
-template <bool boxy, SersicProfile::nser_t t>
-double SersicProfile::evaluate_at(double x, double y, double r, bool reuse_r) const {
+template <bool boxy, nser_t t> static
+double _sersic_for_xy_r(const RadialProfile &slp,
+                        double x, double y,
+                        double r, bool reuse_r) {
 
+	const SersicProfile &sp = static_cast<const SersicProfile &>(slp);
 	double r_factor;
-	if( reuse_r && box == 0. ){
-		r_factor = pow(r/re, 1/nser);
+	if( reuse_r && sp.box == 0. ){
+		r_factor = pow(r/sp.re, 1/sp.nser);
 	}
 	else {
 		double base;
-		double exponent = box + 2;
-		base = _base<boxy>(x, y, re, exponent);
-		r_factor = _r_factor<boxy,t>(base,_invexp<boxy>(nser,exponent));
+		double exponent = sp.box + 2;
+		base = _base<boxy>(x, y, sp.re, exponent);
+		r_factor = _r_factor<boxy,t>(base,_invexp<boxy>(sp.nser,exponent));
 	}
 
-	return exp(-_bn * (r_factor - 1));
+	return exp(-sp._bn * (r_factor - 1));
 }
 
 void SersicProfile::validate() {
@@ -224,41 +238,34 @@ void SersicProfile::validate() {
 
 }
 
-template <bool boxy, SersicProfile::nser_t t>
-eval_function_t SersicProfile::get_evaluation_function_t() {
-	return [](const RadialProfile &rp, double x, double y, double r, bool reuse_r) -> double {
-		auto sp = static_cast<const SersicProfile &>(rp);
-		return sp.evaluate_at<boxy, t>(x, y, r, reuse_r);
-	};
-}
-
 eval_function_t SersicProfile::get_evaluation_function() {
 
 	if( this->box != 0 ) {
-		     if( this->nser == 0.5 ) return get_evaluation_function_t<true, pointfive>();
-		else if( this->nser == 1 )   return get_evaluation_function_t<true, one>();
-		else if( this->nser == 2 )   return get_evaluation_function_t<true, two>();
-		else if( this->nser == 3 )   return get_evaluation_function_t<true, three>();
-		else if( this->nser == 4 )   return get_evaluation_function_t<true, four>();
-		else if( this->nser == 8 )   return get_evaluation_function_t<true, eight>();
-		else if( this->nser == 16 )  return get_evaluation_function_t<true, sixteen>();
-		else                         return get_evaluation_function_t<true, general>();
+		     if( this->nser == 0.5 ) return _sersic_for_xy_r<true, pointfive>;
+		else if( this->nser == 1 )   return _sersic_for_xy_r<true, one>;
+		else if( this->nser == 2 )   return _sersic_for_xy_r<true, two>;
+		else if( this->nser == 3 )   return _sersic_for_xy_r<true, three>;
+		else if( this->nser == 4 )   return _sersic_for_xy_r<true, four>;
+		else if( this->nser == 8 )   return _sersic_for_xy_r<true, eight>;
+		else if( this->nser == 16 )  return _sersic_for_xy_r<true, sixteen>;
+		else                         return _sersic_for_xy_r<true, general>;
 	}
 	else {
-		     if( this->nser == 0.5 ) return get_evaluation_function_t<false, pointfive>();
-		else if( this->nser == 1 )   return get_evaluation_function_t<false, one>();
-		else if( this->nser == 2 )   return get_evaluation_function_t<false, two>();
-		else if( this->nser == 3 )   return get_evaluation_function_t<false, three>();
-		else if( this->nser == 4 )   return get_evaluation_function_t<false, four>();
-		else if( this->nser == 8 )   return get_evaluation_function_t<false, eight>();
-		else if( this->nser == 16 )  return get_evaluation_function_t<false, sixteen>();
-		else                         return get_evaluation_function_t<false, general>();
+		     if( this->nser == 0.5 ) return _sersic_for_xy_r<false, pointfive>;
+		else if( this->nser == 1 )   return _sersic_for_xy_r<false, one>;
+		else if( this->nser == 2 )   return _sersic_for_xy_r<false, two>;
+		else if( this->nser == 3 )   return _sersic_for_xy_r<false, three>;
+		else if( this->nser == 4 )   return _sersic_for_xy_r<false, four>;
+		else if( this->nser == 8 )   return _sersic_for_xy_r<false, eight>;
+		else if( this->nser == 16 )  return _sersic_for_xy_r<false, sixteen>;
+		else                         return _sersic_for_xy_r<false, general>;
 	}
 }
 
-double SersicProfile::fluxfrac(double fraction) const {
-	double ratio = qgamma(fraction, 2*nser) / _bn;
-	return re * pow(ratio, nser);
+static inline
+double sersic_fluxfrac(SersicProfile *sp, double fraction) {
+	double ratio = qgamma(fraction, 2*sp->nser) / sp->_bn;
+	return sp->re * pow(ratio, sp->nser);
 }
 
 double SersicProfile::adjust_rscale_switch() {
@@ -269,13 +276,13 @@ double SersicProfile::adjust_rscale_switch() {
 	 * GALFIT anywhere)
 	 */
 	double nser = this->nser;
-	double rscale_switch = ceil(fluxfrac(1. - nser*nser/2e3));
+	double rscale_switch = ceil(sersic_fluxfrac(this, 1. - nser*nser/2e3));
 	rscale_switch = max(min(rscale_switch, 20.), 2.);
 	return rscale_switch / this->re;
 }
 
 double SersicProfile::adjust_rscale_max() {
-	return ceil(fluxfrac(0.9999));
+	return ceil(sersic_fluxfrac(this, 0.9999));
 }
 
 double SersicProfile::adjust_acc() {
@@ -347,41 +354,12 @@ void SersicProfile::subsampling_params(double x, double y,
 /**
  * The sersic creation function
  */
-SersicProfile::SersicProfile(const Model &model, const string &name) :
-	RadialProfile(model, name),
+SersicProfile::SersicProfile(const Model &model) :
+	RadialProfile(model),
 	re(1), nser(1),
 	rescale_flux(false)
 {
 	// no-op
-}
-
-bool SersicProfile::parameter_impl(const string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "re" )        { re = val; }
-	else if( name == "nser" ) { nser = val; }
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-bool SersicProfile::parameter_impl(const string &name, bool val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "rescale_flux" ) {
-		rescale_flux = val;
-		return true;
-	}
-
-	return false;
 }
 
 } /* namespace profit */

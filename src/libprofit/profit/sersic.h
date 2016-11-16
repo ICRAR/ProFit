@@ -34,57 +34,22 @@ namespace profit
 /**
  * A Sersic profile
  *
- * The sersic profile has parameters `nser` and `re` and is calculated as
- * follows at radius `r`:
+ * The ferrer profile has parameters ``nser`` and ``re`` and is calculated as
+ * follows for coordinates x/y::
  *
- * @f[
- *   \exp \left\{ -b_n \left[ \left(\frac{r}{r_e}\right)^{\frac{1}{n_{ser}}} - 1 \right] \right\}
- * @f]
+ *   e^{-bn * (r_factor - 1)}
+ *
+ * with::
+ *  r_factor = (r/re)^{1/nser}
+ *         r = (x^{2+b} + y^{2+b})^{1/(2+b)}
+ *         b = box parameter
+ *        bn = qgamma(0.5, 2*nser)
  */
 class SersicProfile : public RadialProfile {
 
-public:
-
-	/*
-	 * The nser parameter is a double; we need an enumeration of the known values
-	 * to optimize for to use in our templates
-	 */
-	enum nser_t {
-		general,
-		pointfive,
-		one,
-		two,
-		three,
-		four,
-		eight,
-		sixteen
-	};
-
-	/**
-	 * Constructor
-	 *
-	 * @param model The model this profile belongs to
-	 * @param name The name of this profile
-	 */
-	SersicProfile(const Model &model, const std::string &name);
-
-	void validate() override;
-
 protected:
 
-	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double val) override;
-	bool parameter_impl(const std::string &name, bool val) override;
-
-	/*
-	 * ----------------------------
-	 * Inherited from RadialProfile
-	 * ----------------------------
-	 */
+	/* All these are inherited from RadialProfile */
 	void initial_calculations() override;
 	void subsampling_params(double x, double y, unsigned int &res, unsigned int &max_rec) override;
 	double get_pixel_scale() override;
@@ -96,14 +61,23 @@ protected:
 	double adjust_rscale_max() override;
 	eval_function_t get_evaluation_function() override;
 
+public:
+
+	/**
+	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
+	 */
+	SersicProfile(const Model & model);
+
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
-	/** @name Profile Parameters */
-	// @{
 	/**
 	 * The effective radius
 	 */
@@ -118,21 +92,10 @@ protected:
 	 * Rescale flux up to rscale_max or not
 	 */
 	bool rescale_flux;
-	// @}
 
-	/* these are internally calculated when the profile is evaluated */
+	/* These are internally calculated profile init */
 	double _bn;
 	double _rescale_factor;
-
-private:
-
-	template <bool boxy, nser_t t>
-	double evaluate_at(double x, double y, double r, bool reuse_r) const;
-
-	template <bool boxy, nser_t t>
-	eval_function_t get_evaluation_function_t();
-
-	double fluxfrac(double fraction) const;
 
 };
 

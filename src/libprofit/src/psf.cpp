@@ -27,12 +27,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "profit/common.h"
-#include "profit/exceptions.h"
-#include "profit/model.h"
 #include "profit/psf.h"
 #include "profit/utils.h"
-
 
 using namespace std;
 
@@ -54,10 +50,10 @@ unsigned int bind(double value, unsigned int max) {
 		return 0;
 	}
 	unsigned int uintval = static_cast<unsigned int>(intval);
-	return min(uintval, max);
+	return std::min(uintval, max);
 }
 
-void PsfProfile::evaluate(vector<double> &image) {
+void PsfProfile::evaluate(std::vector<double> &image) {
 
 	int psf_pix_x, psf_pix_y;
 	unsigned int pix_x, pix_y;
@@ -130,8 +126,8 @@ void PsfProfile::evaluate(vector<double> &image) {
 					 *
 					 * The contribution will then be given by:
 					 */
-					double intersect_x = min(x + scale_x, psf_x + psf_scale_x) - max(x, psf_x);
-					double intersect_y = min(y + scale_y, psf_y + psf_scale_y) - max(y, psf_y);
+					double intersect_x = std::min(x + scale_x, psf_x + psf_scale_x) - std::max(x, psf_x);
+					double intersect_y = std::min(y + scale_y, psf_y + psf_scale_y) - std::max(y, psf_y);
 					val += model.psf[psf_pix_x + psf_pix_y*psf_width] * (intersect_x * intersect_y)/(psf_scale_x * psf_scale_y);
 
 				}
@@ -152,29 +148,13 @@ void PsfProfile::evaluate(vector<double> &image) {
 
 }
 
-PsfProfile::PsfProfile(const Model &model, const string &name) :
-	Profile(model, name),
+PsfProfile::PsfProfile(const Model &model) :
+	Profile(model),
 	xcen(0),
 	ycen(0),
 	mag(0)
 {
 	// no-op
-}
-
-bool PsfProfile::parameter_impl(const string &name, double val) {
-
-	if( Profile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "xcen" )      { xcen = val; }
-	else if( name == "ycen" ) { ycen = val; }
-	else if( name == "mag" )  { mag = val; }
-	else {
-		return false;
-	}
-
-	return true;
 }
 
 } /* namespace profit */

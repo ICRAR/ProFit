@@ -35,46 +35,21 @@ namespace profit
  * A Moffat profile
  *
  * The moffat profile has parameters ``fwhm`` and ``con``, and is calculated as
- * follows at radius `r`:
+ * follows for coordinates x/y::
  *
- * @f[
- *   \left[ 1 + \left(\frac{r}{r_d}\right)\right]^{-con}
- * @f]
+ *   (1+r_factor)^(-c)
  *
- * with:
+ * with::
  *
- * @f[
- *   r_d = \frac{fwhm}{2 \sqrt{2^{\frac{1}{con}} - 1}}
- * @f]
+ *   r_factor = (r/rscale)^2
+ *     rscale = fwhm/(2*sqrt( 2^(1/con) - 1))
+ *          r = (x^{2+b} + y^{2+b})^{1/(2+b)}
+ *          b = box parameter
  */
 class MoffatProfile : public RadialProfile {
 
-public:
-
-	/**
-	 * Constructor
-	 *
-	 * @param model The model this profile belongs to
-	 * @param name The name of this profile
-	 */
-	MoffatProfile(const Model &model, const std::string &name);
-
-	void validate() override;
-
 protected:
-
-	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double val) override;
-
-	/*
-	 * ----------------------------
-	 * Inherited from RadialProfile
-	 * ----------------------------
-	 */
+	/* All these are inherited from RadialProfile */
 	double get_lumtot(double r_box) override;
 	double get_rscale() override;
 	double adjust_acc() override;
@@ -82,14 +57,23 @@ protected:
 	double adjust_rscale_max() override;
 	eval_function_t get_evaluation_function() override;
 
+public:
+
+	/**
+	 * Constructor
+	 *
+	 * @param model The model this profile belongs to
+	 */
+	MoffatProfile(const Model &);
+
+	void validate() override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
-	/** @name Profile Parameters */
-	// @{
 	/**
 	 * Full-width at half maximum of the profiles across the major axis of the
 	 * intensity profile.
@@ -97,14 +81,9 @@ protected:
 	double fwhm;
 
 	/**
-	 * %Profile concentration
+	 * Profile concentration
 	 */
 	double con;
-	// @}
-
-private:
-
-	double evaluate_at(double x, double y, double r, bool reuse_r) const;
 
 };
 
