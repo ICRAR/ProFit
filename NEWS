@@ -1,10 +1,8 @@
-v1.0
+Latest version is always on GitHub at ICRAR/ProFit. Noted which version is on CRAN.
 
-Released on CRAN
+v1.0  First released on CRAN & GitHub
 
-v1.0.1
-
-On GitHub
+v1.0.1  Released on GitHub
 
 FEATURE: You can now directly specify the region to use for fitting in profitSetupData (before it always used a combination of segim and mask, which it will use if this is not provided). Old code will work as before. Argument order has changed to accommodate.
 
@@ -15,6 +13,18 @@ FEATURE: profitRemakeModellist can now take Data as an input for simplicity.
 FIXED: Solaris issue with gauss.cpp.
 
 FIXED: profitMakePlots so the region is shown correctly.
+
+v1.0.2 Released on CRAN (latest) & GitHub
+
+CHANGE: Minor internal naming changes.
+
+FIXED: Occassional issue with profitMakePlots failing for certain region over-plots.
+
+FIXED:  Intervals now work properly with the PSF model.
+
+v1.0.3 GitHub only (latest)
+
+Currently same as v1.0.2
 
 TO DO:
 
