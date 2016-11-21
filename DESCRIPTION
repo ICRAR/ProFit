@@ -1,7 +1,7 @@
 Package: ProFit
 Type: Package
 Title: Fit Projected 2D Profiles to Galaxy Images
-Version: 1.0.2
+Version: 1.0.3
 Date: 2016-11-21
 Author: Aaron Robotham, Dan Taranu, Rodrigo Tobar
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
