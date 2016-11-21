@@ -26,13 +26,13 @@ str(ExampleImage0)
 
 The structure is a pure image matrix. It is possible to use base `image` to view this matrix, but the defaults will make it look pretty dreadful, hard to comprehend, and will be slow to actually plot:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=F}
 image(ExampleImage0)
 ```
 
 We can make a *much* better image of this model easily using `magimage`, which chooses useful scaling for astronomical images:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=F}
 magimage(ExampleImage0)
 ```
 
@@ -76,16 +76,19 @@ str(ExampleImage1)
 
 Next we can make a greyscale image of our requested model structure:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=F}
 magimage(ExampleImage1)
 ```
 
 Notice there are no stars and the models look very sharp - this is because we have not specified a PSF with which to convolve the image. We can use `profitPointSource` to create a default circular Gaussian PSF with FWHM=2 pixels:
 
-```{r, fig.width=5, fig.height=5}
+```{r}
 ExamplePSF = profitMakePointSource()
 ExamplePSF = ExamplePSF/sum(ExamplePSF)
 ExampleImagePSF1=profitMakeModel(model=model1, psf=ExamplePSF, dim=c(200,200))
+```
+
+```{r, fig.width=5, fig.height=5, eval=F}
 magimage(ExampleImagePSF1)
 ```
 
@@ -103,7 +106,7 @@ Note we are still using the PSF image to convolve the Sersic models, but we use 
 
 We can now easily make a classic bulge+disk system where the two Sersic model components sit on top of each other:
 
-```{r, fig.width=5, fig.height=5}
+```{r}
 modelBD = list(
 	sersic = list(
 		xcen   = c(100, 100),
@@ -117,6 +120,9 @@ modelBD = list(
 	)
 )
 ExampleImage = profitMakeModel(model=modelBD, psf=ExamplePSF, dim=c(200,200))
+```
+
+```{r}
 magimage(ExampleImage)
 ```
 
@@ -134,7 +140,7 @@ ExampleImageFine = profitMakeModel(model=modelBD, dim=c(200,200),finesample = Fi
 
 We can see how much of a difference this makes and where:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=F}
 magimage(ExampleImageFine$z-ExampleImage$z)
 ```
 

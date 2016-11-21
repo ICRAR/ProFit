@@ -57,14 +57,14 @@ psfsigma=sqrt(abs(psf))/200 #To get reasonable PSF errors
 
 We can check the image of the PSF wiht magimage:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=F}
 temp=magimage(psf,lo=0,hi=1)
 contour(temp, add=T, col='red', drawlabels = FALSE)
 ```
 
 To check the profile a few 1D plots can be useful:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=F}
 magplot(psf[13,],type='l')
 lines(psf[12,],lty=2,col='red')
 lines(psf[14,],lty=2,col='blue')
@@ -96,8 +96,11 @@ modellist
 
 We can check what this default model looks like:
 
-```{r, fig.width=5, fig.height=5}
+```{r}
 psfmodel=profitMakeModel(modellist,dim=c(25,25))$z
+```
+
+```{r, fig.width=5, fig.height=5, eval=F}
 magimage(psfmodel)
 magimage(abs(psfmodel-psf)/psfmodel,zlim=c(0,1))
 ```
@@ -161,7 +164,7 @@ Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modelli
 
 Check our rough model:
 
-```{r,  fig.width=7, fig.height=5}
+```{r,  fig.width=7, fig.height=5, eval=F}
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
