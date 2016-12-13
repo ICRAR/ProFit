@@ -23,8 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _BROKENEXPONENTIAL_H_
-#define _BROKENEXPONENTIAL_H_
+#ifndef PROFIT_BROKENEXPONENTIAL_H
+#define PROFIT_BROKENEXPONENTIAL_H
 
 #include "profit/radial.h"
 
@@ -34,28 +34,14 @@ namespace profit
 /**
  * A Broken Exponential profile
  *
- * The Broken Exponential profile has parameters ``h1``, ``h2``, ``rb`` and ``a`` is
- * calculated as follows for coordinates x/y::
+ * The Broken Exponential profile has parameters `h1`, `h2`, `rb` and `a` is
+ * calculated as follows at radius `r`:
  *
- *    inten = exp(-r/h1)*
- *            (1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
- *
- * with::
- *
- *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
- *           B = box parameter
+ * @f[
+ *     e^{-r/h_1} \left[1 + e^{a (r-r_b)})\right]^{\frac{1}{a} \left(\frac{1}{h_1} - \frac{1}{h_2}\right)}
+ * @f]
  */
 class BrokenExponentialProfile : public RadialProfile {
-
-protected:
-
-	/* All these are inherited from RadialProfile */
-	double get_lumtot(double r_box) override;
-	double get_rscale() override;
-	double adjust_acc() override;
-	double adjust_rscale_switch() override;
-	double adjust_rscale_max() override;
-	eval_function_t get_evaluation_function() override;
 
 public:
 
@@ -63,10 +49,32 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	BrokenExponentialProfile(const Model &model);
+	BrokenExponentialProfile(const Model &model, const std::string &name);
 
 	void validate() override;
+
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double val) override;
+
+	/*
+	 * ----------------------------
+	 * Inherited from RadialProfile
+	 * ----------------------------
+	 */
+	double get_lumtot(double r_box) override;
+	double get_rscale() override;
+	double adjust_acc() override;
+	double adjust_rscale_switch() override;
+	double adjust_rscale_max() override;
+	double evaluate_at(double x, double y) const override;
 
 	/*
 	 * -------------------------
@@ -74,6 +82,8 @@ public:
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The inner exponential scale length.
 	 */
@@ -93,9 +103,14 @@ public:
 	 * The strength of the truncation as the radius approaches ``rb``.
 	 */
 	double a;
+	// @}
+
+private:
+
+	double integrate_at(double r) const;
 
 };
 
 } /* namespace profit */
 
-#endif /* _BROKENEXPONENTIAL_H_ */
+#endif /* PROFIT_BROKENEXPONENTIAL_H */

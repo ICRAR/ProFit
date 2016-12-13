@@ -1,12 +1,12 @@
 /**
- * Sky profile implementation
+ * Exception classes implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
- * Contributed by Aaron Robotham, Rodrigo Tobar
+ * Contributed by Rodrigo Tobar
  *
  * This file is part of libprofit.
  *
@@ -24,60 +24,29 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <vector>
+#include <string>
 
 #include "profit/common.h"
-#include "profit/model.h"
-#include "profit/sky.h"
+#include "profit/exceptions.h"
 
 
 using namespace std;
 
 namespace profit {
 
-void SkyProfile::validate() {
-	/* no-op for the time being, probably check value in range, etc */
-	return;
-}
-
-void SkyProfile::evaluate(vector<double> &image) {
-
-	/* In case we need to mask some pixels out */
-	auto mask_it = model.calcmask.begin();
-
-	/* Fill the image with the background value */
-	for(auto &pixel: image) {
-
-		/* Check the calculation mask and avoid pixel if necessary  */
-		if( !model.calcmask.empty() ) {
-			if( !*mask_it++ ) {
-				continue;
-			}
-		}
-
-		pixel = this->bg;
-	}
-}
-
-SkyProfile::SkyProfile(const Model &model, const string &name) :
-	Profile(model, name),
-	bg(0.)
+invalid_parameter::invalid_parameter(const string &what_arg) :
+	exception(),
+	m_what(what_arg)
 {
 	// no-op
 }
 
-bool SkyProfile::parameter_impl(const string &name, double val) {
+invalid_parameter::~invalid_parameter() throw () {
+	// no-op
+}
 
-	if( Profile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "bg" ) {
-		this->bg = val;
-		return true;
-	}
-
-	return false;
+const char *invalid_parameter::what() const throw() {
+	return m_what.c_str();
 }
 
 } /* namespace profit */

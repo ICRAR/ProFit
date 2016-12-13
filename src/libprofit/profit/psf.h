@@ -23,10 +23,10 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _PSF_H_
-#define _PSF_H_
+#ifndef PROFIT_PSF_H
+#define PROFIT_PSF_H
 
-#include "profit/profit.h"
+#include "profit/profile.h"
 
 namespace profit
 {
@@ -45,8 +45,9 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	PsfProfile(const Model &);
+	PsfProfile(const Model &model, const std::string &name);
 
 	/*
 	 * ---------------------------------------------
@@ -56,12 +57,23 @@ public:
 	void validate() override;
 	void evaluate(std::vector<double> &image) override;
 
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double value) override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The X center of this profile
 	 */
@@ -76,9 +88,10 @@ public:
 	 * The magnitude of this profile, based on the model's magnitude
 	 */
 	double mag;
+	// @}
 
 };
 
 } /* namespace profit */
 
-#endif /* _PSF_H_ */
+#endif /* PROFIT_PSF_H */

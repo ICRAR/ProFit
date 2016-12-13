@@ -23,8 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _MOFFAT_H_
-#define _MOFFAT_H_
+#ifndef PROFIT_MOFFAT_H
+#define PROFIT_MOFFAT_H
 
 #include "profit/radial.h"
 
@@ -35,27 +35,19 @@ namespace profit
  * A Moffat profile
  *
  * The moffat profile has parameters ``fwhm`` and ``con``, and is calculated as
- * follows for coordinates x/y::
+ * follows at radius `r`:
  *
- *   (1+r_factor)^(-c)
+ * @f[
+ *   \left[ 1 + \left(\frac{r}{r_d}\right)\right]^{-con}
+ * @f]
  *
- * with::
+ * with:
  *
- *   r_factor = (r/rscale)^2
- *     rscale = fwhm/(2*sqrt( 2^(1/con) - 1))
- *          r = (x^{2+b} + y^{2+b})^{1/(2+b)}
- *          b = box parameter
+ * @f[
+ *   r_d = \frac{fwhm}{2 \sqrt{2^{\frac{1}{con}} - 1}}
+ * @f]
  */
 class MoffatProfile : public RadialProfile {
-
-protected:
-	/* All these are inherited from RadialProfile */
-	double get_lumtot(double r_box) override;
-	double get_rscale() override;
-	double adjust_acc() override;
-	double adjust_rscale_switch() override;
-	double adjust_rscale_max() override;
-	eval_function_t get_evaluation_function() override;
 
 public:
 
@@ -63,10 +55,32 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	MoffatProfile(const Model &);
+	MoffatProfile(const Model &model, const std::string &name);
 
 	void validate() override;
+
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double val) override;
+
+	/*
+	 * ----------------------------
+	 * Inherited from RadialProfile
+	 * ----------------------------
+	 */
+	double get_lumtot(double r_box) override;
+	double get_rscale() override;
+	double adjust_acc() override;
+	double adjust_rscale_switch() override;
+	double adjust_rscale_max() override;
+	double evaluate_at(double x, double y) const override;
 
 	/*
 	 * -------------------------
@@ -74,6 +88,8 @@ public:
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * Full-width at half maximum of the profiles across the major axis of the
 	 * intensity profile.
@@ -81,12 +97,13 @@ public:
 	double fwhm;
 
 	/**
-	 * Profile concentration
+	 * %Profile concentration
 	 */
 	double con;
+	// @}
 
 };
 
 } /* namespace profit */
 
-#endif /* _MOFFAT_H_ */
+#endif /* PROFIT_MOFFAT_H */

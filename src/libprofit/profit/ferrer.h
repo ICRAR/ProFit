@@ -23,8 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _FERRER_H_
-#define _FERRER_H_
+#ifndef PROFIT_FERRER_H
+#define PROFIT_FERRER_H
 
 #include "profit/radial.h"
 
@@ -34,28 +34,14 @@ namespace profit
 /**
  * A Ferrer profile
  *
- * The ferrer profile has parameters ``rout``, ``a`` and ``b`` and is
- * calculated as follows for coordinates x/y::
+ * The ferrer profile has parameters `rout`, `a` and `b` and is
+ * calculated as follows at radius `r`:
  *
- *    (1-r_factor)^(a)
- *
- * with::
- *
- *    r_factor = (r/rout)^(2-b)
- *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
- *           B = box parameter
+ * @f[
+ *    \left[ 1 - \left(\frac{r}{r_{out}}\right)^{(2-b)} \right]^{a}
+ * @f]
  */
 class FerrerProfile : public RadialProfile {
-
-protected:
-
-	/* All these are inherited from RadialProfile */
-	double get_lumtot(double r_box) override;
-	double get_rscale() override;
-	double adjust_acc() override;
-	double adjust_rscale_switch() override;
-	double adjust_rscale_max() override;
-	eval_function_t get_evaluation_function() override;
 
 public:
 
@@ -63,10 +49,32 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	FerrerProfile(const Model & model);
+	FerrerProfile(const Model &model, const std::string &name);
 
 	void validate() override;
+
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double val) override;
+
+	/*
+	 * ----------------------------
+	 * Inherited from RadialProfile
+	 * ----------------------------
+	 */
+	double get_lumtot(double r_box) override;
+	double get_rscale() override;
+	double adjust_acc() override;
+	double adjust_rscale_switch() override;
+	double adjust_rscale_max() override;
+	double evaluate_at(double x, double y) const override;
 
 	/*
 	 * -------------------------
@@ -74,6 +82,8 @@ public:
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The outer truncation radius
 	 */
@@ -88,9 +98,10 @@ public:
 	 * The strength of the truncation as the radius approaches ``rout``.
 	 */
 	double b;
+	// @}
 
 };
 
 } /* namespace profit */
 
-#endif /* _FERRER_H_ */
+#endif /* PROFIT_FERRER_H */

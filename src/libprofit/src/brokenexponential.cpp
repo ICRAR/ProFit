@@ -26,8 +26,11 @@
 
 #include <cmath>
 
+#include "profit/common.h"
 #include "profit/brokenexponential.h"
+#include "profit/exceptions.h"
 #include "profit/utils.h"
+
 
 using namespace std;
 
@@ -46,22 +49,10 @@ namespace profit
  *       r = (x^{2+B} + y^{2+B})^{1/(2+B)}
  *       B = box parameter
  */
-static
-double _brokenexponential_for_xy_r(const RadialProfile &sp,
-                                   double x, double y,
-                                   double r, bool reuse_r) {
-
-	const BrokenExponentialProfile &bep = static_cast<const BrokenExponentialProfile &>(sp);
-	if( !reuse_r && bep.box == 0 ) {
-		r = sqrt(x*x + y*y);
-	}
-	else if( !reuse_r ) { // && bep.box != 0
-		double box = bep.box + 2.;
-		r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
-	}
-	// else reuse_r == true, so r is used as is
-
-	return exp(-r/bep.h1)*pow(1+exp(bep.a*(r-bep.rb)),(1/bep.a)*(1/bep.h1-1/bep.h2));
+double BrokenExponentialProfile::evaluate_at(double x, double y) const {
+	double box = this->box + 2.;
+	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
+	return exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
 
 }
 
@@ -84,14 +75,8 @@ void BrokenExponentialProfile::validate() {
 
 }
 
-eval_function_t BrokenExponentialProfile::get_evaluation_function() {
-	return &_brokenexponential_for_xy_r;
-}
-
-static
-double brokenexponential_int(double r, void *ex) {
-	BrokenExponentialProfile *bep = (BrokenExponentialProfile *)ex;
-	return r * exp(-r/bep->h1)*pow(1+exp(bep->a*(r-bep->rb)),(1/bep->a)*(1/bep->h1-1/bep->h2));
+double BrokenExponentialProfile::integrate_at(double r) const {
+	return r * exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
 }
 
 double BrokenExponentialProfile::get_lumtot(double r_box) {
@@ -99,7 +84,12 @@ double BrokenExponentialProfile::get_lumtot(double r_box) {
 	 * We numerically integrate r from 0 to infinity
 	 * to get the total luminosity
 	 */
-	double magtot = integrate_qagi(&brokenexponential_int, 0, this);
+	double magtot = integrate_qagi(
+		[](double r, void *ctx) -> double {
+			BrokenExponentialProfile *p = reinterpret_cast<BrokenExponentialProfile *>(ctx);
+			return p->integrate_at(r);
+		},
+		0, this);
 	return 2*M_PI * axrat * magtot/r_box;
 }
 
@@ -119,11 +109,28 @@ double BrokenExponentialProfile::adjust_acc() {
 	return this->acc;
 }
 
-BrokenExponentialProfile::BrokenExponentialProfile(const Model &model) :
-	RadialProfile(model),
+BrokenExponentialProfile::BrokenExponentialProfile(const Model &model, const string &name) :
+	RadialProfile(model, name),
 	h1(1), h2(1), rb(1), a(1)
 {
 	// no-op
+}
+
+bool BrokenExponentialProfile::parameter_impl(const string &name, double val) {
+
+	if( RadialProfile::parameter_impl(name, val) ) {
+		return true;
+	}
+
+	if( name == "h1" )      { h1 = val; }
+	else if( name == "h2" ) { h2 = val; }
+	else if( name == "rb" ) { rb = val; }
+	else if( name == "a" )  { a = val; }
+	else {
+		return false;
+	}
+
+	return true;
 }
 
 } /* namespace profit */

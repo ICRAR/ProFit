@@ -26,6 +26,9 @@
 
 #include <vector>
 
+#include "profit/common.h"
+
+
 using namespace std;
 
 namespace profit

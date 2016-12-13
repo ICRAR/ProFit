@@ -24,10 +24,10 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SKY_H_
-#define _SKY_H_
+#ifndef PROFIT_SKY_H
+#define PROFIT_SKY_H
 
-#include "profit/profit.h"
+#include "profit/profile.h"
 
 namespace profit
 {
@@ -46,8 +46,9 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	SkyProfile(const Model &model);
+	SkyProfile(const Model &model, const std::string &name);
 
 	/*
 	 * ---------------------------------------------
@@ -57,19 +58,30 @@ public:
 	void validate() override;
 	void evaluate(std::vector<double> &image) override;
 
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double value) override;
+
 	/*
 	 * -------------------------
 	 * Profile parameters follow
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The value to fill the image with.
 	 */
 	double bg;
-
+	// @}
 };
 
 } /* namespace profit */
 
-#endif /* _SKY_H_ */
+#endif /* PROFIT_SKY_H */

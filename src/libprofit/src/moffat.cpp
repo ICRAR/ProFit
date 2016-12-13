@@ -27,7 +27,10 @@
 #include <cmath>
 #include <algorithm>
 
+#include "profit/common.h"
+#include "profit/exceptions.h"
 #include "profit/moffat.h"
+
 
 using namespace std;
 
@@ -48,23 +51,11 @@ namespace profit
  * Reducing:
  *  r_factor = ((x/rscale)^{2+b} + (y/rscale)^{2+b})^{1/(2+b)}
  */
-static
-double _moffat_for_xy_r(const RadialProfile &sp,
-                        double x, double y,
-                        double r, bool reuse_r) {
-
-	const MoffatProfile &mp = static_cast<const MoffatProfile &>(sp);
-	double r_factor;
-	if( mp.box == 0 ) {
-		r_factor = sqrt(x*x + y*y);
-	}
-	else {
-		double box = 2 + mp.box;
-		r_factor = pow( pow(abs(x), box) + pow(abs(y), box), 1./(box));
-	}
-
-	r_factor /= mp.rscale;
-	return pow(1 + r_factor*r_factor, -mp.con);
+double MoffatProfile::evaluate_at(double x, double y) const {
+	double box = 2 + this->box;
+	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./(box));
+	double r_factor = r/rscale;
+	return pow(1 + r_factor*r_factor, -con);
 }
 
 void MoffatProfile::validate() {
@@ -78,10 +69,6 @@ void MoffatProfile::validate() {
 		throw invalid_parameter("con < 0, must have con >= 0");
 	}
 
-}
-
-eval_function_t MoffatProfile::get_evaluation_function() {
-	return &_moffat_for_xy_r;
 }
 
 double MoffatProfile::get_lumtot(double r_box) {
@@ -108,11 +95,27 @@ double MoffatProfile::adjust_acc() {
 }
 
 
-MoffatProfile::MoffatProfile(const Model &model) :
-	RadialProfile(model),
+MoffatProfile::MoffatProfile(const Model &model, const string &name) :
+	RadialProfile(model, name),
 	fwhm(3), con(2)
 {
 	// no-op
 }
+
+bool MoffatProfile::parameter_impl(const string &name, double val) {
+
+	if( RadialProfile::parameter_impl(name, val) ) {
+		return true;
+	}
+
+	if( name == "fwhm" )     { fwhm = val; }
+	else if( name == "con" ) { con = val; }
+	else {
+		return false;
+	}
+
+	return true;
+}
+
 
 } /* namespace profit */

@@ -23,8 +23,10 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _CONVOLUTION_H_
-#define _CONVOLUTION_H_
+#ifndef PROFIT_CONVOLVE_H
+#define PROFIT_CONVOLVE_H
+
+#include <vector>
 
 namespace profit
 {
@@ -52,5 +54,5 @@ convolve(const std::vector<double> &src, unsigned int src_width, unsigned int sr
 
 } /* namespace profit */
 
-#endif /* _CONVOLUTION_H_ */
+#endif /* PROFIT_CONVOLVE_H */
 

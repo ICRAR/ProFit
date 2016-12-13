@@ -23,8 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _KING_H_
-#define _KING_H_
+#ifndef PROFIT_KING_H
+#define PROFIT_KING_H
 
 #include "profit/radial.h"
 
@@ -34,29 +34,17 @@ namespace profit
 /**
  * A King profile
  *
- * The King profile has parameters ``rc``, ``rt`` and ``a`` is
- * calculated as follows for coordinates x/y::
+ * The King profile has parameters `rc`, `rt` and `a` is
+ * calculated as follows at radius `r`:
  *
- *    temp=1/(1+(rt/rc)^2)^(1/a)
- *    inten = (1-temp)^(-a)*
- *            (1/(1+(r/rc)^2)^(1/a)-temp)^a
- *
- * with::
- *
- *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
- *           B = box parameter
+ * @f[
+ *    \left(
+ *      \frac{1}{ \left[1 + \left(\frac{r}{r_c}\right)^{2}\right]^{\frac{1}{a}} } -
+ *      \frac{1}{ \left[1 + \left(\frac{r_t}{r_c}\right)^{2}\right]^{\frac{1}{a}} }
+ *    \right)^{a}
+ * @f]
  */
 class KingProfile : public RadialProfile {
-
-protected:
-
-	/* All these are inherited from RadialProfile */
-	double get_lumtot(double r_box) override;
-	double get_rscale() override;
-	double adjust_acc() override;
-	double adjust_rscale_switch() override;
-	double adjust_rscale_max() override;
-	eval_function_t get_evaluation_function() override;
 
 public:
 
@@ -64,10 +52,32 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	KingProfile(const Model &model);
+	KingProfile(const Model &model, const std::string &name);
 
 	void validate() override;
+
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double val) override;
+
+	/*
+	 * ----------------------------
+	 * Inherited from RadialProfile
+	 * ----------------------------
+	 */
+	double get_lumtot(double r_box) override;
+	double get_rscale() override;
+	double adjust_acc() override;
+	double adjust_rscale_switch() override;
+	double adjust_rscale_max() override;
+	double evaluate_at(double x, double y) const override;
 
 	/*
 	 * -------------------------
@@ -75,6 +85,8 @@ public:
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The effective radius of the Sersic component
 	 */
@@ -89,9 +101,14 @@ public:
 	 * The power-law of the King.
 	 */
 	double a;
+	// @}
+
+private:
+
+	double integrate_at(double r) const;
 
 };
 
 } /* namespace profit */
 
-#endif /* _KING_H_ */
+#endif /* PROFIT_KING_H */

@@ -23,8 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _CORESERSIC_H_
-#define _CORESERSIC_H_
+#ifndef PROFIT_CORESERSIC_H
+#define PROFIT_CORESERSIC_H
 
 #include "profit/radial.h"
 
@@ -34,29 +34,16 @@ namespace profit
 /**
  * A CoreSersic profile
  *
- * The CoreSersic profile has parameters ``re``, ``rb``, ``nser``, ``a`` and ``b`` and is
- * calculated as follows for coordinates x/y::
+ * The CoreSersic profile has parameters `re`, `rb`, `nser`, `a` and `b` and is
+ * calculated as follows at radius `r`:
  *
- *    (1+(r/rb)^(-a))^(b/a)*
- *        exp(-bn*(((r^a+rb^a)/re^a))^(1/(nser*a)))
+ * @f[
+ *    \left[1+\left(\frac{r}{r_b}\right)^{-a}\right]^{\frac{b}{a}}
+ *        \exp \left[ -b_n \left( \frac{r^a+{r_b}^a}{{r_e}^a}\right)^{\frac{1}{a n_{ser}}} \right]
+ * @f]
  *
- * with::
- *
- *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
- *           B = box parameter
  */
 class CoreSersicProfile : public RadialProfile {
-
-protected:
-
-	/* All these are inherited from RadialProfile */
-	double get_lumtot(double r_box) override;
-	double get_rscale() override;
-	double adjust_acc() override;
-	double adjust_rscale_switch() override;
-	double adjust_rscale_max() override;
-	void initial_calculations() override;
-	eval_function_t get_evaluation_function() override;
 
 public:
 
@@ -64,10 +51,33 @@ public:
 	 * Constructor
 	 *
 	 * @param model The model this profile belongs to
+	 * @param name The name of this profile
 	 */
-	CoreSersicProfile(const Model &model);
+	CoreSersicProfile(const Model &model, const std::string &name);
 
 	void validate() override;
+
+protected:
+
+	/*
+	 * ----------------------
+	 * Inherited from Profile
+	 * ----------------------
+	 */
+	bool parameter_impl(const std::string &name, double val) override;
+
+	/*
+	 * ----------------------------
+	 * Inherited from RadialProfile
+	 * ----------------------------
+	 */
+	void initial_calculations() override;
+	double get_lumtot(double r_box) override;
+	double get_rscale() override;
+	double adjust_acc() override;
+	double adjust_rscale_switch() override;
+	double adjust_rscale_max() override;
+	double evaluate_at(double x, double y) const override;
 
 	/*
 	 * -------------------------
@@ -75,6 +85,8 @@ public:
 	 * -------------------------
 	 */
 
+	/** @name Profile Parameters */
+	// @{
 	/**
 	 * The effective radius of the Sersic component
 	 */
@@ -99,14 +111,17 @@ public:
 	 * The inner power-law of the Core-Sersic.
 	 */
 	double b;
+	// @}
 
-	/**
-	 * The Sersic bn.
-	 */
+	/* internally calculated when the profile is evaluated */
 	double _bn;
+
+private:
+
+	double integrate_at(double r) const;
 
 };
 
 } /* namespace profit */
 
-#endif /* _CORESERSIC_H_ */
+#endif /* PROFIT_CORESERSIC_H */
