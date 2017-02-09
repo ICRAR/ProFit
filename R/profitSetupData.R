@@ -68,6 +68,8 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   if(missing(region)){
     segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
     region = segim==segimkeep & mask!=1
+  }else{
+    region=region==TRUE
   }
   
   haspsf = length(psf) > 0

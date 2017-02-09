@@ -162,7 +162,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     ndata = length(cutim)
     LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
   } else if(ist) {
-    vardata = var(cutsig)
+    vardata = var(cutsig,na.rm = TRUE)
     dof=2*vardata/(vardata-1)
     dof=interval(dof,0,Inf)
     LL=sum(dt(cutsig,dof,log=TRUE))
