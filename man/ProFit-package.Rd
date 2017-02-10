@@ -210,7 +210,7 @@ profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
 
-modeloptim=profitRemakeModelList(optimfit$par,Data$modellist,Data$tofit,Data$tolog)
+modeloptim=profitRemakeModellist(optimfit$par,Data$modellist,Data$tofit,Data$tolog)$modellist
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 }
 

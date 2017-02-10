@@ -42,7 +42,7 @@ We are not limited to simpel single Sersic profiles, highly complex multi-compon
 
 First we need to setup a legal model structure, with each component type being a separate list. Whilst this seems more fiddly than before, it allows us to make very complex structures and images very easily (i.e. it scales with complexity very well).
 
-The top level list can be called whatever you like - **model** is recommended. The model can contain any number of the following components: **sersic** / **pointsource** / **sky**. Here is a legal model structure containing 2 Sersic components, 3 stars (point sources) and a sky pedestal:
+The top level list can be called whatever you like - **model** is recommended. The model can contain any number of the following components: **sersic** / **coresersic** / **moffat** / **king** / **brokenexp** / **pointsource** / **sky**. Here is a legal model structure containing 2 Sersic components, 3 stars (point sources) and a sky pedestal:
 
 ```{r}
 model1 = list(
@@ -70,7 +70,7 @@ model1 = list(
 With this structure we can make a simple model using `profitMakeModel`:
 
 ```{r}
-ExampleImage1=profitMakeModel(model=model1, dim=c(200,200))
+ExampleImage1=profitMakeModel(modellist=model1, dim=c(200,200))
 str(ExampleImage1)
 ```
 
@@ -85,7 +85,7 @@ Notice there are no stars and the models look very sharp - this is because we ha
 ```{r}
 ExamplePSF = profitMakePointSource()
 ExamplePSF = ExamplePSF/sum(ExamplePSF)
-ExampleImagePSF1=profitMakeModel(model=model1, psf=ExamplePSF, dim=c(200,200))
+ExampleImagePSF1=profitMakeModel(modellist=model1, psf=ExamplePSF, dim=c(200,200))
 ```
 
 ```{r, fig.width=5, fig.height=5, eval=F}
@@ -99,7 +99,7 @@ You can also specify the PSF as a Sersic model - specifically a Gaussian, where 
 ```{r, fig.width=5, fig.height=5}
 model1a=model1
 model1a$psf = list(sersic=list(nser=0.5,mag=0,re=1,axrat=1,ang=0))
-ExampleImagePSF1A=profitMakeModel(model=model1a, psf=ExamplePSF, dim=c(200,200))
+ExampleImagePSF1A=profitMakeModel(modellist=model1a, psf=ExamplePSF, dim=c(200,200))
 ```
 
 Note we are still using the PSF image to convolve the Sersic models, but we use the PSF model to create more accurate images of the point sources. This is because we are integrating the flux in the point source more accurately than by interpolating a static PSF image.
@@ -119,7 +119,7 @@ modelBD = list(
 		box = c(0,0)
 	)
 )
-ExampleImage = profitMakeModel(model=modelBD, psf=ExamplePSF, dim=c(200,200))
+ExampleImage = profitMakeModel(modellist=modelBD, psf=ExamplePSF, dim=c(200,200))
 ```
 
 ```{r}
@@ -134,8 +134,8 @@ Note that the accuracy of convolution is limited by the pixel dimensions relativ
 Finesample=3L
 FinePSFmodel = model1a$psf
 FinePSFmodel$sersic$re = FinePSFmodel$sersic$re*Finesample
-ExamplePSFFine = profitMakePointSource(model=FinePSFmodel,image = matrix(0,27,27))
-ExampleImageFine = profitMakeModel(model=modelBD, dim=c(200,200),finesample = Finesample)
+ExamplePSFFine = profitMakePointSource(modellist=FinePSFmodel,image = matrix(0,27,27))
+ExampleImageFine = profitMakeModel(modellist=modelBD, dim=c(200,200),finesample = Finesample, psf=ExamplePSFFine)
 ```
 
 We can see how much of a difference this makes and where:
@@ -176,7 +176,7 @@ model2 = list(
 As before we can run this through `profitMakeModel` and then plot the image. This should run in ~0.5 second, which means we are scaling well with our more complex model:
 
 ```{r, fig.width=5, fig.height=5}
-system.time(ExampleImagePSF2<-profitMakeModel(model=model2, psf=ExamplePSF, dim=c(200,200)))
+system.time(ExampleImagePSF2<-profitMakeModel(modellist=model2, psf=ExamplePSF, dim=c(200,200)))
 magimage(ExampleImagePSF2)
 ```
 
@@ -203,14 +203,14 @@ model3 = list(
 		bg = 3e-12
 	)
 )
-system.time(ExampleImagePSF3<-profitMakeModel(model=model3, psf=ExamplePSF, dim=c(1000,1000)))
+system.time(ExampleImagePSF3<-profitMakeModel(modellist=model3, psf=ExamplePSF, dim=c(1000,1000)))
 magimage(ExampleImagePSF3)
 ```
 
-A faster image can be generated if the remax flag is turned on. With remax=10 it only takes ~1.5 seconds to make the model image. This might be accurate enough for many simulation purposes and can be a factor of 2 faster.
+A faster image can be generated if the remax flag is turned on. With remax=10 it only takes ~2 seconds to make the model image. This might be accurate enough for many simulation purposes and can be a factor of 2 faster.
 
 ```{r, fig.width=5, fig.height=5, eval=F}
-system.time(profitMakeModel(model=model3, psf=ExamplePSF, dim=c(1000,1000), remax=10))
+system.time(profitMakeModel(modellist=model3, psf=ExamplePSF, dim=c(1000,1000), remax=10))
 ```
 
 It is easy to add together model images using `profitAddMats', giving flexibility in how mock images are made:
