@@ -1,6 +1,7 @@
 CXX_STD = CXX11
 
-PKG_CPPFLAGS = -Ilibprofit  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R
+PKG_CPPFLAGS = -Ilibprofit  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R -DPROFIT_BUILD @profit_CPPFLAGS@
+PKG_LIBS = @profit_LIBS@
 
 OBJECTS = libprofit/src/brokenexponential.o \
           libprofit/src/convolve.o \
