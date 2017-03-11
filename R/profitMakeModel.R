@@ -5,7 +5,8 @@ profitMakeModel = function(modellist,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
-                           convopt=list(method="Bruteconv")) {
+                           convopt=list(method="Bruteconv"),
+                           openclenv=NULL) {
 
 	stopifnot(is.integer(finesample) && finesample >= 1)
 
@@ -261,6 +262,9 @@ profitMakeModel = function(modellist,
 	)
 	if( docalcregion ) {
 		model[['calcregion']] = calcregion
+	}
+	if( !is.null(openclenv) ) {
+		model[['openclenv']] = openclenv
 	}
 
 	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)

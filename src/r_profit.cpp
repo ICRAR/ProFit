@@ -245,6 +245,69 @@ void _read_psf_profiles(Model &model, SEXP profiles_list) {
 
 
 /*
+ * OpenCL-related functionality follows
+ * ----------------------------------------------------------------------------
+ */
+#ifdef PROFIT_OPENCL
+
+struct openclenv_wrapper {
+	shared_ptr<OpenCL_env> env;
+};
+
+static
+void _R_profit_openclenv_finalizer(SEXP ptr) {
+
+	if(!R_ExternalPtrAddr(ptr)) {
+		return;
+	}
+
+	openclenv_wrapper *wrapper = reinterpret_cast<openclenv_wrapper *>(R_ExternalPtrAddr(ptr));
+	wrapper->env.reset();
+	delete wrapper;
+	R_ClearExternalPtr(ptr); /* not really needed */
+
+}
+
+static
+SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
+
+	unsigned int platform_idx = INTEGER(plat_idx)[0];
+	unsigned int device_idx = INTEGER(dev_idx)[0];
+	bool use_double = static_cast<bool>(INTEGER(use_dbl)[0]);
+
+	std::shared_ptr<OpenCL_env> env;
+	try {
+		env = get_opencl_environment(platform_idx, device_idx, use_double, false);
+	} catch (const opencl_error &e) {
+		ostringstream os;
+		os << "Error while creating OpenCL environment: " << e.what();
+		Rf_error(os.str().c_str());
+		return R_NilValue;
+	} catch (const invalid_parameter &e) {
+		ostringstream os;
+		os << "Error while creating OpenCL environment, invalid parameter: " << e.what();
+		Rf_error(os.str().c_str());
+		return R_NilValue;
+	}
+
+	openclenv_wrapper *wrapper = new openclenv_wrapper();
+	wrapper->env = env;
+	SEXP r_openclenv = R_MakeExternalPtr(wrapper, Rf_install("OpenCL_env"), R_NilValue);
+	PROTECT(r_openclenv);
+	R_RegisterCFinalizerEx(r_openclenv, _R_profit_openclenv_finalizer, TRUE);
+	UNPROTECT(1);
+	return r_openclenv;
+}
+
+#else
+static
+SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
+	Rf_error("This ProFit package was not compiled with OpenCL support\n");
+	return R_NilValue;
+}
+#endif /* PROFIT_OPENCL */
+
+/*
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
  */
@@ -300,6 +363,26 @@ SEXP _R_profit_make_model(SEXP model_list) {
 			return R_NilValue;
 		}
 	}
+
+#ifdef PROFIT_OPENCL
+	/* OpenCL environment, if any */
+	SEXP openclenv = _get_list_element(model_list, "openclenv");
+	if( openclenv != R_NilValue ) {
+
+		if( TYPEOF(openclenv) != EXTPTRSXP ) {
+			Rf_error("Given openclenv not of proper type\n");
+			return R_NilValue;
+		}
+
+		openclenv_wrapper *wrapper = reinterpret_cast<openclenv_wrapper *>(R_ExternalPtrAddr(openclenv));
+		if( !wrapper ) {
+			Rf_error("No OpenCL environment found in openclenv\n");
+			return R_NilValue;
+		}
+
+		m.opencl_env = wrapper->env;
+	}
+#endif /* PROFIT_OPENCL */
 
 	/* Read profiles and parameters and append them to the model */
 	SEXP profiles = _get_list_element(model_list, "profiles");
@@ -373,6 +456,10 @@ extern "C" {
 	}
 
 	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
-		return(_R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region));
+		return _R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region);
+	}
+
+	SEXP R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
+		return _R_profit_openclenv(plat_idx, dev_idx, use_dbl);
 	}
 }
