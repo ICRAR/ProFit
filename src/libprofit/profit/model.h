@@ -27,13 +27,18 @@
 #ifndef PROFIT_MODEL_H
 #define PROFIT_MODEL_H
 
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include "profit/opencl.h"
 
 namespace profit
 {
 
 /* Forward declaration */
+struct ProfileStats;
 class Profile;
 
 /**
@@ -58,14 +63,6 @@ public:
 	Model();
 
 	/**
-	 * Destructor.
-	 *
-	 * It frees all the resources used by the given model, after which it cannot
-	 * be used anymore.
-	 */
-	~Model();
-
-	/**
 	 * Creates a new profile for the given name and adds it to the given model.
 	 * On success, the new profile is created, added to the model,
 	 * and its reference is returned for further customization.
@@ -73,9 +70,9 @@ public:
 	 * exception is thrown.
 	 *
 	 * @param profile_name The name of the profile that should be created
-	 * @returns A new profile that corresponds to the given name
+	 * @returns A shared pointer to the new profile that corresponds to the given name
 	 */
-	Profile &add_profile(const std::string &profile_name);
+	std::shared_ptr<Profile> add_profile(const std::string &profile_name);
 
 	/**
 	 * Whether this model contains any profiles or not.
@@ -94,6 +91,17 @@ public:
 	 *          ``image[y*width + x]``
 	 */
 	std::vector<double> evaluate();
+
+#ifdef PROFIT_DEBUG
+	std::map<std::string, std::map<int, int>> get_profile_integrations() const;
+#endif
+
+	/**
+	 * Return a map of all profile statistics.
+	 *
+	 * @return A map indexed by profile name with runtime statistics
+	 */
+	std::map<std::string, std::shared_ptr<ProfileStats>> get_stats() const;
 
 	/**
 	 * The width of the model to generate
@@ -154,13 +162,23 @@ public:
 	 */
 	std::vector<bool> calcmask;
 
+	/**
+	 * Whether the actual evaluation of profiles should be skipped or not.
+	 * Profile validation still occurs.
+	 */
+	bool dry_run;
+
+#ifdef PROFIT_OPENCL
+	std::shared_ptr<OpenCL_env> opencl_env;
+#endif /* PROFIT_OPENCL */
+
 private:
 
 	/**
 	 * A list of pointers to the individual profiles used to generate the
 	 * model's image
 	 */
-	std::vector<Profile *> profiles;
+	std::vector<std::shared_ptr<Profile>> profiles;
 
 };
 

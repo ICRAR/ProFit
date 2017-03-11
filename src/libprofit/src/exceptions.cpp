@@ -49,4 +49,21 @@ const char *invalid_parameter::what() const throw() {
 	return m_what.c_str();
 }
 
+#ifdef PROFIT_OPENCL
+opencl_error::opencl_error(const string &what_arg) :
+	exception(),
+	m_what(what_arg)
+{
+	// no-op
+}
+
+opencl_error::~opencl_error() throw () {
+	// no-op
+}
+
+const char *opencl_error::what() const throw() {
+	return m_what.c_str();
+}
+#endif /* PROFIT_OPENCL */
+
 } /* namespace profit */

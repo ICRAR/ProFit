@@ -27,14 +27,40 @@
 #ifndef PROFIT_PROFILE_H
 #define PROFIT_PROFILE_H
 
+#include <memory>
 #include <string>
 #include <vector>
+
+#include "profit/common.h"
+#include "profit/opencl.h"
 
 namespace profit
 {
 
 /* Forward declaration */
 class Model;
+
+struct ProfileStats {
+	ProfileStats();
+	virtual ~ProfileStats();
+	nsecs_t total;
+};
+
+struct RadialProfileStats : ProfileStats {
+	RadialProfileStats();
+#ifdef PROFIT_OPENCL
+	OpenCL_times cl_times;
+	struct radial_subsampling_stats {
+		nsecs_t pre_subsampling;
+		nsecs_t new_subsampling;
+		nsecs_t inital_transform;
+		OpenCL_times cl_times;
+		nsecs_t final_transform;
+		nsecs_t total;
+	} subsampling;
+	nsecs_t final_image;
+#endif /* PROFIT_OPENCL */
+};
 
 /**
  * The base profile class
@@ -105,6 +131,12 @@ public:
 
 	bool do_convolve(void) const;
 
+	/**
+	 * Returns the runtime statistics after evaluating this profile.
+	 * @return
+	 */
+	std::shared_ptr<ProfileStats> get_stats() const;
+
 protected:
 
 	/**
@@ -137,6 +169,8 @@ protected:
 	 * The name of this profile
 	 */
 	const std::string name;
+
+	std::shared_ptr<ProfileStats> stats;
 
 	/** @name Profile Parameters */
 	// @{

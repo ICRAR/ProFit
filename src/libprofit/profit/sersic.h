@@ -135,6 +135,19 @@ private:
 
 	double fluxfrac(double fraction) const;
 
+#ifdef PROFIT_OPENCL
+
+protected:
+	virtual void add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const override;
+	virtual void add_kernel_parameters_double(unsigned int index, cl::Kernel &kernel) const override;
+	virtual bool supports_opencl() const override;
+
+private:
+	template <typename FT>
+	void add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const;
+
+#endif /* PROFIT_OPENCL */
+
 };
 
 } /* namespace profit */

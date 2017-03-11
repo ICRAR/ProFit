@@ -30,9 +30,9 @@
 #include "profit/common.h"
 #include "profit/exceptions.h"
 #include "profit/model.h"
+#include "profit/opencl.h"
 #include "profit/sersic.h"
 #include "profit/utils.h"
-
 
 using namespace std;
 
@@ -329,7 +329,7 @@ void SersicProfile::subsampling_params(double x, double y,
 
 	RadialProfile::subsampling_params(x, y, resolution, max_recursions);
 
-	/* Higher subsampling params for central pixel if nser < 1 */
+	/* Higher subsampling params for central pixel if nser > 1 */
 	bool center_pixel = abs(x - this->xcen) < this->model.scale_x && abs(y - this->ycen) < this->model.scale_y;
 	if( center_pixel && this->nser > 1 ) {
 		resolution = 8;
@@ -377,5 +377,26 @@ bool SersicProfile::parameter_impl(const string &name, bool val) {
 
 	return false;
 }
+
+#ifdef PROFIT_OPENCL
+void SersicProfile::add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const {
+	add_kernel_parameters<float>(index, kernel);
+}
+
+void SersicProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel &kernel) const {
+	add_kernel_parameters<double>(index, kernel);
+}
+
+template <typename FT>
+void SersicProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
+	kernel.setArg(index++, (FT)nser);
+	kernel.setArg(index++, (FT)_bn);
+}
+
+bool SersicProfile::supports_opencl() const {
+	return true;
+}
+
+#endif /* PROFIT_OPENCL */
 
 } /* namespace profit */

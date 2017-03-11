@@ -50,6 +50,24 @@ private:
 
 };
 
+#ifdef PROFIT_OPENCL
+/**
+ * Exception class thrown when an error occurs while dealing with OpenCL.
+ */
+class opencl_error : public std::exception
+{
+
+public:
+	opencl_error(const std::string &what);
+	~opencl_error() throw();
+	const char *what() const throw();
+
+private:
+	std::string m_what;
+
+};
+#endif /* PROFIT_OPENCL */
+
 } /* namespace profit */
 
 #endif /* PROFIT_EXCEPTIONS_H */

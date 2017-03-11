@@ -30,13 +30,11 @@
 #include <map>
 #endif
 
-
+#include "profit/opencl.h"
 #include "profit/profile.h"
 
 namespace profit
 {
-
-class RadialProfile;
 
 /**
  * The base class for radial profiles.
@@ -71,6 +69,10 @@ public:
 	 */
 	void validate() override;
 	void evaluate(std::vector<double> &image) override;
+
+#ifdef PROFIT_DEBUG
+	std::map<int,int> get_integrations();
+#endif
 
 protected:
 
@@ -244,17 +246,14 @@ protected:
 	 */
 	double rscale;
 
-#ifdef PROFIT_DEBUG
-	/* record of how many subintegrations we've done */
-	std::map<int,int> n_integrations;
-#endif
-
 	/* These are internally calculated at profile evaluation time */
 	double _ie;
 	double _cos_ang;
 	double _sin_ang;
 
 private:
+
+	void evaluate_cpu(std::vector<double> &image);
 
 	void _image_to_profile_coordinates(double x, double y, double &x_prof, double &y_prof);
 
@@ -263,6 +262,32 @@ private:
 	                       unsigned int recur_level,
 	                       unsigned int max_recursions,
 	                       unsigned int resolution);
+
+
+#ifdef PROFIT_DEBUG
+	/* record of how many subintegrations we've done */
+	std::map<int,int> n_integrations;
+#endif /* PROFIT_DEBUG */
+
+#ifdef PROFIT_OPENCL
+private:
+
+	/* Evaluates this radial profile using an OpenCL kernel and floating type FT */
+	template <typename FT>
+	void evaluate_opencl(std::vector<double> &image);
+
+	template <typename FT>
+	void add_common_kernel_parameters(unsigned int argIdx, cl::Kernel &kernel) const;
+
+protected:
+
+	virtual bool supports_opencl() const;
+
+	/* Add extra parameters to the given kernel, starts with parameter `index` */
+	virtual void add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const;
+	virtual void add_kernel_parameters_double(unsigned int index, cl::Kernel &kernel) const;
+
+#endif /* PROFIT_OPENCL */
 
 };
 

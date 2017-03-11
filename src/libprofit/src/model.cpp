@@ -51,47 +51,46 @@ Model::Model() :
 	magzero(0),
 	psf(), psf_width(0), psf_height(0),
 	psf_scale_x(1), psf_scale_y(1),
-	calcmask(), profiles()
+	calcmask(),
+	dry_run(false),
+#ifdef PROFIT_OPENCL
+	opencl_env(),
+#endif /* PROFIT_OPENCL */
+	profiles()
 {
 	// no-op
-}
-
-Model::~Model() {
-	for(auto profile: this->profiles) {
-		delete profile;
-	}
 }
 
 bool Model::has_profiles() const {
 	return this->profiles.size() > 0;
 }
 
-Profile &Model::add_profile(const string &profile_name) {
+shared_ptr<Profile> Model::add_profile(const string &profile_name) {
 
-	Profile * profile = nullptr;
+	shared_ptr<Profile> profile;
 	if( profile_name == "sky" ) {
-		profile = static_cast<Profile *>(new SkyProfile(*this, profile_name));
+		profile = make_shared<SkyProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "sersic" ) {
-		profile = static_cast<Profile *>(new SersicProfile(*this, profile_name));
+		profile = make_shared<SersicProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "moffat" ) {
-		profile = static_cast<Profile *>(new MoffatProfile(*this, profile_name));
+		profile = make_shared<MoffatProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "ferrer" || profile_name == "ferrers" ) {
-		profile = static_cast<Profile *>(new FerrerProfile(*this, profile_name));
+		profile = make_shared<FerrerProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "coresersic" ) {
-		profile = static_cast<Profile *>(new CoreSersicProfile(*this, profile_name));
+		profile = make_shared<CoreSersicProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "king" ) {
-		profile = static_cast<Profile *>(new KingProfile(*this, profile_name));
+		profile = make_shared<KingProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "brokenexp" ) {
-		profile = static_cast<Profile *>(new BrokenExponentialProfile(*this, profile_name));
+		profile = make_shared<BrokenExponentialProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "psf" ) {
-		profile = static_cast<Profile *>(new PsfProfile(*this, profile_name));
+		profile = make_shared<PsfProfile>(*this, profile_name);
 	}
 	else {
 		ostringstream ss;
@@ -100,7 +99,7 @@ Profile &Model::add_profile(const string &profile_name) {
 	}
 
 	this->profiles.push_back(profile);
-	return *profile;
+	return profile;
 }
 
 vector<double> Model::evaluate() {
@@ -156,6 +155,11 @@ vector<double> Model::evaluate() {
 		profile->validate();
 	}
 
+	/* so long folks! */
+	if( dry_run ) {
+		return image;
+	}
+
 	/*
 	 * Generate a separate image for each profile.
 	 *
@@ -165,10 +169,10 @@ vector<double> Model::evaluate() {
 	 * parallelize only if we have more than 2 or 3 profiles)
 	 */
 	vector<vector<double>> profile_images;
-	for(auto profile: this->profiles) {
+	for(auto &profile: this->profiles) {
 		vector<double> profile_image(this->width * this->height, 0);
 		profile->evaluate(profile_image);
-		profile_images.push_back(profile_image);
+		profile_images.push_back(move(profile_image));
 	}
 
 	/*
@@ -179,7 +183,7 @@ vector<double> Model::evaluate() {
 	 */
 	bool do_convolve = false;
 	auto it = profile_images.begin();
-	for(auto profile: this->profiles) {
+	for(auto &profile: this->profiles) {
 		if( profile->do_convolve() ) {
 			do_convolve = true;
 			add_images(image, *it);
@@ -192,7 +196,7 @@ vector<double> Model::evaluate() {
 		image = convolve(image, this->width, this->height, psf, this->psf_width, this->psf_height, this->calcmask);
 	}
 	it = profile_images.begin();
-	for(auto profile: this->profiles) {
+	for(auto &profile: this->profiles) {
 		if( !profile->do_convolve() ) {
 			add_images(image, *it);
 		}
@@ -202,5 +206,26 @@ vector<double> Model::evaluate() {
 	/* Done! Good job :-) */
 	return image;
 }
+
+map<string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
+	map<string, std::shared_ptr<ProfileStats>> stats;
+	for(auto p: profiles) {
+		stats[p->get_name()] = p->get_stats();
+	}
+	return stats;
+}
+
+#ifdef PROFIT_DEBUG
+map<string, map<int, int>> Model::get_profile_integrations() const {
+	map<string, map<int, int>> profile_integrations;
+	for(auto p: profiles) {
+		RadialProfile *rp = dynamic_cast<RadialProfile *>(p.get());
+		if( rp ) {
+			profile_integrations[rp->get_name()] = rp->get_integrations();
+		}
+	}
+	return profile_integrations;
+}
+#endif /* PROFIT_DEBUG */
 
 } /* namespace profit */

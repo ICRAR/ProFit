@@ -1,4 +1,5 @@
 #include <cmath>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -43,14 +44,14 @@ SEXP _get_list_element(SEXP list, const char *name) {
 }
 
 static
-void _read_bool(Profile &p, SEXP list, const char *name, unsigned int idx) {
+void _read_bool(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int idx) {
 	SEXP element = _get_list_element(list, name);
 	if( element != R_NilValue ) {
 		if( TYPEOF(element) == LGLSXP ) {
-			p.parameter(name, (bool)LOGICAL(element)[idx]);
+			p->parameter(name, (bool)LOGICAL(element)[idx]);
 		}
 		else if( TYPEOF(element) == INTSXP ) {
-			p.parameter(name, (bool)INTEGER(element)[idx]);
+			p->parameter(name, (bool)INTEGER(element)[idx]);
 		}
 		else {
 			Rf_error("Parameter %s[%u] should be of boolean or integer type", name, idx);
@@ -59,17 +60,17 @@ void _read_bool(Profile &p, SEXP list, const char *name, unsigned int idx) {
 }
 
 static
-void _read_uint(Profile &p, SEXP list, const char *name, unsigned int idx) {
+void _read_uint(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int idx) {
 	SEXP element = _get_list_element(list, name);
 	if( element != R_NilValue ) {
 		if( TYPEOF(element) == INTSXP ) {
-			p.parameter(name, (unsigned int)INTEGER(element)[idx]);
+			p->parameter(name, (unsigned int)INTEGER(element)[idx]);
 		}
 		else if( TYPEOF(element) == LGLSXP ) {
-			p.parameter(name, (unsigned int)LOGICAL(element)[idx]);
+			p->parameter(name, (unsigned int)LOGICAL(element)[idx]);
 		}
 		else if( TYPEOF(element) == REALSXP ) {
-			p.parameter(name, (unsigned int)REAL(element)[idx]);
+			p->parameter(name, (unsigned int)REAL(element)[idx]);
 		}
 		else {
 			Rf_error("Parameter %s[%u] should be of numeric type", name, idx);
@@ -78,16 +79,16 @@ void _read_uint(Profile &p, SEXP list, const char *name, unsigned int idx) {
 }
 
 static
-void _read_real(Profile &p, SEXP list, const char *name, unsigned int idx) {
+void _read_real(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int idx) {
 	SEXP element = _get_list_element(list, name);
 	if( element != R_NilValue ) {
-		p.parameter(name, REAL(element)[idx]);
+		p->parameter(name, REAL(element)[idx]);
 	}
 }
 
 static
-void list_to_radial(SEXP radial_list, Profile &p, unsigned int idx) {
-	p.parameter("adjust", true);
+void list_to_radial(SEXP radial_list, shared_ptr<Profile> p, unsigned int idx) {
+	p->parameter("adjust", true);
 	_read_real(p, radial_list, "xcen",  idx);
 	_read_real(p, radial_list, "ycen",  idx);
 	_read_real(p, radial_list, "mag",   idx);
@@ -105,7 +106,7 @@ void list_to_radial(SEXP radial_list, Profile &p, unsigned int idx) {
 }
 
 static
-void list_to_sersic(SEXP sersic_list, Profile &p, unsigned int idx) {
+void list_to_sersic(SEXP sersic_list, shared_ptr<Profile> p, unsigned int idx) {
 	list_to_radial(sersic_list, p, idx);
 	_read_real(p, sersic_list, "re",           idx);
 	_read_real(p, sersic_list, "nser",         idx);
@@ -113,14 +114,14 @@ void list_to_sersic(SEXP sersic_list, Profile &p, unsigned int idx) {
 }
 
 static
-void list_to_moffat(SEXP moffat_list, Profile &p, unsigned int idx) {
+void list_to_moffat(SEXP moffat_list, shared_ptr<Profile> p, unsigned int idx) {
 	list_to_radial(moffat_list, p, idx);
 	_read_real(p, moffat_list, "fwhm", idx);
 	_read_real(p, moffat_list, "con",  idx);
 }
 
 static
-void list_to_ferrer(SEXP ferrer_list, Profile &p, unsigned int idx) {
+void list_to_ferrer(SEXP ferrer_list, shared_ptr<Profile> p, unsigned int idx) {
 	list_to_radial(ferrer_list, p, idx);
 	_read_real(p, ferrer_list, "rout",  idx);
 	_read_real(p, ferrer_list, "a",     idx);
@@ -128,7 +129,7 @@ void list_to_ferrer(SEXP ferrer_list, Profile &p, unsigned int idx) {
 }
 
 static
-void list_to_coresersic(SEXP coresersic_list, Profile &p, unsigned int idx) {
+void list_to_coresersic(SEXP coresersic_list, shared_ptr<Profile> p, unsigned int idx) {
 	list_to_radial(coresersic_list, p, idx);
 	_read_real(p, coresersic_list, "re",   idx);
 	_read_real(p, coresersic_list, "rb",   idx);
@@ -138,7 +139,7 @@ void list_to_coresersic(SEXP coresersic_list, Profile &p, unsigned int idx) {
 }
 
 static
-void list_to_king(SEXP king_list, Profile &p, unsigned int idx) {
+void list_to_king(SEXP king_list, shared_ptr<Profile> p, unsigned int idx) {
 	list_to_radial(king_list, p, idx);
 	_read_real(p, king_list, "rc", idx);
 	_read_real(p, king_list, "rt", idx);
@@ -146,7 +147,7 @@ void list_to_king(SEXP king_list, Profile &p, unsigned int idx) {
 }
 
 static
-void list_to_brokenexponential(SEXP brokenexponential_list, Profile &p, unsigned int idx) {
+void list_to_brokenexponential(SEXP brokenexponential_list, shared_ptr<Profile> p, unsigned int idx) {
 	list_to_radial(brokenexponential_list, p, idx);
 	_read_real(p, brokenexponential_list, "h1", idx);
 	_read_real(p, brokenexponential_list, "h2", idx);
@@ -155,12 +156,12 @@ void list_to_brokenexponential(SEXP brokenexponential_list, Profile &p, unsigned
 }
 
 static
-void list_to_sky(SEXP sky_list, Profile &p, unsigned int idx) {
+void list_to_sky(SEXP sky_list, shared_ptr<Profile> p, unsigned int idx) {
 	_read_real(p, sky_list, "bg", idx);
 }
 
 static
-void list_to_psf(SEXP psf_list, Profile &p, unsigned int idx) {
+void list_to_psf(SEXP psf_list, shared_ptr<Profile> p, unsigned int idx) {
 	_read_real(p, psf_list, "xcen",  idx);
 	_read_real(p, psf_list, "ycen",  idx);
 	_read_real(p, psf_list, "mag",   idx);
@@ -170,7 +171,7 @@ void list_to_psf(SEXP psf_list, Profile &p, unsigned int idx) {
 static
 void _read_profiles(Model &model, SEXP profiles_list,
                     const char *profile_name, const char* example_property,
-                    void (*list_to_profile)(SEXP, Profile &, unsigned int)) {
+                    void (*list_to_profile)(SEXP, shared_ptr<Profile>, unsigned int)) {
 
 	/* Is the profile specified in the model? */
 	SEXP profile_list = _get_list_element(profiles_list, profile_name);
@@ -190,7 +191,7 @@ void _read_profiles(Model &model, SEXP profiles_list,
 	/* Create that many profiles and then start reading the info if available */
 	for(i=0; i!=count; i++) {
 		try {
-			Profile &p = model.add_profile(profile_name);
+			shared_ptr<Profile> p = model.add_profile(profile_name);
 			_read_bool(p, profile_list, "convolve", i);
 			list_to_profile(profile_list, p, i);
 		} catch (invalid_parameter &e) {

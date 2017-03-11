@@ -10,6 +10,7 @@ OBJECTS = libprofit/src/brokenexponential.o \
           libprofit/src/king.o \
           libprofit/src/model.o \
           libprofit/src/moffat.o \
+          libprofit/src/opencl.o \
           libprofit/src/profile.o \
           libprofit/src/psf.o \
           libprofit/src/radial.o \

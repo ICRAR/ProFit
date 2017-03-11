@@ -37,9 +37,32 @@ using namespace std;
 
 namespace profit {
 
+ProfileStats::ProfileStats() :
+	total(0)
+{
+	// no-op
+}
+
+ProfileStats::~ProfileStats()
+{
+	// no-op
+}
+
+RadialProfileStats::RadialProfileStats() :
+	ProfileStats()
+#ifdef PROFIT_OPENCL
+	,cl_times(),
+	subsampling{0, 0, 0, OpenCL_times(), 0, 0},
+	final_image(0)
+#endif /* PROFIT_OPENCL */
+{
+	// no-op
+}
+
 Profile::Profile(const Model &model, const string &name) :
 	model(model),
 	name(name),
+	stats(),
 	convolve(false)
 {
 	// no-op
@@ -56,6 +79,10 @@ bool Profile::do_convolve() const {
 
 const string& Profile::get_name() const {
 	return name;
+}
+
+shared_ptr<ProfileStats> Profile::get_stats() const {
+	return stats;
 }
 
 template <typename T>
