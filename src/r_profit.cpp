@@ -3,13 +3,13 @@
 #include <sstream>
 #include <vector>
 
+#include <profit/profit.h>
+
 /* Use the cannonical Rf_* names */
 #define R_NO_REMAP
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
-
-#include <profit/profit.h>
 
 using namespace profit;
 using namespace std;

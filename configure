@@ -1,6 +1,6 @@
 #!/bin/sh
 
-detect_R() {
+detect_system() {
 	# R_HOME and stuff
 	if test -z "${R_HOME}"; then
 		echo "could not determine R_HOME"
@@ -10,6 +10,7 @@ detect_R() {
 	CC=`"${R_HOME}/bin/R" CMD config CC`
 	CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 	LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
+	OS=`uname`
 }
 
 has_cl_headers() {
@@ -30,13 +31,21 @@ HDRS
 	echo $has_headers
 }
 
+cl_lib_flags() {
+	if [ "$OS" = "Darwin" ]; then
+		echo "-framework OpenCL"
+	else
+		echo "-lOpenCL"
+	fi
+}
+
 
 has_cl_lib() {
 	has_lib="no"
 	echo "int main() { clCreateContext(); }" > $tmpdir/clfunc.c
 	$CC $CFLAGS -c $tmpdir/clfunc.c -o $tmpdir/clfunc.o 2> /dev/null
 	if [ $? -eq 0 ]; then
-		$CC $LDFLAGS $tmpdir/clfunc.o -o $tmpdir/clfunc -lOpenCL 2> /dev/null
+		$CC $LDFLAGS $tmpdir/clfunc.o -o $tmpdir/clfunc `cl_lib_flags` 2> /dev/null
 		if [ $? -eq 0 ]; then
 			has_lib="yes"
 		fi
@@ -72,7 +81,7 @@ if [ -n "${PROFIT_NO_OPENCL}" ]; then
 	echo "- Skipping OpenCL detection"
 else
 
-	detect_R
+	detect_system
 
 	# where we put all our temporary things
 	tmpdir=.profit_tmp
@@ -101,7 +110,7 @@ fi
 if [ -n "$cl_ver_maj" ]; then
 	echo "- Compiling with OpenCL $cl_ver_maj.$cl_ver_min support"
 	profit_CPPFLAGS="-DPROFIT_OPENCL -DPROFIT_OPENCL_MAJOR=$cl_ver_maj -DPROFIT_OPENCL_MINOR=$cl_ver_min"
-	profit_LIBS="-lOpenCL"
+	profit_LIBS=`cl_lib_flags`
 else
 	echo "- Compiling without OpenCL support"
 	profit_CPPFLAGS=""
