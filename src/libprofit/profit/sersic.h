@@ -46,10 +46,14 @@ class SersicProfile : public RadialProfile {
 public:
 
 	/*
-	 * The nser parameter is a double; we need an enumeration of the known values
-	 * to optimize for to use in our templates
+	 * An enumeration of (inverse) power exponents used internally when
+	 * evaluating the sersic profile.
+	 * This enumeration allows us to write optimized versions of the evaluation
+	 * function particular nser/box combinations, avoiding to call pow() and
+	 * calling other functions instead (e.g., sqrt which in x86_64 is
+	 * implemented in hardware).
 	 */
-	enum nser_t {
+	enum rfactor_invexp_t {
 		general,
 		pointfive,
 		one,
@@ -130,7 +134,7 @@ private:
 
 	double (*m_eval_function)(double x, double y, double box, double re, double nser, double bn);
 
-	template <bool boxy, SersicProfile::nser_t t>
+	template <bool boxy, SersicProfile::rfactor_invexp_t t>
 	void init_eval_function();
 
 	double fluxfrac(double fraction) const;

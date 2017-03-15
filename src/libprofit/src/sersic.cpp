@@ -78,7 +78,7 @@ namespace profit
  */
 
 /* "true" cases for r_factor */
-template<bool boxy, SersicProfile::nser_t t>
+template<bool boxy, SersicProfile::rfactor_invexp_t t>
 inline double _r_factor(double b, double invexp)
 {
   return pow(b, 1/invexp);
@@ -190,12 +190,12 @@ inline double _invexp<false>(const double nser, const double exponent)
   return nser;
 }
 
-template<bool boxy, SersicProfile::nser_t t>
+template<bool boxy, SersicProfile::rfactor_invexp_t t>
 static inline
 double eval_function(double x, double y, double box, double re, double nser, double bn) {
-	double exponent = box + 2;
-	double base = _base<boxy>(x, y, re, exponent);
-	double r_factor = _r_factor<boxy, t>(base,_invexp<boxy>(nser,exponent));
+	double B = box + 2;
+	double base = _base<boxy>(x, y, re, B);
+	double r_factor = _r_factor<boxy, t>(base, _invexp<boxy>(nser, B));
 	return exp(-bn * (r_factor - 1));
 }
 
@@ -219,32 +219,37 @@ void SersicProfile::validate() {
 
 }
 
-template <bool boxy, SersicProfile::nser_t t>
+template <bool boxy, SersicProfile::rfactor_invexp_t t>
 void SersicProfile::init_eval_function() {
 	m_eval_function = eval_function<boxy, t>;
 }
 
 void SersicProfile::evaluate(vector<double> &image) {
 
+	// inv_exponent is exactly what is yield by the templated _invexp function
+	// later on during each individual evaluation
+	// We need to calculate it here though to decide which template to choose
+	double inv_exponent = nser;
 	if( this->box != 0 ) {
-		if( this->nser == 0.5 )     init_eval_function<true, pointfive>();
-		else if( this->nser == 1 )  init_eval_function<true, one>();
-		else if( this->nser == 2 )  init_eval_function<true, two>();
-		else if( this->nser == 3 )  init_eval_function<true, three>();
-		else if( this->nser == 4 )  init_eval_function<true, four>();
-		else if( this->nser == 8 )  init_eval_function<true, eight>();
-		else if( this->nser == 16 ) init_eval_function<true, sixteen>();
-		else                        init_eval_function<true, general>();
+		inv_exponent *= (box + 2);
+		if( inv_exponent == 0.5 )     init_eval_function<true, pointfive>();
+		else if( inv_exponent == 1 )  init_eval_function<true, one>();
+		else if( inv_exponent == 2 )  init_eval_function<true, two>();
+		else if( inv_exponent == 3 )  init_eval_function<true, three>();
+		else if( inv_exponent == 4 )  init_eval_function<true, four>();
+		else if( inv_exponent == 8 )  init_eval_function<true, eight>();
+		else if( inv_exponent == 16 ) init_eval_function<true, sixteen>();
+		else                          init_eval_function<true, general>();
 	}
 	else {
-		if( this->nser == 0.5 )     init_eval_function<false, pointfive>();
-		else if( this->nser == 1 )  init_eval_function<false, one>();
-		else if( this->nser == 2 )  init_eval_function<false, two>();
-		else if( this->nser == 3 )  init_eval_function<false, three>();
-		else if( this->nser == 4 )  init_eval_function<false, four>();
-		else if( this->nser == 8 )  init_eval_function<false, eight>();
-		else if( this->nser == 16 ) init_eval_function<false, sixteen>();
-		else                        init_eval_function<false, general>();
+		if( inv_exponent == 0.5 )     init_eval_function<false, pointfive>();
+		else if( inv_exponent == 1 )  init_eval_function<false, one>();
+		else if( inv_exponent == 2 )  init_eval_function<false, two>();
+		else if( inv_exponent == 3 )  init_eval_function<false, three>();
+		else if( inv_exponent == 4 )  init_eval_function<false, four>();
+		else if( inv_exponent == 8 )  init_eval_function<false, eight>();
+		else if( inv_exponent == 16 ) init_eval_function<false, sixteen>();
+		else                          init_eval_function<false, general>();
 	}
 
 	return RadialProfile::evaluate(image);
