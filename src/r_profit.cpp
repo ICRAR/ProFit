@@ -250,6 +250,68 @@ void _read_psf_profiles(Model &model, SEXP profiles_list) {
  */
 #ifdef PROFIT_OPENCL
 
+static
+SEXP _R_profit_openclenv_info() {
+
+	map<int, OpenCL_plat_info> clinfo;
+	try {
+		clinfo = get_opencl_info();
+	} catch (const exception &e) {
+		ostringstream os;
+		os << "Error while querying OpenCL environment: " << e.what();
+		Rf_error(os.str().c_str());
+		return R_NilValue;
+	}
+
+	unsigned int protections = 0;
+	SEXP r_platinfo_names = PROTECT(Rf_allocVector(STRSXP, 3));
+	SEXP r_devinfo_names = PROTECT(Rf_allocVector(STRSXP, 2));
+	SET_STRING_ELT(r_platinfo_names, 0, Rf_mkChar("name"));
+	SET_STRING_ELT(r_platinfo_names, 1, Rf_mkChar("opencl_version"));
+	SET_STRING_ELT(r_platinfo_names, 2, Rf_mkChar("devices"));
+	SET_STRING_ELT(r_devinfo_names, 0, Rf_mkChar("name"));
+	SET_STRING_ELT(r_devinfo_names, 1, Rf_mkChar("supports_double"));
+	protections += 2;
+
+	SEXP r_clinfo = PROTECT(Rf_allocVector(VECSXP, clinfo.size()));
+	protections += 1;
+	unsigned int plat = 0;
+	for(auto platform_info: clinfo) {
+
+		auto plat_info = std::get<1>(platform_info);
+
+		unsigned int dev = 0;
+		SEXP r_devsinfo = PROTECT(Rf_allocVector(VECSXP, plat_info.dev_info.size()));
+		protections += 1;
+		for(auto device_info: plat_info.dev_info) {
+
+			auto dev_info = std::get<1>(device_info);
+			SEXP r_double_support = PROTECT(Rf_ScalarLogical(dev_info.double_support ? TRUE : FALSE));
+			SEXP r_dev_name = PROTECT(Rf_mkString(dev_info.name.c_str()));
+			SEXP r_devinfo = PROTECT(Rf_allocVector(VECSXP, 2));
+			Rf_setAttrib(r_devinfo, R_NamesSymbol, r_devinfo_names);
+			SET_VECTOR_ELT(r_devinfo, 0, r_dev_name);
+			SET_VECTOR_ELT(r_devinfo, 1, r_double_support);
+			SET_VECTOR_ELT(r_devsinfo, dev++, r_devinfo);
+			protections += 3;
+		}
+
+		SEXP r_plat_clver = PROTECT(Rf_ScalarReal(plat_info.supported_opencl_version/100.));
+		SEXP r_plat_name = PROTECT(Rf_mkString(plat_info.name.c_str()));
+		SEXP r_platinfo = PROTECT(Rf_allocVector(VECSXP, 3));
+		Rf_setAttrib(r_platinfo, R_NamesSymbol, r_platinfo_names);
+		SET_VECTOR_ELT(r_platinfo, 0, r_plat_name);
+		SET_VECTOR_ELT(r_platinfo, 1, r_plat_clver);
+		SET_VECTOR_ELT(r_platinfo, 2, r_devsinfo);
+		protections += 3;
+
+		SET_VECTOR_ELT(r_clinfo, plat++, r_platinfo);
+	}
+
+	UNPROTECT(protections);
+	return r_clinfo;
+}
+
 struct openclenv_wrapper {
 	shared_ptr<OpenCL_env> env;
 };
@@ -300,6 +362,12 @@ SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 }
 
 #else
+static
+SEXP _R_profit_openclenv_info() {
+	Rf_error("This ProFit package was not compiled with OpenCL support\n");
+	return R_NilValue;
+}
+
 static
 SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 	Rf_error("This ProFit package was not compiled with OpenCL support\n");
@@ -457,6 +525,10 @@ extern "C" {
 
 	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
 		return _R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region);
+	}
+
+	SEXP R_profit_openclenv_info() {
+		return _R_profit_openclenv_info();
 	}
 
 	SEXP R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
