@@ -245,12 +245,20 @@ magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
+magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(),
+dim=c(200,200)))
 
 # Using a GPU to create the image:
 \dontrun{
 tempCL=profitOpenCLEnv()
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
+
+# The time elapsed is the key thing to check. The system time tends to be higher for
+# OpenCL due to the large number of system calls made to the GPU.
+
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200))})
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200),
+openclenv=tempCL)})
 }
 
 }
