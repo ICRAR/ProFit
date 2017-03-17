@@ -11,7 +11,8 @@ This is a utility function to get the user inputs in the format required for mod
 profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, priors,
 intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0,
 algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
-benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE)
+benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE,
+openclenv = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -77,6 +78,9 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
 }
   \item{verbose}{
   Logical; if TRUE then the value of parameters currently being assessed will be printed to screen. Useful for prototyping, but typically this produces a lot of screen output and can slow down the fitting process.
+  }
+  \item{openclenv}{
+  If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
   }
 }
 \details{
@@ -295,7 +299,7 @@ By ProFit convention the bottom-left part of the bottom-left pixel when plotting
 To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument referes to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
-List; complex structure  of class profit.data containing:
+List; complex structure of class profit.data containing:
 
 \item{init}{The initial parameters to use for fitting. These are parameters where \option{tofit}=TRUE, and are extracted from \option{modellist}.}  
 \item{image}{The specified \option{image} matrix.}

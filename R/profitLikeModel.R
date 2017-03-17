@@ -1,32 +1,3 @@
-# Convenient function to flatten a list into another list and
-# avoid coercion into a single type (usually numeric/double)
-# Below is currently not used due to code simplification- might want to add back
-# in if modellist gain a variety of data types in the future.
-# .renquote = function(l) if (is.vector(l) && (length(l) > 1 || is.list(l))) lapply(l, .renquote) else enquote(l)
-# .flattenlist = function(ml) lapply(unlist(.renquote(ml)), eval)
-# .rrelist = function(flesh, skeleton=attr(flesh, "skeleton")){
-#   index = 1
-#   result = skeleton
-#   for (i in 1:length(skeleton)) {
-#     size = length(unlist(result[[i]]))
-#     if(is.list(result[[i]])) {
-#       result[[i]] = .rrelist(flesh[index:(index + size - 1)], result[[i]])
-#     } else if(size >1) {
-#       result[[i]] = relist(flesh[index:(index + size - 1)], result[[i]])
-#     } else {
-#       result[[i]] = flesh[[index]]
-#     }
-#     index <- index + size
-#   }
-#   result
-# }
-# On stack overflow this solution was offered:
-# relist2 = function(x, like, relist.vectors=F) {
-#    if (! relist.vectors) 
-#        like = rapply(a, function(f) NA, how='replace')
-#    lapply(relist(x, skeleton=like), function(e) unlist(e, recursive=F))
-# }
-
 profitLikeModel=function(parm, Data, makeplots=FALSE, 
   whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"), rough=FALSE,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), errcmap=cmap, plotchisq=FALSE) {
@@ -35,81 +6,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   finesample = 1L
   if(length(Data$finesample)>0) finesample = Data$finesample
   profitCheckFinesample(finesample)
-  
-  # fitIDs=which(unlist(Data$tofit))
-  # parm=parm[1:length(fitIDs)]
-  # paramsinit=unlist(Data$modellist)
-  # paramsnew=paramsinit
-  # paramsnew[fitIDs]=parm
-  # 
-  # # Flatten or unlist?
-  # tounlogIDs=which(unlist(Data$tolog) & unlist(Data$tofit))
-  # for(i in tounlogIDs){
-  #   paramsnew[i]=10^paramsnew[i]
-  # }
-  # # Inherit values for NA flags
-  # inheritIDs=which(is.na(unlist(Data$tofit)))
-  # for(i in inheritIDs) paramsnew[i]=paramsnew[i-1]
-  # 
-  # # Re-list the new linear modellist
-  # modellistnew=relist(paramsnew,Data$modellist)
-  # 
-  # # Apply constraints to the new linear modellist
-  # if(length(Data$constraints)>0){
-  #   modellistnew=Data$constraints(modellistnew)
-  # }
-  # 
-  # # Specify interval limits on the now linear data
-  # if(length(Data$intervals)>0){
-  #   #paramsnew = unlist(modellistnew)
-  #   #intervals = unlist(Data$intervals)
-  #   #for(i in 1:length(paramsnew)){
-  #   #  paramsnew[i]=max(intervals[(i-1)*2+1], min(intervals[(i-1)*2+2], paramsnew[i], na.rm = FALSE), na.rm = FALSE)
-  #   #}
-  #   ## Re-list the new linear modellist
-  #   #modellistnew=relist(paramsnew,Data$modellist)
-  #   #New approach, to deal with partial interval limits:
-  #   compnames=names(Data$intervals)
-  #   for(i in compnames){
-  #     #For the more typical non-PSF case
-  #     if(i != "psf"){
-  #       subnames=names(Data$intervals[[i]])
-  #       for(j in subnames){
-  #         subsublength=length(modellistnew[[i]][[j]])
-  #         for(k in 1:subsublength){
-  #           intervalmin=Data$intervals[[i]][[j]][[k]][1]
-  #           intervalmax=Data$intervals[[i]][[j]][[k]][2]
-  #           currentval=modellistnew[[i]][[j]][k]
-  #           modellistnew[[i]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = FALSE), na.rm = FALSE)
-  #         }
-  #       }
-  #     }else{
-  #       #For the deeper PSF case:
-  #       subnames=names(Data$intervals[[i]])
-  #       for(j in subnames){
-  #         subsubnames=Data$intervals[[i]][[j]]
-  #         for(k in subsubnames){
-  #           subsubsublength=length(modellistnew[[i]][[j]][[k]])
-  #           for(l in 1:subsublength){
-  #             intervalmin=Data$intervals[[i]][[j]][[k]][[l]][1]
-  #             intervalmax=Data$intervals[[i]][[j]][[k]][[l]][2]
-  #             currentval=modellistnew[[i]][[j]][[k]][l]
-  #             modellistnew[[i]][[j]][[k]][l]=max(intervalmin, min(intervalmax, currentval, na.rm = FALSE), na.rm = FALSE)
-  #           }
-  #         }
-  #       }
-  #     }
-  #   }
-  # }
-  # 
-  # # Unlist and extract the tolog elements and log where required
-  # paramsnew=unlist(modellistnew)
-  # for(i in tounlogIDs){
-  #   paramsnew[i]=log10(paramsnew[i])
-  # }
-  # 
-  # # Specify the new parm to be parsed back to the external optimisation function
-  # parm=paramsnew[fitIDs]
   
   remakeout=profitRemakeModellist(parm=parm, Data=Data)
   modellistnew=remakeout$modellist
@@ -131,10 +27,10 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   if(Data$usecalcregion){
     model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
       whichcomponents = whichcomponents, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
-      magmu=Data$magmu,finesample=finesample, convopt=Data$convopt)
+      magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv)
   }else{
     model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=Data$psf, dim=Data$imagedim, 
-      whichcomponents = whichcomponents, rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt)
+      whichcomponents = whichcomponents, rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv)
   }
   
   if(any(Data$region)) {

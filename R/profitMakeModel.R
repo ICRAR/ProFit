@@ -264,7 +264,11 @@ profitMakeModel = function(modellist,
 		model[['calcregion']] = calcregion
 	}
 	if( !is.null(openclenv) ) {
-		model[['openclenv']] = openclenv
+	  if(class(openclenv)=='externalptr'){
+		  model[['openclenv']] = openclenv
+	  }else if(openclenv=='get'){
+	    model[['openclenv']]=profitOpenCLEnv()
+	  }
 	}
 
 	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)

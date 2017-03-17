@@ -191,7 +191,7 @@ These are the parameters we wish to fit for, and we take the initial guesses fro
 
 We can test how things currently look (we get an output because we set verbose=TRUE earlier):
 
-```{r,  fig.width=7, fig.height=3, eval=F}
+```{r,  fig.width=7, fig.height=3, eval=TRUE}
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 ```
 
@@ -199,7 +199,7 @@ profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
 First we will try `optim` BFGS.
 
-```{r, include=FALSE}
+```{r, eval=FALSE}
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
 optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
 control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))

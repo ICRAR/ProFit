@@ -1,4 +1,4 @@
-profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE) {
+profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE, openclenv=NULL){
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
   
@@ -164,12 +164,19 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   parm.names=names(init)
   mon.names=c("LL","LP")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
-  
+  if (!is.null(openclenv)) {
+    if (class(openclenv) == "externalptr") {
+      openclenv = openclenv
+    }
+    else if (openclenv == "get") {
+      openclenv = profitOpenCLEnv()
+    }
+  }
   profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist, psf=psf, psftype=psftype, fitpsf=fitpsf,
                    algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))), region=region,
                    calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
                    tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints, like.func = like.func,
-                   magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu)
+                   magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu, openclenv=openclenv)
   class(profit.data)="profit.data"
   return(profit.data)
 }

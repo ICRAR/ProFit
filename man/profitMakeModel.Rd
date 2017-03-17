@@ -13,7 +13,7 @@ whichcomponents=list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "
 coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
 acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion,
 docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
-convopt=list(method="Bruteconv"))
+convopt=list(method="Bruteconv"), openclenv = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -64,6 +64,9 @@ Logical; where the profile has been truncated via \option{remax} this specifies 
 }
 \item{convopt}{
   A list specifying options for convolution. Currently ignored.
+}
+\item{openclenv}{
+  If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
 }
 }
 \details{
@@ -182,7 +185,7 @@ modellist = list(\cr
 		nser  = c(10, 4),\cr
 		ang  = c(60, 135),\cr
 		axrat  = c(0.5, 0.3),\cr
-		box = c(2,-2)\cr
+		box = c(0.5,-0.3)\cr
 	),\cr
 	pointsource = list(\cr
 		xcen   = c(34,10,150),\cr
@@ -243,6 +246,13 @@ magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 # the PSF:
 
 magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(), dim=c(200,200)))
+
+# Using a GPU to create the image:
+\dontrun{
+tempCL=profitOpenCLEnv()
+magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
+}
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

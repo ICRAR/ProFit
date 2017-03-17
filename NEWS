@@ -24,7 +24,9 @@ FIXED:  Intervals now work properly with the PSF model.
 
 v1.0.3 GitHub only (latest)
 
-Currently same as v1.0.2
+FEATURE: GPU support via OpenCL. Currently working with Sersic profiles only. See profitMakeModel for an example of how to use it.
+
+Some minor mixes.
 
 TO DO:
 
