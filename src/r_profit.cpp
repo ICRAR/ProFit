@@ -364,7 +364,7 @@ SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 #else
 static
 SEXP _R_profit_openclenv_info() {
-	Rf_error("This ProFit package was not compiled with OpenCL support\n");
+	Rf_warning("This ProFit package was not compiled with OpenCL support\n");
 	return R_NilValue;
 }
 
