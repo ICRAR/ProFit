@@ -13,7 +13,7 @@ whichcomponents=list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "
 coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
 acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion,
 docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
-convopt=list(method="Bruteconv"), openclenv = NULL)
+convopt=list(method="Bruteconv"), openclenv = NULL, omp_threads = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -67,6 +67,9 @@ Logical; where the profile has been truncated via \option{remax} this specifies 
 }
 \item{openclenv}{
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
+}
+\item{omp_threads}{
+  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. If \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
 }
 }
 \details{
@@ -259,6 +262,12 @@ magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
 system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200))})
 system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200),
 openclenv=tempCL)})
+}
+
+# Using OpenMP to create the image:
+\dontrun{
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200))})
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), omp_threads=4)})
 }
 
 }
