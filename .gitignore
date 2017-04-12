@@ -7,3 +7,8 @@ src/*.dll
 inst/doc
 .crancompress
 Makevars
+
+# Eclipse files
+.cproject
+.project
+.settings
