@@ -150,4 +150,26 @@ bool CoreSersicProfile::parameter_impl(const string &name, double val) {
 
 	return true;
 }
+
+#ifdef PROFIT_OPENCL
+void CoreSersicProfile::add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const {
+	add_kernel_parameters<float>(index, kernel);
+}
+
+void CoreSersicProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel &kernel) const {
+	add_kernel_parameters<double>(index, kernel);
+}
+
+template <typename FT>
+void CoreSersicProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
+	kernel.setArg(index++, static_cast<FT>(re));
+	kernel.setArg(index++, static_cast<FT>(rb));
+	kernel.setArg(index++, static_cast<FT>(nser));
+	kernel.setArg(index++, static_cast<FT>(a));
+	kernel.setArg(index++, static_cast<FT>(b));
+	kernel.setArg(index++, static_cast<FT>(_bn));
+}
+
+#endif /* PROFIT_OPENCL */
+
 } /* namespace profit */

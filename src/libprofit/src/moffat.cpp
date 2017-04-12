@@ -117,5 +117,20 @@ bool MoffatProfile::parameter_impl(const string &name, double val) {
 	return true;
 }
 
+#ifdef PROFIT_OPENCL
+void MoffatProfile::add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const {
+	add_kernel_parameters<float>(index, kernel);
+}
+
+void MoffatProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel &kernel) const {
+	add_kernel_parameters<double>(index, kernel);
+}
+
+template <typename FT>
+void MoffatProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
+	kernel.setArg(index++, static_cast<FT>(con));
+}
+
+#endif /* PROFIT_OPENCL */
 
 } /* namespace profit */

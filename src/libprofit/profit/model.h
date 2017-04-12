@@ -172,6 +172,15 @@ public:
 	std::shared_ptr<OpenCL_env> opencl_env;
 #endif /* PROFIT_OPENCL */
 
+#ifdef PROFIT_OPENMP
+	/**
+	 * Maximum number of OpenMP threads to use to evaluate the profiles
+	 * contained in this model. 0 threads means that no OpenMP support
+	 * has been requested.
+	 */
+	unsigned int omp_threads;
+#endif /* PROFIT_OPENMP */
+
 private:
 
 	/**

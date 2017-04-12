@@ -1,8 +1,9 @@
+R"===(
 /**
- * Header file with common definitions for libprofit
+ * Common single-precision OpenCL routines for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
- * (c) UWA - The University of Western Australia, 2016
+ * (c) UWA - The University of Western Australia, 2017
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
@@ -23,26 +24,22 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
+typedef struct _f_point {
+	float x;
+	float y;
+} f_point_t;
 
-#ifndef PROFIT_COMMON_H
-#define PROFIT_COMMON_H
+typedef struct _f_subsampling_info {
+	f_point_t point;
+	float xbin;
+	float ybin;
+	float val;
+} f_ss_kinfo;
 
-/* M_PI is not part of C/C++, but usually there */
-#include <cmath>
-#ifndef M_PI
-# define M_PI 3.14159265358979323846
-#endif
-
-/* The override keyword is not supported until gcc 4.7 */
-#if defined(__GNUG__) && (__GNUC__ <= 4) && (__GNUC_MINOR__ < 7)
-# define override
-#endif
-
-/* Sometimes we don't use all arguments */
-#define UNUSED(x) do { (void)x; } while(0)
-
-namespace profit {
-	typedef unsigned int nsecs_t;
+inline void f_image_to_profile_coordiates(float x, float y, float *x_prof, float *y_prof, float xcen, float ycen, float cos_ang, float sin_ang, float axrat) {
+	x -= xcen;
+	y -= ycen;
+	*x_prof =   x * cos_ang + y * sin_ang;
+	*y_prof = (-x * sin_ang + y * cos_ang)/axrat;
 }
-
-#endif /* PROFIT_COMMON_H */
+)==="

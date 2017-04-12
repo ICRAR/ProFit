@@ -56,6 +56,9 @@ Model::Model() :
 #ifdef PROFIT_OPENCL
 	opencl_env(),
 #endif /* PROFIT_OPENCL */
+#ifdef PROFIT_OPENMP
+	omp_threads(0),
+#endif /* PROFIT_OPENMP */
 	profiles()
 {
 	// no-op

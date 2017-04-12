@@ -31,7 +31,7 @@ HDRS
 	echo $has_headers
 }
 
-cl_lib_flags() {
+get_cl_libflags() {
 	if [ "$OS" = "Darwin" ]; then
 		echo "-framework OpenCL"
 	else
@@ -45,7 +45,7 @@ has_cl_lib() {
 	echo "int main() { clCreateContext(); }" > $tmpdir/clfunc.c
 	$CC $CFLAGS -c $tmpdir/clfunc.c -o $tmpdir/clfunc.o 2> /dev/null
 	if [ $? -eq 0 ]; then
-		$CC $LDFLAGS $tmpdir/clfunc.o -o $tmpdir/clfunc `cl_lib_flags` 2> /dev/null
+		$CC $LDFLAGS $tmpdir/clfunc.o -o $tmpdir/clfunc `get_cl_libflags` 2> /dev/null
 		if [ $? -eq 0 ]; then
 			has_lib="yes"
 		fi
@@ -75,6 +75,29 @@ CLVER
 	done
 }
 
+get_omp_cflag() {
+
+	cat > $tmpdir/openmp.c <<OMP
+#include <omp.h>
+int main() {
+#ifdef _OPENMP
+	return 0;
+#else
+	breaks_on_purpose
+#endif
+}
+OMP
+
+	for flag in "" "-fopenmp" "-fopenmp=libomp" "-openmp" "-xopenmp" "-mp"; do
+		$CC $CFLAGS $flag -c $tmpdir/openmp.c -o $tmpdir/openmp.o 2> /dev/null
+		if [ $? -eq 0 ]; then
+			echo $flag
+			return
+		fi
+	done
+	echo "NOT_FOUND"
+}
+
 
 # The main routine
 if [ -n "${PROFIT_NO_OPENCL}" ]; then
@@ -102,20 +125,34 @@ else
 		fi
 	fi
 
+	if [ -n "$cl_ver_maj" ]; then
+		echo "- Compiling with OpenCL $cl_ver_maj.$cl_ver_min support"
+		cl_cflags="-DPROFIT_OPENCL -DPROFIT_OPENCL_MAJOR=$cl_ver_maj -DPROFIT_OPENCL_MINOR=$cl_ver_min"
+		cl_libflags=`get_cl_libflags`
+	else
+		echo "- Compiling without OpenCL support"
+		cl_cflags=""
+		cl_libflags=""
+	fi
+
+	# Check for OpenMP support
+	omp_flag=`get_omp_cflag`
+	if [ "$omp_flag" != "NOT_FOUND" ]; then
+		echo "- Compiling with OpenMP support"
+		omp_cflags="-DPROFIT_OPENMP $omp_flag"
+		omp_libflags="$omp_flag"
+	else
+		echo "- Compiling without OpenMP support"
+		omp_cflags=""
+		omp_libflags=""
+	fi
+
 	rm -rf $tmpdir
 
 fi
 
-# If we have this one it implies we have the rest
-if [ -n "$cl_ver_maj" ]; then
-	echo "- Compiling with OpenCL $cl_ver_maj.$cl_ver_min support"
-	profit_CPPFLAGS="-DPROFIT_OPENCL -DPROFIT_OPENCL_MAJOR=$cl_ver_maj -DPROFIT_OPENCL_MINOR=$cl_ver_min"
-	profit_LIBS=`cl_lib_flags`
-else
-	echo "- Compiling without OpenCL support"
-	profit_CPPFLAGS=""
-	profit_LIBS=""
-fi
+profit_CPPFLAGS="$cl_cflags $omp_cflags"
+profit_LIBS="$cl_libflags $omp_libflags"
 
 # Replace the values in Makevars.in and produce Makevars
 sed "s/@profit_CPPFLAGS@/$profit_CPPFLAGS/; s/@profit_LIBS@/$profit_LIBS/" src/Makevars.in > src/Makevars

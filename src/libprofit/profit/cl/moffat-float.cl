@@ -1,6 +1,6 @@
 R"===(
 /**
- * Single-precision Sersic profile OpenCL kernel implementation for libprofit
+ * Single-precision Moffat profile OpenCL kernel implementation for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2017
@@ -25,13 +25,13 @@ R"===(
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-inline float f_evaluate_sersic(float x, float y, float box, float nser, float rscale, float bn) {
+inline float f_evaluate_moffat(float x, float y, float box, float rscale, float con) {
 	private float r = pow(pow(fabs(x), 2+box) + pow(fabs(y), 2+box), 1/(2+box));
-	private float r_factor = pow(r/rscale, 1/nser);
-	return exp(-bn * (r_factor - 1));
+	private float r_factor = r/rscale;
+	return pow(1 + r*r/(rscale*rscale), -con);
 }
 
-kernel void sersic_float(
+kernel void moffat_float(
 	global float *image,
 	global f_point_t *to_subsample,
 	int width, int height,
@@ -40,7 +40,7 @@ kernel void sersic_float(
 	float xcen, float ycen,
 	float cos_ang, float sin_ang, float axrat,
 	float rscale, float rscale_switch, float rscale_max,
-	float box, float nser, float bn) {
+	float box, float con) {
 
 	private int i = get_global_id(0);
 	private float x = (i%width + 0.5f)*scale_x;
@@ -59,7 +59,7 @@ kernel void sersic_float(
 #endif /* __OPENCL_C_VERSION__ */
 	}
 	else if( rough || (r_prof/rscale) > rscale_switch ) {
-		image[i] = f_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
+		image[i] = f_evaluate_moffat(x_prof, y_prof, box, rscale, con);
 #if __OPENCL_C_VERSION__ <= 120
 		to_subsample[i].x = -1;
 #endif /* __OPENCL_C_VERSION__ */
@@ -76,13 +76,13 @@ kernel void sersic_float(
 
 }
 
-kernel void sersic_subsample_float(
+kernel void moffat_subsample_float(
 	global f_ss_kinfo *kinfo,
 	float acc,
 	float xcen, float ycen,
 	float cos_ang, float sin_ang, float axrat,
 	float rscale, float rscale_switch, float rscale_max,
-	float box, float nser, float bn) {
+	float box, float con) {
 
 	private int i = get_global_id(0);
 	private f_ss_kinfo info = kinfo[i];
@@ -97,13 +97,13 @@ kernel void sersic_subsample_float(
 
 	private float val, testval;
 
-	val = f_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
-	testval = f_evaluate_sersic(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, nser, rscale, bn);
+	val = f_evaluate_moffat(x_prof, y_prof, box, rscale, con);
+	testval = f_evaluate_moffat(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, rscale, con);
 
 	// As we keep closing to the center we cannot distinguish that well anymore between
 	// the different profile values, so we need to adjust our accuracy to give up earlier
 	private float r = pow( pow(fabs(x_prof), 2+box) + pow(fabs(x_prof), 2+box), 2+box);
-	private float acc_scale = log10(fabs(log10(r)))/nser/2;
+	private float acc_scale = log10(fabs(log10(r)))/(con*2);
 	acc_scale = (acc_scale < 1 ? 1 : acc_scale);
 
 	// no need for subsampling

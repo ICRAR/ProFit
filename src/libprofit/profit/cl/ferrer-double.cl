@@ -1,6 +1,6 @@
 R"===(
 /**
- * Double-precision Sersic profile OpenCL kernel implementation for libprofit
+ * Double-precision Ferrer profile OpenCL kernel implementation for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2017
@@ -25,13 +25,16 @@ R"===(
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-inline double d_evaluate_sersic(double x, double y, double box, double nser, double rscale, double bn) {
+inline double d_evaluate_ferrer(double x, double y, double box, double rscale, double a, double b) {
 	private double r = pow(pow(fabs(x), 2+box) + pow(fabs(y), 2+box), 1/(2+box));
-	private double r_factor = pow(r/rscale, 1/nser);
-	return exp(-bn * (r_factor - 1));
+	private double r_factor = r/rscale;
+	if( r_factor < 1 ) {
+		return pow(1 - pow(r_factor, 2 - b), a);
+	}
+	return 0;
 }
 
-kernel void sersic_double(
+kernel void ferrer_double(
 	global double *image,
 	global d_point_t *to_subsample,
 	int width, int height,
@@ -40,7 +43,7 @@ kernel void sersic_double(
 	double xcen, double ycen,
 	double cos_ang, double sin_ang, double axrat,
 	double rscale, double rscale_switch, double rscale_max,
-	double box, double nser, double bn) {
+	double box, double a, double b) {
 
 	private int i = get_global_id(0);
 	private double x = (i%width + 0.5)*scale_x;
@@ -59,7 +62,7 @@ kernel void sersic_double(
 #endif /* __OPENCL_C_VERSION__ */
 	}
 	else if( rough || (r_prof/rscale) > rscale_switch ) {
-		image[i] = d_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
+		image[i] = d_evaluate_ferrer(x_prof, y_prof, box, rscale, a, b);
 #if __OPENCL_C_VERSION__ <= 120
 		to_subsample[i].x = -1;
 #endif /* __OPENCL_C_VERSION__ */
@@ -75,13 +78,13 @@ kernel void sersic_double(
 
 }
 
-kernel void sersic_subsample_double(
+kernel void ferrer_subsample_double(
 	global d_ss_kinfo_t *kinfo,
 	double acc,
 	double xcen, double ycen,
 	double cos_ang, double sin_ang, double axrat,
 	double rscale, double rscale_switch, double rscale_max,
-	double box, double nser, double bn) {
+	double box, double a, double b) {
 
 	private int i = get_global_id(0);
 	private d_ss_kinfo_t info = kinfo[i];
@@ -96,8 +99,8 @@ kernel void sersic_subsample_double(
 
 	private double val, testval;
 
-	val = d_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
-	testval = d_evaluate_sersic(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, nser, rscale, bn);
+	val = d_evaluate_ferrer(x_prof, y_prof, box, rscale, a, b);
+	testval = d_evaluate_ferrer(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, rscale, a, b);
 
 	// no need for subsampling
 	if( fabs(testval/val - 1.0) <= acc ) {

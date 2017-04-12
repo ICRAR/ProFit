@@ -272,6 +272,15 @@ private:
 #ifdef PROFIT_OPENCL
 private:
 
+	/**
+	 * Indicates whether this profile supports OpenCL evaluation or not
+	 * (i.e., implements the required OpenCL kernels)
+	 *
+	 * @return Whether this profile supports OpenCL evaluation. The default
+	 * implementation returns true.
+	 */
+	virtual bool supports_opencl() const;
+
 	/* Evaluates this radial profile using an OpenCL kernel and floating type FT */
 	template <typename FT>
 	void evaluate_opencl(std::vector<double> &image);
@@ -280,8 +289,6 @@ private:
 	void add_common_kernel_parameters(unsigned int argIdx, cl::Kernel &kernel) const;
 
 protected:
-
-	virtual bool supports_opencl() const;
 
 	/* Add extra parameters to the given kernel, starts with parameter `index` */
 	virtual void add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const;

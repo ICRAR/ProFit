@@ -398,10 +398,6 @@ void SersicProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel
 	kernel.setArg(index++, (FT)_bn);
 }
 
-bool SersicProfile::supports_opencl() const {
-	return true;
-}
-
 #endif /* PROFIT_OPENCL */
 
 } /* namespace profit */

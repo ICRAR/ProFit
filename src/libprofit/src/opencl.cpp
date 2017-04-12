@@ -116,12 +116,11 @@ static cl_ver_t get_opencl_version(const cl::Platform &platform) {
 	return major*100u + minor*10u;
 }
 
-map<int, OpenCL_plat_info> get_opencl_info() {
+static
+map<int, OpenCL_plat_info> _get_opencl_info() {
 
 	vector<cl::Platform> all_platforms;
-	if( cl::Platform::get(&all_platforms) != CL_SUCCESS ) {
-		throw opencl_error("Error while getting OpenCL platforms");
-	}
+	cl::Platform::get(&all_platforms);
 
 	map<int, OpenCL_plat_info> pinfo;
 	unsigned int pidx = 0;
@@ -143,6 +142,18 @@ map<int, OpenCL_plat_info> get_opencl_info() {
 	}
 
 	return pinfo;
+}
+
+map<int, OpenCL_plat_info> get_opencl_info() {
+
+	// Wrap cl::Error exceptions
+	try {
+		return _get_opencl_info();
+	} catch(const cl::Error &e) {
+		ostringstream os;
+		os << "OpenCL error: " << e.what() << ". OpenCL error code: " << e.err();
+		throw opencl_error(os.str());
+	}
 }
 
 static
@@ -185,18 +196,70 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 		}
 	}
 
-	// kernel calculates sersic profile for each stuff
+	// Create a program with all the relevant kernels
+	// The source of the kernels is kept in a different file,
+	// but gets #included here, and thus gets embedded in the resulting
+	// shared library (instead of, for instance, loading the sources from a
+	// particular location on disk at runtime)
+	const char *common_float =
+#include "profit/cl/common-float.cl"
+	;
+	const char *common_double =
+#include "profit/cl/common-double.cl"
+	;
 	const char *sersic_float =
 #include "profit/cl/sersic-float.cl"
 	;
 	const char *sersic_double =
 #include "profit/cl/sersic-double.cl"
 	;
+	const char *moffat_float =
+#include "profit/cl/moffat-float.cl"
+	;
+	const char *moffat_double =
+#include "profit/cl/moffat-double.cl"
+	;
+	const char *ferrer_float =
+#include "profit/cl/ferrer-float.cl"
+	;
+	const char *ferrer_double =
+#include "profit/cl/ferrer-double.cl"
+	;
+	const char *king_float =
+#include "profit/cl/king-float.cl"
+	;
+	const char *king_double =
+#include "profit/cl/king-double.cl"
+	;
+	const char *brokenexp_float =
+#include "profit/cl/brokenexponential-float.cl"
+	;
+	const char *brokenexp_double =
+#include "profit/cl/brokenexponential-double.cl"
+	;
+	const char *coresersic_float =
+#include "profit/cl/coresersic-float.cl"
+	;
+	const char *coresersic_double =
+#include "profit/cl/coresersic-double.cl"
+	;
 
 	cl::Program::Sources sources;
+	sources.push_back(common_float);
 	sources.push_back(sersic_float);
+	sources.push_back(moffat_float);
+	sources.push_back(ferrer_float);
+	sources.push_back(king_float);
+	sources.push_back(brokenexp_float);
+	sources.push_back(coresersic_float);
 	if( use_double ) {
+		sources.push_back(common_double);
 		sources.push_back(sersic_double);
+		sources.push_back(moffat_double);
+		sources.push_back(ferrer_double);
+		sources.push_back(king_double);
+		sources.push_back(brokenexp_double);
+		sources.push_back(coresersic_double);
 	}
 
 	cl::Context context(device);

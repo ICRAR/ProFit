@@ -1,6 +1,6 @@
 R"===(
 /**
- * Single-precision Sersic profile OpenCL kernel implementation for libprofit
+ * Single-precision Ferrer profile OpenCL kernel implementation for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2017
@@ -25,13 +25,16 @@ R"===(
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-inline float f_evaluate_sersic(float x, float y, float box, float nser, float rscale, float bn) {
+inline float f_evaluate_ferrer(float x, float y, float box, float rscale, float a, float b) {
 	private float r = pow(pow(fabs(x), 2+box) + pow(fabs(y), 2+box), 1/(2+box));
-	private float r_factor = pow(r/rscale, 1/nser);
-	return exp(-bn * (r_factor - 1));
+	private float r_factor = r/rscale;
+	if( r_factor < 1 ) {
+		return pow(1 - pow(r_factor, 2 - b), a);
+	}
+	return 0;
 }
 
-kernel void sersic_float(
+kernel void ferrer_float(
 	global float *image,
 	global f_point_t *to_subsample,
 	int width, int height,
@@ -40,7 +43,7 @@ kernel void sersic_float(
 	float xcen, float ycen,
 	float cos_ang, float sin_ang, float axrat,
 	float rscale, float rscale_switch, float rscale_max,
-	float box, float nser, float bn) {
+	float box, float a, float b) {
 
 	private int i = get_global_id(0);
 	private float x = (i%width + 0.5f)*scale_x;
@@ -59,7 +62,7 @@ kernel void sersic_float(
 #endif /* __OPENCL_C_VERSION__ */
 	}
 	else if( rough || (r_prof/rscale) > rscale_switch ) {
-		image[i] = f_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
+		image[i] = f_evaluate_ferrer(x_prof, y_prof, box, rscale, a, b);
 #if __OPENCL_C_VERSION__ <= 120
 		to_subsample[i].x = -1;
 #endif /* __OPENCL_C_VERSION__ */
@@ -76,13 +79,13 @@ kernel void sersic_float(
 
 }
 
-kernel void sersic_subsample_float(
+kernel void ferrer_subsample_float(
 	global f_ss_kinfo *kinfo,
 	float acc,
 	float xcen, float ycen,
 	float cos_ang, float sin_ang, float axrat,
 	float rscale, float rscale_switch, float rscale_max,
-	float box, float nser, float bn) {
+	float box, float a, float b) {
 
 	private int i = get_global_id(0);
 	private f_ss_kinfo info = kinfo[i];
@@ -97,17 +100,15 @@ kernel void sersic_subsample_float(
 
 	private float val, testval;
 
-	val = f_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
-	testval = f_evaluate_sersic(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, nser, rscale, bn);
+	val = f_evaluate_ferrer(x_prof, y_prof, box, rscale, a, b);
+	testval = f_evaluate_ferrer(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, rscale, a, b);
 
-	// As we keep closing to the center we cannot distinguish that well anymore between
-	// the different profile values, so we need to adjust our accuracy to give up earlier
-	private float r = pow( pow(fabs(x_prof), 2+box) + pow(fabs(x_prof), 2+box), 2+box);
-	private float acc_scale = log10(fabs(log10(r)))/nser/2;
-	acc_scale = (acc_scale < 1 ? 1 : acc_scale);
+	// We don't adjust accurracy in the ferrer profile
+	// because its luminosity doesn't have a very steep gradient
+	// like the other profiles
 
 	// no need for subsampling
-	if( fabs(testval/val - 1.0f) <= acc*acc_scale ) {
+	if( fabs(testval/val - 1.0f) <= acc ) {
 		kinfo[i].point.x = -1.f;
 		kinfo[i].point.y = -1.f;
 		kinfo[i].val = val;

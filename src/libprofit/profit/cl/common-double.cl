@@ -1,8 +1,9 @@
+R"===(
 /**
- * Header file with common definitions for libprofit
+ * Common double-precision OpenCL routines for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
- * (c) UWA - The University of Western Australia, 2016
+ * (c) UWA - The University of Western Australia, 2017
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
@@ -23,26 +24,26 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#ifndef PROFIT_COMMON_H
-#define PROFIT_COMMON_H
-
-/* M_PI is not part of C/C++, but usually there */
-#include <cmath>
-#ifndef M_PI
-# define M_PI 3.14159265358979323846
+#if __OPENCL_C_VERSION__ < 120
+#pragma OPENCL EXTENSION cl_khr_fp64: enable
 #endif
 
-/* The override keyword is not supported until gcc 4.7 */
-#if defined(__GNUG__) && (__GNUC__ <= 4) && (__GNUC_MINOR__ < 7)
-# define override
-#endif
+typedef struct _d_point {
+	double x;
+	double y;
+} d_point_t;
 
-/* Sometimes we don't use all arguments */
-#define UNUSED(x) do { (void)x; } while(0)
+typedef struct _d_subsampling_kernel_info {
+	d_point_t point;
+	double xbin;
+	double ybin;
+	double val;
+} d_ss_kinfo_t;
 
-namespace profit {
-	typedef unsigned int nsecs_t;
+inline void d_image_to_profile_coordiates(double x, double y, double *x_prof, double *y_prof, double xcen, double ycen, double cos_ang, double sin_ang, double axrat) {
+	x -= xcen;
+	y -= ycen;
+	*x_prof =   x * cos_ang + y * sin_ang;
+	*y_prof = (-x * sin_ang + y * cos_ang)/axrat;
 }
-
-#endif /* PROFIT_COMMON_H */
+)==="

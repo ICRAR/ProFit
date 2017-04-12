@@ -1,6 +1,6 @@
 R"===(
 /**
- * Single-precision Sersic profile OpenCL kernel implementation for libprofit
+ * Single-precision Broken Exponential profile OpenCL kernel implementation for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2017
@@ -25,13 +25,12 @@ R"===(
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-inline float f_evaluate_sersic(float x, float y, float box, float nser, float rscale, float bn) {
+inline float f_evaluate_brokenexp(float x, float y, float box, float h1, float h2, float rb, float a) {
 	private float r = pow(pow(fabs(x), 2+box) + pow(fabs(y), 2+box), 1/(2+box));
-	private float r_factor = pow(r/rscale, 1/nser);
-	return exp(-bn * (r_factor - 1));
+	return exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
 }
 
-kernel void sersic_float(
+kernel void brokenexp_float(
 	global float *image,
 	global f_point_t *to_subsample,
 	int width, int height,
@@ -40,7 +39,7 @@ kernel void sersic_float(
 	float xcen, float ycen,
 	float cos_ang, float sin_ang, float axrat,
 	float rscale, float rscale_switch, float rscale_max,
-	float box, float nser, float bn) {
+	float box, float h1, float h2, float rb, float a) {
 
 	private int i = get_global_id(0);
 	private float x = (i%width + 0.5f)*scale_x;
@@ -59,7 +58,7 @@ kernel void sersic_float(
 #endif /* __OPENCL_C_VERSION__ */
 	}
 	else if( rough || (r_prof/rscale) > rscale_switch ) {
-		image[i] = f_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
+		image[i] = f_evaluate_brokenexp(x_prof, y_prof, box, h1, h2, rb, a);
 #if __OPENCL_C_VERSION__ <= 120
 		to_subsample[i].x = -1;
 #endif /* __OPENCL_C_VERSION__ */
@@ -76,13 +75,13 @@ kernel void sersic_float(
 
 }
 
-kernel void sersic_subsample_float(
+kernel void brokenexp_subsample_float(
 	global f_ss_kinfo *kinfo,
 	float acc,
 	float xcen, float ycen,
 	float cos_ang, float sin_ang, float axrat,
 	float rscale, float rscale_switch, float rscale_max,
-	float box, float nser, float bn) {
+	float box, float h1, float h2, float rb, float a) {
 
 	private int i = get_global_id(0);
 	private f_ss_kinfo info = kinfo[i];
@@ -97,13 +96,13 @@ kernel void sersic_subsample_float(
 
 	private float val, testval;
 
-	val = f_evaluate_sersic(x_prof, y_prof, box, nser, rscale, bn);
-	testval = f_evaluate_sersic(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, nser, rscale, bn);
+	val = f_evaluate_brokenexp(x_prof, y_prof, box, h1, h2, rb, a);
+	testval = f_evaluate_brokenexp(x_prof, fabs(y_prof) + fabs(delta_y_prof), box, h1, h2, rb, a);
 
 	// As we keep closing to the center we cannot distinguish that well anymore between
 	// the different profile values, so we need to adjust our accuracy to give up earlier
 	private float r = pow( pow(fabs(x_prof), 2+box) + pow(fabs(x_prof), 2+box), 2+box);
-	private float acc_scale = log10(fabs(log10(r)))/nser/2;
+	private float acc_scale = log10(fabs(log10(r)))/a;
 	acc_scale = (acc_scale < 1 ? 1 : acc_scale);
 
 	// no need for subsampling

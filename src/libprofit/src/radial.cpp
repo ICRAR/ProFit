@@ -242,7 +242,7 @@ void RadialProfile::evaluate(vector<double> &image) {
 	 */
 	this->initial_calculations();
 
-	stats = shared_ptr<RadialProfileStats>(new RadialProfileStats());
+	stats = make_shared<RadialProfileStats>();
 #ifdef PROFIT_DEBUG
 	n_integrations.clear();
 #endif /* PROFIT_DEBUG */
@@ -278,28 +278,30 @@ void RadialProfile::evaluate(vector<double> &image) {
 
 void RadialProfile::evaluate_cpu(vector<double> &image) {
 
-	unsigned int i, j;
-	double x, y, pixel_val;
-	double x_prof, y_prof, r_prof;
 	double half_xbin = model.scale_x/2.;
-	double half_ybin = model.scale_x/2.;
+	double half_ybin = model.scale_y/2.;
 
 	double scale = this->get_pixel_scale();
 
-	/* The middle X/Y value is used for each pixel */
-	y = 0;
-	for(j=0; j < model.height; j++) {
-		y += half_ybin;
-		x = 0;
-		for(i=0; i < model.width; i++) {
-			x += half_xbin;
+	/*
+	 * If compiled with OpenMP support, and if the user requests so,
+	 * we parallelize the following two "for" loops
+	 */
+#ifdef PROFIT_OPENMP
+	bool use_omp = model.omp_threads > 1;
+	#pragma omp parallel for collapse(2) schedule(dynamic, 10) if(use_omp) num_threads(model.omp_threads)
+#endif /* PROFIT_OPENMP */
+	for(unsigned int j=0; j < model.height; j++) {
+		for(unsigned int i=0; i < model.width; i++) {
 
 			/* We were instructed to ignore this pixel */
 			if( !model.calcmask.empty() && !model.calcmask[i + j*model.width] ) {
-				x += half_xbin;
 				continue;
 			}
 
+			double x_prof, y_prof, r_prof;
+			double y = half_ybin + j*model.scale_y;
+			double x = half_xbin + i*model.scale_x;
 			this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
 
 			/*
@@ -307,6 +309,7 @@ void RadialProfile::evaluate_cpu(vector<double> &image) {
 			 * TODO: the radius calculation doesn't take into account boxing
 			 */
 			r_prof = sqrt(x_prof*x_prof + y_prof*y_prof);
+			double pixel_val;
 			if( this->rscale_max > 0 && r_prof/this->rscale > this->rscale_max ) {
 				pixel_val = 0.;
 			}
@@ -326,9 +329,7 @@ void RadialProfile::evaluate_cpu(vector<double> &image) {
 			}
 
 			image[i + j*model.width] = scale * pixel_val;
-			x += half_xbin;
 		}
-		y += half_ybin;
 	}
 
 }
@@ -405,10 +406,12 @@ unsigned int new_subsampling_points(const vector<ss_info_t<FT>> &prev_ss_info, v
 		FT x = info.point.x;
 		FT y = info.point.y;
 
-		if( x == -1 || recur_level >= maxr) {
+		if( x == -1 || recur_level > maxr) {
 			continue;
 		}
 
+		// New subsampling for this point starts at x0,y0
+		// and contains res*res subsampling points
 		FT x0 = x - info.xbin / 2;
 		FT y0 = y - info.ybin / 2;
 		FT ss_xbin = info.xbin / res;
@@ -567,19 +570,14 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 	unsigned int recur_level = 0;
 
 	t_loopstart = system_clock::now();
-	while( recur_level < top_recursions ) {
+	while( recur_level <= top_recursions ) {
 
 		/* Points in time we want to measure */
 		system_clock::time_point t0, t_newsamples, t_trans_h2k, t_kprep, t_opencl, t_trans_k2h;
 
 
 		t0 = system_clock::now();
-#ifdef PROFIT_DEBUG
-		/* record how many sub-integrations we've done */
-		n_integrations[recur_level] = new_subsampling_points<FT>(last_ss_info, ss_info, recur_level);
-#else
-		new_subsampling_points<FT>(last_ss_info, ss_info, recur_level);
-#endif /* PROFIT_DEBUG */
+		unsigned int subsampled_pixels = new_subsampling_points<FT>(last_ss_info, ss_info, recur_level);
 		t_newsamples = system_clock::now();
 
 		auto subsamples = ss_info.size();
@@ -588,6 +586,13 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 		}
 
 		ss_cl_times.nwork_items += subsamples;
+#ifdef PROFIT_DEBUG
+		/* record how many sub-integrations we've done */
+		n_integrations[recur_level] = subsampled_pixels;
+#else
+		// avoid warning because of unused variable
+		UNUSED(subsampled_pixels);
+#endif
 
 		/* Keeping things in size */
 		auto prev_im_size = subimages_results.size();
@@ -640,13 +645,6 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 					val /= (ss_info_it->resolution * ss_info_it->resolution);
 				}
 
-				// This is a final result that requires no more subsampling
-//				if( kinfo.point.x == -1 ) {
-//					FT x = ss_info_it->point.x / model.scale_x;
-//					FT y = ss_info_it->point.y / model.scale_y;
-//					unsigned int idx = static_cast<unsigned int>(floor(x)) + static_cast<unsigned int>(floor(y)) * model.width;
-//					image[idx] += val;
-//				}
 				subimages_results.push_back(im_result_t{ss_info_it->point, val});
 
 				last_ss_info_it++;
@@ -721,7 +719,7 @@ void RadialProfile::add_common_kernel_parameters(unsigned int arg, cl::Kernel &k
 }
 
 bool RadialProfile::supports_opencl() const {
-	return false;
+	return true;
 }
 
 #endif /* PROFIT_OPENCL */
@@ -737,7 +735,9 @@ RadialProfile::RadialProfile(const Model &model, const string &name) :
 	rough(false), acc(0.1),
 	rscale_switch(1), resolution(9),
 	max_recursions(2), adjust(true),
-	rscale_max(0)
+	rscale_max(0),
+	rscale(0), _ie(0),
+	_cos_ang(0), _sin_ang(0)
 {
 	// no-op
 }

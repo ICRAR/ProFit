@@ -452,6 +452,14 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	}
 #endif /* PROFIT_OPENCL */
 
+#ifdef PROFIT_OPENMP
+	/* Number of OpenMP threads, if any */
+	SEXP omp_threads = _get_list_element(model_list, "omp_threads");
+	if( omp_threads != R_NilValue ) {
+		m.omp_threads = (unsigned int)Rf_asInteger(omp_threads);
+	}
+#endif /* PROFIT_OPENMP */
+
 	/* Read profiles and parameters and append them to the model */
 	SEXP profiles = _get_list_element(model_list, "profiles");
 	if( profiles == R_NilValue ) {
