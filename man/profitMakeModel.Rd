@@ -69,7 +69,7 @@ Logical; where the profile has been truncated via \option{remax} this specifies 
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
 }
 \item{omp_threads}{
-  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. If \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
+  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
 }
 }
 \details{
