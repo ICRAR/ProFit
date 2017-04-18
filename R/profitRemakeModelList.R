@@ -17,6 +17,14 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   if(!missing(Data) & missing(constraints)){
     constraints=Data$constraints
   }
+  if(!missing(tolog)){
+    if(length(tolog)>0){
+      tounlogIDs=which(unlist(tolog) & unlist(tofit))
+      parmnew[tounlogIDs]=10^parmnew[tounlogIDs]
+    }
+  }else{
+    tounlogIDs={}
+  }
   fitIDs=which(unlist(tofit))
   if(length(fitIDs)>=1){
     parm=parm[1:length(fitIDs)]
@@ -28,16 +36,6 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   }else{
     parmnew=parm
   }
-  
-  if(!missing(tolog)){
-    if(length(tolog)>0){
-      tounlogIDs=which(unlist(tolog) & unlist(tofit))
-      parmnew[tounlogIDs]=10^parmnew[tounlogIDs]
-    }
-  }else{
-    tounlogIDs={}
-  }
-  
   modellistnew = relist(parmnew, modellist)
   # Apply constraints to the new linear modellist
   

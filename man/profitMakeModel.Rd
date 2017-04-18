@@ -74,7 +74,7 @@ Logical; where the profile has been truncated via \option{remax} this specifies 
 }
 \details{
 
-A legal model list (\option{modellist}) has the structure of list(sersic, moffat, ferrer, psf, sky). At least one of sersic, coresersic, moffat, ferrer, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
+A legal model list (\option{modellist}) has the structure of list(sersic, coresersic, moffat, ferrer, king, brokenexp, pointsource, sky). At least one of sersic, coresersic, moffat, ferrer, king, brokenexp, pointsource, psf or sky should be present. Each of these is itself a list which contain vectors for each relevant parameter. All these vectors should be the same length for each type of model structure.
 
 The parameters that must be specified for \option{sersic} are:
 

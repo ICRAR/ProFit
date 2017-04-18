@@ -20,7 +20,7 @@ openclenv = NULL)
 Image matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
 }
   \item{region}{
-Logical matrix; optional, specifying the parts of the image to be used for fitting this will override the combination of \option{segim} and \option{mask} that is used otherwise. If provided this matrix *must* be the same dimensions as \option{image}. Can be integer 0/1 or boolean TRUE/FALSE type logic.
+Logical matrix; optional, specifying the parts of the image to be used for fitting this will override the combination of \option{segim} and \option{mask} that is used otherwise. If provided this matrix *must* be the same dimensions as \option{image}. Can be integer 1/0 or boolean TRUE/FALSE type logic.
 }
   \item{sigma}{
 Sigma matrix; optional, the measurement errors per pixel (expressed in terms of sigma). This matrix *must* be the same dimensions as \option{image}.
