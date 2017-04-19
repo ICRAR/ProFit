@@ -17,6 +17,7 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   if(!missing(Data) & missing(constraints)){
     constraints=Data$constraints
   }
+  parmnew=unlist(modellist)
   if(!missing(tolog)){
     if(length(tolog)>0){
       tounlogIDs=which(unlist(tolog) & unlist(tofit))
@@ -28,7 +29,6 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   fitIDs=which(unlist(tofit))
   if(length(fitIDs)>=1){
     parm=parm[1:length(fitIDs)]
-    parmnew=unlist(modellist)
     parmnew[fitIDs]=parm
     # Inherit values for NA flags
     inheritIDs=which(is.na(unlist(tofit)))
