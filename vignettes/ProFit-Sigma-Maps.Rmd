@@ -46,7 +46,7 @@ maghist(image, log='x')
 
 Notice that the image counts tail off at about 36k. Given that typical CCDs have well depths <100k and are most linear in the middle regime of electron counts, this image represents an ideally exposed image.
 
-An important point to note is that the image is represented, in its rawest form, in photo-electron counts (not photon counts). For modern CCDs the difference tends not to be much (quantum efficiency / QE = 0.9 typically in the r-band). In any case, we care about the number of electrons excited by photons, not the number of photons that do the exciting. Exactly why is a more detailed explanation, but in brief QE is a stochastic binomial filtering process, not an exact fraction. Since every photon has, say, a 50% cahnce of either exciting an electron or not the net result is it is the photo-electrons that produce the image shot-noise and have a Poisson distribution (error goes as $\sqrt{N}$ for large $N$). A quick R proof:
+An important point to note is that the image is represented, in its rawest form, in photo-electron counts (not photon counts). For modern CCDs the difference tends not to be much (quantum efficiency / QE = 0.9 typically in the r-band). In any case, we care about the number of electrons excited by photons, not the number of photons that do the exciting. Exactly why is a more detailed explanation, but in brief QE is a stochastic binomial filtering process, not an exact fraction. Since every photon has, say, a 50% chance of either exciting an electron or not, the net result is it is the photo-electrons that produce the image shot-noise and have a Poisson distribution (error goes as $\sqrt{N}$ for large $N$). A quick R proof:
 
 ```{r}
 RanPois=rpois(n=1e4, lambda=400)
@@ -59,7 +59,7 @@ sd(RanPois_PureFilter)
 
 The proper QE process has $\sqrt{2}$ more noise, and is the correct type of nosie to consider for a sigma map.
 
-Since the image we have made is in photo-electron counts by construction, we should formally use Poisson statistics to represent the uncertainty per pixel. In practice in the regime that matters ($N>20$) we can apprximate the behaviour with Normal statistics. So now we can make our object only shot noise sigma map:
+Since the image we have made is in photo-electron counts by construction, we should formally use Poisson statistics to represent the uncertainty per pixel. In practice in the regime that matters ($N>20$) we can approximate the behaviour with Normal statistics. So now we can make our object only shot noise sigma map:
 
 ```{r}
 sigma=sqrt(image)
@@ -100,16 +100,17 @@ Things get more complicated when dealing with real astronomical data, beacuse yo
 image_sky=image - sky_elec - dark_elec - bias_elec
 ```
 
-Next they tend to put images into different Astronomical Data Unit (ADU) schemes where they want one ADU to represent 0 magnitudes. In this case the magzero point input to *ProFit* is 0, and the image pixels become manipulated as such:
+Next they tend to put images into different Astronomical Data Unit (ADU) schemes where they want one ADU to represent 0 magnitudes. In this case the magzero point input to *ProFit* is 30, and the image pixels become manipulated as such:
 
 ```{r}
-gain_e_ADU=1/10^(-0.4*30)
+magzero=30
+gain_e_ADU=1/10^(-0.4*magzero)
 image_sky_ADU=image_sky/gain_e_ADU
 ```
 
 The **gain** is nearly always expressed in this sense (photo-electrons per ADU) rather than ADU per photo-electron, but I have seen both used informally (ouch).
 
-To this exact image (remeber, this is our exact model still) we can add the various noise terms back in using a Normal process:
+To this exact image (remember, this is our exact model still) we can add the various noise terms back in using a Normal sampling process. For increased accuracy we could use a Poisson process, but since the per pixel counts are fairly large ($N>20$), this is not necessary.
 
 ```{r}
 image_sky_ADU_noise=image_sky_ADU+rnorm(length(image_sky_ADU), mean=0, sd=sigma)/gain_e_ADU
@@ -125,7 +126,7 @@ Notice this fairly realistic image is much shallower than the first one we made.
 
 The question is, given the type of data in image_sky_ADU_noise and knowledge that the gain_e_ADU=1e12, how do you calculate the sigma image when this has not been explicitly provided? In pratice there are two routes (both of which are imperfect).
 
-In one you are told the sky pedestal subtracted (in ADUs), the read noise (in photo-electrons) and the dark noise (in photo-electrons):
+In one you are told the sky pedestal subtracted (in ADUs), the read noise (in photo-electrons), the dark noise (in photo-electrons) and the gain (in photo-electrons per ADU):
 
 $$\frac{\sqrt{(image[ADU]+sky[ADU]).gain+\sigma_{read}[elec]^2+\sigma_{dark}[elec]^2}}{gain}$$
 
@@ -210,13 +211,16 @@ We can check how sensitive this approach might be to error:
 magimage((image_sky_ADU_noise*1.01-image_sky_ADU)/sigma_est_1)
 ```
 
-Basically, both our two estimates are no worse than the correct answer. It is worth considering why there is a difference. Ultimately the sigma map should be derived from the exact model, not a noisy sample from it. I.e. we might be observing a pixel that intrinsically (averaged over infinite time and images) produces 10,000 / 100 photon-electron counts in the time we integrate our image for, but in any given image we do not observe the exact answer. How inaccurate is this assumption?
+Basically, both our two estimates are no worse than the correct answer. It is worth considering why there is a difference. Ultimately the sigma map should be derived from the exact model, not a noisy sample from it. I.e. we might be observing a pixel that intrinsically (averaged over infinite time and images) produces, e.g., 10,000 / 100 / 10 photon-electron counts in the time we integrate our image for, but in any given image we do not observe the exact answer. How inaccurate is this assumption?
 
 ```{r, fig.width=5, fig.height=5}
-maghist(sqrt(rpois(1e3,1e4)))
-maghist(sqrt(rpois(1e3,1e2)))
+maghist(sqrt(rpois(1e3,1e4)), breaks=20)
+maghist(sqrt(rpois(1e3,1e2)), breaks=20)
+maghist(sqrt(rpois(1e3,1e1)), breaks=20)
 ```
 
-This is not bad. It means if our source is this bright we should expect to be able to estimate the error for pixels with 10,000 / 100 counts to better than 1% / 10% accuracy.
+This is not too bad in general (when photon-electron counts are high). It means if our source is this bright we should expect to be able to estimate the error for pixels with 10,000 / 100 / 10 photon-electron counts to better than 1% / 5% / 20% accuracy. In fact there is a funny effect that occurs with Poisson statistics that makes computing this very easy- taking the square-root of a Poisson distribution is *variance stabilising*, so for $N>5$ the square-root of the Poisson distribution gives a standard-deviation close to 0.5, thus the approximate relative error in the above assumption simply becomes $0.5/\sqrt{cnts_{PE}}$.
+
+For details on this look at the article on Anscombe transforms on Wikipedia, but in brief the transform $A : x \rightarrow 2\sqrt{x + 3/8}$ transform all Poisson distributions so they have a mean $\mu_{new}=2\sqrt{\mu_{old}+3/8}-1/(4\sqrt{\mu_{old}}))$ and standard-deviation $\sigma_{new}=1$. Hence our simpler tranform (without the additive $3/8$ and factor 2 multiplier) generates a standard-deviation uncertainty close to 0.5 for all pixels when estimating their true mean.
 
 That rounds off this vignette. You should now have a good idea how to approch making a sigma map for feeding into **profitSetupData**.

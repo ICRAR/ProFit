@@ -10,5 +10,5 @@ License: GPL-3
 Imports: fftw, Rcpp (>= 0.11.6)
 Depends: R (>= 3.0), FITSio, LaplacesDemon, magicaxis, R2Cuba, RColorBrewer
 LinkingTo: Rcpp
-Suggests: knitr
+Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
