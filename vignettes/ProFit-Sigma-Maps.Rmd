@@ -57,7 +57,7 @@ sd(RanPois_QE)
 sd(RanPois_PureFilter)
 ```
 
-The proper QE process has $\sqrt{2}$ more noise, and is the correct type of nosie to consider for a sigma map.
+The proper QE process has $\sqrt{2}$ more noise, and is the correct type of noise to consider for a sigma map.
 
 Since the image we have made is in photo-electron counts by construction, we should formally use Poisson statistics to represent the uncertainty per pixel. In practice in the regime that matters ($N>20$) we can approximate the behaviour with Normal statistics. So now we can make our object only shot noise sigma map:
 
@@ -221,6 +221,6 @@ maghist(sqrt(rpois(1e3,1e1)), breaks=20)
 
 This is not too bad in general (when photon-electron counts are high). It means if our source is this bright we should expect to be able to estimate the error for pixels with 10,000 / 100 / 10 photon-electron counts to better than 1% / 5% / 20% accuracy. In fact there is a funny effect that occurs with Poisson statistics that makes computing this very easy- taking the square-root of a Poisson distribution is *variance stabilising*, so for $N>5$ the square-root of the Poisson distribution gives a standard-deviation close to 0.5, thus the approximate relative error in the above assumption simply becomes $0.5/\sqrt{cnts_{PE}}$.
 
-For details on this look at the article on [Anscombe transforms](https://en.wikipedia.org/wiki/Anscombe_transform) on Wikipedia, but in brief the transform $A : x \rightarrow 2\sqrt{x + 3/8}$ transform all Poisson distributions so they have a mean $\mu_{new}=2\sqrt{\mu_{old}+3/8}-1/(4\sqrt{\mu_{old}}))$ and standard-deviation $\sigma_{new}=1$. Hence our simpler tranform (without the additive $3/8$ and factor 2 multiplier) generates a standard-deviation uncertainty close to 0.5 for all pixels when estimating their true mean.
+For details on this look at the article on [Anscombe transforms](https://en.wikipedia.org/wiki/Anscombe_transform) on Wikipedia, but in brief the transform $A : x \rightarrow 2\sqrt{x + 3/8}$ transforms all Poisson distributions so they have a mean $\mu_{new}=2\sqrt{\mu_{old}+3/8}-1/(4\sqrt{\mu_{old}}))$ and standard-deviation $\sigma_{new}=1$. Hence our simpler tranform (without the additive $3/8$ and factor 2 multiplier) generates a standard-deviation uncertainty close to 0.5 for all pixels when estimating their true mean.
 
 That rounds off this vignette. You should now have a good idea how to approch making a sigma map for feeding into **profitSetupData**.
