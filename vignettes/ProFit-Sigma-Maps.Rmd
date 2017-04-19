@@ -1,10 +1,10 @@
 ---
-title: "ProFit Sigma Maps"
+title: "ProFit: Sigma Maps"
 author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ProFit Sigma Maps}
+  %\VignetteIndexEntry{ProFit: Sigma Maps}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

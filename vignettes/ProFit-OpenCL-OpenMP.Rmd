@@ -1,10 +1,10 @@
 ---
-title: "ProFit OpenCL and OpenMP Support"
+title: "ProFit: OpenCL and OpenMP Support"
 author: "Aaron Robotham & Rodrigo Tobar"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ProFit OpenCL and OpenMP Support}
+  %\VignetteIndexEntry{ProFit: OpenCL and OpenMP Support}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
