@@ -1,0 +1,169 @@
+---
+title: "ProFit: OpenCL and OpenMP Support"
+author: "Aaron Robotham & Rodrigo Tobar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFit: OpenCL and OpenMP Support}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Load libraries
+
+```{r}
+library(ProFit)
+```
+
+# OpenCL support
+
+The support for OpenCL compatible graphics cards is described in a bit of detail in the help for **profitOpenCLEnv** **profitOpenCLEnvInfo**. This should generally work more-or-less out the box if you have a compatible card on your local machine (mileage may vary though). An example using the defaults (that uses the first vaialbel card on your machine if possible):
+
+```{r, fig.width=5, fig.height=5}
+modellist = list(
+  sersic = list(
+    xcen   = c(180, 60),
+    ycen   = c(90, 10),
+    mag = c(15, 13),
+    re  = c(14, 5),
+    nser  = c(3, 10),
+    ang  = c(46, 80),
+    axrat  = c(0.4, 0.6),
+    box = c(0.5,-0.5)
+  ),
+  pointsource = list(
+    xcen   = c(34,10,150),
+    ycen   = c(74,120,130),
+    mag = c(10,13,16)
+  ),
+  sky = list(
+    bg = 3e-12
+  )
+)
+
+magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
+
+tempCL=profitOpenCLEnv()
+magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
+```
+
+## Speed comparisons
+
+You can see the kind of speed up this offers us by comparing these timings.
+
+First a single big image:
+
+```{r}
+system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000), openclenv=tempCL))
+system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000), openclenv={}))
+```
+
+Next 100 smaller images:
+
+```{r}
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL)})
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), openclenv={})})
+```
+
+On my (ASGR's) MacBook Pro circa 2012 with a quad 2.6 GHz Intel Core i7 CPU and a NVIDIA GeForce GT 650M 1024 MB GPU I see a speed up of a factor ~3.5 for the first example (a single big image) and ~4 for the second example (looped smaller images).
+
+# OpenMP support
+
+**ProFit** also supports OpenMP threading at the pixel level. To get this working is fairly straight-forward ona Linux install, a bit harder on a Mac, and probably impossible on a Windows machine (good luck there...). In all cases you will need to re-build **ProFit** from source rather than rely on the CRAN binary.
+
+When you build **ProFit** it will try to detect whether your default compiler supports OpenMP. This is stored in ~/.R/Makevars and is a text file used by your local R build to select compilers to build and link against.
+
+## Linux
+
+For Linux using a fairly new (2016+) version of GCC or Clang this should work quite easily. If you want to use, e.g., Clang then you should make (or edit) your R Makevars file. For a modern Linux install it should probably look like this:
+
+```
+CC=clang
+CXX=clang++
+CXX1X = clang++
+```
+
+## Mac OS X
+
+For Macs (El Capitan or older certainly) the version of Clang incuded is quite old and does not support OpenMP. To get round this you have to install a newer version of LLVM from e.g. homebrew (using something like `brew install llvm'). On my machine homebrew installs to /usr/local/Cellar/llvm/4.0.0/, but this will vary by setup. In my case my Makevars file therefore looks like this:
+
+```
+CC=/usr/local/Cellar/llvm/4.0.0/bin/clang
+CXX=/usr/local/Cellar/llvm/4.0.0/bin/clang++
+CXX1X=/usr/local/Cellar/llvm/4.0.0/bin/clang++
+CXXFLAGS= -O3 -pedantic -march=native -Ofast
+CXX1XFLAGS =-O3 -Wall -march=native -Ofast
+LDFLAGS =  -L/usr/local/Cellar/llvm/4.0.0/lib -Wl,-rpath,/usr/local/Cellar/llvm/4.0.0/lib
+```
+
+This took a bit of fiddling to figure out (especially the last line), and is basically a side-effect of the compiler linking getting more complicated as soon as you start using a non-standard Clang compiler.
+
+## Microsoft Windows
+
+I do not know how you should go about building OpenMP supported packages on Windows. Get in touch if you have success at this, otherwise I assume it will not work easily.
+
+## After setting up
+
+Once you have setup your Makevars files you can now build **ProFit** from source with OpenMP support. If you download a recent tarball, then this is done from the command line with the following command:
+
+```
+R CMD INSTALL --preclean ProFit_X.X.X.tar.gz 
+```
+
+Where X.X.X is the relevant version numbering for **ProFit** (note this support only exists from v1.0.3+).
+
+You should see some helpful outputs when this starts which indicates whether you are building with OpenCL and OpenMP support, e.g.:
+
+```
+==> R CMD INSTALL ProFit
+
+* installing to library ‘/Users/aaron/Library/R/3.3/library’
+* installing *source* package ‘ProFit’ ...
+- Found OpenCL headers
+- Found OpenCL libs
+- Looking for OpenCL version 2.0
+- Looking for OpenCL version 1.2
+- Compiling with OpenCL 1.2 support
+- Compiling with OpenMP support
+```
+
+## Speed comparisons:
+
+You can see the kind of speed up this offers us by comparing these timings.
+
+First a single big image:
+
+```{r}
+system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000)))
+system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000), omp_threads=4))
+```
+
+Next 100 smaller images:
+
+```{r}
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200))})
+system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), omp_threads=4)})
+```
+
+On my (ASGR's) MacBook Pro circa 2012 with a quad 2.6 GHz Intel Core i7 CPU I see a speed up of a factor ~2.5 for the first example (a single big image) and ~4 for the second example (looped smaller images).
+
+# Foreach support
+
+The other way you might make use of multiple cores is using **foreach**, so we can compare the runtime to this easily, also using 4 cores.
+
+```{r}
+library(doParallel)
+library(foreach)
+registerDoParallel(cores=4)
+```
+
+Again, for 100 smaller images:
+
+```{r}
+system.time(foreach(i=1:100)%do%{profitMakeModel(modellist=modellist, dim=c(200,200))})
+system.time(foreach(i=1:100)%dopar%{profitMakeModel(modellist=modellist, dim=c(200,200))})
+```
+
+On my (ASGR's) MacBook Pro circa 2012 with a quad 2.6 GHz Intel Core i7 CPU I again see a speed up of a factor ~4.
+
+Depending on your use case any of the three strategies might be most sensible. For fitting a single object you will get the most speed-up from using OpenCL or OpenMP. For fitting a large number of galaxies running an embarrassingly parallel **foreach** loop should offer a similar speed-up to OpenMP using the same number of cores, but it will use much more memory (**foreach** effectively copies the session for each core, which produces additional overheads).

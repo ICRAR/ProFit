@@ -153,7 +153,7 @@ tolog=list(
 Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE)
 
-# Finally, calcualte the likelihood and make a plot:
+# Finally, calculate the likelihood and make a plot:
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 }
