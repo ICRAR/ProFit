@@ -98,20 +98,22 @@ OMP
 	echo "NOT_FOUND"
 }
 
+#
+# Prepare for the show
+#
+detect_system
+tmpdir=.profit_tmp
+[ -d $tmpdir ] || mkdir $tmpdir || { echo "couldn't create temporary directory $tmpdir" && exit 1; }
 
-# The main routine
+#
+# Check for OpenCL headers, libs and max OpenCL version
+# Skip if required
+#
+cl_cflags=""
+cl_libflags=""
 if [ -n "${PROFIT_NO_OPENCL}" ]; then
 	echo "- Skipping OpenCL detection"
 else
-
-	detect_system
-
-	# where we put all our temporary things
-	tmpdir=.profit_tmp
-	[ -d $tmpdir ] || mkdir $tmpdir || { echo "couldn't create temporary directory $tmpdir" && exit 1; }
-
-	# Check for OpenCL headers, libs and max OpenCL version
-	# Skip if required
 	cl_headers=`has_cl_headers`
 	if [ "$cl_headers" = "yes" ]; then
 		echo "- Found OpenCL headers"
@@ -131,11 +133,17 @@ else
 		cl_libflags=`get_cl_libflags`
 	else
 		echo "- Compiling without OpenCL support"
-		cl_cflags=""
-		cl_libflags=""
 	fi
+fi
 
-	# Check for OpenMP support
+#
+# Check for OpenMP support, skip if required
+#
+omp_cflags=""
+omp_libflags=""
+if [ -n "${PROFIT_NO_OPENMP}" ]; then
+	echo "- Skipping OpenMP detection"
+else
 	omp_flag=`get_omp_cflag`
 	if [ "$omp_flag" != "NOT_FOUND" ]; then
 		echo "- Compiling with OpenMP support"
@@ -143,16 +151,14 @@ else
 		omp_libflags="$omp_flag"
 	else
 		echo "- Compiling without OpenMP support"
-		omp_cflags=""
-		omp_libflags=""
 	fi
-
-	rm -rf $tmpdir
 
 fi
 
+#
+# Cleanup and replace the values in Makevars.in and produce Makevars
+#
+rm -rf $tmpdir
 profit_CPPFLAGS="$cl_cflags $omp_cflags"
 profit_LIBS="$cl_libflags $omp_libflags"
-
-# Replace the values in Makevars.in and produce Makevars
 sed "s/@profit_CPPFLAGS@/$profit_CPPFLAGS/; s/@profit_LIBS@/$profit_LIBS/" src/Makevars.in > src/Makevars
