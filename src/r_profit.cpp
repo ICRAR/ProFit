@@ -375,6 +375,22 @@ SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 }
 #endif /* PROFIT_OPENCL */
 
+
+/*
+ * OpenMP-related functionality follows
+ * ----------------------------------------------------------------------------
+ */
+static
+SEXP _R_profit_has_openmp() {
+	return Rf_ScalarLogical(
+#ifdef PROFIT_OPENMP
+		TRUE
+#else
+		FALSE
+#endif /* PROFIT_OPENMP */
+	);
+}
+
 /*
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
@@ -537,6 +553,10 @@ extern "C" {
 
 	SEXP R_profit_openclenv_info() {
 		return _R_profit_openclenv_info();
+	}
+
+	SEXP R_profit_has_openmp() {
+		return _R_profit_has_openmp();
 	}
 
 	SEXP R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
