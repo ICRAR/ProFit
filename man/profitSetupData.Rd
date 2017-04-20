@@ -29,7 +29,7 @@ Sigma matrix; optional, the measurement errors per pixel (expressed in terms of 
 Segmentation matrix; optional, the full segmentation map of the image. If \option{region} is not provided then value of the central pixel is used to select the segmented pixels of the galaxy we want to fit. The log-likelihood is then computed using only these pixels. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{mask}{
-Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If \option{region} is not provided then 0 values are used to define the common area to sue for fitting. This matrix *must* be the same dimensions as \option{image}.
+Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If \option{region} is not provided then 0 values are used to define the common area to use for fitting. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{modellist}{
 List; required, the initial model list that describes the analytic model to be created. Can contain an analytical PSF model as well. See Details.

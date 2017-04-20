@@ -18,7 +18,7 @@ The authors of **ProFit** have answered many (many) questions regarding what `si
 ## Make some fake data:
 
 ```{r}
-modellist=modellist = list(
+modellist = list(
   sersic = list(
     xcen = c(200, 200),
     ycen = c(200, 200),
@@ -46,7 +46,7 @@ maghist(image_elec, log='x', majorn=c(10,5))
 
 Notice that the image counts tail off at about 36k. Given that typical CCDs have well depths <100k and are most linear in the middle regime of electron counts, this image represents an ideally exposed image.
 
-An important point to note is that the image is represented, in its rawest form, in photo-electron counts (not photon counts). For modern CCDs the difference tends not to be much (quantum efficiency / QE = 0.9 typically in the r-band). In any case, we care about the number of electrons excited by photons, not the number of photons that do the exciting. Exactly why is a more detailed explanation, but in brief QE is a stochastic binomial filtering process, not an exact fraction. Since every photon has, say, a 50% chance of either exciting an electron or not, the net result is it is the photo-electrons that produce the image shot-noise and have a Poisson distribution (error goes as $\sqrt{N}$ for large $N$). A quick R proof:
+An important point to note is that the image is represented, in its rawest form, in photo-electron counts (not photon counts). For modern CCDs the difference tends not to be much (quantum efficiency / QE = 0.9 typically in the r-band). In any case, we care about the number of electrons excited by photons, not the number of photons that do the exciting. Exactly why is a more detailed explanation, but in brief QE is a stochastic binomial filtering process, not an exact fraction. Since every photon has, say, a 50% chance of either exciting an electron or not, the net result is that it is the photo-electrons that produce the image shot-noise and have a Poisson distribution (error goes as $\sqrt{N}$ for large $N$). A quick R proof:
 
 ```{r}
 RanPois=rpois(n=1e4, lambda=400)
@@ -65,7 +65,7 @@ Since the image we have made is in photo-electron counts by construction, we sho
 sigma_elec=sqrt(image_elec)
 ```
 
-To our image we should add a realistic component of sky flux/counts. This clearly introduces its own component of image shot-noise. Typically sky counts tend to number 100s and sky noise tends to be in the regime of 10s of counts for well exposed data (e.g. $\sqrt{400}=20$). To add the error correctly we have to add things together in quadrature.
+To our image we should add a realistic component of sky flux/counts. This clearly introduces its own component of image shot-noise. Typically sky photon-electron counts tend to number 100s and sky noise tends to be in the regime of 10s of counts for well exposed data (e.g. $\sqrt{400}=20$). To add the error correctly we have to add things together in quadrature.
 
 ```{r}
 sky_elec=400
@@ -125,7 +125,7 @@ image_ADU_sub_noise=image_ADU_sub+rnorm(length(image_ADU_sub), mean=0, sd=sigma_
 magimage(image_ADU_sub_noise)
 ```
 
-Notice this fairly realistic image is much shallower than the first one we made. We cannot observe so far into the low surface brightness wings of the galaxy due to the various noise components that do not come from the galaxy object shot noise (read, dark, sky). This is why it is important to observe galaxies in dark sites- galaxies a pretty dim compared to the typical night sky we observe on the ground.
+Notice this fairly realistic image is much shallower than the first one we made. We cannot observe so far into the low surface brightness wings of the galaxy due to the various noise components that do not come from the galaxy object shot noise (read, dark, sky). This is why it is important to observe galaxies in dark sites- galaxies are pretty dim compared to the typical night sky we observe on the ground.
 
 ## Transform data back to a sigma map
 
@@ -145,7 +145,7 @@ sigma_est_1=sqrt((image_ADU_sub_noise+sky_ADU)*gain_elec_ADU + read_elec_noise^2
 Now we can compare this estimated sigma map against the exact answer we know from above. It should be a delta function at 1 if it was precisely correct everywhere on the image.
 
 ```{r, fig.width=5, fig.height=5}
-maghist(sigma_est_1/sigma_elec*gain_elec_ADU)
+maghist((sigma_est_1/sigma_elec)*gain_elec_ADU)
 ```
 
 So even with this high quality of meta information we find a few percent uncertainty in our estimated sigma map. Even this scenario is a bit optimisitic in practice, but it is achievable with data sources that include a lot of meta data and helpful online documentation (e.g.\ SDSS, HST).
@@ -191,7 +191,7 @@ sigma_est_2=sqrt(image_ADU_sub_noise/gain_elec_ADU+sky_pix_ADU_noise^2)
 maghist(sigma_est_2/sigma_elec*gain_elec_ADU)
 ```
 
-This histogram looks much like our first estimate, but it is a tiny bit skewed to lower values. In practice both produce decent Normal residuls (sd~1) when we look at (Data-Model)/Sigma. The best we can possibly do is:
+This histogram looks much like our first estimate, but it is a tiny bit skewed to lower values. In practice both produce decent Normal residuals (sd~1) when we look at (Data-Model)/Sigma. The best we can possibly do is:
 
 ```{r}
 sd((image_ADU_sub_noise-image_ADU_sub)/sigma_elec)*gain_elec_ADU
