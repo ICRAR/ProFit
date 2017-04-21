@@ -1,5 +1,8 @@
 profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE, 
-  options=list(method="Bruteconv")){
+  options=list(method="Bruteconv"), sky=0){
+  if(sky!=0){
+    image=image-sky
+  }
   if(missing(calcregion)){
     if(docalcregion){
       calcregion=matrix(1,dim(image)[1],dim(image)[2])
@@ -61,6 +64,9 @@ profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE,
       imagepad = fft(imagepad, inverse = TRUE)/options$fft$paddim[1]/options$fft$paddim[2]
     }
     output=Re(imagepad)[options$fft$cropx,options$fft$cropy]
+  }
+  if(sky!=0){
+    output=output+sky
   }
   return(output)
 }

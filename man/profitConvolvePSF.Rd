@@ -30,7 +30,7 @@ Logical; should the \option{calcregion} logical matrix be used to define a subse
 }
 }
 \details{
-In the regime where one image is significantly (a factor of a few) smaller than the other image, this tends to be faster than FFT based convolution due to the lack of image padding and other overheads. PSf images tend to be only dozens of pixels and images 100s, so brute force convolution is the standard approach used in ProFit. This function offers a convenient high level interface to \code{link{profitBruteConv}}, which can only accept odd size dimensions for the PSF.
+In the regime where one image is significantly (a factor of a few) smaller than the other image, this tends to be faster than FFT based convolution due to the lack of image padding and other overheads. PSF images tend to be only dozens of pixels and images 100s, so brute force convolution is the standard approach used in ProFit. This function offers a convenient high level interface to \code{link{profitBruteConv}}, which can only accept odd size dimensions for the PSF.
 }
 \value{
 Matrix; convolved image matrix the same size as the input \option{image} matrix.

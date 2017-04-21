@@ -58,7 +58,6 @@ profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth
   if(stats){
     segvec=as.integer(names(table(segim)))
     segvec=segvec[segvec>0]
-    image=image-median(image[objects==0],na.rm = TRUE)
     flux={}
     Nseg={}
     pixloc={}
@@ -77,7 +76,7 @@ profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth
   return=list(objects=objects, segim=segim, segstats=segstats)
 }
 
-profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=1, smooth=TRUE, fwhm=2, dim=c(25,25), expand='all', plot=FALSE, stats=TRUE){
+profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=5, smooth=TRUE, expandfwhm=2, dim=c(25,25), expand='all', plot=FALSE, stats=TRUE){
   imageorig=image
   sky=profitSkyEst(image,mask,plot=plot)
   image=(image-sky$sky)/sky$skyRMS
@@ -89,8 +88,8 @@ profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=1, smoot
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
-  image[image<=0]=min(image[image>0], na.rm=TRUE)
-  kernel=profitMakeGaussianPSF(fwhm = fwhm, dim=dim)
+  #image[image<=0]=min(image[image>0], na.rm=TRUE)
+  kernel=profitMakeGaussianPSF(fwhm = expandfwhm, dim=dim)
   maxmat=matrix(0,xlen,ylen)
   segim_new=matrix(-1,xlen,ylen)
   segvec=as.integer(names(table(segim)))
@@ -113,7 +112,6 @@ profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=1, smoot
   }
   objects=segim_new>0
   if(stats){
-    image=image-median(image[objects==0],na.rm = TRUE)
     flux={}
     Nseg={}
     pixloc={}

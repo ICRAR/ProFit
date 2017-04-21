@@ -8,7 +8,7 @@ Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Get data / Define model / ??? / ProFit! ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation library and a flexible interface to a large number of likelihood samplers.
 License: GPL-3
 Imports: fftw, Rcpp (>= 0.11.6)
-Depends: R (>= 3.0), FITSio, LaplacesDemon, magicaxis, R2Cuba, RColorBrewer
+Depends: R (>= 3.0), FITSio, LaplacesDemon, magicaxis, R2Cuba, RColorBrewer, dbscan
 LinkingTo: Rcpp
 Suggests: knitr, rmarkdown, foreach, doParallel
 VignetteBuilder: knitr
