@@ -1,12 +1,14 @@
-profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth=TRUE, eps=3, minPts=3, plot=FALSE, stats=TRUE){
-  imageorig=image
-  sky=profitSkyEst(image,mask,plot=plot)
-  image=(image-sky$sky)/sky$skyRMS
+profitSegIm=function(image, mask=0, skycut=5, clipiters=10, sigma=1, smooth=TRUE, eps=3, minPts=3, plot=FALSE, stats=TRUE){
+  sky=profitSkyEst(image,mask,plot=plot)$sky
+  skyRMS=profitSkyEst(profitImDiffBlur(image,1),mask,plot=plot)$skyRMS
+  image_sky=image-sky
+  image=image_sky/skyRMS
   if(plot){
     magimage(image)
   }
   if(smooth){
-    image=profitConvolvePSF(image,profitMakeGaussianPSF(smoothfwhm))
+    image=as.matrix(isoblur(as.cimg(image),sigma))
+    #image=profitConvolvePSF(image,profitMakeGaussianPSF(sigma))
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -23,17 +25,17 @@ profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth
   #   for(i in 1:clipiters){
   #     oldlen=newlen
   #     roughsky=median(tempval, na.rm = TRUE)
-  #     vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*sigcut+roughsky
+  #     vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*skycut+roughsky
   #     temprad=tempradorig[mask==0 & tempvalorig<vallims]
   #     tempval=tempvalorig[mask==0 & tempvalorig<vallims]
   #     newlen=length(tempval)
   #     if(oldlen==newlen){break}
   #   }
   # }else{
-  #   pcut=pnorm(-sigcut)
-  #   vallims=diff(quantile(tempval,c(pnorm(-1),0.5)))*sigcut
+  #   pcut=pnorm(-skycut)
+  #   vallims=diff(quantile(tempval,c(pnorm(-1),0.5)))*skycut
   # }
-  objects=image>sigcut
+  objects=image>skycut
   refs=which(objects,arr.ind = TRUE)
   #tempopt=optics(refs, eps=eps, minPts=minPts, eps_cl=eps_cl)
   tempopt=dbscan(refs, eps=eps, minPts=minPts)
@@ -46,10 +48,9 @@ profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth
     tempcon=magimage(segim,add=T,magmap=F,col=NA)
     x=tempcon$x
     y=tempcon$y
-    colvec=rainbow(len,start = 0,end = 2/3)
     for(i in 1:len){
       z=tempcon$z==rangevec[i]
-      contour(x,y,z,add=T,col=colvec[i],xlim=c(0,1),drawlabels=FALSE)
+      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
     }
   }
   temp=matrix(0, xlen, ylen)
@@ -66,7 +67,7 @@ profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth
       segtemp[segim==i]=1
       segtemp[segim!=i]=0
       Nseg=c(Nseg,sum(segtemp))
-      flux=c(flux,sum(imageorig*segtemp))
+      flux=c(flux,sum(image_sky*segtemp))
       pixloc=rbind(pixloc, which(segim==i & image==max(image[segim==i]),arr.ind = T)-0.5)
     }
     segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux)
@@ -76,20 +77,22 @@ profitSegIm=function(image, mask=0, sigcut=5, clipiters=10, smoothfwhm=1, smooth
   return=list(objects=objects, segim=segim, segstats=segstats)
 }
 
-profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=5, smooth=TRUE, expandfwhm=2, dim=c(25,25), expand='all', plot=FALSE, stats=TRUE){
-  imageorig=image
-  sky=profitSkyEst(image,mask,plot=plot)
-  image=(image-sky$sky)/sky$skyRMS
+profitSegImExpand=function(image, segim, mask=0, skycut=1.5, sigma=1, smooth=TRUE, expandsigma=2, dim=c(25,25), expand='all', plot=FALSE, stats=TRUE){
+  sky=profitSkyEst(image,mask,plot=plot)$sky
+  skyRMS=profitSkyEst(profitImDiffBlur(image,1),mask,plot=plot)$skyRMS
+  image_sky=image-sky
+  image=image_sky/skyRMS
   if(plot){
     magimage(image)
   }
   if(smooth){
-    image=profitConvolvePSF(image,profitMakeGaussianPSF(smoothfwhm))
+    image=as.matrix(isoblur(as.cimg(image),sigma))
+    #image=profitConvolvePSF(image,profitMakeGaussianPSF(sigma))
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   #image[image<=0]=min(image[image>0], na.rm=TRUE)
-  kernel=profitMakeGaussianPSF(fwhm = expandfwhm, dim=dim)
+  #kernel=profitMakeGaussianPSF(fwhm = expandsigma, dim=dim)
   maxmat=matrix(0,xlen,ylen)
   segim_new=matrix(-1,xlen,ylen)
   segvec=as.integer(names(table(segim)))
@@ -100,13 +103,14 @@ profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=5, smoot
     segtemp[segim==i]=1
     segtemp[segim!=i]=0
     if(i %in% expand){
-      temp=profitConvolvePSF(segtemp, psf = kernel)
+      temp=as.matrix(isoblur(as.cimg(segtemp), expandsigma))
+      #temp=profitConvolvePSF(segtemp, kernel)
     }else{
       temp=segtemp
     }
     tempmult=temp*image
     segsel=tempmult>maxmat
-    segsel=segsel & image>sigcut
+    segsel=segsel & image>skycut
     segim_new[segsel]=i
     maxmat[segsel]=tempmult[segsel]
   }
@@ -120,7 +124,7 @@ profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=5, smoot
       segtemp[segim_new==i]=1
       segtemp[segim_new!=i]=0
       Nseg=c(Nseg,sum(segtemp))
-      flux=c(flux,sum(imageorig*segtemp))
+      flux=c(flux,sum(image_sky*segtemp))
       pixloc=rbind(pixloc, which(segim_new==i & image==max(image[segim_new==i]),arr.ind = T)-0.5)
     }
     segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux)
@@ -134,36 +138,35 @@ profitSegImExpand=function(image, segim, mask=0, sigcut=1.5, smoothfwhm=5, smoot
     tempcon=magimage(segim_new,add=T,magmap=F,col=NA)
     x=tempcon$x
     y=tempcon$y
-    colvec=rainbow(len,start = 0,end = 2/3)
     for(i in 1:len){
       z=tempcon$z==rangevec[i]
-      contour(x,y,z,add=T,col=colvec[i],xlim=c(0,1),drawlabels=FALSE)
+      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
     }
   }
   return=list(objects=objects , segim=segim_new, segstats=segstats)
 }
 
-profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), sigcut=3, clipiters=5, radweight=1, plot=FALSE){
+profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=3, clipiters=5, radweight=1, plot=FALSE){
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   tempref=as.matrix(expand.grid(1:xlen,1:ylen))
   xcen=xlen/2; ycen=ylen/2
   temprad=sqrt((tempref[,1]-xcen)^2+(tempref[,2]-ycen)^2)
   #Keep only pixels inside the radius bounds given by cutlo and cuthi
-  keep=temprad>cutlo & temprad<cuthi
+  keep=temprad>=cutlo & temprad<=cuthi
   #Trim
   tempref=tempref[keep & mask==0,]
   tempval=image[tempref]
   temprad=temprad[keep & mask==0]
   #Do iterative 3-sigma pixel clipping
   if(clipiters>0){
-    pcut=pnorm(-sigcut)
+    pcut=pnorm(-skycut)
     newlen=length(tempval)
     for(i in 1:clipiters){
       oldlen=newlen
       roughsky=median(tempval, na.rm = TRUE)
-      vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*sigcut
-      cutlogic=tempval>(roughsky-vallims*5) & tempval<(roughsky+vallims)
+      vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*skycut
+      cutlogic=tempval>(roughsky-vallims*3) & tempval<(roughsky+vallims)
       temprad=temprad[cutlogic]
       tempval=tempval[cutlogic]
       newlen=length(tempval)
@@ -196,7 +199,7 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
     abline(v=c(sky-skyerr,sky,sky+skyerr),lty=c(3,1,3),col='blue')
     abline(v=c(sky-skyRMS,sky+skyRMS),lty=2,col='red')
     legend('topleft', legend=c('Sky Data', 'Sky Level', 'Sky RMS'), lty=1, col=c('black','blue','red'))
-    magplot(tempmedian)
+    #magplot(tempmedian)
   }
   #tempgain=1/sd(tempval,na.rm=TRUE)
   # tempgain=1
@@ -231,7 +234,7 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
   return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian,skypix=tempval)
 }
 
-profitImGrad=function(image, sigma=2, plot=FALSE){
+profitImGradBlur=function(image, sigma=1, plot=FALSE){
   grad=enorm(imgradient(isoblur(as.cimg(image),sigma), "xy"))
   output=as.matrix(grad)
   if(plot){
@@ -240,11 +243,66 @@ profitImGrad=function(image, sigma=2, plot=FALSE){
   return=output
 }
 
-profitFindSeed=function(image,sigma=2, plot=FALSE){
+profitImDiffBlur=function(image,sigma=1, plot=FALSE){
   blur=as.matrix(isoblur(as.cimg(image),sigma))
   output=image-blur
   if(plot){
     magimage(output)
   }
   return=output
+}
+
+profitWatershed=function(image,mask=0,tolerance=1, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, plot=FALSE,stats=TRUE){
+  sky=profitSkyEst(image,mask,plot=plot)$sky
+  skyRMS=profitSkyEst(profitImDiffBlur(image,1),mask,plot=plot)$skyRMS
+  image_sky=image-sky
+  image=image_sky/skyRMS
+  if(plot){
+    magimage(image)
+  }
+  if(smooth){
+    image=as.matrix(isoblur(as.cimg(image),sigma))
+    #image=profitConvolvePSF(image,profitMakeGaussianPSF(sigma))
+  }
+  xlen=dim(image)[1]
+  ylen=dim(image)[2]
+  image[image<skycut]=0
+  segim=imageData(watershed(as.Image(image),tolerance=tolerance,ext=ext))
+  segtab=tabulate(segim)
+  segim[segim %in% which(segtab<pixcut)]=0
+  if(plot){
+    range=range(which(segtab>=pixcut))
+    rangevec=0:range[2]
+    len=range[2]-range[1]
+    tempcon=magimage(segim,add=T,magmap=F,col=NA)
+    x=tempcon$x
+    y=tempcon$y
+    for(i in 1:len){
+      z=tempcon$z==rangevec[i]
+      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
+    }
+  }
+  objects=segim>0
+  temp=matrix(0, xlen, ylen)
+  temp[objects]=1
+  objects=temp
+  if(stats){
+    segvec=as.integer(names(table(segim)))
+    segvec=segvec[segvec>0]
+    flux={}
+    Nseg={}
+    pixloc={}
+    for(i in segvec){
+      segtemp=segim
+      segtemp[segim==i]=1
+      segtemp[segim!=i]=0
+      Nseg=c(Nseg,sum(segtemp))
+      flux=c(flux,sum(image_sky*segtemp))
+      pixloc=rbind(pixloc, which(segim==i & image==max(image[segim==i]),arr.ind = T)-0.5)
+    }
+    segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux)
+  }else{
+    segstats=NULL
+  }
+  return=list(objects=objects, segim=segim, segstats=segstats)
 }
