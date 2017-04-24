@@ -19,7 +19,7 @@ library(ProFit)
 
 The support for OpenCL compatible graphics cards is described in a bit of detail in the help for **profitOpenCLEnv** **profitOpenCLEnvInfo**. This should generally work more-or-less out the box if you have a compatible card on your local machine (mileage may vary though). An example using the defaults (that uses the first vaialbel card on your machine if possible):
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 modellist = list(
   sersic = list(
     xcen   = c(180, 60),
@@ -53,14 +53,14 @@ You can see the kind of speed up this offers us by comparing these timings.
 
 First a single big image:
 
-```{r}
+```{r, eval=FALSE}
 system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000), openclenv=tempCL))
 system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000), openclenv={}))
 ```
 
 Next 100 smaller images:
 
-```{r}
+```{r, eval=FALSE}
 system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL)})
 system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), openclenv={})})
 ```
@@ -133,14 +133,14 @@ You can see the kind of speed up this offers us by comparing these timings.
 
 First a single big image:
 
-```{r}
+```{r, eval=FALSE}
 system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000)))
 system.time(profitMakeModel(modellist=modellist, dim=c(2000,2000), omp_threads=4))
 ```
 
 Next 100 smaller images:
 
-```{r}
+```{r, eval=FALSE}
 system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200))})
 system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200), omp_threads=4)})
 ```
@@ -151,7 +151,7 @@ On my (ASGR's) MacBook Pro circa 2012 with a quad 2.6 GHz Intel Core i7 CPU I se
 
 The other way you might make use of multiple cores is using **foreach**, so we can compare the runtime to this easily, also using 4 cores.
 
-```{r}
+```{r, eval=FALSE}
 library(doParallel)
 library(foreach)
 registerDoParallel(cores=4)
@@ -159,7 +159,7 @@ registerDoParallel(cores=4)
 
 Again, for 100 smaller images:
 
-```{r}
+```{r, eval=FALSE}
 system.time(foreach(i=1:100)%do%{profitMakeModel(modellist=modellist, dim=c(200,200))})
 system.time(foreach(i=1:100)%dopar%{profitMakeModel(modellist=modellist, dim=c(200,200))})
 ```

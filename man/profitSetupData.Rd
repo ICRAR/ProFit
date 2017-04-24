@@ -12,7 +12,7 @@ profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, prio
 intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0,
 algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
 benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE,
-openclenv = NULL)
+openclenv = NULL, omp_threads = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,7 +29,7 @@ Sigma matrix; optional, the measurement errors per pixel (expressed in terms of 
 Segmentation matrix; optional, the full segmentation map of the image. If \option{region} is not provided then value of the central pixel is used to select the segmented pixels of the galaxy we want to fit. The log-likelihood is then computed using only these pixels. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{mask}{
-Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If \option{region} is not provided then 0 values are used to define the common area to sue for fitting. This matrix *must* be the same dimensions as \option{image}.
+Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If \option{region} is not provided then 0 values are used to define the common area to use for fitting. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{modellist}{
 List; required, the initial model list that describes the analytic model to be created. Can contain an analytical PSF model as well. See Details.
@@ -81,6 +81,9 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
   }
   \item{openclenv}{
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
+  }
+  \item{omp_threads}{
+  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
   }
 }
 \details{

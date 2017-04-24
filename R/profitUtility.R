@@ -1,0 +1,383 @@
+profitMag2Mu=function(mag=15, re=1, axrat=1, pixscale=1){
+  return(mag+2.5*log10(pi*re^2*axrat)-2.5*log10(0.5)+5*log10(pixscale))
+}
+
+profitMu2Mag=function(mu=17, re=1, axrat=1, pixscale=1){
+  return(mu-2.5*log10(pi*re^2*axrat)+2.5*log10(0.5)-5*log10(pixscale))
+}
+
+profitAddMats=function(matbase,matadd,addloc=c(1,1)){
+  newmat=matrix(0,dim(matbase)[1]+dim(matadd)[1]*2,dim(matbase)[2]+dim(matadd)[2]*2)
+  xrangebase=(dim(matadd)[1]+1):(dim(matadd)[1]+dim(matbase)[1])
+  yrangebase=(dim(matadd)[2]+1):(dim(matadd)[2]+dim(matbase)[2])
+  newmat[xrangebase,yrangebase]=matbase
+  xrangeadd=(addloc[1]+dim(matadd)[1]):(addloc[1]+2*dim(matadd)[1]-1)
+  yrangeadd=(addloc[2]+dim(matadd)[2]):(addloc[2]+2*dim(matadd)[2]-1)
+  if(min(xrangeadd)>=1 & max(xrangeadd)<=dim(newmat)[1] & min(yrangeadd)>=1 & max(yrangeadd)<=dim(newmat)[2]){
+    newmat[xrangeadd,yrangeadd]=newmat[xrangeadd,yrangeadd]+matadd
+  }
+  return=newmat[xrangebase,yrangebase]
+}
+
+profitCheckFinesample <- function(finesample)
+{
+  stopifnot(is.integer(finesample) && finesample >= 1L)
+}
+
+profitParseLikefunc <- function(funcname)
+{
+  funcname=tolower(funcname)
+  if(funcname=="norm" | funcname=="normal")
+  {
+    return("norm")
+  }
+  else if(funcname=="chisq" | funcname=="chi-sq")
+  {
+    return("chisq")
+  }
+  else if(funcname=="t" | funcname=='student' | funcname=='student-t') {
+    return("t")
+  }
+  else if(funcname=="pois" | funcname=="poisson" | funcname=="cash" | funcname=="c") {
+    return("pois")
+  }
+  else {
+    stop(paste0("Error: unknown likelihood function: '",funcname,"'"))
+  }
+}
+
+# profitSegIm=function(image, mask=0, skycut=5, clipiters=10, sigma=1, smooth=TRUE, eps=3, minPts=3, plot=FALSE, stats=TRUE, ...){
+#   if(!requireNamespace("base", quietly = TRUE)){
+#     stop('The dbscan package is needed for this function to work. Please install it.', call. = FALSE)
+#   }
+#   if(!requireNamespace("imager", quietly = TRUE)){
+#     stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+#   }
+#   sky=profitSkyEst(image,mask,plot=FALSE)$sky
+#   skyRMS=profitSkyEst(profitImDiff(image,1),mask,plot=FALSE)$skyRMS
+#   image_sky=image-sky
+#   image=image_sky/skyRMS
+#   if(plot){
+#     magimage(image, ...)
+#   }
+#   if(smooth){
+#     image=as.matrix(isoblur(as.cimg(image),sigma))
+#   }
+#   xlen=dim(image)[1]
+#   ylen=dim(image)[2]
+#   objects=image>skycut
+#   refs=which(objects,arr.ind = TRUE)
+#   tempopt=dbscan(refs, eps=eps, minPts=minPts)
+#   segim=matrix(-1, xlen, ylen)
+#   segim[refs]=tempopt$cluster
+#   if(plot){
+#     tempcon=magimage(segim,add=T,magmap=F,col=NA)
+#     x=tempcon$x
+#     y=tempcon$y
+#     segvec=which(tabulate(segim)>0)
+#     for(i in segvec){
+#       z=tempcon$z==i
+#       contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
+#     }
+#   }
+#   temp=matrix(0, xlen, ylen)
+#   temp[objects]=1
+#   objects=temp
+#   if(stats){
+#     segvec=which(tabulate(segim)>0)
+#     segvec=segvec[segvec>0]
+#     flux={}
+#     Nseg={}
+#     pixloc={}
+#     for(i in segvec){
+#       segtemp=segim
+#       segtemp[segim==i]=1
+#       segtemp[segim!=i]=0
+#       Nseg=c(Nseg,sum(segtemp))
+#       flux=c(flux,sum(image_sky*segtemp))
+#       pixloc=rbind(pixloc, which(segim==i & image==max(image[segim==i], na.rm=T),arr.ind = T)-0.5)
+#     }
+#     segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux, SB=flux/Nseg)
+#     sky=profitSkyEst(image,mask=objects,plot=FALSE)$sky
+#     skyRMS=profitSkyEst(profitImDiff(image,1),mask=objects,plot=FALSE)$skyRMS
+#   }else{
+#     segstats=NULL
+#   }
+#   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
+# }
+
+profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', plot=FALSE, stats=TRUE, ...){
+  if(!requireNamespace("imager", quietly = TRUE)){
+    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+  }
+  sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  skyRMS=profitSkyEst(profitImDiff(image,1),mask,plot=FALSE)$skyRMS
+  image_sky=image-sky
+  image=image_sky/skyRMS
+  if(plot){
+    magimage(image, ...)
+  }
+  if(smooth){
+    image=as.matrix(isoblur(as.cimg(image),sigma))
+  }
+  xlen=dim(image)[1]
+  ylen=dim(image)[2]
+  image[image<=0]=min(image[image>0], na.rm=TRUE)
+  kernel=profitMakeGaussianPSF(fwhm = expandsigma, dim=dim)
+  maxmat=matrix(0,xlen,ylen)
+  segim_new=matrix(-1,xlen,ylen)
+  segvec=which(tabulate(segim)>0)
+  segvec=segvec[segvec>0]
+  if(expand[1]=='all'){expand=segvec}
+  for(i in segvec){
+    segtemp=segim
+    segtemp[segim==i]=1
+    segtemp[segim!=i]=0
+    if(i %in% expand){
+      temp=profitConvolvePSF(segtemp, kernel)
+    }else{
+      temp=segtemp
+    }
+    tempmult=temp*image
+    segsel=tempmult>maxmat
+    if(skycut>0){
+      segsel=segsel & image>skycut
+    }
+    segim_new[segsel]=i
+    maxmat[segsel]=tempmult[segsel]
+  }
+  objects=segim_new>0
+  if(stats){
+    segvec=which(tabulate(segim_new)>0)
+    flux={}
+    Nseg={}
+    pixloc={}
+    for(i in segvec){
+      segtemp=segim_new
+      segtemp[segim_new==i]=1
+      segtemp[segim_new!=i]=0
+      Nseg=c(Nseg,sum(segtemp))
+      flux=c(flux,sum(image_sky*segtemp))
+      pixloc=rbind(pixloc, which(segim_new==i & image==max(image[segim_new==i],na.rm=T),arr.ind = T)-0.5)
+    }
+    segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux, SB=flux/Nseg)
+  }else{
+    segstats=NULL
+  }
+  if(plot){
+    tempcon=magimage(segim_new,add=T,magmap=F,col=NA)
+    x=tempcon$x
+    y=tempcon$y
+    segvec=which(tabulate(segim_new)>0)
+    for(i in segvec){
+      z=tempcon$z==i
+      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
+    }
+  }
+  return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
+}
+
+profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=2, clipiters=5, radweight=0.5, plot=FALSE, ...){
+  xlen=dim(image)[1]
+  ylen=dim(image)[2]
+  tempref=as.matrix(expand.grid(1:xlen,1:ylen))
+  xcen=xlen/2; ycen=ylen/2
+  temprad=sqrt((tempref[,1]-xcen)^2+(tempref[,2]-ycen)^2)
+  #Keep only pixels inside the radius bounds given by cutlo and cuthi
+  keep=temprad>=cutlo & temprad<=cuthi
+  #Trim
+  tempref=tempref[keep & mask==0,]
+  tempval=image[tempref]
+  temprad=temprad[keep & mask==0]
+  #Do iterative 3-sigma pixel clipping
+  if(clipiters>0){
+    pcut=pnorm(-skycut)
+    newlen=length(tempval)
+    for(i in 1:clipiters){
+      oldlen=newlen
+      roughsky=median(tempval, na.rm = TRUE)
+      vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*skycut
+      cutlogic=tempval>(roughsky-vallims*3) & tempval<(roughsky+vallims)
+      temprad=temprad[cutlogic]
+      tempval=tempval[cutlogic]
+      newlen=length(tempval)
+      if(oldlen==newlen){break}
+    }
+  }
+  #Find the running medians for the data
+  tempmedian=magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T)
+  if(plot){magplot(density(tempval),...)}
+  tempylims=tempmedian$ysd
+  tempy=tempmedian$y
+  #Calculate worst case sky error- the sd of the medians calculated
+  skyerr=sd(tempy)
+  #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
+  weights=1/((tempmedian$x^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
+  #Find the weighted mean of the medians
+  sky=sum(tempy*weights)/(sum(weights))
+  #Now we iterate until no running medians are outside the 1-sigma bound of the sky
+  while(any(!(tempylims[,1]<=sky & tempylims[,2]>=sky)) & all(!(tempylims[,1]<=sky & tempylims[,2]>=sky))==FALSE){
+    tempy=tempy[tempylims[,1]<=sky & tempylims[,2]>=sky]
+    weights=weights[tempylims[,1]<=sky & tempylims[,2]>=sky]
+    tempylims=rbind(tempylims[tempylims[,1]<=sky & tempylims[,2]>=sky,])
+    sky=sum(tempy*weights)/(sum(weights))
+  }
+  #Find the number of running medians that agree with the final sky within error bounds (max=10)
+  Nnearsky=length(tempylims[,1])
+  skyRMS=mean((tempylims[,2]-tempylims[,1])/2)*sqrt(mean(tempmedian$Nbins))
+  if(plot){
+    lines(seq(sky-5*skyRMS, sky+5*skyRMS, len=1e3), dnorm(seq(sky-5*skyRMS, sky+5*skyRMS, len=1e3), mean=sky, sd=skyRMS), col='red')
+    abline(v=c(sky-skyerr,sky,sky+skyerr),lty=c(3,1,3),col='blue')
+    abline(v=c(sky-skyRMS,sky+skyRMS),lty=2,col='red')
+    legend('topleft', legend=c('Sky Data', 'Sky Level', 'Sky RMS'), lty=1, col=c('black','blue','red'))
+  }
+  #tempgain=1/sd(tempval,na.rm=TRUE)
+  # tempgain=1
+  # converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
+  # while(abs(converge-1)>1e-4){
+  #   print(tempgain)
+  #   print(converge)
+  #   converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
+  #   tempgain=tempgain/converge
+  # }
+  # gainlo=tempgain
+  # tempgain=100*tempgain
+  # converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
+  # while(abs(converge-1)>1e-4){
+  #   print(tempgain)
+  #   print(converge)
+  #   converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
+  #   tempgain=tempgain/converge
+  # }
+  # gainhi=tempgain
+  # tempvar={}
+  # tempmean={}
+  # tempanscomb={}
+  # for(i in gainrange){
+  #   newval=tempval*10^i
+  #   transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
+  #   tempvar=c(tempvar,var(newval,na.rm=T))
+  #   tempmean=c(tempmean, mean(newval+var(newval),na.rm=T))
+  #   tempanscomb=c(tempanscomb, var(transform,na.rm=T))
+  # }
+  #gaintable=cbind(gainrange,tempmean,tempvar,tempanscomb)
+  return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian,skypix=tempval)
+}
+
+profitImBlur=function(image, sigma=1, plot=FALSE, ...){
+  if(!requireNamespace("imager", quietly = TRUE)){
+    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+  }
+  output=as.matrix(isoblur(as.cimg(image),sigma))
+  if(plot){
+    magimage(output, ...)
+  }
+  return=output
+}
+
+profitImGrad=function(image, sigma=1, plot=FALSE, ...){
+  if(!requireNamespace("imager", quietly = TRUE)){
+    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+  }
+  output=as.matrix(enorm(imgradient(isoblur(as.cimg(image),sigma), "xy")))
+  if(plot){
+    magimage(output, ...)
+  }
+  return=output
+}
+
+profitImDiff=function(image,sigma=1, plot=FALSE, ...){
+  if(!requireNamespace("imager", quietly = TRUE)){
+    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+  }
+  blur=as.matrix(isoblur(as.cimg(image),sigma))
+  output=image-blur
+  if(plot){
+    magimage(output, ...)
+  }
+  return=output
+}
+
+profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, plot=FALSE,stats=TRUE, ...){
+  if(!requireNamespace("imager", quietly = TRUE)){
+    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+  }
+  if(!requireNamespace("EBImage", quietly = TRUE)){
+    stop('The EBImage package is needed for this function to work. Please install it.', call. = FALSE)
+  }
+  sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  skyRMS=profitSkyEst(profitImDiff(image,1),mask,plot=FALSE)$skyRMS
+  image_sky=image-sky
+  image=image_sky/skyRMS
+  if(plot){
+    magimage(image, ...)
+  }
+  if(smooth){
+    image=as.matrix(isoblur(as.cimg(image),sigma))
+  }
+  xlen=dim(image)[1]
+  ylen=dim(image)[2]
+  image[image<skycut]=0
+  segim=imageData(watershed(as.Image(image),tolerance=tolerance,ext=ext))
+  segtab=tabulate(segim)
+  segim[segim %in% which(segtab<pixcut)]=0
+  if(plot){
+    tempcon=magimage(segim,add=T,magmap=F,col=NA)
+    x=tempcon$x
+    y=tempcon$y
+    segvec=which(tabulate(segim)>0)
+    for(i in segvec){
+      z=tempcon$z==i
+      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
+    }
+  }
+  objects=segim>0
+  temp=matrix(0, xlen, ylen)
+  temp[objects]=1
+  objects=temp
+  if(stats){
+    segvec=which(tabulate(segim)>0)
+    segvec=segvec[segvec>0]
+    flux={}
+    Nseg={}
+    pixloc={}
+    for(i in segvec){
+      segtemp=segim
+      segtemp[segim==i]=1
+      segtemp[segim!=i]=0
+      Nseg=c(Nseg,sum(segtemp))
+      flux=c(flux,sum(image_sky*segtemp))
+      pixloc=rbind(pixloc, which(segim==i & image==max(image[segim==i], na.rm=T),arr.ind = T)-0.5)
+    }
+    segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux, SB=flux/Nseg)
+  }else{
+    segstats=NULL
+  }
+  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
+}
+
+profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0){
+  image=image-sky
+  return=sqrt(image/gain+skyRMS/gain+readRMS/gain+darkRMS/gain)
+}
+
+profitGainEst=function(image, mask, sky=0){
+  image=image-sky
+  tempval=as.numeric(image[mask==0])
+  
+  tempfunc=function(gain,tempval){
+    newval=tempval*10^gain
+    transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
+    return=var(transform,na.rm=T)
+  }
+  
+  # tempfunc2=function(gain,tempval){
+  #   newval=tempval*10^gain
+  #   transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
+  #   return=abs(1-var(transform,na.rm=T))
+  # }
+  
+  findgain=optimise(tempfunc,interval=c(-100,100),tempval=tempval,maximum=TRUE)
+  #findgain2=optimise(tempfunc1,interval=c(-100,100),tempval=tempval,maximum=FALSE)
+  return(list(gain=findgain$maximum, quality=findgain$objective-1))
+}

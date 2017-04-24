@@ -6,7 +6,7 @@ Low level brute force image convolution
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
-A low level direct Rcpp implementation of brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. In most situations users should make convolutions using the higher level \code{\link{profitConvolvePSF}} provided.
+A low level direct C++ implementation of brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. In most situations users should make convolutions using the higher level \code{\link{profitConvolvePSF}} provided.
 }
 \usage{
 profitBruteConv(image, psf, calcregion=matrix(1,1,1), docalcregion=FALSE)
