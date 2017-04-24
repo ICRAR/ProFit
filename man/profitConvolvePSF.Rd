@@ -9,7 +9,7 @@ A high level interface to fast convolution that takes a user supplied image and 
 }
 \usage{
 profitConvolvePSF(image, psf, calcregion, docalcregion=FALSE, 
-  options=list(method="Bruteconv"))
+  options=list(method="Bruteconv"), sky = 0)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -23,10 +23,13 @@ The point spread function (PSF) image matrix that ProFit will use to convolve th
 Additional options for model convolution parsed as a list. option$method inputs allowed are Bruteconv (brute force convolution), FFTconv (FFT convolution using the R \code{\link{fft}} function) and FFTWconv (FFT using the FFTW library).
 }
   \item{calcregion}{
-Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
+Logical matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
 }
   \item{docalcregion}{
 Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
+}
+  \item{sky}{
+Numeric scalar;  the sky level of the image. Thsi is important to ensure the convolution works well at the edges, since the padded regions outside the image bounds will be effectively set to the \option{sky} value. If this is much higher of lower than the true sky then you may see artefacts.
 }
 }
 \details{

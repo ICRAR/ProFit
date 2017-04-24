@@ -12,7 +12,7 @@ profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, prio
 intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0,
 algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
 benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE,
-openclenv = NULL)
+openclenv = NULL, omp_threads = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -81,6 +81,9 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
   }
   \item{openclenv}{
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
+  }
+  \item{omp_threads}{
+  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
   }
 }
 \details{

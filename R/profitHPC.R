@@ -12,3 +12,7 @@ profitOpenCLEnv = function(plat_idx=1, dev_idx=1, use_double=FALSE) {
 profitHasOpenCL = function() {
   return(!is.null(profitOpenCLEnvInfo()))
 }
+
+profitHasOpenMP <- function() {
+	.Call('R_profit_has_openmp')
+}

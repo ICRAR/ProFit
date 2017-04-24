@@ -5,13 +5,17 @@ import("fftw")
 import("FITSio")
 import("LaplacesDemon")
 import("magicaxis")
-import("RColorBrewer")
-import("R2Cuba")
 
-importFrom("grDevices", "colorRampPalette", "heat.colors", "hsv")
+importFrom("grDevices", "colorRampPalette", "heat.colors", "hsv", "rainbow")
 importFrom("graphics", "abline", "axis", "box", "contour", "hist",
              "layout", "legend", "lines", "par", "plot", "polygon")
 importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
              "median", "predict", "qgamma", "residuals", "rnorm",
-             "smooth.spline", "var", "integrate")
+             "smooth.spline", "var", "integrate", "density", "pnorm", "quantile", "sd",
+           "optimise")
 importFrom("utils", "relist")
+#importFrom("EBImage", "watershed", "imageData", "as.Image")
+#importFrom("imager", "isoblur", "imgradient", "enorm", "as.cimg")
+#importFrom("dbscan", "dbscan")
+importFrom("RColorBrewer", "brewer.pal")
+importFrom("R2Cuba", "cuhre")
