@@ -74,7 +74,7 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
             subsubnames=intervals[[i]][[j]]
             for(k in subsubnames){
               subsubsublength=length(modellistnew[[i]][[j]][[k]])
-              for(l in 1:subsublength){
+              for(l in 1:subsubsublength){
                 intervalmin=intervals[[i]][[j]][[k]][[l]][1]
                 intervalmax=intervals[[i]][[j]][[k]][[l]][2]
                 currentval=modellistnew[[i]][[j]][[k]][l]
@@ -86,9 +86,6 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
       }
     }  
   }
-  
-  #Unlist the new modellist
-  parmnew=unlist(modellistnew)
   
   # Unlist and extract the tolog elements and log where required
   parmnew=unlist(modellistnew)
