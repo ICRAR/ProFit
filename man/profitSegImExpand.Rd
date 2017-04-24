@@ -8,7 +8,8 @@ Segmentation Map Expansion
 A high level utility to achieve decent quality image segmentation based on the expansion of a pre-existing segmentation map. It uses smoothing and local flux weighted comparisons to grow the current segmentation map so as to better identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitSegImExpand(image, segim, mask = 0, skycut = 1, sigma = 1, smooth = TRUE, expandsigma = 2, dim = c(15, 15), expand = "all", plot = FALSE, stats = TRUE, ...)
+profitSegImExpand(image, segim, mask = 0, skycut = 1, sigma = 1, smooth = TRUE,
+expandsigma = 2, dim = c(15, 15), expand = "all", plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -80,11 +81,11 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-  image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-  segim=profitSegImWatershed(image,plot=T)
-  profitSegImExpand(image, segim$segim, plot=T, skycut=2)
-  profitSegImExpand(image, segim$segim, plot=T, skycut=1)
-  profitSegImExpand(image, segim$segim, plot=T, skycut=0)
+image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+segim=profitSegImWatershed(image, plot=TRUE)
+profitSegImExpand(image, segim$segim, plot=TRUE, skycut=2)
+profitSegImExpand(image, segim$segim, plot=TRUE, skycut=1)
+profitSegImExpand(image, segim$segim, plot=TRUE, skycut=0)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

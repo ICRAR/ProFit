@@ -111,8 +111,8 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
   }
   sky=profitSkyEst(image,mask,plot=FALSE)$sky
-  skyRMS=profitSkyEst(profitImDiff(image,1),mask,plot=FALSE)$skyRMS
   image_sky=image-sky
+  skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
   image=image_sky/skyRMS
   if(plot){
     magimage(image, ...)
@@ -177,7 +177,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
   return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 
-profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=2, clipiters=5, radweight=0.5, plot=FALSE, ...){
+profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=qnorm(1-1/prod(dim(image))/2), clipiters=5, radweight=0.5, plot=FALSE, ...){
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   tempref=as.matrix(expand.grid(1:xlen,1:ylen))
@@ -189,7 +189,7 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
   tempref=tempref[keep & mask==0,]
   tempval=image[tempref]
   temprad=temprad[keep & mask==0]
-  #Do iterative 3-sigma pixel clipping
+  #Do iterative sigma pixel clipping
   if(clipiters>0){
     pcut=pnorm(-skycut)
     newlen=length(tempval)
@@ -231,37 +231,7 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
     abline(v=c(sky-skyRMS,sky+skyRMS),lty=2,col='red')
     legend('topleft', legend=c('Sky Data', 'Sky Level', 'Sky RMS'), lty=1, col=c('black','blue','red'))
   }
-  #tempgain=1/sd(tempval,na.rm=TRUE)
-  # tempgain=1
-  # converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
-  # while(abs(converge-1)>1e-4){
-  #   print(tempgain)
-  #   print(converge)
-  #   converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
-  #   tempgain=tempgain/converge
-  # }
-  # gainlo=tempgain
-  # tempgain=100*tempgain
-  # converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
-  # while(abs(converge-1)>1e-4){
-  #   print(tempgain)
-  #   print(converge)
-  #   converge=var(sqrt(tempval*tempgain+var(tempval*tempgain)+3/8),na.rm=T)*4
-  #   tempgain=tempgain/converge
-  # }
-  # gainhi=tempgain
-  # tempvar={}
-  # tempmean={}
-  # tempanscomb={}
-  # for(i in gainrange){
-  #   newval=tempval*10^i
-  #   transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
-  #   tempvar=c(tempvar,var(newval,na.rm=T))
-  #   tempmean=c(tempmean, mean(newval+var(newval),na.rm=T))
-  #   tempanscomb=c(tempanscomb, var(transform,na.rm=T))
-  # }
-  #gaintable=cbind(gainrange,tempmean,tempvar,tempanscomb)
-  return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian,skypix=tempval)
+  return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian)
 }
 
 profitImBlur=function(image, sigma=1, plot=FALSE, ...){
@@ -306,8 +276,8 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
     stop('The EBImage package is needed for this function to work. Please install it.', call. = FALSE)
   }
   sky=profitSkyEst(image,mask,plot=FALSE)$sky
-  skyRMS=profitSkyEst(profitImDiff(image,1),mask,plot=FALSE)$skyRMS
   image_sky=image-sky
+  skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
   image=image_sky/skyRMS
   if(plot){
     magimage(image, ...)
@@ -318,7 +288,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   image[image<skycut]=0
-  segim=imageData(watershed(as.Image(image),tolerance=tolerance,ext=ext))
+  segim=imageData(EBImage::watershed(as.Image(image),tolerance=tolerance,ext=ext))
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
   if(plot){
@@ -356,28 +326,36 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 
-profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0){
+profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0, plot=FALSE, ...){
   image=image-sky
-  return=sqrt(image/gain+skyRMS/gain+readRMS/gain+darkRMS/gain)
+  image[image<0]=0
+  sigma=sqrt((gain*image)+(gain*skyRMS)^2+(gain*readRMS)^2+(gain*darkRMS)^2)/gain
+  if(plot){
+    magimage(sigma, ...)
+  }
+  return=sigma
 }
 
-profitGainEst=function(image, mask, sky=0){
+profitGainEst=function(image, mask, sky=0, range=-15:15, plot=TRUE, ...){
   image=image-sky
   tempval=as.numeric(image[mask==0])
   
   tempfunc=function(gain,tempval){
     newval=tempval*10^gain
     transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
-    return=var(transform,na.rm=T)
+    return=-var(transform,na.rm=T)
   }
   
-  # tempfunc2=function(gain,tempval){
-  #   newval=tempval*10^gain
-  #   transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
-  #   return=abs(1-var(transform,na.rm=T))
-  # }
+  tempgain={}
+  for(i in range){
+    tempgain=c(tempgain,tempfunc(i,tempval))
+  }
+  rough=(range)[which.min(tempgain)]
+  if(plot){
+    magplot(range,tempgain,type='l',...)
+    abline(v=rough, col='red')
+  }
   
-  findgain=optimise(tempfunc,interval=c(-100,100),tempval=tempval,maximum=TRUE)
-  #findgain2=optimise(tempfunc1,interval=c(-100,100),tempval=tempval,maximum=FALSE)
-  return(list(gain=findgain$maximum, quality=findgain$objective-1))
+  findgain=optim(par=0, fn=tempfunc, method="Brent", tempval=tempval, lower=rough-1, upper=rough+1)
+  return(list(gain=10^findgain$par, quality=findgain$value-1))
 }

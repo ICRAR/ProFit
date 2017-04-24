@@ -9,7 +9,8 @@ Watershed Image Segmentation
 A high level utility to achieve decent quality image segmentation. It uses a mixture of image smoothing and watershed segmentation propogation to identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitSegImWatershed(image, mask = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, plot = FALSE, stats = TRUE, ...)
+profitSegImWatershed(image, mask = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
+pixcut = 5, skycut = 2, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -80,8 +81,8 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-  image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-  profitSegImWatershed(image,plot=T)
+image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+profitSegImWatershed(image,plot=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
