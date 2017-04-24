@@ -288,7 +288,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   image[image<skycut]=0
-  segim=imageData(EBImage::watershed(as.Image(image),tolerance=tolerance,ext=ext))
+  segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
   if(plot){
