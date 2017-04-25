@@ -55,8 +55,10 @@ Aaron Robotham
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", 'KiDS/G266035sigma.fits', package="ProFit"))$imDat
 segim = profitSegImWatershed(image)
-gain = profitGainEst(image, segim$objects, sky=segim$sky)
-sigma_est=profitMakeSigma(image, sky=segim$sky, skyRMS=segim$skyRMS, gain=gain$gain)
+sigma_est=profitMakeSigma(image, sky=segim$sky, skyRMS=segim$skyRMS, gain=1.8e13)
+
+#This gets us close to the demo sigma image:
+magplot(sigma, sigma_est, pch='.')
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

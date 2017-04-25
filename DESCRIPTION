@@ -1,8 +1,8 @@
 Package: ProFit
 Type: Package
 Title: Fit Projected 2D Profiles to Galaxy Images
-Version: 1.0.3
-Date: 2016-11-21
+Version: 1.0.4
+Date: 2017-04-215
 Author: Aaron Robotham, Dan Taranu, Rodrigo Tobar
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Get data / Define model / ??? / ProFit! ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation library and a flexible interface to a large number of likelihood samplers.

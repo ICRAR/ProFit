@@ -110,6 +110,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
   }
+  image_orig=image
   sky=profitSkyEst(image,mask,plot=FALSE)$sky
   image_sky=image-sky
   skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
@@ -174,10 +175,14 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
       contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
     }
   }
+  sky=profitSkyEst(image_orig, mask | objects, plot=FALSE)$sky
+  image_sky=image_orig-sky
+  skyRMS=profitSkyEst(profitImDiff(image_sky,3), mask | objects, plot=FALSE)$skyRMS
   return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 
-profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=qnorm(1-1/prod(dim(image))/2), clipiters=5, radweight=0.5, plot=FALSE, ...){
+profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=qnorm(1-1/prod(dim(image))/2), clipiters=5, radweight=0, plot=FALSE, ...){
+  radweight=-radweight
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   tempref=as.matrix(expand.grid(1:xlen,1:ylen))
@@ -216,15 +221,24 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
   #Find the weighted mean of the medians
   sky=sum(tempy*weights)/(sum(weights))
   #Now we iterate until no running medians are outside the 1-sigma bound of the sky
-  while(any(!(tempylims[,1]<=sky & tempylims[,2]>=sky)) & all(!(tempylims[,1]<=sky & tempylims[,2]>=sky))==FALSE){
-    tempy=tempy[tempylims[,1]<=sky & tempylims[,2]>=sky]
-    weights=weights[tempylims[,1]<=sky & tempylims[,2]>=sky]
-    tempylims=rbind(tempylims[tempylims[,1]<=sky & tempylims[,2]>=sky,])
-    sky=sum(tempy*weights)/(sum(weights))
+  select=tempylims[,1]<=sky & tempylims[,2]>=sky
+  Nselect=length(which(select))
+  Nselect_old=0
+  while(Nselect!=Nselect_old){
+    Nselect_old=length(which(select))
+    newtempy=tempy[select]
+    newweights=weights[select]
+    sky=sum(newtempy*newweights)/(sum(newweights))
+    select=tempylims[,1]<=sky & tempylims[,2]>=sky
+    Nselect=length(which(select))
   }
   #Find the number of running medians that agree with the final sky within error bounds (max=10)
-  Nnearsky=length(tempylims[,1])
-  skyRMS=mean((tempylims[,2]-tempylims[,1])/2)*sqrt(mean(tempmedian$Nbins))
+  Nnearsky=length(which(select))
+  if(Nnearsky>=1){
+    skyRMS=mean((tempylims[select,2]-tempylims[select,1])/2)*sqrt(mean(tempmedian$Nbins[select]))
+  }else{
+    skyRMS=mean((tempylims[,2]-tempylims[,1])/2)*sqrt(mean(tempmedian$Nbins))
+  }
   if(plot){
     lines(seq(sky-5*skyRMS, sky+5*skyRMS, len=1e3), dnorm(seq(sky-5*skyRMS, sky+5*skyRMS, len=1e3), mean=sky, sd=skyRMS), col='red')
     abline(v=c(sky-skyerr,sky,sky+skyerr),lty=c(3,1,3),col='blue')
@@ -275,6 +289,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it.', call. = FALSE)
   }
+  image_orig=image
   sky=profitSkyEst(image,mask,plot=FALSE)$sky
   image_sky=image-sky
   skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
@@ -323,6 +338,9 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   }else{
     segstats=NULL
   }
+  sky=profitSkyEst(image_orig, mask | objects, plot=FALSE)$sky
+  image_sky=image_orig-sky
+  skyRMS=profitSkyEst(profitImDiff(image_sky,3), mask | objects, plot=FALSE)$skyRMS
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 

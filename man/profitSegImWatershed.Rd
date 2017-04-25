@@ -49,7 +49,13 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \details{
-This function offers a high level internal to R interface for making quick segmentation maps. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{tolerance}, \option{sigma}, \option{ext}, \option{skycut}, \option{pixcut}.
+To use this function you will need to have \code{EBImage} installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
+
+> source("https://bioconductor.org/biocLite.R")
+
+> biocLite("EBImage")
+
+The \code{profitSegImWatershed} function offers a high level internal to R interface for making quick segmentation maps. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{tolerance}, \option{sigma}, \option{ext}, \option{skycut}, \option{pixcut}.
 }
 \value{
 A list containing:
