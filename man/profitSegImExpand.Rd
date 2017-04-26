@@ -9,7 +9,8 @@ A high level utility to achieve decent quality image segmentation based on the e
 }
 \usage{
 profitSegImExpand(image, segim, mask = 0, skycut = 1, sigma = 1, smooth = TRUE,
-expandsigma = 2, dim = c(15, 15), expand = "all", plot = FALSE, stats = TRUE, ...)
+expandsigma = 2, dim = c(15, 15), expand = "all", sky, skyRMS, plot = FALSE,
+stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -39,6 +40,12 @@ Integer vector; the dimensions of the image to be generated. Typically this shou
 }
   \item{expand}{
 Vector; specifies which segmentation regions should be expanded. If left with the default \option{expand}='all' then all segments will be expanded.
+}
+  \item{sky}{
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+}
+  \item{skyRMS}{
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?

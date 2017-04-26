@@ -10,7 +10,7 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitSegImWatershed(image, mask = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, plot = FALSE, stats = TRUE, ...)
+pixcut = 5, skycut = 2, sky, skyRMS, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,6 +37,12 @@ Integer scalar; the number of pixels required to identify an object.
 }
   \item{skycut}{
 Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS.
+}
+  \item{sky}{
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+}
+  \item{skyRMS}{
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?

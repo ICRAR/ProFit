@@ -125,14 +125,18 @@ profitParseLikefunc <- function(funcname)
 #   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
 # }
 
-profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', plot=FALSE, stats=TRUE, ...){
+profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
   }
   image_orig=image
-  sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  if(missing(sky)){
+    sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  }
   image_sky=image-sky
-  skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
+  if(missing(skyRMS)){
+    skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
+  }
   image=image_sky/skyRMS
   if(plot){
     magimage(image, ...)
@@ -190,7 +194,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
     xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
     ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
-    covxy=tempDT[,covarwt(x,y,val),by=segID]$V1
+    covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
     corxy=covxy/(xsd*ysd)
     rad=.cov2eigval(xsd, ysd, covxy)
     rad$hi=sqrt(rad$hi)
@@ -321,7 +325,7 @@ profitImDiff=function(image,sigma=1, plot=FALSE, ...){
   return=output
 }
 
-profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, plot=FALSE,stats=TRUE, ...){
+profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
   }
@@ -329,9 +333,13 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
     stop('The EBImage package is needed for this function to work. Please install it.', call. = FALSE)
   }
   image_orig=image
-  sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  if(missing(sky)){
+    sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  }
   image_sky=image-sky
-  skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
+  if(missing(skyRMS)){
+    skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
+  }
   image=image_sky/skyRMS
   if(plot){
     magimage(image, ...)
