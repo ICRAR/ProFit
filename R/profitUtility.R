@@ -141,9 +141,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     }
     tempmult=temp*image
     segsel=tempmult>maxmat
-    if(skycut>0){
-      segsel=segsel & image>skycut
-    }
+    segsel=segsel & image>skycut
     segim_new[segsel]=i
     maxmat[segsel]=tempmult[segsel]
   }
@@ -181,7 +179,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
   return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 
-profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut=qnorm(1-1/prod(dim(image))/2), clipiters=5, radweight=0, plot=FALSE, ...){
+profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
   radweight=-radweight
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -195,20 +193,22 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
   tempval=image[tempref]
   temprad=temprad[keep & mask==0]
   #Do iterative sigma pixel clipping
-  if(clipiters>0){
-    pcut=pnorm(-skycut)
-    newlen=length(tempval)
-    for(i in 1:clipiters){
-      oldlen=newlen
-      roughsky=median(tempval, na.rm = TRUE)
-      vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*skycut
-      cutlogic=tempval>(roughsky-vallims*3) & tempval<(roughsky+vallims)
-      temprad=temprad[cutlogic]
-      tempval=tempval[cutlogic]
-      newlen=length(tempval)
-      if(oldlen==newlen){break}
-    }
-  }
+  # if(clipiters>0){
+  #   newlen=length(tempval)
+  #   for(i in 1:clipiters){
+  #     oldlen=newlen
+  #     roughsky=median(tempval, na.rm = TRUE)
+  #     vallims=(roughsky-quantile(tempval,pnorm(-1),na.rm = TRUE))*skycut
+  #     cutlogic=tempval>(roughsky-vallims*3) & tempval<(roughsky+vallims)
+  #     temprad=temprad[cutlogic]
+  #     tempval=tempval[cutlogic]
+  #     newlen=length(tempval)
+  #     if(oldlen==newlen){break}
+  #   }
+  # }
+  clip=magclip(tempval, sigma=skycut, estimate='lo')
+  tempval=tempval[clip$clip]
+  temprad=temprad[clip$clip]
   #Find the running medians for the data
   tempmedian=magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T)
   if(plot){magplot(density(tempval),...)}
@@ -304,6 +304,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   ylen=dim(image)[2]
   image[image<skycut]=0
   segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
+  objects=segim>0
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
   if(plot){

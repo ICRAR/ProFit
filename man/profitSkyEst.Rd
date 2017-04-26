@@ -8,7 +8,7 @@ Local Sky Estimator
 A high level utility to estimate the sky properties of a supplied \option{image}. This is closely related to the equivilant routines available in the LAMBDAR R package.
 }
 \usage{
-profitSkyEst(image, mask = 0, cutlo = cuthi/2, cuthi = sqrt(sum((dim(image)/2)^2)), skycut = qnorm(1-1/prod(dim(image))/2), clipiters = 5, radweight = 0, plot = FALSE, ...)
+profitSkyEst(image, mask = 0, cutlo = cuthi/2, cuthi = sqrt(sum((dim(image)/2)^2)), skycut = 'auto', clipiters = 5, radweight = 0, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -66,9 +66,9 @@ Aaron Robotham
 \examples{
 \dontrun{
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-sky = profitSkyEst(image, plot=T)
-image_sky = image-sky$sky
-profitSkyEst(profitImDiff(image_sky), plot=T)
+sky1 = profitSkyEst(image, plot=T)
+image_sky = image-sky1$sky
+sky2 = profitSkyEst(profitImDiff(image_sky), plot=T)
 
 #You can check whether you are contaminated by the central objects by plotting the radrun
 #object in the list (it should be flat for a well behaved sky):
@@ -77,7 +77,8 @@ magplot(sky$radrun)
 abline(h=sky$sky)
 
 #The above shows heavy contamination by the central object without. We can either mask
-#this out using the output of profitSegImWatershed, or set cutlo to be larger:
+#this out using the output of profitSegImWatershed, set cutlo to be larger or weight
+#the sky towards outer annuli.
 
 segim=profitSegImWatershed(image)
 sky = profitSkyEst(image, mask=segim$objects, cutlo=0, plot=TRUE)
@@ -88,6 +89,13 @@ abline(h=sky$sky)
 
 segim=profitSegImWatershed(image, skycut=0.5, sigma=3)
 sky = profitSkyEst(image, mask=segim$objects, cutlo=0, plot=TRUE)
+magplot(sky$radrun)
+abline(h=sky$sky)
+
+#Or weighting the sky to outer radii
+
+segim=profitSegImWatershed(image)
+sky = profitSkyEst(image, mask=segim$objects, cutlo=0, radweight=1, plot=TRUE)
 magplot(sky$radrun)
 abline(h=sky$sky)
 
