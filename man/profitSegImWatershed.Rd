@@ -69,11 +69,21 @@ A list containing:
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns:
 
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
-  \item{x}{The x location of the brightest pixel for this segment.}
-  \item{y}{The y location of the brightest pixel for this segment.}
-  \item{N}{The number of pixels in thsi segment.}
+  \item{xcen}{The flux weighted x centre for this segment.}
+  \item{ycen}{The flux weighted y centre for this segment.}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
-  \item{SB}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
+  \item{N}{The number of pixels in this segment.}
+  \item{N50}{The number of brightest pixels containing 50\% of the flux.}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}/2/\option{N50}.}
+  \item{xsd}{The weighted standard deviation in x.}
+  \item{ysd}{The weighted standard deviation in y.}
+  \item{covxy}{The weighted covariance in xy.}
+  \item{corxy}{The weighted correlation in xy.}
+  \item{maj}{The weighted standard deviation along the major axis.}
+  \item{min}{The weighted standard deviation along the minor axis.}
+  \item{axrat}{The axial ratio as given by min/maj.}
+  \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
 }
 \references{
 See ?EBImage::watershed

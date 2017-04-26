@@ -1,3 +1,22 @@
+.varwt=function(x, wt){
+return=sum((x-mean(x))^2*wt^2,na.rm = T)/sum(wt^2,na.rm = T)
+}
+
+.covarwt=function(x, y, wt){
+return=sum((x-mean(x))*(y-mean(y))*wt^2,na.rm = T)/sum(wt^2,na.rm = T)
+}
+
+.cov2eigval=function(sx,sy,sxy){
+b=-sx^2-sy^2
+c=sx^2*sy^2-sxy^2
+return=list(hi=(-b+sqrt(b^2-4*c))/2,lo=(-b-sqrt(b^2-4*c))/2)
+}
+
+.cov2eigvec=function(sx,sy,sxy){
+eigval=.cov2eigval(sx,sy,sxy)$hi
+eigvec=(sx^2-eigval)/sxy
+}
+
 profitMag2Mu=function(mag=15, re=1, axrat=1, pixscale=1){
   return(mag+2.5*log10(pi*re^2*axrat)-2.5*log10(0.5)+5*log10(pixscale))
 }
@@ -146,20 +165,40 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     maxmat[segsel]=tempmult[segsel]
   }
   objects=segim_new>0
+  
   if(stats){
-    segvec=which(tabulate(segim_new)>0)
-    flux={}
-    Nseg={}
-    pixloc={}
-    for(i in segvec){
-      segtemp=segim_new
-      segtemp[segim_new==i]=1
-      segtemp[segim_new!=i]=0
-      Nseg=c(Nseg,sum(segtemp))
-      flux=c(flux,sum(image_sky*segtemp))
-      pixloc=rbind(pixloc, which(segim_new==i & image==max(image[segim_new==i],na.rm=T),arr.ind = T)-0.5)
-    }
-    segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux, SB=flux/Nseg)
+    segvec=which(tabulate(segim)>0)
+    segvec=segvec[segvec>0]
+    #flux={}
+    #Nseg={}
+    #pixloc={}
+    #for(i in segvec){
+    #  segtemp=segim
+    #  segtemp[segim==i]=1
+    #  segtemp[segim!=i]=0
+    #  Nseg=c(Nseg,sum(segtemp))
+    #  flux=c(flux,sum(image_sky[segtemp]))
+    #  pixloc=rbind(pixloc, which(segtemp & image==max(image[segim==i], na.rm=T),arr.ind = T)-0.5)
+    #}
+    locs=expand.grid(1:xlen,1:ylen)-0.5
+    tempDT=data.table(x=locs[,1],y=locs[,2],val=as.numeric(image_sky),segID=as.integer(segim))
+    tempDT=tempDT[segID>0,]
+    segID=tempDT[,.BY,by=segID]$segID
+    flux=tempDT[,sum(val),by=segID]$V1
+    Nseg=tempDT[,.N,by=segID]$N
+    xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+    ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+    xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
+    ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
+    covxy=tempDT[,covarwt(x,y,val),by=segID]$V1
+    corxy=covxy/(xsd*ysd)
+    rad=.cov2eigval(xsd, ysd, covxy)
+    rad$hi=sqrt(rad$hi)
+    rad$lo=sqrt(rad$lo)
+    grad=.cov2eigvec(xsd, ysd, covxy)
+    ang=(90-atan(grad)*180/pi)%%180
+    N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
+    segstats=data.table(segID=segvec, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
   }else{
     segstats=NULL
   }
@@ -321,21 +360,40 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   temp=matrix(0, xlen, ylen)
   temp[objects]=1
   objects=temp
+  
   if(stats){
     segvec=which(tabulate(segim)>0)
     segvec=segvec[segvec>0]
-    flux={}
-    Nseg={}
-    pixloc={}
-    for(i in segvec){
-      segtemp=segim
-      segtemp[segim==i]=1
-      segtemp[segim!=i]=0
-      Nseg=c(Nseg,sum(segtemp))
-      flux=c(flux,sum(image_sky*segtemp))
-      pixloc=rbind(pixloc, which(segim==i & image==max(image[segim==i], na.rm=T),arr.ind = T)-0.5)
-    }
-    segstats=data.frame(segID=segvec, x=pixloc[,1], y=pixloc[,2], N=Nseg, flux=flux, SB=flux/Nseg)
+    #flux={}
+    #Nseg={}
+    #pixloc={}
+    #for(i in segvec){
+    #  segtemp=segim
+    #  segtemp[segim==i]=1
+    #  segtemp[segim!=i]=0
+    #  Nseg=c(Nseg,sum(segtemp))
+    #  flux=c(flux,sum(image_sky[segtemp]))
+    #  pixloc=rbind(pixloc, which(segtemp & image==max(image[segim==i], na.rm=T),arr.ind = T)-0.5)
+    #}
+    locs=expand.grid(1:xlen,1:ylen)-0.5
+    tempDT=data.table(x=locs[,1],y=locs[,2],val=as.numeric(image_sky),segID=as.integer(segim))
+    tempDT=tempDT[segID>0,]
+    segID=tempDT[,.BY,by=segID]$segID
+    flux=tempDT[,sum(val),by=segID]$V1
+    Nseg=tempDT[,.N,by=segID]$N
+    xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+    ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+    xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
+    ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
+    covxy=tempDT[,covarwt(x,y,val),by=segID]$V1
+    corxy=covxy/(xsd*ysd)
+    rad=.cov2eigval(xsd, ysd, covxy)
+    rad$hi=sqrt(rad$hi)
+    rad$lo=sqrt(rad$lo)
+    grad=.cov2eigvec(xsd, ysd, covxy)
+    ang=(90-atan(grad)*180/pi)%%180
+    N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
+    segstats=data.table(segID=segvec, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
   }else{
     segstats=NULL
   }
