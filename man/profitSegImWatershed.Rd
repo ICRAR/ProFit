@@ -78,10 +78,12 @@ If \option{stats}=TRUE then the \option{segstats} part of the returned list will
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
-  \item{N}{The number of pixels in this segment.}
+  \item{N}{The total number of pixels in this segment.}
   \item{N50}{The number of brightest pixels containing 50\% of the flux.}
+  \item{N50}{The number of brightest pixels containing 90\% of the flux.}
   \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
-  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}/2/\option{N50}.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}.}
+  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}.}
   \item{xsd}{The weighted standard deviation in x.}
   \item{ysd}{The weighted standard deviation in y.}
   \item{covxy}{The weighted covariance in xy.}

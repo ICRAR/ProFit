@@ -127,7 +127,7 @@ profitParseLikefunc <- function(funcname)
 
 profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
-    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+    stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
   image_orig=image
   if(missing(sky)){
@@ -188,7 +188,6 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     tempDT=tempDT[segID>0,]
     segID=tempDT[,.BY,by=segID]$segID
     flux=tempDT[,sum(val),by=segID]$V1
-    Nseg=tempDT[,.N,by=segID]$N
     xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
     ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
     xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
@@ -200,9 +199,11 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     rad$lo=sqrt(rad$lo)
     grad=.cov2eigvec(xsd, ysd, covxy)
     ang=(90-atan(grad)*180/pi)%%180
+    Nseg=tempDT[,.N,by=segID]$N
     N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
-    segstats[order(segID),]
+    N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+    segstats=as.data.frame(segstats[order(segID),])
   }else{
     segstats=NULL
   }
@@ -293,7 +294,7 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
 
 profitImBlur=function(image, sigma=1, plot=FALSE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
-    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+    stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
   output=as.matrix(isoblur(as.cimg(image),sigma))
   if(plot){
@@ -304,7 +305,7 @@ profitImBlur=function(image, sigma=1, plot=FALSE, ...){
 
 profitImGrad=function(image, sigma=1, plot=FALSE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
-    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+    stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
   output=as.matrix(enorm(imgradient(isoblur(as.cimg(image),sigma), "xy")))
   if(plot){
@@ -315,7 +316,7 @@ profitImGrad=function(image, sigma=1, plot=FALSE, ...){
 
 profitImDiff=function(image,sigma=1, plot=FALSE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
-    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+    stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
   blur=as.matrix(isoblur(as.cimg(image),sigma))
   output=image-blur
@@ -327,10 +328,10 @@ profitImDiff=function(image,sigma=1, plot=FALSE, ...){
 
 profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
-    stop('The imager package is needed for this function to work. Please install it.', call. = FALSE)
+    stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
   if(!requireNamespace("EBImage", quietly = TRUE)){
-    stop('The EBImage package is needed for this function to work. Please install it.', call. = FALSE)
+    stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
   }
   image_orig=image
   if(missing(sky)){
@@ -388,7 +389,6 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
     tempDT=tempDT[segID>0,]
     segID=tempDT[,.BY,by=segID]$segID
     flux=tempDT[,sum(val),by=segID]$V1
-    Nseg=tempDT[,.N,by=segID]$N
     xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
     ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
     xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
@@ -400,9 +400,11 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
     rad$lo=sqrt(rad$lo)
     grad=.cov2eigvec(xsd, ysd, covxy)
     ang=(90-atan(grad)*180/pi)%%180
+    Nseg=tempDT[,.N,by=segID]$N
     N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
-    segstats=segstats=segstats[order(segID),]
+    N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+    segstats=as.data.frame(segstats[order(segID),])
   }else{
     segstats=NULL
   }
@@ -441,11 +443,9 @@ profitGainEst=function(image, mask, sky, skyRMS){
   
   tempfunc=function(gain,tempval,skyRMS){
     gain=10^gain
-    print(gain)
     floor=(skyRMS*gain)^2
     trialdata=tempval*gain+floor
     value=-sum(dpois(x=round(trialdata), lambda=floor, log=T))
-    print(value)
     return=value
   }
   
