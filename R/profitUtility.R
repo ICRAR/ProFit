@@ -146,9 +146,9 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
-  image[image<=0]=min(image[image>0], na.rm=TRUE)
+  image[image<=skycut]=skycut
   kernel=profitMakeGaussianPSF(fwhm = expandsigma, dim=dim)
-  maxmat=matrix(0,xlen,ylen)
+  maxmat=matrix(min(image, na.rm=T), xlen, ylen)
   segim_new=matrix(-1,xlen,ylen)
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
@@ -163,8 +163,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
       temp=segtemp
     }
     tempmult=temp*image
-    segsel=tempmult>maxmat
-    segsel=segsel & image>skycut
+    segsel=tempmult>maxmat & temp>0 &image>skycut
     segim_new[segsel]=i
     maxmat[segsel]=tempmult[segsel]
   }
@@ -202,7 +201,8 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
     grad=.cov2eigvec(xsd, ysd, covxy)
     ang=(90-atan(grad)*180/pi)%%180
     N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-    segstats=data.table(segID=segvec, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+    segstats[order(segID),]
   }else{
     segstats=NULL
   }
@@ -393,7 +393,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
     ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
     xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
     ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
-    covxy=tempDT[,covarwt(x,y,val),by=segID]$V1
+    covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
     corxy=covxy/(xsd*ysd)
     rad=.cov2eigval(xsd, ysd, covxy)
     rad$hi=sqrt(rad$hi)
@@ -401,7 +401,8 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
     grad=.cov2eigvec(xsd, ysd, covxy)
     ang=(90-atan(grad)*180/pi)%%180
     N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-    segstats=data.table(segID=segvec, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, SB_N=flux/Nseg, SB_N50=flux/2/N50, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+    segstats=segstats=segstats[order(segID),]
   }else{
     segstats=NULL
   }
