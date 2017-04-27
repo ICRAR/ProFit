@@ -12,10 +12,10 @@ importFrom("graphics", "abline", "axis", "box", "contour", "hist",
 importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
              "median", "predict", "qgamma", "residuals", "rnorm",
              "smooth.spline", "var", "integrate", "density", "pnorm", "quantile", "sd",
-           "optimise")
+           "optimise", "optim", "qnorm")
 importFrom("utils", "relist")
-#importFrom("EBImage", "watershed", "imageData", "as.Image")
-#importFrom("imager", "isoblur", "imgradient", "enorm", "as.cimg")
 #importFrom("dbscan", "dbscan")
 importFrom("RColorBrewer", "brewer.pal")
 importFrom("R2Cuba", "cuhre")
+importFrom("imager", "as.cimg", "enorm", "imgradient", "isoblur")
+importFrom("data.table", "data.table")

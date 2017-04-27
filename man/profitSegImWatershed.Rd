@@ -9,7 +9,8 @@ Watershed Image Segmentation
 A high level utility to achieve decent quality image segmentation. It uses a mixture of image smoothing and watershed segmentation propogation to identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitSegImWatershed(image, mask = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, plot = FALSE, stats = TRUE, ...)
+profitSegImWatershed(image, mask = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
+pixcut = 5, skycut = 2, sky, skyRMS, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,6 +38,12 @@ Integer scalar; the number of pixels required to identify an object.
   \item{skycut}{
 Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS.
 }
+  \item{sky}{
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+}
+  \item{skyRMS}{
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
+}
   \item{plot}{
 Logical; should a diagnostic plot be generated?
 }
@@ -48,7 +55,13 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \details{
-This function offers a high level internal to R interface for making quick segmentation maps. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{tolerance}, \option{sigma}, \option{ext}, \option{skycut}, \option{pixcut}.
+To use this function you will need to have \code{EBImage} installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
+
+> source("https://bioconductor.org/biocLite.R")
+
+> biocLite("EBImage")
+
+The \code{profitSegImWatershed} function offers a high level internal to R interface for making quick segmentation maps. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{tolerance}, \option{sigma}, \option{ext}, \option{skycut}, \option{pixcut}.
 }
 \value{
 A list containing:
@@ -62,11 +75,21 @@ A list containing:
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns:
 
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
-  \item{x}{The x location of the brightest pixel for this segment.}
-  \item{y}{The y location of the brightest pixel for this segment.}
-  \item{N}{The number of pixels in thsi segment.}
+  \item{xcen}{The flux weighted x centre for this segment.}
+  \item{ycen}{The flux weighted y centre for this segment.}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
-  \item{SB}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
+  \item{N}{The number of pixels in this segment.}
+  \item{N50}{The number of brightest pixels containing 50\% of the flux.}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}/2/\option{N50}.}
+  \item{xsd}{The weighted standard deviation in x.}
+  \item{ysd}{The weighted standard deviation in y.}
+  \item{covxy}{The weighted covariance in xy.}
+  \item{corxy}{The weighted correlation in xy.}
+  \item{maj}{The weighted standard deviation along the major axis.}
+  \item{min}{The weighted standard deviation along the minor axis.}
+  \item{axrat}{The axial ratio as given by min/maj.}
+  \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
 }
 \references{
 See ?EBImage::watershed
@@ -80,8 +103,8 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-  image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-  profitSegImWatershed(image,plot=T)
+image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+profitSegImWatershed(image,plot=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

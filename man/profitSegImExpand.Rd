@@ -8,7 +8,9 @@ Segmentation Map Expansion
 A high level utility to achieve decent quality image segmentation based on the expansion of a pre-existing segmentation map. It uses smoothing and local flux weighted comparisons to grow the current segmentation map so as to better identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitSegImExpand(image, segim, mask = 0, skycut = 1, sigma = 1, smooth = TRUE, expandsigma = 2, dim = c(15, 15), expand = "all", plot = FALSE, stats = TRUE, ...)
+profitSegImExpand(image, segim, mask = 0, skycut = 1, sigma = 1, smooth = TRUE,
+expandsigma = 2, dim = c(15, 15), expand = "all", sky, skyRMS, plot = FALSE,
+stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -39,6 +41,12 @@ Integer vector; the dimensions of the image to be generated. Typically this shou
   \item{expand}{
 Vector; specifies which segmentation regions should be expanded. If left with the default \option{expand}='all' then all segments will be expanded.
 }
+  \item{sky}{
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+}
+  \item{skyRMS}{
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
+}
   \item{plot}{
 Logical; should a diagnostic plot be generated?
 }
@@ -64,11 +72,21 @@ A list containing:
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns:
 
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
-  \item{x}{The x location of the brightest pixel for this segment.}
-  \item{y}{The y location of the brightest pixel for this segment.}
-  \item{N}{The number of pixels in thsi segment.}
+  \item{xcen}{The flux weighted x centre for this segment.}
+  \item{ycen}{The flux weighted y centre for this segment.}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
-  \item{SB}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
+  \item{N}{The number of pixels in this segment.}
+  \item{N50}{The number of brightest pixels containing 50\% of the flux.}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}/2/\option{N50}.}
+  \item{xsd}{The weighted standard deviation in x.}
+  \item{ysd}{The weighted standard deviation in y.}
+  \item{covxy}{The weighted covariance in xy.}
+  \item{corxy}{The weighted correlation in xy.}
+  \item{maj}{The weighted standard deviation along the major axis.}
+  \item{min}{The weighted standard deviation along the minor axis.}
+  \item{axrat}{The axial ratio as given by min/maj.}
+  \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
 }
 
 \author{
@@ -80,11 +98,11 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-  image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-  segim=profitSegImWatershed(image,plot=T)
-  profitSegImExpand(image, segim$segim, plot=T, skycut=2)
-  profitSegImExpand(image, segim$segim, plot=T, skycut=1)
-  profitSegImExpand(image, segim$segim, plot=T, skycut=0)
+image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+segim=profitSegImWatershed(image, plot=TRUE)
+profitSegImExpand(image, segim$segim, plot=TRUE, skycut=2)
+profitSegImExpand(image, segim$segim, plot=TRUE, skycut=1)
+profitSegImExpand(image, segim$segim, plot=TRUE, skycut=0)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

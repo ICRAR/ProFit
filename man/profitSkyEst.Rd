@@ -8,7 +8,7 @@ Local Sky Estimator
 A high level utility to estimate the sky properties of a supplied \option{image}. This is closely related to the equivilant routines available in the LAMBDAR R package.
 }
 \usage{
-profitSkyEst(image, mask = 0, cutlo = cuthi/2, cuthi = sqrt(sum((dim(image)/2)^2)), skycut = 2, clipiters = 5, radweight = 0.5, plot = FALSE, ...)
+profitSkyEst(image, mask = 0, cutlo = cuthi/2, cuthi = sqrt(sum((dim(image)/2)^2)), skycut = 'auto', clipiters = 5, radweight = 0, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,13 +25,13 @@ Numeric scalar; radius where the code will start to calculate the sky annuli aro
 Numeric scalar; radius where the code will stop calculating the sky annuli around the central object. Default is the corner edge of the \option{image}.
 }
   \item{skycut}{
-Numeric scalar; clipping threshold to make on the \option{image} in units of the skyRMS.
+Numeric scalar; clipping threshold to make on the \option{image} in units of the skyRMS. The default scales the clipping to the number of pixels in the \option{image}, and will usually work reasonably.
 }
   \item{clipiters}{
 Numeric scalar; How many iterative clips of the sky will be made.
 }
   \item{radweight}{
-Numeric scalar; what radius power-law weighting should be used to bias the sky towards sky annuli nearer to the central object. Larger values weight the sky value more towards central values (default 0.5, so larger radius biased).
+Numeric scalar; what radius power-law weighting should be used to bias the sky towards sky annuli nearer to the central object. \option{radweight}>0 weight the sky value more towards larger radii and \option{radweight}<0 weight the sky values towards the \option{image} centre. The default of 0 means there is no radial weightings. This becomes clear when plotting the \option{radrun} output (see Examples). Note this behaves differently to the similarly named option in LAMBDAR's sky.estimate.
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?
@@ -41,107 +41,71 @@ Further arguments to be passed to \code{\link{magplot}}. Only relevant is \optio
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+This function is closely modelled on the sky.estimate function in the LAMBDAR package (the basic elements of which were written by ASGR). The defaults work well for data where the main objects (usually a galaxy) is centrally located in the \option{image} since the \option{cutlo} default will usually ignore contaminated central pixels. On top of this it does pretty agressive object pixel rejection using the \option{skycut} and \option{clipiters} options.
+
+The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{cutlo}, \option{radweight}, \option{clipiters}.
+
+It is intersting to note that a better estimate of the sky RMS can be made by using the output of \code{\link{profitImDiff}} (see Examples).
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
-%% ~put references to the literature/web site here ~
+Returns a list with 5 elements:
+
+\item{sky}{The value of the estimated sky.}
+\item{skyerr}{The estimated uncertainty in the sky level.}
+\item{skyRMS}{The RMS of the sky pixels.}
+\item{Nnearsky}{The number of sky annuli that have error bars encompassing the final sky.}
+\item{radrun}{The output of \code{\link{magrun}} for radius versus sky pixels values.}
 }
 \author{
-%%  ~~who you are~~
+Aaron Robotham
 }
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{profitSegImWatershed}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+\dontrun{
+image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+sky1 = profitSkyEst(image, plot=T)
+image_sky = image-sky1$sky
+sky2 = profitSkyEst(profitImDiff(image_sky), plot=T)
 
-## The function is currently defined as
-function (image, mask = 0, cutlo = cuthi/2, cuthi = sqrt(sum((dim(image)/2)^2)), 
-    skycut = 2, clipiters = 5, radweight = 1, plot = FALSE, ...) 
-{
-    xlen = dim(image)[1]
-    ylen = dim(image)[2]
-    tempref = as.matrix(expand.grid(1:xlen, 1:ylen))
-    xcen = xlen/2
-    ycen = ylen/2
-    temprad = sqrt((tempref[, 1] - xcen)^2 + (tempref[, 2] - 
-        ycen)^2)
-    keep = temprad >= cutlo & temprad <= cuthi
-    tempref = tempref[keep & mask == 0, ]
-    tempval = image[tempref]
-    temprad = temprad[keep & mask == 0]
-    if (clipiters > 0) {
-        pcut = pnorm(-skycut)
-        newlen = length(tempval)
-        for (i in 1:clipiters) {
-            oldlen = newlen
-            roughsky = median(tempval, na.rm = TRUE)
-            vallims = (roughsky - quantile(tempval, pnorm(-1), 
-                na.rm = TRUE)) * skycut
-            cutlogic = tempval > (roughsky - vallims * 3) & tempval < 
-                (roughsky + vallims)
-            temprad = temprad[cutlogic]
-            tempval = tempval[cutlogic]
-            newlen = length(tempval)
-            if (oldlen == newlen) {
-                break
-            }
-        }
-    }
-    tempmedian = magrun(x = temprad, y = tempval, ranges = NULL, 
-        binaxis = "x", Nscale = T)
-    if (plot) {
-        magplot(density(tempval), ...)
-    }
-    tempylims = tempmedian$ysd
-    tempy = tempmedian$y
-    skyerr = sd(tempy)
-    weights = 1/((tempmedian$x^radweight) * (tempylims[, 2] - 
-        tempylims[, 1])/2)^2
-    sky = sum(tempy * weights)/(sum(weights))
-    while (any(!(tempylims[, 1] <= sky & tempylims[, 2] >= sky)) & 
-        all(!(tempylims[, 1] <= sky & tempylims[, 2] >= sky)) == 
-            FALSE) {
-        tempy = tempy[tempylims[, 1] <= sky & tempylims[, 2] >= 
-            sky]
-        weights = weights[tempylims[, 1] <= sky & tempylims[, 
-            2] >= sky]
-        tempylims = rbind(tempylims[tempylims[, 1] <= sky & tempylims[, 
-            2] >= sky, ])
-        sky = sum(tempy * weights)/(sum(weights))
-    }
-    Nnearsky = length(tempylims[, 1])
-    skyRMS = mean((tempylims[, 2] - tempylims[, 1])/2) * sqrt(mean(tempmedian$Nbins))
-    if (plot) {
-        lines(seq(sky - 5 * skyRMS, sky + 5 * skyRMS, len = 1000), 
-            dnorm(seq(sky - 5 * skyRMS, sky + 5 * skyRMS, len = 1000), 
-                mean = sky, sd = skyRMS), col = "red")
-        abline(v = c(sky - skyerr, sky, sky + skyerr), lty = c(3, 
-            1, 3), col = "blue")
-        abline(v = c(sky - skyRMS, sky + skyRMS), lty = 2, col = "red")
-        legend("topleft", legend = c("Sky Data", "Sky Level", 
-            "Sky RMS"), lty = 1, col = c("black", "blue", "red"))
-    }
-    return = list(sky = sky, skyerr = skyerr, skyRMS = skyRMS, 
-        Nnearsky = Nnearsky, radrun = tempmedian, skypix = tempval)
-  }
+#You can check whether you are contaminated by the central objects by plotting the radrun
+#object in the list (it should be flat for a well behaved sky):
+sky = profitSkyEst(image, cutlo=0, plot=TRUE)
+magplot(sky$radrun)
+abline(h=sky$sky)
+
+#The above shows heavy contamination by the central object without. We can either mask
+#this out using the output of profitSegImWatershed, set cutlo to be larger or weight
+#the sky towards outer annuli.
+
+segim=profitSegImWatershed(image)
+sky = profitSkyEst(image, mask=segim$objects, cutlo=0, plot=TRUE)
+magplot(sky$radrun)
+abline(h=sky$sky)
+
+#The above is better, but not great. A more aggressive segmentation helps:
+
+segim=profitSegImWatershed(image, skycut=0.5, sigma=3)
+sky = profitSkyEst(image, mask=segim$objects, cutlo=0, plot=TRUE)
+magplot(sky$radrun)
+abline(h=sky$sky)
+
+#Or weighting the sky to outer radii
+
+segim=profitSegImWatershed(image)
+sky = profitSkyEst(image, mask=segim$objects, cutlo=0, radweight=1, plot=TRUE)
+magplot(sky$radrun)
+abline(h=sky$sky)
+
+#Finally we can leave the central cutlo mask turned on:
+
+sky = profitSkyEst(image, mask=segim$objects, plot=TRUE)
+magplot(sky$radrun)
+abline(h=sky$sky)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ sky }% use one of  RShowDoc("KEYWORDS")
