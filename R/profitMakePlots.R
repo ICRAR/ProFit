@@ -36,7 +36,7 @@
   if(add.axis) {axis(axis.pos, padj=axis.padj, tck=axis.tck)}
 }
 
-profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE,
+profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE, maxsigma=5,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), 
   errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
   plotchisq=FALSE, dofs) {
@@ -82,7 +82,6 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
   }
   else
   {
-    maxsigma = 5
     if(missing(dofs)){ndofs=0}else{ndofs = length(dofs)}
     if(ndofs>0) stopifnot(length(dofs) <= 2)
 

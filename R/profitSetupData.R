@@ -176,7 +176,8 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
                    algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))), region=region,
                    calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
                    tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints, like.func = like.func,
-                   magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu, openclenv=openclenv)
+                   magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu, openclenv=openclenv, 
+                   omp_threads=omp_threads)
   class(profit.data)="profit.data"
   return(profit.data)
 }
