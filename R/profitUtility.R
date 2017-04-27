@@ -1,20 +1,21 @@
 .varwt=function(x, wt){
-return=sum((x-mean(x))^2*wt^2,na.rm = T)/sum(wt^2,na.rm = T)
+return(sum((x-mean(x))^2*wt^2,na.rm = T)/sum(wt^2,na.rm = T))
 }
 
 .covarwt=function(x, y, wt){
-return=sum((x-mean(x))*(y-mean(y))*wt^2,na.rm = T)/sum(wt^2,na.rm = T)
+return(sum((x-mean(x))*(y-mean(y))*wt^2,na.rm = T)/sum(wt^2,na.rm = T))
 }
 
 .cov2eigval=function(sx,sy,sxy){
 b=-sx^2-sy^2
 c=sx^2*sy^2-sxy^2
-return=list(hi=(-b+sqrt(b^2-4*c))/2,lo=(-b-sqrt(b^2-4*c))/2)
+return(list(hi=(-b+sqrt(b^2-4*c))/2,lo=(-b-sqrt(b^2-4*c))/2))
 }
 
 .cov2eigvec=function(sx,sy,sxy){
 eigval=.cov2eigval(sx,sy,sxy)$hi
 eigvec=(sx^2-eigval)/sxy
+return(eigvec)
 }
 
 profitMag2Mu=function(mag=15, re=1, axrat=1, pixscale=1){
@@ -35,7 +36,7 @@ profitAddMats=function(matbase,matadd,addloc=c(1,1)){
   if(min(xrangeadd)>=1 & max(xrangeadd)<=dim(newmat)[1] & min(yrangeadd)>=1 & max(yrangeadd)<=dim(newmat)[2]){
     newmat[xrangeadd,yrangeadd]=newmat[xrangeadd,yrangeadd]+matadd
   }
-  return=newmat[xrangebase,yrangebase]
+  return(newmat[xrangebase,yrangebase])
 }
 
 profitCheckFinesample <- function(finesample)
@@ -219,7 +220,7 @@ profitSegImExpand=function(image, segim, mask=0, skycut=1, sigma=1, smooth=TRUE,
   sky=profitSkyEst(image_orig, mask | objects, plot=FALSE)$sky
   image_sky=image_orig-sky
   skyRMS=profitSkyEst(profitImDiff(image_sky,3), mask | objects, plot=FALSE)$skyRMS
-  return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
+  return(list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS))
 }
 
 profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
@@ -288,7 +289,7 @@ profitSkyEst=function(image, mask=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2
     abline(v=c(sky-skyRMS,sky+skyRMS),lty=2,col='red')
     legend('topleft', legend=c('Sky Data', 'Sky Level', 'Sky RMS'), lty=1, col=c('black','blue','red'))
   }
-  return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian)
+  return(list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian))
 }
 
 profitImBlur=function(image, sigma=1, plot=FALSE, ...){
@@ -299,7 +300,7 @@ profitImBlur=function(image, sigma=1, plot=FALSE, ...){
   if(plot){
     magimage(output, ...)
   }
-  return=output
+  return(output)
 }
 
 profitImGrad=function(image, sigma=1, plot=FALSE, ...){
@@ -310,7 +311,7 @@ profitImGrad=function(image, sigma=1, plot=FALSE, ...){
   if(plot){
     magimage(output, ...)
   }
-  return=output
+  return(output)
 }
 
 profitImDiff=function(image,sigma=1, plot=FALSE, ...){
@@ -322,7 +323,7 @@ profitImDiff=function(image,sigma=1, plot=FALSE, ...){
   if(plot){
     magimage(output, ...)
   }
-  return=output
+  return(output)
 }
 
 profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
@@ -408,7 +409,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   sky=profitSkyEst(image_orig, mask | objects, plot=FALSE)$sky
   image_sky=image_orig-sky
   skyRMS=profitSkyEst(profitImDiff(image_sky,3), mask | objects, plot=FALSE)$skyRMS
-  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
+  return(list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS))
 }
 
 profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0, plot=FALSE, ...){
@@ -418,7 +419,7 @@ profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0, p
   if(plot){
     magimage(sigma, ...)
   }
-  return=sigma
+  return(sigma)
 }
 
 profitGainEst=function(image, mask, sky=0, range=-15:15, plot=TRUE, ...){
