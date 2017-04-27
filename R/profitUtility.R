@@ -422,26 +422,43 @@ profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0, p
   return=sigma
 }
 
-profitGainEst=function(image, mask, sky=0, range=-15:15, plot=TRUE, ...){
-  image=image-sky
-  tempval=as.numeric(image[mask==0])
+profitGainEst=function(image, mask, sky, skyRMS){
+  if(missing(sky)){
+    sky=profitSkyEst(image,mask,plot=FALSE)$sky
+  }
+  image_sky=image-sky
+  if(missing(skyRMS)){
+    skyRMS=profitSkyEst(profitImDiff(image_sky,3),mask,plot=FALSE)$skyRMS
+  }
+  tempval=as.numeric(image_sky[mask==0])
   
-  tempfunc=function(gain,tempval){
-    newval=tempval*10^gain
-    transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
-    return=-var(transform,na.rm=T)
+  startgain=ceiling(log10(abs(min(tempval, na.rm=T)-sky)/(skyRMS^2)))+1
+  # tempfunc=function(gain,tempval){
+  #   newval=tempval*10^gain
+  #   transform=2*suppressWarnings(sqrt(newval+var(newval))+3/8)
+  #   return=-var(transform,na.rm=T)
+  # }
+  
+  tempfunc=function(gain,tempval,skyRMS){
+    gain=10^gain
+    print(gain)
+    floor=(skyRMS*gain)^2
+    trialdata=tempval*gain+floor
+    value=-sum(dpois(x=round(trialdata), lambda=floor, log=T))
+    print(value)
+    return=value
   }
   
-  tempgain={}
-  for(i in range){
-    tempgain=c(tempgain,tempfunc(i,tempval))
-  }
-  rough=(range)[which.min(tempgain)]
-  if(plot){
-    magplot(range,tempgain,type='l',...)
-    abline(v=rough, col='red')
-  }
-  
-  findgain=optim(par=0, fn=tempfunc, method="Brent", tempval=tempval, lower=rough-1, upper=rough+1)
-  return(list(gain=10^findgain$par, quality=findgain$value-1))
+  # tempgain={}
+  # for(i in range){
+  #   tempgain=c(tempgain,tempfunc(i,tempval))
+  # }
+  # rough=(range)[which.min(tempgain)]
+  # if(plot){
+  #   magplot(range,tempgain,type='l',...)
+  #   abline(v=rough, col='red')
+  # }
+
+  suppressWarnings({findgain=optim(par=startgain, fn=tempfunc, method="Brent", tempval=tempval, skyRMS=skyRMS, lower=startgain-2, upper=startgain+2)})
+  return(list(gain=10^findgain$par, value=findgain$value))
 }
