@@ -18,7 +18,7 @@ profitEllipse=function(x, y, flux, xcen=0, ycen=0, ang=0, axrat=1, box=0){
   radmod=(xmod^(2+box)+ymod^(2+box))^(1/(2+box))
   output=cbind(rad=radmod, flux=flux)
   output=output[order(radmod),]
-  return=output
+  return(output)
 }
 
 profitEllipsePlot=function(Data, modellist, bulgeloc=1, diskloc=2, pixscale=1, FWHM=1, SBlim=26, df=100, raw=FALSE){
@@ -30,8 +30,11 @@ profitEllipsePlot=function(Data, modellist, bulgeloc=1, diskloc=2, pixscale=1, F
   disk=profitMakeModel(modellist, magzero = Data$magzero, whichcomponents=list(sersic = diskloc), dim = Data$imagedim, psf=Data$psf)
   total=profitMakeModel(modellist, magzero = Data$magzero, whichcomponents=list(sersic = 'all'), dim = Data$imagedim, psf=Data$psf)
 
-  imageellipse=profitEllipse(Data$image*(1-Data$mask), xcen=modellist$sersic$xcen[diskloc], ycen=modellist$sersic$ycen[diskloc], ang=modellist$sersic$ang[diskloc], axrat=modellist$sersic$axrat[diskloc], box=modellist$sersic$box[diskloc])
-  sigmaellipse=profitEllipse(Data$sigma*(1-Data$mask), xcen=modellist$sersic$xcen[diskloc], ycen=modellist$sersic$ycen[diskloc], ang=modellist$sersic$ang[diskloc], axrat=modellist$sersic$axrat[diskloc], box=modellist$sersic$box[diskloc])
+  region = Data$region
+  if(is.null(region)) region = numeric(length(Data$image)) + 1
+  
+  imageellipse=profitEllipse(Data$image*region, xcen=modellist$sersic$xcen[diskloc], ycen=modellist$sersic$ycen[diskloc], ang=modellist$sersic$ang[diskloc], axrat=modellist$sersic$axrat[diskloc], box=modellist$sersic$box[diskloc])
+  sigmaellipse=profitEllipse(Data$sigma*region, xcen=modellist$sersic$xcen[diskloc], ycen=modellist$sersic$ycen[diskloc], ang=modellist$sersic$ang[diskloc], axrat=modellist$sersic$axrat[diskloc], box=modellist$sersic$box[diskloc])
   bulgeellipse=profitEllipse(bulge$z, xcen=modellist$sersic$xcen[bulgeloc], ycen=modellist$sersic$ycen[bulgeloc], ang=modellist$sersic$ang[bulgeloc], axrat=modellist$sersic$axrat[bulgeloc], box=modellist$sersic$box[bulgeloc])
   diskellipse=profitEllipse(disk$z, xcen=modellist$sersic$xcen[diskloc], ycen=modellist$sersic$ycen[diskloc], ang=modellist$sersic$ang[diskloc], axrat=modellist$sersic$axrat[diskloc], box=modellist$sersic$box[diskloc])
   totalellipse=profitEllipse(total$z, xcen=modellist$sersic$xcen[diskloc], ycen=modellist$sersic$ycen[diskloc], ang=modellist$sersic$ang[diskloc], axrat=modellist$sersic$axrat[diskloc], box=modellist$sersic$box[diskloc])
