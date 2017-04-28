@@ -17,6 +17,10 @@ eigval=.cov2eigval(sx,sy,sxy)$hi
 eigvec=(sx^2-eigval)/sxy
 }
 
+.nser2ccon=function(nser=0.5, lo=0.5, hi=0.9){
+  ((qgamma(lo, 2 * nser)/qgamma(hi, 2 * nser))^nser)^2
+}
+
 profitMag2Mu=function(mag=15, re=1, axrat=1, pixscale=1){
   return(mag+2.5*log10(pi*re^2*axrat)-2.5*log10(0.5)+5*log10(pixscale))
 }
