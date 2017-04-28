@@ -186,7 +186,7 @@ sigmas=list(
   )
 )
 
-priors = profitMakePrior(modellist, sigmas, tolog, allowflat = TRUE)
+priors = profitMakePriors(modellist, sigmas, tolog, allowflat = TRUE)
 print(priors(modellist,modellist))
 print(priors)
 ```

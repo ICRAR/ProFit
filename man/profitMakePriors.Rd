@@ -1,14 +1,14 @@
-\name{profitMakePrior}
-\alias{profitMakePrior}
+\name{profitMakePriors}
+\alias{profitMakePriors}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Make a Prior Function
+Make a Priors Function
 }
 \description{
 A utility function to construct a legal \code{ProFit} prior function that can be input to \code{\link{profitSetupData}}
 }
 \usage{
-profitMakePrior(modellist, sigmas, tolog, means=NULL, tofit=NULL, allowflat=FALSE)
+profitMakePriors(modellist, sigmas, tolog, means=NULL, tofit=NULL, allowflat=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -73,7 +73,7 @@ sigmas[which(!linear)] = 1
 sigmas = relist(sigmas, modellist)
 
 #Make the list strcture of prior function:
-priors=profitMakePrior(modellist, sigmas)
+priors=profitMakePriors(modellist, sigmas)
 
 #Check that the priors return the expected likelihood:
 priors(modellist,modellist)

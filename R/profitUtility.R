@@ -419,7 +419,7 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   return(list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS))
 }
 
-profitMakePrior <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, allowflat=FALSE)
+profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, allowflat=FALSE)
 {
   # Sanity checks
   stopifnot(is.logical(allowflat))
