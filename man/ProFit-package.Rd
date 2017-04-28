@@ -18,7 +18,7 @@ Date: \tab 2017-04-25\cr
 License: \tab GPL-3+\cr
 Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon, imager\cr
 LinkingTo: \tab Rcpp\cr
-Depends: \tab R (>= 3.0), Rcpp (>= 0.11.6), magicaxis, FITSio\cr
+Depends: \tab R (>= 3.0), Rcpp (>= 0.11.6), magicaxis, FITSio, data.table\cr
 Suggests: \tab knitr, rmarkdown, foreach, doParallel, EBImage\cr
 }
 }

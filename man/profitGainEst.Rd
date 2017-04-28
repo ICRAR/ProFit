@@ -5,10 +5,10 @@
 Image Gain Estimator
 }
 \description{
-High level function to estimate a rough value for the image gain in cases where you have no idea what the true image gain is. In practice this tends to be accurate to an order of magnitude, which is good enough to make a rough first attempt at a sigma map.
+High level function to estimate a rough value for the image gain in cases where you have no idea what the true image gain is. In practice this tends to be accurate to an order of magnitude and provides a reasonable lower limit for the true gain, which is good enough to make a rough first attempt at a sigma map.
 }
 \usage{
-profitGainEst(image, mask, sky = 0, range = -15:15, plot = TRUE, ...)
+profitGainEst(image, mask, sky, skyRMS)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -19,20 +19,14 @@ Numeric matrix; required, the galaxy image we want to fit a model to. The galaxy
 Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as image.
 }
   \item{sky}{
-The absolute sky level. Consider using the sky output from \code{\link{profitSkyEst}}.
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
 }
-  \item{range}{
-The log10 range of gains to be explored.
-}
-  \item{plot}{
-Logical; should a diagnostic plot be generated? This is useful to check whether the \option{range} is appropriate.
-}
-  \item{\dots}{
-Further arguments to be passed to \code{\link{magplot}}. Only relevant is \option{plot}=TRUE.
+  \item{skyRMS}{
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
 }
 }
 \details{
-This function uses properties of the Anscombe transform and the expectation that mean=var for Poisson distributed sky-noise. This does not return a very accurate estimate, but it is usually good enough for a first guess at making a sigma map.
+This function makes use of the fact that a true Poisson distribution cannot generate samples below 0 and the distribution shape properties of the sky pixels. In practice this means the gain estimated is low as it can be. Once the ProFit fit has been made the gain estimated can be improved based on the residuals (assuming the model does a good job of subtracting the data).
 }
 \value{
 Numeric matrix; the measurement errors per pixel (expressed in terms of sigma). This matrix is matched pixel by pixel to \option{image}.
