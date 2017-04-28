@@ -61,7 +61,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitSegImWatershed}}
+\code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
 }
 \examples{
 \dontrun{

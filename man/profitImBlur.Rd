@@ -42,7 +42,7 @@ For \code{profitImDiff} the output is the original \option{image} minus the smoo
 Aaron Robotham
 }
 \seealso{
-\code{\link{profitSegImWatershed}}, \code{\link{profitSegImExpand}}
+\code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
 }
 \examples{
 \dontrun{

@@ -35,7 +35,7 @@ Numeric matrix; the measurement errors per pixel (expressed in terms of sigma). 
 Aaron Robotham
 }
 \seealso{
-\code{\link{profitSegImWatershed}}, \code{\link{profitSkyEst}}, \code{\link{profitMakeSigma}}
+\code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}, \code{\link{profitSkyEst}}, \code{\link{profitMakeSigma}}
 }
 \examples{
 \dontrun{
