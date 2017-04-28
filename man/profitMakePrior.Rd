@@ -24,7 +24,7 @@ Logical list; required. Logicals indicating whether the parameter is fit in log 
   \item{means}{
 Numeric list; optional. The mean of the prior distribution for each parameter; these must be logged if \option{tolog} is TRUE for this parameter. Must have the same length as modellist. If the means are not specified, the prior function will follow default behaviour, which is to assume that the values in Data$modellist specify the prior means.
 }
-  \item{tolog}{
+  \item{tofit}{
 Logical list; optional. Logicals indicating whether the parameter is to be fit. If specified, only the parameters to be fit will have priors computed; otherwise, the default is for all priors to be evaluated (including for fixed parameters). Must have the same length as modellist.
 }
  \item{allowflat}{
@@ -72,7 +72,12 @@ sigmas[which(linear)] = 0.1
 sigmas[which(!linear)] = 1
 sigmas = relist(sigmas, modellist)
 
-print(c(priors(modellist,modellist),sum(dnorm(0,0,unlist(sigmas),log=TRUE))))
+#Make the list strcture of prior function:
+priors=profitMakePrior(modellist, sigmas)
+
+#Check that the priors return the expected likelihood:
+priors(modellist,modellist)
+sum(dnorm(0,0,unlist(sigmas),log=TRUE))
 
 }
 }

@@ -8,7 +8,7 @@ Plot Image, Model and Residuals
 Plots appropriately scaled data and model images, along with a residual (data-model) image, and histograms of the residuals.
 }
 \usage{
-profitMakePlots(image, modelimage, region, sigma, errischisq = FALSE, 
+profitMakePlots(image, modelimage, region, sigma, errischisq = FALSE, maxsigma = 5,
 cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)), 
 errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
 plotchisq = FALSE, dofs)
@@ -29,6 +29,9 @@ plotchisq = FALSE, dofs)
 }
   \item{errischisq}{
   Logical flag; to be set if \option{error} specifies the chi-squared statistic in each pixel rather than sigma.
+}
+  \item{maxsigma}{
+  The maximum range of sigma deviations displayed.
 }
   \item{cmap}{
   Optional vector; color map to use for plots of the \option{image}, \option{model}, and \option{error}.

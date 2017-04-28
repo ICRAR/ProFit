@@ -11,7 +11,7 @@ This is the work-horse log-likelihood that we can use to assess the current fit.
 profitLikeModel(parm, Data, makeplots = FALSE,
 whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"),
 rough = FALSE, cmap = rev(colorRampPalette(brewer.pal(9,"RdYlBu"))(100)),
-errcmap = cmap, plotchisq = FALSE)
+errcmap = cmap, plotchisq = FALSE, maxsigma = 5)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -38,6 +38,9 @@ The colour map to use for chi-square residual images if \option{makeplots} is TR
 }
   \item{plotchisq}{
   Logical flag to determine if the function should plot a map and a histogram of chi squared = (((image-optionmodel)/optionerror)[/optionregion])^2.
+}
+  \item{maxsigma}{
+The maximum range of sigma deviations displayed. Only relevant if \option{makeplots}=TRUE.  
 }
 }
 \details{
