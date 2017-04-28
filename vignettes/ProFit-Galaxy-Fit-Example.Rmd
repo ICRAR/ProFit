@@ -131,7 +131,7 @@ tolog=list(
 )
 ```
 
-Now we specify the priors object The priors object is really a function that takes modellist as an input and returns an addative log-likelihood sum that increments the total log-likelihood for the current realisation of the model.
+Now we specify the priors object. The priors object is really a function that takes modellist as an input and returns an addative log-likelihood sum that increments the total log-likelihood for the current realisation of the model.
 
 The elements you access within the modellist structure must really exist or ProFit will stop with an error. The modellist used internally will be the linear (un-logged version), so logging must be made within the function if, e.g., log-normal distributions are required. You do not have to apply priors to each parameter- notice below a few are left out.
 
@@ -145,9 +145,52 @@ priors=function(new,init,sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)){
       dnorm(log10(new$sersic$nser),log10(init$sersic$nser),sigmas[9:10],log=TRUE),
       dnorm(log10(new$sersic$axrat),log10(init$sersic$axrat),sigmas[13:14],log=TRUE)
   )
-  return=LL
+  return(LL)
 }
+print(priors(modellist,modellist))
 ```
+
+Notice that the values for sigmas were defined along with the function definition. In practice, you may want to define them separately as such:
+
+```{r}
+sigmavec=c(2,2,5,1,1,30,0.3,0.2)
+priors=function(new,init,sigmas=sigmavec){
+  return(sum(2*dnorm(log10(new$sersic$re),log10(init$sersic$re),sigmas[4],log=TRUE)))
+}
+print(priors(modellist,modellist))
+```
+
+Unfortunately, R does not store the provided values of sigmas, but simply the name of a variable sigma, so if you happen to redefine sigma later on, the prior function will change (or fail entirely if you delete sigma or save and then load a fit):
+
+```{r}
+sigmavec=sigmavec/2
+print(priors(modellist,modellist))
+print(priors)
+```
+
+Because of this issue, we provide a utility function to create a valid prior function, saving the values of the prior distributions:
+
+```{r}
+sigmas=c(2,2,5,1,1,30,0.3,Inf)
+
+sigmas=list(
+  sersic=list(
+    xcen= numeric(2)+sigmas[1],
+    ycen= numeric(2)+sigmas[2],
+    mag= numeric(2)+sigmas[3],
+    re= numeric(2)+sigmas[4],
+    nser= numeric(2)+sigmas[5],
+    ang= numeric(2)+sigmas[6],
+    axrat= numeric(2)+sigmas[7],
+    box= numeric(2)+sigmas[8]
+  )
+)
+
+priors = profitMakePrior(modellist, sigmas, tolog, allowflat = TRUE)
+print(priors(modellist,modellist))
+print(priors)
+```
+
 
 The hard intervals should also be specified in linear space:
 

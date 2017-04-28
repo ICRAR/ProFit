@@ -413,6 +413,59 @@ profitSegImWatershed=function(image, mask=0, tolerance=4, ext=2, sigma=1, smooth
   return(list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS))
 }
 
+profitMakePrior <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, allowflat=FALSE)
+{
+  # Sanity checks
+  stopifnot(is.logical(allowflat))
+  stopifnot(all(is.list(sigmas),is.list(tolog)))
+  if(!is.null(means)) stopifnot(is.list(means))
+  if(!is.null(tofit)) stopifnot(is.list(tofit))
+  
+  model = unlist(modellist)
+  nparams = length(model)
+  stopifnot(all(is.numeric(model) & is.finite(model)))
+  
+  pformals = list(
+    sigmas = unlist(sigmas),
+    tolog = unlist(tolog)
+  )
+  stopifnot(all(pformals$sigmas >0))
+  if(!allowflat) stopifnot(all(is.finite(pformals$sigmas)))
+  if(!is.null(means)) pformals$means = unlist(means)
+  if(!is.null(tofit)) pformals$tofit = unlist(tofit)
+  for(formal in names(pformals)) stopifnot(length(pformals[[formal]]) == nparams)
+      
+  # Define a valid prior function. 
+  # tofit will only calculate the prior for fitted values
+  # if not otherwise specified, the means will be taken from init
+  priors <- function(new, init, sigmas=NULL, tolog=NULL, tofit=NULL, means=unlist(init), allowflat=FALSE)
+  {
+  	LL = 0
+  	parms = unlist(new)
+  	if(!is.null(tofit)) ps = tofit
+  	else ps = 1:length(parms)
+  	for(p in ps)
+  	{
+  	  if(!(allowflat && (sigmas[p] == Inf)))
+  	  {
+    		parm = parms[[p]]
+    		mean = means[[p]]
+    		if(tolog[p])
+    		{
+    		  parm = log10(parm)
+    		  mean = log10(mean)
+    		}
+    		LL = LL + dnorm(parm,mean,sigmas[p],log=TRUE)
+  	  }
+  	}
+  	return(LL)
+  }
+  for(formal in names(pformals)) formals(priors)[[formal]] = pformals[[formal]]
+  formals(priors)$allowflat = allowflat
+  stopifnot(is.numeric(priors(modellist,modellist)))
+  return(priors)
+}
+
 profitMakeSigma=function(image, sky=0, skyRMS=1, gain=1, readRMS=0, darkRMS=0, plot=FALSE, ...){
   image=image-sky
   image[image<0]=0
