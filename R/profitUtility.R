@@ -520,3 +520,76 @@ profitGainEst=function(image, mask, sky, skyRMS){
   suppressWarnings({findgain=optim(par=startgain, fn=tempfunc, method="Brent", tempval=tempval, skyRMS=skyRMS, lower=startgain-2, upper=startgain+2)})
   return=list(gain=10^findgain$par, value=findgain$value)
 }
+
+profitDeprojectImageEllipse <- function(image, xcen, ycen, axrat, ang, upsample=5L)
+{
+  stopifnot(is.integer(upsample))
+  if(axrat == 1) return(image)
+  stopifnot(axrat > 0 && axrat < 1)
+  if(!is.list(image)) image = list(img=image)
+  dimorig = dim(image[[1]])
+  dimimg = upsample*dimorig
+  nimages = length(image)
+  for(i in 1:nimages)
+  {
+    stopifnot(identical(dimorig,dim(image[[i]])))
+    image[[i]] = profitUpsample(image[[i]],upsample)
+    dim(image[[i]]) = dimimg
+  }
+  xcen = xcen*upsample
+  ycen = ycen*upsample
+  
+  ang = (ang-90)*pi/180
+  maj = c(sin(ang),cos(ang))
+  min = c(-maj[2],maj[1])
+  x = matrix(rep(0:(dimimg[1] - 1), times=dimimg[2]), nrow=dimimg[1], ncol=dimimg[2])
+  y = matrix(rep(0:(dimimg[2] - 1), each=dimimg[1]), nrow=dimimg[1], ncol=dimimg[2])
+  idx = 1 + x + dimimg[1]*y
+  x = x - 0.5 - xcen
+  y = y - 0.5 - xcen
+  rmaj = maj[1]*x + maj[2]*y
+  rmin = (min[1]*x + min[2]*y)/axrat
+  x = ceiling(rmaj*maj[1] + rmin*min[1] + xcen)
+  y = ceiling(rmaj*maj[2] + rmin*min[2] + ycen)
+  cond = which((x>=1) & (x<=dimimg[1]) & (y>=1) & (y<=dimimg[2]))
+  for(j in 1:nimages)
+  {
+    new = matrix(0,dimimg[1],dimimg[2])
+    for(i in cond) new[x[i],y[i]] = new[x[i],y[i]] + image[[j]][idx[i]]
+    image[[j]] = profitDownsample(new,upsample)
+    dim(image[[j]]) = dimorig
+  }
+  return(image)
+}
+
+profitGuessEllipse <- function(img, qrange=c(0,1))
+{
+	stopifnot(is.numeric(qrange) && length(qrange) == 2 && all(is.finite(qrange)) &&
+		qrange[1] >= 0 && qrange[2] <= 1 && qrange[1] <= qrange[2])
+	dims = dim(img)
+	cens = dims/2
+	x = matrix(rep(1:dims[1] - 0.5 - cens[1], times=dims[2]), nrow=dims[1], ncol=dims[2])
+  y = matrix(rep(1:dims[2] - 0.5 - cens[2], each=dims[1]), nrow=dims[1], ncol=dims[2])
+	moi = matrix(0,2,2)
+	moi[1,1] = sum(x^2*img)
+	moi[2,2] = sum(y^2*img)
+	moi[1,2] = sum(x*y*img)
+	moi[2,1] = moi[1,2]
+	eigens = eigen(moi)
+	mineig = which.min(eigens$values)
+	maxeig = 3-mineig
+	q = eigens$values[mineig]/eigens$values[maxeig]
+	pa = acos(eigens$vectors[1,maxeig])*180/pi - 90
+	if(pa < 0) pa = pa + 180
+	rv = list(pa = pa, q=q)
+	if(rv$q < qrange[1]) rv$q = qrange[1]
+	else if(rv$q > qrange[2]) rv$q = qrange[2]
+	return(rv)
+}
+
+profitPoissonMonteCarlo <- function(x)
+{
+  dimx = dim(x)
+  x = rpois(length(x), x)
+  dim(x) = dimx
+}
