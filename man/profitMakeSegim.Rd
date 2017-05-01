@@ -8,16 +8,19 @@ Watershed Image Segmentation
 A high level utility to achieve decent quality image segmentation. It uses a mixture of image smoothing and watershed segmentation propogation to identify distinct objects for use in, e.g., \code{\link{profitSetupData}} (where the \option{segim} list item output of \code{profitMakeSegim} would be parsed to the \option{segim} input of \code{\link{profitSetupData}}).
 }
 \usage{
-profitMakeSegim(image, mask = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, sky, skyRMS, plot = FALSE, stats = TRUE, ...)
+profitMakeSegim(image, mask = 0, objects=0, tolerance = 4, ext = 2, sigma = 1,
+smooth = TRUE, pixcut = 5, skycut = 2, sky, skyRMS, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Image matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
+Numeric matrix; required,the image we want to analyse.
 }
   \item{mask}{
-Numeric matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+}
+  \item{objects}{
+Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{tolerance}{
 Numeric scalar; the minimum height of the object in the units of skyRMS between its highest point (seed) and the point where it contacts another object (checked for every contact pixel). If the height is smaller than the tolerance, the object will be combined with one of its neighbors, which is the highest. The range 1-5 offers decent results usually.
@@ -38,10 +41,10 @@ Integer scalar; the number of pixels required to identify an object.
 Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?
@@ -105,7 +108,15 @@ Aaron Robotham
 \examples{
 \dontrun{
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-profitMakeSegim(image,plot=TRUE)
+segim=profitMakeSegim(image,plot=TRUE)
+
+#Providing a mask entirely removes regions of the image for segmentation:
+mask=matrix(0,209,155)
+mask[1:80,]=1
+profitMakeSegim(image,mask=mask,plot=TRUE)
+
+#Providing a previously created object map can sometimes help with detection (not here):
+profitMakeSegim(image,mask=mask,object=segim$objects,plot=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
