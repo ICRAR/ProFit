@@ -8,20 +8,23 @@ Segmentation Map Expansion
 A high level utility to achieve decent quality image segmentation based on the expansion of a pre-existing segmentation map. It uses smoothing and local flux weighted comparisons to grow the current segmentation map so as to better identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitMakeSegimExpand(image, segim, mask = 0, skycut = 1, sigma = 1, smooth = TRUE,
-expandsigma = 2, dim = c(15, 15), expand = "all", sky, skyRMS, plot = FALSE,
-stats = TRUE, ...)
+profitMakeSegimExpand(image, segim, mask = 0, objects = 0, skycut = 1, sigma = 1,
+smooth = TRUE, expandsigma = 2, dim = c(15, 15), expand = "all", sky, skyRMS,
+plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
+Numeric matrix; required,the image we want to analyse.
 }
   \item{segim}{
 Numeric matrix; required, the segmentation map of the image. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{mask}{
-Logical matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as image.
+Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+}
+  \item{objects}{
+Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{skycut}{
 Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS. Since we are restricted to expanding out pre-existing segmentation regions we can usually afford to make this value lower than the equivilant in \code{\link{profitMakeSegim}}.
@@ -42,10 +45,10 @@ Integer vector; the dimensions of the image to be generated. Typically this shou
 Vector; specifies which segmentation regions should be expanded. If left with the default \option{expand}='all' then all segments will be expanded.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?
@@ -107,7 +110,7 @@ profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=0)
 profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=-1, expandsigma=3)
 
 #This expantion process is a *much* better idea then simply setting the original skycut
-to a low value like 1/0:
+#to a low value like 1/0:
 profitMakeSegim(image, plot=TRUE, skycut = 1)
 profitMakeSegim(image, plot=TRUE, skycut = 0)
 }

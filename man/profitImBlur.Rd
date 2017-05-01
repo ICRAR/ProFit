@@ -17,7 +17,7 @@ profitImDiff(image, sigma = 1, plot = FALSE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Image matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
+Numeric matrix; required,the image we want to analyse.
 }
   \item{sigma}{
 Numeric scalar; standard deviation of the blur.
