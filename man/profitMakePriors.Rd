@@ -72,12 +72,11 @@ sigmas[which(linear)] = 0.1
 sigmas[which(!linear)] = 1
 sigmas = relist(sigmas, modellist)
 
-#Make the list strcture of prior function:
+#Make the list structure of prior function:
 priors=profitMakePriors(modellist, sigmas)
 
 #Check that the priors return the expected likelihood:
-priors(modellist,modellist)
-sum(dnorm(0,0,unlist(sigmas),log=TRUE))
+stopifnot(abs(priors(modellist,modellist)-sum(dnorm(0,0,unlist(sigmas),log=TRUE))) < 10*.Machine$double.eps)
 
 }
 }
