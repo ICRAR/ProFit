@@ -170,7 +170,10 @@ profitMakeModel = function(modellist,
 		  if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
 
 				submodel = modellist$psf
-				for(i in 1:length(modellist$pointsource)) {
+        npointsources = length(modellist$pointsource$xcen)
+				stopifnot(all(lapply(modellist$pointsource,length) == npointsources))
+				
+				for(i in 1:npointsources) {
 
 					for(comp in names(submodel)) {
 
@@ -212,7 +215,8 @@ profitMakeModel = function(modellist,
 						    new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
 						  }
 						}
-
+						# If there are only pointsources with this profile, the profile list will be null so create it first
+            if(is.null(profiles[[comp]])) profiles[[comp]] = list()
 						# Merge into the main list of profiles
 						for(name in c(names(modellist$comp), names(new_profiles))) {
 							profiles[[comp]][[name]] = c(profiles[[comp]][[name]], new_profiles[[name]])
