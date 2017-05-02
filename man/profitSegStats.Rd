@@ -1,5 +1,6 @@
-\name{profitSegStats}
-\alias{profitSegStats}
+\name{profitSegim}
+\alias{profitSegimStats}
+\alias{profitSegimPlot}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Image Segmentation Statistics
@@ -8,7 +9,8 @@ Image Segmentation Statistics
 Basic summary statistics for image segments, e.g. aperture parameters, fluxes and surface brightness estimates. These might provide useful first guesses to ProFit fitting parameters (particularly \option{flux}, \option{axrat} and \option{ang}).
 }
 \usage{
-profitSegStats(image, segim)
+profitSegimStats(image, segim, sky=0)
+profitSegimPlot(image, segim, mask = 0, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,9 +20,18 @@ Numeric matrix; required, the image we want to analyse.
   \item{segim}{
 Numeric matrix; required, the segmentation map of the \option{image}. This matrix *must* be the same dimensions as \option{image}.
 }
+  \item{sky}{
+User provided estimate of the absolute sky level.
+}
+  \item{mask}{
+Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}. 
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}.
+}
 }
 \details{
-This provides summary statistics for the individual segments of the image, e.g. properties of the apertures, and the sum of the flux etc. This is used inside of \code{\link{profitMakeSegim}} and \code{\link{profitMakeSegimExpand}}, but it may be useful to use seperately if manual modifications are made to the segmentation, or two segmentations (e.g. a hto and cold mode segmentation) need to be combined.
+\code{profitSegimStats} provides summary statistics for the individual segments of the image, e.g. properties of the apertures, and the sum of the flux etc. This is used inside of \code{\link{profitMakeSegim}} and \code{\link{profitMakeSegimExpand}}, but it may be useful to use seperately if manual modifications are made to the segmentation, or two segmentations (e.g. a hot and cold mode segmentation) need to be combined.
 }
 \value{
 A data.frame with columns:
@@ -43,7 +54,8 @@ A data.frame with columns:
   \item{min}{The weighted standard deviation along the minor axis.}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
-  
+
+\code{profitSegimplot} is a simple function that overlays the image segments on the original \option{image}.
 }
 \author{
 Aaron Robotham
@@ -55,14 +67,11 @@ Aaron Robotham
 \examples{
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
 segim=profitMakeSegim(image,plot=TRUE)
-segim$segstats
+print(segim$segstats)
 
 segim$segim[15:30, 20:35]=max(segim$segim)+1
-temp=magimage(image)
-contour(temp$x, temp$y, z=segim$segim>0, nlevels=1, zlim=c(0,1), col='red',
-drawlabels=FALSE, add=TRUE)
-print(profitSegStats(image-segim$sky, segim$segim))
-
+print(profitSegimStats(image, segim$segim, sky=segim$sky))
+profitSegimPlot(image, segim$segim)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

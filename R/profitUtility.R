@@ -87,9 +87,9 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   }
   image=image_sky/skyRMS
   image[!is.finite(image)]=0
-  if(plot){
-    magimage(image, ...)
-  }
+  # if(plot){
+  #   magimage(image, ...)
+  # }
   if(smooth){
     image=as.matrix(isoblur(as.cimg(image),sigma))
   }
@@ -103,18 +103,21 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   objects=segim>0
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
+  # if(plot){
+  #   tempcon=magimage(segim,add=T,magmap=F,col=NA)
+  #   x=tempcon$x
+  #   y=tempcon$y
+  #   segvec=which(tabulate(segim)>0)
+  #   for(i in segvec){
+  #     z=tempcon$z==i
+  #     contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
+  #   }
+  #   if(!missing(mask)){
+  #     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
+  #   }
+  # }
   if(plot){
-    tempcon=magimage(segim,add=T,magmap=F,col=NA)
-    x=tempcon$x
-    y=tempcon$y
-    segvec=which(tabulate(segim)>0)
-    for(i in segvec){
-      z=tempcon$z==i
-      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
-    }
-    if(!missing(mask)){
-      magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
-    }
+    profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
   }
   objects=segim>0
   temp=matrix(0, xlen, ylen)
@@ -129,7 +132,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegStats(image=image_orig-sky, segim=segim)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky)
   }else{
     segstats=NULL
   }
@@ -150,9 +153,9 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   }
   image=image_sky/skyRMS
   image[!is.finite(image)]=0
-  if(plot){
-    magimage(image, ...)
-  }
+  # if(plot){
+  #   magimage(image, ...)
+  # }
   if(smooth){
     image=as.matrix(isoblur(as.cimg(image),sigma))
   }
@@ -184,18 +187,21 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   }
   objects=segim_new>0
   
+  # if(plot){
+  #   tempcon=magimage(segim_new,add=T,magmap=F,col=NA)
+  #   x=tempcon$x
+  #   y=tempcon$y
+  #   segvec=which(tabulate(segim_new)>0)
+  #   for(i in segvec){
+  #     z=tempcon$z==i
+  #     contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
+  #   }
+  #   if(!missing(mask)){
+  #     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
+  #   }
+  # }
   if(plot){
-    tempcon=magimage(segim_new,add=T,magmap=F,col=NA)
-    x=tempcon$x
-    y=tempcon$y
-    segvec=which(tabulate(segim_new)>0)
-    for(i in segvec){
-      z=tempcon$z==i
-      contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE)
-    }
-    if(!missing(mask)){
-      magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
-    }
+    profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
   }
   if(missing(sky)){
     sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
@@ -205,7 +211,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegStats(image=image_orig-sky, segim=segim)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky)
   }else{
     segstats=NULL
   }
@@ -428,7 +434,8 @@ for(i in 1:dim(tempgrid)[1]){tempsky=rbind(tempsky, profitSkyEstLoc(image=image,
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
 }
 
-profitSegStats=function(image, segim){
+profitSegimStats=function(image, segim, sky=0){
+  image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   segvec=which(tabulate(segim)>0)
@@ -455,4 +462,17 @@ profitSegStats=function(image, segim){
   N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
   segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
   segstats=as.data.frame(segstats[order(segID),])
+}
+
+profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
+  image=image-sky
+  temp=magimage(image, ...)
+  segvec=which(tabulate(segim)>0)
+  for(i in segvec){
+    z=segim==i
+    contour(temp$x,temp$y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
+  }
+  if(!missing(mask) & length(mask)==length(image)){
+    magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
+  }
 }
