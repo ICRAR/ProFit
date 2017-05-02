@@ -15,7 +15,7 @@ plot = FALSE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image.
+Numeric matrix; required, the image we want to analyse. The galaxy should be approximately central within this image since annuli weighting is done to avoid brighter central regions dominated by galaxy flux.
 }
   \item{mask}{
 Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.

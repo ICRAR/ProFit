@@ -15,7 +15,7 @@ plot = FALSE, stats = TRUE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required,the image we want to analyse.
+Numeric matrix; required, the image we want to analyse.
 }
   \item{segim}{
 Numeric matrix; required, the segmentation map of the image. This matrix *must* be the same dimensions as \option{image}.

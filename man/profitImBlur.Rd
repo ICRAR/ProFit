@@ -17,7 +17,7 @@ profitImDiff(image, sigma = 1, plot = FALSE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required,the image we want to analyse.
+Numeric matrix; required, the image we want to analyse.
 }
   \item{sigma}{
 Numeric scalar; standard deviation of the blur.
