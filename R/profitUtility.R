@@ -121,36 +121,14 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   temp[objects]=1
   objects=temp
   
-  if(stats){
-    segvec=which(tabulate(segim)>0)
-    segvec=segvec[segvec>0]
-    locs=expand.grid(1:xlen,1:ylen)-0.5
-    tempDT=data.table(x=locs[,1],y=locs[,2],val=as.numeric(image_sky),segID=as.integer(segim))
-    tempDT=tempDT[segID>0,]
-    segID=tempDT[,.BY,by=segID]$segID
-    flux=tempDT[,sum(val),by=segID]$V1
-    xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
-    ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
-    xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
-    ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
-    covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
-    corxy=covxy/(xsd*ysd)
-    rad=.cov2eigval(xsd, ysd, covxy)
-    rad$hi=sqrt(rad$hi)
-    rad$lo=sqrt(rad$lo)
-    grad=.cov2eigvec(xsd, ysd, covxy)
-    ang=(90-atan(grad)*180/pi)%%180
-    Nseg=tempDT[,.N,by=segID]$N
-    N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-    N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
-    segstats=as.data.frame(segstats[order(segID),])
-  }else{
-    segstats=NULL
-  }
   sky=profitSkyEst(image=image_orig,  mask=mask, objects=objects, plot=FALSE)$sky
   image_sky=image_orig-sky
   skyRMS=profitSkyEst(image=profitImDiff(image_sky,3),  mask=mask, objects=objects, plot=FALSE)$skyRMS
+  if(stats){
+    segstats=profitSegStats(image=image_orig-sky, segim=segim)
+  }else{
+    segstats=NULL
+  }
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 
@@ -202,33 +180,6 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   }
   objects=segim_new>0
   
-  if(stats){
-    segvec=which(tabulate(segim)>0)
-    segvec=segvec[segvec>0]
-    locs=expand.grid(1:xlen,1:ylen)-0.5
-    tempDT=data.table(x=locs[,1],y=locs[,2],val=as.numeric(image_sky),segID=as.integer(segim))
-    tempDT=tempDT[segID>0,]
-    segID=tempDT[,.BY,by=segID]$segID
-    flux=tempDT[,sum(val),by=segID]$V1
-    xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
-    ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
-    xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
-    ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
-    covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
-    corxy=covxy/(xsd*ysd)
-    rad=.cov2eigval(xsd, ysd, covxy)
-    rad$hi=sqrt(rad$hi)
-    rad$lo=sqrt(rad$lo)
-    grad=.cov2eigvec(xsd, ysd, covxy)
-    ang=(90-atan(grad)*180/pi)%%180
-    Nseg=tempDT[,.N,by=segID]$N
-    N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-    N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
-    segstats=as.data.frame(segstats[order(segID),])
-  }else{
-    segstats=NULL
-  }
   if(plot){
     tempcon=magimage(segim_new,add=T,magmap=F,col=NA)
     x=tempcon$x
@@ -245,6 +196,11 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
   image_sky=image_orig-sky
   skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
+  if(stats){
+    segstats=profitSegStats(image=image_orig-sky, segim=segim)
+  }else{
+    segstats=NULL
+  }
   return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
 }
 
@@ -462,4 +418,33 @@ for(i in 1:dim(tempgrid)[1]){tempsky=rbind(tempsky, profitSkyEstLoc(image=image,
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
+}
+
+profitSegStats=function(image, segim){
+  xlen=dim(image)[1]
+  ylen=dim(image)[2]
+  segvec=which(tabulate(segim)>0)
+  segvec=segvec[segvec>0]
+  locs=expand.grid(1:xlen,1:ylen)-0.5
+  tempDT=data.table(x=locs[,1],y=locs[,2],val=as.numeric(image),segID=as.integer(segim))
+  tempDT=tempDT[segID>0,]
+  segID=tempDT[,.BY,by=segID]$segID
+  val=NULL; x=NULL; y=NULL
+  flux=tempDT[,sum(val),by=segID]$V1
+  xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+  ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+  xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
+  ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
+  covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
+  corxy=covxy/(xsd*ysd)
+  rad=.cov2eigval(xsd, ysd, covxy)
+  rad$hi=sqrt(rad$hi)
+  rad$lo=sqrt(rad$lo)
+  grad=.cov2eigvec(xsd, ysd, covxy)
+  ang=(90-atan(grad)*180/pi)%%180
+  Nseg=tempDT[,.N,by=segID]$N
+  N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
+  N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
+  segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+  segstats=as.data.frame(segstats[order(segID),])
 }

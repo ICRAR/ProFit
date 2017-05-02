@@ -13,7 +13,7 @@ profitMakeSkyMap(image, objects = 0, box = c(100, 100))
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required,the image we want to analyse.
+Numeric matrix; required, the image we want to analyse.
 }
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.

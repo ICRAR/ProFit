@@ -13,7 +13,7 @@ profitGainEst(image, mask=0, objects=0, sky, skyRMS)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required,the image we want to analyse.
+Numeric matrix; required, the image we want to analyse.
 }
   \item{mask}{
 Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.

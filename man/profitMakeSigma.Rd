@@ -14,7 +14,7 @@ plot=FALSE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required,the image we want to analyse.
+Numeric matrix; required, the image we want to analyse.
 }
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. Pixels set to 0 are interpretted as sky, and set to zero for calculating object shot-noise. If provided, this matrix *must* be the same dimensions as \option{image}. 
