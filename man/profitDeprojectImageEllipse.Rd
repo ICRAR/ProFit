@@ -18,7 +18,7 @@ List or numeric; required. An image matrix or a list of image matrices, each of 
   \item{xcen}{
 Numeric; required. The x-coordinate in pixels of the ellipse center in the images.
 }
-  \item{tolog}{
+  \item{ycen}{
 Numeric; required. The y-coordinate in pixels of the ellipse center in the images.
 }
   \item{axrat}{
