@@ -336,7 +336,7 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
   {
   	LL = 0
   	parms = unlist(new)
-  	if(!is.null(tofit)) ps = tofit
+  	if(!is.null(tofit)) ps = which(tofit)
   	else ps = 1:length(parms)
   	for(p in ps)
   	{
