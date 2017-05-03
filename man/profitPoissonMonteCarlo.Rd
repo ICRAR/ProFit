@@ -27,7 +27,8 @@ Dan Taranu
 }
 \examples{
 \dontrun{
-disk = profitMakeModel(modellist=list(sersic=list(xcen=50,ycen=50,mag=15,re=5,nser=1,axrat=0.5,ang=125,box=0)))$z
+disk = profitMakeModel(modellist=list(sersic=list(xcen=50,ycen=50,mag=15,re=5,nser=1,
+axrat=0.5,ang=125,box=0)))$z
 gain = 1e13
 magimage(profitPoissonMonteCarlo(disk*gain))
 }
