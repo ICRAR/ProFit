@@ -201,7 +201,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   #   }
   # }
   if(plot){
-    profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
+    profitSegimPlot(image=image_orig, segim=segim_new, mask=mask, sky=sky, ...)
   }
   if(missing(sky)){
     sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
@@ -518,6 +518,7 @@ profitSegimStats=function(image, segim, sky=0){
 profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   image=image-sky
   temp=magimage(image, ...)
+  if(min(segim,na.rm=TRUE)!=0){segim=segim-min(segim,na.rm=TRUE)}
   segvec=which(tabulate(segim)>0)
   for(i in segvec){
     z=segim==i
