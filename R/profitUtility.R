@@ -569,3 +569,15 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
   }
 }
+
+profitGainConvert=function(gain=1, magzero=0, magzero_new=0){
+  return(gain*10^(-0.4*(magzero_new-magzero)))
+}
+
+profitMag2Flux=function(mag=0, magzero=0){
+  return(10^(-0.4*(mag-magzero)))
+}
+
+profitFlux2Mag=function(flux=1, magzero=0){
+  return(-2.5*log10(flux)+magzero)
+}
