@@ -191,29 +191,39 @@ sigma_est_2=sqrt(image_ADU_sub_noise/gain_elec_ADU+sky_pix_ADU_noise^2)
 maghist(sigma_est_2/sigma_elec*gain_elec_ADU)
 ```
 
-As a convenience there also exists a helper function profitMakeSigma that does the scaling and error addition for you (if you are feeling lazy, or want to sanity check your own thought process).
+As a convenience there also exists a helper function profitMakeSigma that does the scaling and error addition for you (if you are feeling lazy, or want to sanity check your own thought process). Below we compare both of the above methods to estimate the sigma maps:
 
 ```{r, fig.width=5, fig.height=5}
-sigma_est_3=profitMakeSigma(image = image_ADU_sub_noise, sky = 0, skyRMS = sky_pix_ADU_noise, gain = gain_elec_ADU)
+sigma_est_3=profitMakeSigma(image = image_ADU_sub_noise, sky = 0, skyRMS = sky_elec_noise, gain = gain_elec_ADU, readRMS = read_elec_noise, darkRMS = dark_elec_noise, sky_units = 'elec', read_units = 'elec', dark_units = 'elec')
 magimage(sigma_est_3)
+```
+
+```{r, fig.width=5, fig.height=5}
+sigma_est_4=profitMakeSigma(image = image_ADU_sub_noise, sky = 0, skyRMS = sky_pix_ADU_noise, gain = gain_elec_ADU)
+magimage(sigma_est_4)
 ```
 
 The only difference is the helper function does not allow negative sky counts to reduce the skyRMS floor:
 
 ```{r, fig.width=5, fig.height=5}
-magplot(sigma_est_2, sigma_est_3,pch='.',log='xy', grid=TRUE)
-abline(h=sky_pix_ADU_noise,col='red')
+magplot(sigma_est_2, sigma_est_3, pch='.', log='xy', grid=TRUE)
+```
+
+The outputs of using profitMakeSigma either way is almost identical:
+
+```{r, fig.width=5, fig.height=5}
+magplot(sigma_est_3, sigma_est_4, pch='.', log='xy', grid=TRUE)
 ```
 
 We can also use the segmentation map we made before to identify pure sky areas where the error should simply be the skyRMS:
 
 ```{r, fig.width=5, fig.height=5}
-sigma_est_4=profitMakeSigma(image = image_ADU_sub_noise, objects = segim>0, sky = 0, skyRMS = sky_pix_ADU_noise, gain = gain_elec_ADU)
-magimage(sigma_est_4)
+sigma_est_5=profitMakeSigma(image = image_ADU_sub_noise, objects = segim>0, sky = 0, skyRMS = sky_pix_ADU_noise, gain = gain_elec_ADU)
+magimage(sigma_est_5)
 ```
 
 ```{r, fig.width=5, fig.height=5}
-magplot(sigma_est_2, sigma_est_4,pch='.',log='xy', grid=TRUE)
+magplot(sigma_est_2, sigma_est_5,pch='.',log='xy', grid=TRUE)
 abline(h=sky_pix_ADU_noise,col='red')
 ```
 

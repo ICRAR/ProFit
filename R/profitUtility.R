@@ -360,13 +360,54 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
   return=priors
 }
 
-profitMakeSigma=function(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, readRMS=0, darkRMS=0, plot=FALSE, ...){
-  image=image-sky
-  if(!missing(objects)){
+profitMakeSigma=function(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, readRMS=0, darkRMS=0, image_units='ADU', sky_units='ADU', read_units='ADU', dark_units='ADU', output_units='ADU', plot=FALSE, ...){
+  if(!missing(objects) & length(objects)==length(image)){
     image[objects==0]=0
   }
-  image[image< skyRMS*skycut]=0
-  sigma=sqrt((gain*image)+(gain*skyRMS)^2+(gain*readRMS)^2+(gain*darkRMS)^2)/gain
+  if(image_units=='ADU'){
+    image=gain*image
+  }else if(image_units=='elec'){
+    NULL
+  }else{
+    stop(paste('image_units unit type of',image_units,'not recognised, must be ADU or elec'))
+  }
+  
+  if(sky_units=='ADU'){
+    sky=gain*sky
+    skyRMS=gain*skyRMS
+  }else if(sky_units=='elec'){
+    NULL
+  }else{
+    stop(paste('sky_units unit type of',sky_units,'not recognised, must be ADU or elec'))
+  }
+  
+  if(read_units=='ADU'){
+    readRMS=gain*readRMS
+  }else if(read_units=='elec'){
+    NULL
+  }else{
+    stop(paste('read_units unit type of',read_units,'not recognised, must be ADU or elec'))
+  }
+  
+  if(dark_units=='ADU'){
+    darkRMS=gain*darkRMS
+  }else if(dark_units=='elec'){
+    NULL
+  }else{
+    stop(paste('dark_units unit type of',dark_units,'not recognised, must be ADU or elec'))
+  }
+  
+  image=image-sky
+  image[image < skyRMS*skycut]=0
+  
+  if(output_units=='ADU'){
+    sigma=sqrt(image+skyRMS^2+readRMS^2+darkRMS^2)/gain
+  }else if(output_units=='elec'){
+    sigma=sqrt(image+skyRMS^2+readRMS^2+darkRMS^2)
+  }else{
+    stop(paste('output_units unit type of',output_units,'not recognised, must be ADU or elec'))
+  }
+  
   if(plot){
     magimage(sigma, ...)
   }

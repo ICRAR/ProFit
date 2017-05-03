@@ -9,7 +9,8 @@ A utility function to construct a \code{ProFit} legal sigma map that can be inpu
 }
 \usage{
 profitMakeSigma(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, readRMS=0, darkRMS=0,
-plot=FALSE, ...)
+image_units='ADU', sky_units='ADU', read_units='ADU', dark_units='ADU',
+output_units='ADU', plot=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -36,6 +37,21 @@ Numeric; the RMS of the read-noise. If you have estimated the sky RMS from the i
 }
   \item{darkRMS}{
 Numeric; the RMS of the dark-current-noise. If you have estimated the sky RMS from the image directly this should not be necessary since it naturally captures this component. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+}
+  \item{image_units}{
+Character; the units of the \option{image}. Must either be 'ADU' for generic astronomical data units, or 'elec' for photo-electrons.
+}
+  \item{sky_units}{
+Character; the units of \option{sky} and \option{skyRMS}. Must either be 'ADU' for generic astronomical data units (the same type and scaling as per \option{image}), or 'elec' for photo-electrons.
+}
+  \item{read_units}{
+Character; the units of \option{read}. Must either be 'ADU' for generic astronomical data units (the same type and scaling as per \option{image}), or 'elec' for photo-electrons.
+}
+  \item{dark_units}{
+Character; the units of \option{dark}. Must either be 'ADU' for generic astronomical data units (the same type and scaling as per \option{image}), or 'elec' for photo-electrons.
+}
+  \item{output_units}{
+Character; the units of the output sigma map. Must either be 'ADU' for generic astronomical data units (the same type and scaling as per \option{image}), or 'elec' for photo-electrons.
 }
   \item{plot}{
 Logical; should a \code{\link{magimage}} plot of the output be generated?
