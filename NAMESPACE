@@ -13,7 +13,7 @@ importFrom("graphics", "abline", "axis", "box", "contour", "hist",
 importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
              "median", "predict", "qgamma", "residuals", "rnorm",
              "smooth.spline", "var", "integrate", "density", "pnorm", "quantile", "sd",
-           "optimise", "optim", "qnorm")
+           "optimise", "optim", "qnorm", "rpois")
 importFrom("utils", "relist")
 #importFrom("dbscan", "dbscan")
 importFrom("RColorBrewer", "brewer.pal")

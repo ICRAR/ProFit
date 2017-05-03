@@ -45,13 +45,18 @@ Dan Taranu
 }
 \examples{
 \dontrun{
-disk = profitMakeModel(modellist=list(sersic=list(xcen=50,ycen=50,mag=15,re=5,nser=1,axrat=0.5,ang=125,box=0)))
+disk = profitMakeModel(modellist=list(sersic=list(xcen=50,ycen=50,mag=15,re=5,nser=1,
+axrat=0.5,ang=125,box=0)))
 magimage(log10(disk$z), zlim=c(-15,-7.5),magmap=FALSE)
 
-deproj = profitDeprojectImageEllipse(disk$z, xcen=50, ycen=50, axrat=0.5, ang=125,upsample = 9L)
+deproj = profitDeprojectImageEllipse(disk$z, xcen=50, ycen=50, axrat=0.5, ang=125,
+upsample = 9L)
 magimage(log10(deproj$img), zlim=c(-15,-7.5),magmap=FALSE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ deproject, ellipse, disk, disc }% use one of  RShowDoc("KEYWORDS")
+\keyword{deproject}
+\keyword{ellipse}
+\keyword{disk}
+\keyword{disc}

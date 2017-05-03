@@ -76,8 +76,8 @@ sigmas = relist(sigmas, modellist)
 priors=profitMakePriors(modellist, sigmas)
 
 #Check that the priors return the expected likelihood:
-stopifnot(abs(priors(modellist,modellist)-sum(dnorm(0,0,unlist(sigmas),log=TRUE))) < 10*.Machine$double.eps)
-
+stopifnot(abs(priors(modellist,modellist) - sum(dnorm(0,0,unlist(sigmas),log=TRUE)))
+< 10*.Machine$double.eps)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

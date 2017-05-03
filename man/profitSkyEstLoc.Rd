@@ -8,7 +8,8 @@ Calculate Sky in Subest
 Calculate the sky and sky RMS for a subset region of a larger image, as used in \code{\link{profitMakeSkyMap}}.
 }
 \usage{
-profitSkyEstLoc(image, objects = 0, loc = dim(image)/2, box = c(100, 100), plot = FALSE, ...)
+profitSkyEstLoc(image, objects = 0, loc = dim(image)/2, box = c(100, 100), plot = FALSE,
+...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
