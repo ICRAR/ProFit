@@ -155,10 +155,10 @@ More realisticially, you will need to use the gain to estimate the shot noise of
 First you will need a reasonable segmentation map (of the type you would pass to segim in **profitSetupData**). Here we will be very conservative and only use the faintest 50% of pixels from the original (noise free) image we made:
 
 ```{r}
-segim=image_elec<=quantile(image_elec,0.5)
+segim=image_elec>=quantile(image_elec,0.5)
 ```
 
-This will look like a black circle when we plot it
+This will look like a white circle when we plot it
 
 ```{r, fig.width=5, fig.height=5}
 magimage(segim)
@@ -167,7 +167,7 @@ magimage(segim)
 Now we can look at the sky data in the non-object pixels:
 
 ```{r, fig.width=5, fig.height=5}
-sky_pix_ADU=image_ADU_sub_noise[segim]
+  sky_pix_ADU=image_ADU_sub_noise[segim==0]
 maghist(sky_pix_ADU)
 ```
 
@@ -191,7 +191,31 @@ sigma_est_2=sqrt(image_ADU_sub_noise/gain_elec_ADU+sky_pix_ADU_noise^2)
 maghist(sigma_est_2/sigma_elec*gain_elec_ADU)
 ```
 
-This histogram looks much like our first estimate, but it is a tiny bit skewed to lower values. In practice both produce decent Normal residuals (sd~1) when we look at (Data-Model)/Sigma. The best we can possibly do is:
+As a convenience there also exists a helper function profitMakeSigma that does the scaling and error addition for you (if you are feeling lazy, or want to sanity check your own thought process).
+
+```{r}
+sigma_est_3=profitMakeSigma(image = image_ADU_sub_noise, sky = 0, skyRMS = sky_pix_ADU_noise, gain = gain_elec_ADU)
+```
+
+The only difference is the helper function does not allow negative sky counts to reduce the skyRMS floor:
+
+```{r, fig.width=5, fig.height=5}
+magplot(sigma_est_2, sigma_est_3,pch='.',log='xy', grid=TRUE)
+abline(h=sky_pix_ADU_noise,col='red')
+```
+
+We can also use the segmentation map we made before to identify pure sky areas where the error should simply be the skyRMS:
+
+```{r}
+sigma_est_4=profitMakeSigma(image = image_ADU_sub_noise, objects = segim>0, sky = 0, skyRMS = sky_pix_ADU_noise, gain = gain_elec_ADU)
+```
+
+```{r, fig.width=5, fig.height=5}
+magplot(sigma_est_2, sigma_est_4,pch='.',log='xy', grid=TRUE)
+abline(h=sky_pix_ADU_noise,col='red')
+```
+
+The histogram a few plots above looks much like our first estimate, but it is a tiny bit skewed to lower values. In practice both produce decent Normal residuals (sd~1) when we look at (Data-Model)/Sigma. The best we can possibly do is:
 
 ```{r}
 sd((image_ADU_sub_noise-image_ADU_sub)/sigma_elec)*gain_elec_ADU

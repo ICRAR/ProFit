@@ -364,9 +364,8 @@ profitMakeSigma=function(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, re
   image=image-sky
   if(!missing(objects)){
     image[objects==0]=0
-  }else{
-    image[image< skyRMS*skycut]=0
   }
+  image[image< skyRMS*skycut]=0
   sigma=sqrt((gain*image)+(gain*skyRMS)^2+(gain*readRMS)^2+(gain*darkRMS)^2)/gain
   if(plot){
     magimage(sigma, ...)
