@@ -211,7 +211,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky)
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky)
   }else{
     segstats=NULL
   }

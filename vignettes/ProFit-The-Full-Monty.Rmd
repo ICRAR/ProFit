@@ -18,7 +18,7 @@ library(FITSio)
 library(EBImage)
 ```
 
-So, you want to profile a galaxy, and you have next to no information about it. Well with ProFit no segmentation map, no sigma map, no PSF, no gain and no sky subtraction is (almsot) no problem. Thanks to a number of utility functions we can achieve a reasonable fit bootstrapping directly from the data.
+So, you want to profile a galaxy, and you have next to no information about it. Well with **ProFit** no segmentation map, no sigma map, no PSF, no gain and no sky subtraction is (almsot) no problem. Thanks to a number of utility functions we can achieve a reasonable fit bootstrapping directly from the data.
 
 As an example, our mystery data will also be in a fairly crowded region, which will either require good (and conservative) image segmentation, or multiple object fitting.
 
@@ -31,7 +31,6 @@ image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="P
 And take a look at what we have got:
 
 ```{r, fig.width=5, fig.height=5}
-magimage(image)
 magimage(image,hi=1)
 ```
 
@@ -92,15 +91,18 @@ abline(h=c(0.2,0.4), lty=2)
 abline(v=c(1.5,2), lty=2)
 ```
 
+We want to extract very blue (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
+
 ```{r}
 segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$N50/segim_expand$segstats$N90>0.2 & segim_expand$segstats$N50/segim_expand$segstats$N90<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2,]
 ```
 
-We can extract the brightest of these likely stars to do our PSF estimate.
+There are 4 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate.
 
 ```{r}
 psf_image=image[154+-15:15,319+-15:15]
 psf_sigma=sigma[154+-15:15,319+-15:15]
+psf_segim=segim_expand$segim[154+-15:15,319+-15:15]
 ```
 
 Look at our target star to check we are happy:
@@ -108,6 +110,7 @@ Look at our target star to check we are happy:
 ```{r, fig.width=5, fig.height=5}
 magimage(psf_image)
 magimage(psf_sigma)
+magimage(psf_segim)
 ```
 
 Next we make our initial model, where we take our PSF estimates from the segmentation stats:
@@ -126,6 +129,8 @@ psf_tofit=list(moffat=list(xcen=TRUE, ycen=TRUE, mag=TRUE, fwhm=TRUE, con=TRUE, 
 psf_tolog=list(moffat=list(xcen=FALSE, ycen=FALSE, mag=FALSE, fwhm=TRUE, con=TRUE, axrat=FALSE, box=FALSE))
 psf_intervals=list(moffat=list(xcen=list(c(0,dim(psf_image)[1])),ycen=list(c(0,dim(psf_image)[2])), mag=list(c(psf_mag-2,psf_mag+2)), fwhm=list(c(1,100)), con=list(c(1,100)), axrat=list(c(0.1,1)), box=list(c(-1,1))))
 ```
+
+Since there are no other sources in the frame we can use the full **psf_image** to attempt our profile fit (so no need to provide **psf_segim**):
 
 ```{r}
 psf_Data=profitSetupData(psf_image, sigma=psf_sigma, modellist = psf_modellist, tofit = psf_tofit, tolog=psf_tolog, magzero = 30, algo.func = 'optim', intervals = psf_intervals)
@@ -187,17 +192,19 @@ magimage(gal_segim)
 As before, we have to setup some reasonable guesses for our galaxy fit:
 
 ```{r}
+gal_x=segim_expand$segstats[6,'xcen']-178+0.5+dim(gal_image)[1]/2
+gal_y=segim_expand$segstats[6,'ycen']-178+0.5+dim(gal_image)[2]/2
 gal_mag=profitFlux2Mag(flux=segim_expand$segstats[6,'flux'], magzero=30)
-gal_re=segim_expand$segstats[6,'maj']
+gal_re=sqrt(segim_expand$segstats[6,'N50']/(pi*segim_expand$segstats[6,'axrat']))
 gal_ang=segim_expand$segstats[6,'ang']
 gal_axrat=segim_expand$segstats[6,'axrat']
-gal_modellist = list(sersic=list(xcen=dim(gal_image)[1]/2, ycen=dim(gal_image)[2]/2, mag=gal_mag, re=gal_re, nser=1, ang=gal_ang, axrat=gal_axrat, box=0))
+gal_modellist = list(sersic=list(xcen=gal_x, ycen=gal_y, mag=gal_mag, re=gal_re, nser=1, ang=gal_ang, axrat=gal_axrat, box=0))
 ```
 
 And now we make the other inputs we need for our fitting **Data** structure:
 
 ```{r}
-gal_tofit=list(sersic=list(xcen=TRUE, ycen=TRUE, mag=TRUE, re=TRUE, nser=FALSE, axrat=TRUE, box=FALSE))
+gal_tofit=list(sersic=list(xcen=TRUE, ycen=TRUE, mag=TRUE, re=TRUE, nser=TRUE, axrat=TRUE, box=FALSE))
 gal_tolog=list(sersic=list(xcen=FALSE, ycen=FALSE, mag=FALSE, re=TRUE, nser=TRUE, axrat=FALSE, box=FALSE))
 gal_intervals=list(sersic=list(xcen=list(c(0,dim(gal_image)[1])),ycen=list(c(0,dim(gal_image)[2])), mag=list(c(gal_mag-2,gal_mag+2)), re=list(c(1,100)), nser=list(c(0.5,10)), axrat=list(c(0.01,1)), box=list(c(-1,1))))
 ```
@@ -228,7 +235,7 @@ This looks pretty good!
 
 ## Conclusions
 
-So there we have it- using almost just image pixel data (no header information except for the zero-point, which we can always calibrate later by macthing to known sources) we have managed to achieve a very reasonable looking galaxy fit a complex region with bright nearby sources. Our full chain of work was:
+So there we have it- using image pixel data and no header information except for the magnitude zero-point (which we can always calibrate later by matching to known sources) we have managed to achieve a very reasonable looking galaxy fit in a complex region with bright nearby contaminating sources. Our full chain of work was:
 
 1. Load in the **image** data
 2. Make a segmentation map (**segim**), which also estimates sky properties (**profitMakeSegim** and **profitMakeSegimExpand**)
@@ -241,3 +248,10 @@ So there we have it- using almost just image pixel data (no header information e
 
 Nearly all of the above can be automated for user data of interest, and should act as a good outline of how you can use **ProFit** to fit a range of data where not all of the meta information is to hand.
 
+For various reasons users might get better results from using, e.g., SExtractor as part of their processing pipeline rather than the internal utility functions, but there should be enough to get you going on your virtuous path of galaxy fitting ;-)
+
+IN all of this, the biggets gotcha is no doubt achieving a decent estimate of the PSF. Here we fit to a single str using a Moffat function, btu with HST data you will almost certainly need to use Tiny-Tim, and many people advocate using shapelet fitting programs like PSF-Ex and their ilk.
+
+For space derived data you probably do want to use tools provided by the relevant facility, but for most ground imaging better results can be achieved through fitting analytic models to stars near your target galaxy (ideally multiple stars, so you can reject bad fits etc) and constructing an idealised PSF from the analytic model. If you are feeling *really* adventurous you could even marginalise over your uncertainty in the PSF by re-doing your fit with samples from the PSF model posterior.
+
+The other parts of the process mentioned above are much more straigh-forward, and there are lots of routes (including the above) that will give you decent results. In my experience when things go badly wrong (a few percent of the time when trying to fully automate all of this) the main culprit is bad segmentation due to nearby very bright stars. In these situations you probably should not be trying to achieve a good fit given the data quality. Issues with the sigma maps going wrong are easily spotted when looking at the error residuals for a good fit- the main culprit here will usually be a mistake in the gain (e.g. using inverse gain as gain). Remember: image ADUs x gain = image photo-electrons! If really unsure use the provided **profitGainEst** function to sanity check your value.
