@@ -435,7 +435,7 @@ profitGainEst=function(image, mask=0, objects=0, sky, skyRMS){
   }
 
   suppressWarnings({findgain=optim(par=startgain, fn=tempfunc, method="Brent", tempval=tempval, skyRMS=skyRMS, lower=startgain-2, upper=startgain+2)})
-  return=list(gain=10^findgain$par, value=findgain$value)
+  return=10^findgain$par
 }
 
 profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
@@ -552,7 +552,7 @@ profitSegimStats=function(image, segim, sky=0){
   Nseg=tempDT[,.N,by=segID]$N
   N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
   N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-  segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
+  segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
   segstats=as.data.frame(segstats[order(segID),])
 }
 

@@ -2,8 +2,21 @@
 title: "Profit-Segim-Maps"
 author: "Aaron Robotham"
 date: "3 May 2017"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFit: Segim Maps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
+
+First load the libraries we need:
+
+```{r}
+library(knitr)
+library(ProFit)
+library(FITSio)
+library(EBImage)
+```
 
 Having a good segmentation map is important for the successful running of ProFit. Luckily ProFit now comes with some utility functions to help you get there. We can start with a simple example:
 

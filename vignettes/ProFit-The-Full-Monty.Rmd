@@ -1,0 +1,243 @@
+---
+title: "ProFit-The-Full-Monty"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFit: The Full Monty}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+First load the libraries we need:
+
+```{r}
+library(knitr)
+library(ProFit)
+library(FITSio)
+library(EBImage)
+```
+
+So, you want to profile a galaxy, and you have next to no information about it. Well with ProFit no segmentation map, no sigma map, no PSF, no gain and no sky subtraction is (almsot) no problem. Thanks to a number of utility functions we can achieve a reasonable fit bootstrapping directly from the data.
+
+As an example, our mystery data will also be in a fairly crowded region, which will either require good (and conservative) image segmentation, or multiple object fitting.
+
+First load the data:
+
+```{r}
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))$imDat
+```
+
+And take a look at what we have got:
+
+```{r, fig.width=5, fig.height=5}
+magimage(image)
+magimage(image,hi=1)
+```
+
+It is Z-band data from the VIKING survey, and in the second image it is possible to see that the bright source close to our spiral galaxy of interest in the centre is in fact two very bright stars.
+
+## Making Inputs for ProFit
+
+The first thign to do is to create an object segmentation of the full image:
+
+```{r, fig.width=5, fig.height=5}
+segim=profitMakeSegim(image, plot=TRUE)
+```
+
+This is a pretty decent start, and it has identified all the main sources of interest. We can look at the object information in the attached table:
+
+```{r}
+segim$segstats
+```
+
+The output is approximately in descending flux order. This data happen to have a mag-zero point of 30, so we can extract approximate magnitudes already. Our object of interest is the galaxy near the centre of the frame (178,178), so we already have approcimate parameter properties for fitting purposes. E.g. the magnitude to start with is going to be close to:
+
+```{r}
+profitFlux2Mag(flux = segim$segstats[6,'flux'], magzero = 30)
+```
+
+This number will be useful later.
+
+The next step is to expand out the segmantation for our target galaxy. this is a good idea because we want our model fit to descend into sky dominated pixels and not to be tightly defined by bright central pixels:
+
+```{r, fig.width=5, fig.height=5}
+segim_expand=profitMakeSegimExpand(image, segim$segim, expand=6, expandsigma = 3, skycut=-1, plot=TRUE)
+```
+
+Notice because we set expand=6 only our object of interest (with segID=6) has been expanded. The other sources are left as they were.
+
+Now we have a decent segmentation we can estimate the image gain and the sigma map:
+
+```{r}
+gain=profitGainEst(image,objects=segim_expand$objects, sky=segim_expand$sky, skyRMS=segim_expand$skyRMS)
+print(gain)
+```
+
+The number found is ~0.5. Since the gain estimation routine is typically accurate to a factor of a few, it is quite likely that the image is already in photo-electron counts (i.e. gain=1), but we wil continue with our lower estimate regardless.
+
+Now we have the segmentation, sky estimates and the gain, we can make a sgima map:
+
+```{r, fig.width=5, fig.height=5}
+sigma=profitMakeSigma(image, objects=segim_expand$objects, gain = gain, sky = segim_expand$sky, skyRMS =segim_expand$skyRMS, plot=TRUE)
+```
+
+The sigma map will look much liek our original image, but with sky pixels set to a fixed value of uncertainty, and object pixels having an additional component of shot-noise.
+
+Next we want to find the PSF for fitting, so we should extract a a bright but non-saturated star from the list above:
+
+```{r, fig.width=5, fig.height=5}
+magplot(segim_expand$segstats$maj, segim_expand$segstats$N50/segim_expand$segstats$N90 ,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map))
+abline(h=c(0.2,0.4), lty=2)
+abline(v=c(1.5,2), lty=2)
+```
+
+```{r}
+segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$N50/segim_expand$segstats$N90>0.2 & segim_expand$segstats$N50/segim_expand$segstats$N90<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2,]
+```
+
+We can extract the brightest of these likely stars to do our PSF estimate.
+
+```{r}
+psf_image=image[154+-15:15,319+-15:15]
+psf_sigma=sigma[154+-15:15,319+-15:15]
+```
+
+Look at our target star to check we are happy:
+
+```{r, fig.width=5, fig.height=5}
+magimage(psf_image)
+magimage(psf_sigma)
+```
+
+Next we make our initial model, where we take our PSF estimates from the segmentation stats:
+
+```{r}
+psf_mag=profitFlux2Mag(flux=segim_expand$segstats[8,'flux'], magzero=30)
+psf_fwhm=segim_expand$segstats[8,'maj']*2
+psf_con=sqrt(segim_expand$segstats[8,'N90']/segim_expand$segstats[8,'N50'])
+psf_modellist = list(moffat=list(xcen=dim(psf_image)[1]/2, ycen=dim(psf_image)[2]/2, mag=psf_mag, fwhm=psf_fwhm, con=psf_con, axrat=1, box=0))
+```
+
+We also need to set up the tofit, tolog and intervals structure
+
+```{r}
+psf_tofit=list(moffat=list(xcen=TRUE, ycen=TRUE, mag=TRUE, fwhm=TRUE, con=TRUE, axrat=FALSE, box=FALSE))
+psf_tolog=list(moffat=list(xcen=FALSE, ycen=FALSE, mag=FALSE, fwhm=TRUE, con=TRUE, axrat=FALSE, box=FALSE))
+psf_intervals=list(moffat=list(xcen=list(c(0,dim(psf_image)[1])),ycen=list(c(0,dim(psf_image)[2])), mag=list(c(psf_mag-2,psf_mag+2)), fwhm=list(c(1,100)), con=list(c(1,100)), axrat=list(c(0.1,1)), box=list(c(-1,1))))
+```
+
+```{r}
+psf_Data=profitSetupData(psf_image, sigma=psf_sigma, modellist = psf_modellist, tofit = psf_tofit, tolog=psf_tolog, magzero = 30, algo.func = 'optim', intervals = psf_intervals)
+```
+
+We can check our intial guess easily:
+
+```{r, fig.width=8, fig.height=5}
+profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots = TRUE, plotchisq = TRUE)
+```
+
+It is not perfect- and certainly slightly off centre. We can do an optim fit to improve things:
+
+```{r}
+psf_fit=optim(psf_Data$init, profitLikeModel, method='BFGS', Data=psf_Data, control=list(fnscale=-1))
+```
+
+Now we plot the output:
+
+```{r, fig.width=8, fig.height=5}
+profitLikeModel(parm=psf_fit$par, Data=psf_Data, makeplots = TRUE, plotchisq = TRUE)
+```
+
+This looks like a very good fit. We will now contruct our model PSF:
+
+```{r}
+psf_modellist_fit=profitRemakeModellist(parm=psf_fit$par, Data=psf_Data)$modellist
+psf_modellist_fit$moffat$xcen=25/2
+psf_modellist_fit$moffat$ycen=25/2
+psf_model=profitMakeModel(modellist = psf_modellist_fit, magzero = 30, dim=c(25,25))$z
+```
+
+And now we can look at our final PSF model:
+
+```{r, fig.width=5, fig.height=5}
+magimage(psf_model)
+```
+
+Now we have all the key bits we need in order to fit our target galaxy!
+
+## Fitting the Target Galaxy with ProFit
+
+Much like we did with the PSF fit, we have to extract the region of interest a setup our fitting structures:
+
+```{r}
+gal_image=image[178+-50:50, 178+-50:50]
+gal_sigma=sigma[178+-50:50, 178+-50:50]
+gal_segim=segim_expand$segim[178+-50:50, 178+-50:50]
+```
+
+Check the cutout regions:
+
+```{r, fig.width=5, fig.height=5}
+magimage(gal_image)
+magimage(gal_sigma)
+magimage(gal_segim)
+```
+
+As before, we have to setup some reasonable guesses for our galaxy fit:
+
+```{r}
+gal_mag=profitFlux2Mag(flux=segim_expand$segstats[6,'flux'], magzero=30)
+gal_re=segim_expand$segstats[6,'maj']
+gal_ang=segim_expand$segstats[6,'ang']
+gal_axrat=segim_expand$segstats[6,'axrat']
+gal_modellist = list(sersic=list(xcen=dim(gal_image)[1]/2, ycen=dim(gal_image)[2]/2, mag=gal_mag, re=gal_re, nser=1, ang=gal_ang, axrat=gal_axrat, box=0))
+```
+
+And now we make the other inputs we need for our fitting **Data** structure:
+
+```{r}
+gal_tofit=list(sersic=list(xcen=TRUE, ycen=TRUE, mag=TRUE, re=TRUE, nser=FALSE, axrat=TRUE, box=FALSE))
+gal_tolog=list(sersic=list(xcen=FALSE, ycen=FALSE, mag=FALSE, re=TRUE, nser=TRUE, axrat=FALSE, box=FALSE))
+gal_intervals=list(sersic=list(xcen=list(c(0,dim(gal_image)[1])),ycen=list(c(0,dim(gal_image)[2])), mag=list(c(gal_mag-2,gal_mag+2)), re=list(c(1,100)), nser=list(c(0.5,10)), axrat=list(c(0.01,1)), box=list(c(-1,1))))
+```
+
+Now we can set up our full fitting structure with averything we have made:
+
+```{r}
+gal_Data=profitSetupData(gal_image, sigma=gal_sigma, modellist = gal_modellist, tofit = gal_tofit, tolog=gal_tolog, magzero = 30, algo.func = 'optim', intervals = gal_intervals, psf=psf_model, segim=gal_segim)
+```
+
+```{r, fig.width=8, fig.height=5}
+profitLikeModel(parm=gal_Data$init, Data=gal_Data, makeplots = TRUE, plotchisq = TRUE)
+```
+
+Not a bad start, but certainly not great. Let's do an optim fit:
+
+```{r}
+gal_fit=optim(gal_Data$init, profitLikeModel, method='BFGS', Data=gal_Data, control=list(fnscale=-1))
+```
+
+And we can then plot the output:
+
+```{r, fig.width=8, fig.height=5}
+profitLikeModel(parm=gal_fit$par, Data=gal_Data, makeplots = TRUE, plotchisq = TRUE)
+```
+
+This looks pretty good!
+
+## Conclusions
+
+So there we have it- using almost just image pixel data (no header information except for the zero-point, which we can always calibrate later by macthing to known sources) we have managed to achieve a very reasonable looking galaxy fit a complex region with bright nearby sources. Our full chain of work was:
+
+1. Load in the **image** data
+2. Make a segmentation map (**segim**), which also estimates sky properties (**profitMakeSegim** and **profitMakeSegimExpand**)
+3. Calculate the likely elec/ADU gain of the image (**profitGainEst**)
+3. Make a **sigma** map (**profitMakeSigma**)
+4. Find a subset of likely stars, and extract the brightest one
+5. Fit a Moffat profile to this bright star and generate a model PSF
+6. Cut down our data to the region around the galaxy of interest
+7. Using all fo the data created (including the new PSF) fit an exponential disk profile
+
+Nearly all of the above can be automated for user data of interest, and should act as a good outline of how you can use **ProFit** to fit a range of data where not all of the meta information is to hand.
+
