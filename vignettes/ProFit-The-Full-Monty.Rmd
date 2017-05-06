@@ -97,7 +97,7 @@ We want to extract very blue (axial ratio ~ 1) stars from the above region conta
 segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$N50/segim_expand$segstats$N90>0.2 & segim_expand$segstats$N50/segim_expand$segstats$N90<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2,]
 ```
 
-There are 4 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate.
+There are 4 sensible looking options it seems. We can extract the second brightest of these likely stars to do our rough PSF estimate (the brightest is very close to another bright star, which will affect the fit).
 
 ```{r}
 psf_image=image[154+-15:15,319+-15:15]
@@ -198,15 +198,62 @@ gal_mag=profitFlux2Mag(flux=segim_expand$segstats[6,'flux'], magzero=30)
 gal_re=sqrt(segim_expand$segstats[6,'N50']/(pi*segim_expand$segstats[6,'axrat']))
 gal_ang=segim_expand$segstats[6,'ang']
 gal_axrat=segim_expand$segstats[6,'axrat']
-gal_modellist = list(sersic=list(xcen=gal_x, ycen=gal_y, mag=gal_mag, re=gal_re, nser=1, ang=gal_ang, axrat=gal_axrat, box=0))
+
+gal_modellist = list(
+  sersic=list(
+    xcen=rep(gal_x,2),
+    ycen=rep(gal_y,2),
+    mag=rep(gal_mag,2)+0.7,
+    re=c(gal_re/2,gal_re),
+    nser=c(4,1),
+    ang=c(0,gal_ang),
+    axrat=c(1,gal_axrat),
+    box=rep(0,2)
+  )
+)
 ```
 
 And now we make the other inputs we need for our fitting **Data** structure:
 
 ```{r}
-gal_tofit=list(sersic=list(xcen=TRUE, ycen=TRUE, mag=TRUE, re=TRUE, nser=TRUE, axrat=TRUE, box=FALSE))
-gal_tolog=list(sersic=list(xcen=FALSE, ycen=FALSE, mag=FALSE, re=TRUE, nser=TRUE, axrat=FALSE, box=FALSE))
-gal_intervals=list(sersic=list(xcen=list(c(0,dim(gal_image)[1])),ycen=list(c(0,dim(gal_image)[2])), mag=list(c(gal_mag-2,gal_mag+2)), re=list(c(1,100)), nser=list(c(0.5,10)), axrat=list(c(0.01,1)), box=list(c(-1,1))))
+gal_tofit=list(
+  sersic=list(
+    xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
+    ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
+    mag= c(TRUE,TRUE), #Fit for both
+    re= c(TRUE,TRUE), #Fit for both
+    nser= c(FALSE,FALSE), #Fit for bulge
+    ang= c(FALSE,TRUE), #Fit for disk
+    axrat= c(FALSE,TRUE), #Fit for disk
+    box= c(FALSE,FALSE) #Fit for neither
+  )
+)
+
+gal_tolog=list(
+  sersic=list(
+    xcen= c(FALSE,FALSE),
+    ycen= c(FALSE,FALSE),
+    mag= c(FALSE,FALSE),
+    re= c(TRUE,TRUE), #re is best fit in log space
+    nser= c(TRUE,TRUE), #nser is best fit in log space
+    ang= c(FALSE,FALSE),
+    axrat= c(TRUE,TRUE), #axrat is best fit in log space
+    box= c(FALSE,FALSE)
+  )
+)
+
+gal_intervals=list(
+  sersic=list(
+    xcen=list(lim=c(0,dim(gal_image)[1]),lim=c(0,dim(gal_image)[1])),
+    ycen=list(lim=c(0,dim(gal_image)[2]),lim=c(0,dim(gal_image)[2])),
+    mag=list(lim=c(10,30),lim=c(10,30)),
+    re=list(lim=c(1,5),lim=c(1,100)),
+    nser=list(lim=c(0.5,20),lim=c(0.5,20)),
+    ang=list(lim=c(-180,360),lim=c(-180,360)),
+    axrat=list(lim=c(0.001,1),lim=c(0.001,1)),
+    box=list(lim=c(-1,1),lim=c(-1,1))
+  )
+)
 ```
 
 Now we can set up our full fitting structure with averything we have made:
@@ -231,7 +278,12 @@ And we can then plot the output:
 profitLikeModel(parm=gal_fit$par, Data=gal_Data, makeplots = TRUE, plotchisq = TRUE)
 ```
 
-This looks pretty good!
+This looks pretty good! We can format the final model nicely for later analsis:
+
+```{r}
+gal_fit_modellist=profitRemakeModellist(gal_fit$par, Data=gal_Data)$modellist
+print(gal_fit_modellist)
+```
 
 ## Conclusions
 
@@ -244,7 +296,8 @@ So there we have it- using image pixel data and no header information except for
 4. Find a subset of likely stars, and extract the brightest one
 5. Fit a Moffat profile to this bright star and generate a model PSF
 6. Cut down our data to the region around the galaxy of interest
-7. Using all fo the data created (including the new PSF) fit an exponential disk profile
+7. Estimate initial B/D parameters from the segimentation map statistics
+8. Using all fo the data created (including the new PSF) fit an exponential disk + de-Vaucouleurs bulge profile
 
 Nearly all of the above can be automated for user data of interest, and should act as a good outline of how you can use **ProFit** to fit a range of data where not all of the meta information is to hand.
 

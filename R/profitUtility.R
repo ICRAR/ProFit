@@ -1,9 +1,13 @@
+.meanwt=function(x, wt){
+  sum(x*wt, na.rm = T)/sum(wt, na.rm = T)
+}
+
 .varwt=function(x, wt){
-  return=(sum((x-mean(x))^2*wt^2,na.rm = T)/sum(wt^2,na.rm = T))
+  return=(sum((x-.meanwt(x, wt))^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
 .covarwt=function(x, y, wt){
-  return=(sum((x-mean(x))*(y-mean(y))*wt^2,na.rm = T)/sum(wt^2,na.rm = T))
+  return=(sum((x-.meanwt(x, wt))*(y-.meanwt(y, wt))*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
 .cov2eigval=function(sx,sy,sxy){
@@ -537,9 +541,9 @@ profitSegimStats=function(image, segim, sky=0){
   tempDT=tempDT[segID>0,]
   segID=tempDT[,.BY,by=segID]$segID
   val=NULL; x=NULL; y=NULL
-  flux=tempDT[,sum(val),by=segID]$V1
-  xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
-  ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+  flux=tempDT[,sum(val,na.rm = TRUE),by=segID]$V1
+  xcen=tempDT[,.meanwt(x, val),by=segID]$V1
+  ycen=tempDT[,.meanwt(y, val),by=segID]$V1
   xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
   ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
   covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
