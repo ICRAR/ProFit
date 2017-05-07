@@ -568,25 +568,29 @@ extern "C" {
 	 * Registering the methods above at module loading time
 	 * This should speed symbol lookup, and anyway it's considered a better
 	 * practice.
+	 *
+	 * TODO: The Rcpp-related routines should be included in this list too
+	 *       which is currently not the case. We need to decide how to list
+	 *       them here; otherwise .Calls to them from R will not succeed
 	 */
-	static const R_CallMethodDef callMethods[]  = {
-		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
-		{"R_profit_make_convolve", (DL_FUNC) &R_profit_convolve, 4},
-		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
-		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
-		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
-		{NULL, NULL, 0}
-	};
-
-	void R_init_ProFit(DllInfo *dll) {
-		/* Using registered symbols only from now on */
-		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
-		R_useDynamicSymbols(dll, FALSE);
-		R_forceSymbols(dll, TRUE);
-	}
-
-	void R_unload_ProFit(DllInfo *info) {
-		/* no-op */
-	}
+//	static const R_CallMethodDef callMethods[]  = {
+//		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
+//		{"R_profit_make_convolve", (DL_FUNC) &R_profit_convolve, 4},
+//		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
+//		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
+//		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
+//		{NULL, NULL, 0}
+//	};
+//
+//	void R_init_ProFit(DllInfo *dll) {
+//		/* Using registered symbols only from now on */
+//		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
+//		R_useDynamicSymbols(dll, FALSE);
+//		R_forceSymbols(dll, TRUE);
+//	}
+//
+//	void R_unload_ProFit(DllInfo *info) {
+//		/* no-op */
+//	}
 
 }
