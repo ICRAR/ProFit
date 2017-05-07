@@ -10,6 +10,7 @@
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 
 using namespace profit;
 using namespace std;
@@ -551,15 +552,41 @@ extern "C" {
 		return _R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region);
 	}
 
-	SEXP R_profit_openclenv_info() {
-		return _R_profit_openclenv_info();
-	}
-
 	SEXP R_profit_has_openmp() {
 		return _R_profit_has_openmp();
+	}
+
+	SEXP R_profit_openclenv_info() {
+		return _R_profit_openclenv_info();
 	}
 
 	SEXP R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 		return _R_profit_openclenv(plat_idx, dev_idx, use_dbl);
 	}
+
+	/*
+	 * Registering the methods above at module loading time
+	 * This should speed symbol lookup, and anyway it's considered a better
+	 * practice.
+	 */
+	static const R_CallMethodDef callMethods[]  = {
+		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
+		{"R_profit_make_convolve", (DL_FUNC) &R_profit_convolve, 4},
+		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
+		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
+		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
+		{NULL, NULL, 0}
+	};
+
+	void R_init_ProFit(DllInfo *dll) {
+		/* Using registered symbols only from now on */
+		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
+		R_useDynamicSymbols(dll, FALSE);
+		R_forceSymbols(dll, TRUE);
+	}
+
+	void R_unload_ProFit(DllInfo *info) {
+		/* no-op */
+	}
+
 }
