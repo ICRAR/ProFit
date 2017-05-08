@@ -86,7 +86,7 @@ The sigma map will look much liek our original image, but with sky pixels set to
 Next we want to find the PSF for fitting, so we should extract a a bright but non-saturated star from the list above:
 
 ```{r, fig.width=5, fig.height=5}
-magplot(segim_expand$segstats$maj, segim_expand$segstats$N50/segim_expand$segstats$N90 ,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map))
+magplot(segim_expand$segstats$maj, segim_expand$segstats$N50/segim_expand$segstats$N90 ,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map), xlab='Major Axis / pix', ylab='N50/N90')
 abline(h=c(0.2,0.4), lty=2)
 abline(v=c(1.5,2), lty=2)
 ```
