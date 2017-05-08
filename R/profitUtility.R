@@ -106,7 +106,7 @@ profitParseLikefunc <- function(funcname)
   }
 }
 
-profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero, pixscale, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -129,7 +129,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
-  if(!missing(SBlim) & !missing(magzero) & !missing(pixscale)){
+  if(!missing(SBlim) & !missing(magzero)){
     image[image<skycut | image_sky<profitSB2Flux(SBlim, magzero, pixscale)]=0
   }else{
     image[image<skycut]=0
@@ -162,10 +162,17 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   }else{
     segstats=NULL
   }
-  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
+  if(!missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale))
+  }else if(missing(SBlim) & !missing(magzero)){
+    SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
+  }else{
+    SBlim=NULL
+  }
+  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim, magzero, pixscale, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim, magzero, pixscale=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -185,7 +192,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
-  if(!missing(SBlim) & !missing(magzero) & !missing(pixscale)){
+  if(!missing(SBlim) & !missing(magzero)){
     image[image<skycut | image_sky<profitSB2Flux(SBlim, magzero, pixscale)]=0
   }else{
     image[image<skycut]=0
@@ -230,7 +237,14 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
   }else{
     segstats=NULL
   }
-  return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
+  if(!missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale))
+  }else if(missing(SBlim) & !missing(magzero)){
+    SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
+  }else{
+    SBlim=NULL
+  }
+  return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
 profitSkyEst=function(image, mask=0, objects=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
@@ -541,7 +555,7 @@ profitPoissonMonteCarlo <- function(x)
   return(x)
 }
 
-profitSegimStats=function(image, segim, sky=0, magzero, pixscale){
+profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -568,7 +582,7 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale){
   Nseg=tempDT[,.N,by=segID]$N
   N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
   N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-  if(!missing(magzero) & !missing(pixscale)){
+  if(!missing(magzero)){
     mag=profitFlux2Mag(flux=flux, magzero=magzero)
     SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
     SB_N50=profitFlux2SB(flux=flux*0.5/N50, magzero=magzero, pixscale=pixscale)

@@ -44,11 +44,11 @@ There are 10 example galaxies included. Here we run example 1:
 
 ```{r}
 useID=ExampleIDs[1]
-image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),package="ProFit"))$imDat
+image=readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),package="ProFit"))$imDat
+mask=readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),package="ProFit"))$imDat
+sigma=readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),package="ProFit"))$imDat
+segim=readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),package="ProFit"))$imDat
+psf=readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),package="ProFit"))$imDat
 ```
 
 Next we extract parameters for a very rough model (not meant to look too good yet):
@@ -186,7 +186,7 @@ sigmas=list(
   )
 )
 
-priors = profitMakePriors(modellist, sigmas, tolog, allowflat = TRUE)
+priors=profitMakePriors(modellist, sigmas, tolog, allowflat=TRUE)
 print(priors(modellist,modellist))
 print(priors)
 ```
@@ -220,7 +220,7 @@ Setup the data structure we need for optimisation, taking a few seconds to find 
 ```{r}
 Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
                      modellist=modellist, tofit=tofit, tolog=tolog, priors=priors,
-                     intervals=intervals,magzero=0, algo.func='optim', like.func = "t",
+                     intervals=intervals,magzero=0, algo.func='optim', like.func="t",
                      verbose=TRUE)
 ```
 
@@ -283,7 +283,7 @@ Now we can try a `LaplaceApproximation` LM fit. This should take a few minutes:
 
 ```{r, eval=FALSE}
 library(LaplacesDemon)
-Data$algo.func = "LA"
+Data$algo.func="LA"
 LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
                            Method='LM', CovEst='Identity', sir=FALSE)
 ```
@@ -320,12 +320,12 @@ It is recommended to use narrower priors than the very broad ones specified abov
 
 ```{r, eval=FALSE}
 library(cmaeshpc)
-Data$algo.func = "CMA"
+Data$algo.func="CMA"
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
-cmasigma = sigmas[which(unlist(tofit) == TRUE)]/3
-cmafit = cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
+cmasigma=sigmas[which(unlist(tofit) == TRUE)]/3
+cmafit=cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
   fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
-  diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness = 0, stop.tolx=1e-3*cmasigma))
+  diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness=0, stop.tolx=1e-3*cmasigma))
 profitLikeModel(cmafit$par,Data,makeplots=TRUE)
 ```
 
@@ -334,7 +334,7 @@ profitLikeModel(cmafit$par,Data,makeplots=TRUE)
 Now we can try a `LaplacesDemon` fit (this will take about an hour):
 
 ```{r, eval=FALSE}
-Data$algo.func = "LD"
+Data$algo.func="LD"
 
 LDfit=LaplacesDemon(profitLikeModel, Initial.Values=LAfit$Summary1[,1], Data=Data,
   Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
@@ -398,7 +398,7 @@ profitLikeModel(BestLD,Dataf,makeplots=TRUE,whichcomponents=list(sersic='all'))
 That doesn't look so different, but let's run `LaplaceApproximation` again to see how the best-fit parameters changed:
 
 ```{r, eval=FALSE}
-Dataf$algo.func = "LA"
+Dataf$algo.func="LA"
 LAfitf=LaplaceApproximation(profitLikeModel, parm=LAfit$Summary1[,1], Data=Dataf, Iterations=1e3,
   Method='BFGS', CovEst='Identity', sir=FALSE)
 ```
@@ -412,7 +412,7 @@ profitLikeModel(LAfitf$Summary1[,1],Dataf,makeplots=TRUE)
 Now run `LaplacesDemon` again, with fewer iterations to begin with (as it's slower to convolve):
 
 ```{r, eval=FALSE}
-Dataf$algo.func = "LD"
+Dataf$algo.func="LD"
 
 LDfitf=LaplacesDemon(profitLikeModel, Initial.Values=LAfitf$Summary1[,1], Data=Dataf,
   Iterations=1e3, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))

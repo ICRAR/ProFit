@@ -13,7 +13,7 @@ Simple functions to concert between magnitudes and flux given a certain magnitud
 \usage{
 profitFlux2Mag(flux = 1, magzero = 0)
 profitMag2Flux(mag = 0, magzero = 0)
-profitFlux2SB(flux=1, magzero=0, pixscale=1)
+profitFlux2SB(flux = 1, magzero = 0, pixscale = 1)
 profitSB2Flux(SB = 0, magzero = 0, pixscale = 1)
 }
 %- maybe also 'usage' for other objects documented here.

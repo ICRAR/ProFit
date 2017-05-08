@@ -38,10 +38,10 @@ It is Z-band data from the VIKING survey, and in the second image it is possible
 
 ## Making Inputs for ProFit
 
-The first thign to do is to create an object segmentation of the full image:
+The first thing to do is to create an object segmentation of the full image. Here we input the known magnitude zero-point for this frame (30), and the pixel scale for VISTA VIRCAM (0.34 asec/pix). If these are not provided then outputs would be in terms on ADUs and pixels rather than AB mag and asec.
 
 ```{r, fig.width=5, fig.height=5}
-segim=profitMakeSegim(image, plot=TRUE)
+segim=profitMakeSegim(image, magzero=30, pixscale=0.34, plot=TRUE)
 ```
 
 This is a pretty decent start, and it has identified all the main sources of interest. We can look at the object information in the attached table:
@@ -50,21 +50,22 @@ This is a pretty decent start, and it has identified all the main sources of int
 segim$segstats
 ```
 
-The output is approximately in descending flux order. This data happen to have a mag-zero point of 30, so we can extract approximate magnitudes already. Our object of interest is the galaxy near the centre of the frame (178,178), so we already have approcimate parameter properties for fitting purposes. E.g. the magnitude to start with is going to be close to:
-
-```{r}
-profitFlux2Mag(flux = segim$segstats[6,'flux'], magzero = 30)
-```
-
-This number will be useful later.
+The output is approximately in descending flux order. This data happened to have a mag-zero point of 30, so we can extract approximate magnitudes already. Our object of interest is the galaxy near the centre of the frame (178,178), so we already have approximate parameter properties for fitting purposes. E.g. the magnitude to start with is going to be close to 18.55 (notice since we provided a magzero argument before the flux is given in magnitudes already). This number will be useful later.
 
 The next step is to expand out the segmantation for our target galaxy. this is a good idea because we want our model fit to descend into sky dominated pixels and not to be tightly defined by bright central pixels:
 
 ```{r, fig.width=5, fig.height=5}
-segim_expand=profitMakeSegimExpand(image, segim$segim, expand=6, expandsigma = 3, skycut=-1, plot=TRUE)
+segim_expand=profitMakeSegimExpand(image, segim$segim, expand=6, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, plot=TRUE)
 ```
 
 Notice because we set expand=6 only our object of interest (with segID=6) has been expanded. The other sources are left as they were.
+
+We can use this output to calculate an approximate sky surface brightness limit (taken as being the RMS of the sky):
+
+```{r}
+SBlim=profitFlux2SB(segim_expand$skyRMS, magzero=30, pixscale=0.34)
+print(SBlim)
+```
 
 Now we have a decent segmentation we can estimate the image gain and the sigma map:
 
@@ -78,7 +79,7 @@ The number found is ~0.5. Since the gain estimation routine is typically accurat
 Now we have the segmentation, sky estimates and the gain, we can make a sgima map:
 
 ```{r, fig.width=5, fig.height=5}
-sigma=profitMakeSigma(image, objects=segim_expand$objects, gain = gain, sky = segim_expand$sky, skyRMS =segim_expand$skyRMS, plot=TRUE)
+sigma=profitMakeSigma(image, objects=segim_expand$objects, gain=gain, sky=segim_expand$sky, skyRMS =segim_expand$skyRMS, plot=TRUE)
 ```
 
 The sigma map will look much liek our original image, but with sky pixels set to a fixed value of uncertainty, and object pixels having an additional component of shot-noise.
@@ -87,17 +88,26 @@ Next we want to find the PSF for fitting, so we should extract a a bright but no
 
 ```{r, fig.width=5, fig.height=5}
 magplot(segim_expand$segstats$maj, segim_expand$segstats$con,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map), xlab='Major Axis / pix', ylab='Concentration')
+magbar('topleft',title='Axrat')
 abline(h=c(0.2,0.4), lty=2)
 abline(v=c(1.5,2), lty=2)
+
+magplot(segim_expand$segstats$SB_N50, segim_expand$segstats$con, ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map), xlab='SB[50] / mag/asec^2', ylab='Concentration', grid=TRUE)
+magbar('topleft',title='Axrat')
+abline(v=c(23.5,2), lty=2)
+
+magplot( segim_expand$segstats$asymm, segim_expand$segstats$con, ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map), xlab='Asymmetry', ylab='Concentration', grid=TRUE)
+magbar('topleft',title='Axrat')
+abline(v=c(0.4), lty=2)
 ```
 
 We want to extract very blue (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
 
 ```{r}
-segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2,]
+segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.4,]
 ```
 
-There are 4 sensible looking options it seems. We can extract the second brightest of these likely stars to do our rough PSF estimate (the brightest is very close to another bright star, which will affect the fit).
+There are 3 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate. When doing this in anger you might want to consider fitting all 3 stars (or however many make it through the selection cuts above). This gives you a way to marginalise over the uncertainty in the PSF (I discuss PSF uncertainty in some more detail at the end of this vignette).
 
 ```{r}
 psf_image=image[154+-15:15,319+-15:15]
@@ -116,10 +126,10 @@ magimage(psf_segim)
 Next we make our initial model, where we take our PSF estimates from the segmentation stats:
 
 ```{r}
-psf_mag=profitFlux2Mag(flux=segim_expand$segstats[8,'flux'], magzero=30)
+psf_mag=segim_expand$segstats[8,'flux']
 psf_fwhm=segim_expand$segstats[8,'maj']*2
 psf_con=sqrt(segim_expand$segstats[8,'N90']/segim_expand$segstats[8,'N50'])
-psf_modellist = list(moffat=list(xcen=dim(psf_image)[1]/2, ycen=dim(psf_image)[2]/2, mag=psf_mag, fwhm=psf_fwhm, con=psf_con, axrat=1, box=0))
+psf_modellist=list(moffat=list(xcen=dim(psf_image)[1]/2, ycen=dim(psf_image)[2]/2, mag=psf_mag, fwhm=psf_fwhm, con=psf_con, axrat=1, box=0))
 ```
 
 We also need to set up the tofit, tolog and intervals structure
@@ -133,13 +143,13 @@ psf_intervals=list(moffat=list(xcen=list(c(0,dim(psf_image)[1])),ycen=list(c(0,d
 Since there are no other sources in the frame we can use the full **psf_image** to attempt our profile fit (so no need to provide **psf_segim**):
 
 ```{r}
-psf_Data=profitSetupData(psf_image, sigma=psf_sigma, modellist = psf_modellist, tofit = psf_tofit, tolog=psf_tolog, magzero = 30, algo.func = 'optim', intervals = psf_intervals)
+psf_Data=profitSetupData(psf_image, sigma=psf_sigma, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
 ```
 
 We can check our intial guess easily:
 
 ```{r, fig.width=8, fig.height=5}
-profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots = TRUE, plotchisq = TRUE)
+profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 It is not perfect- and certainly slightly off centre. We can do an optim fit to improve things:
@@ -151,7 +161,7 @@ psf_fit=optim(psf_Data$init, profitLikeModel, method='BFGS', Data=psf_Data, cont
 Now we plot the output:
 
 ```{r, fig.width=8, fig.height=5}
-profitLikeModel(parm=psf_fit$par, Data=psf_Data, makeplots = TRUE, plotchisq = TRUE)
+profitLikeModel(parm=psf_fit$par, Data=psf_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 This looks like a very good fit. We will now contruct our model PSF:
@@ -160,7 +170,7 @@ This looks like a very good fit. We will now contruct our model PSF:
 psf_modellist_fit=profitRemakeModellist(parm=psf_fit$par, Data=psf_Data)$modellist
 psf_modellist_fit$moffat$xcen=25/2
 psf_modellist_fit$moffat$ycen=25/2
-psf_model=profitMakeModel(modellist = psf_modellist_fit, magzero = 30, dim=c(25,25))$z
+psf_model=profitMakeModel(modellist=psf_modellist_fit, magzero=30, dim=c(25,25))$z
 ```
 
 And now we can look at our final PSF model:
@@ -194,12 +204,12 @@ As before, we have to setup some reasonable guesses for our galaxy fit:
 ```{r}
 gal_x=segim_expand$segstats[6,'xcen']-178+0.5+dim(gal_image)[1]/2
 gal_y=segim_expand$segstats[6,'ycen']-178+0.5+dim(gal_image)[2]/2
-gal_mag=profitFlux2Mag(flux=segim_expand$segstats[6,'flux'], magzero=30)
+gal_mag=segim_expand$segstats[6,'flux']
 gal_re=sqrt(segim_expand$segstats[6,'N50']/(pi*segim_expand$segstats[6,'axrat']))
 gal_ang=segim_expand$segstats[6,'ang']
 gal_axrat=segim_expand$segstats[6,'axrat']
 
-gal_modellist = list(
+gal_modellist=list(
   sersic=list(
     xcen=rep(gal_x,2),
     ycen=rep(gal_y,2),
@@ -259,11 +269,11 @@ gal_intervals=list(
 Now we can set up our full fitting structure with averything we have made:
 
 ```{r}
-gal_Data=profitSetupData(gal_image, sigma=gal_sigma, modellist = gal_modellist, tofit = gal_tofit, tolog=gal_tolog, magzero = 30, algo.func = 'optim', intervals = gal_intervals, psf=psf_model, segim=gal_segim)
+gal_Data=profitSetupData(gal_image, sigma=gal_sigma, modellist=gal_modellist, tofit=gal_tofit, tolog=gal_tolog, magzero=30, algo.func='optim', intervals=gal_intervals, psf=psf_model, segim=gal_segim)
 ```
 
 ```{r, fig.width=8, fig.height=5}
-profitLikeModel(parm=gal_Data$init, Data=gal_Data, makeplots = TRUE, plotchisq = TRUE)
+profitLikeModel(parm=gal_Data$init, Data=gal_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 Not a bad start, but certainly not great. Let's do an optim fit:
@@ -272,18 +282,21 @@ Not a bad start, but certainly not great. Let's do an optim fit:
 gal_fit=optim(gal_Data$init, profitLikeModel, method='BFGS', Data=gal_Data, control=list(fnscale=-1))
 ```
 
-And we can then plot the output:
-
-```{r, fig.width=8, fig.height=5}
-profitLikeModel(parm=gal_fit$par, Data=gal_Data, makeplots = TRUE, plotchisq = TRUE)
-```
-
-This looks pretty good! We can format the final model nicely for later analsis:
+We can now recreate our optimised **modellist**:
 
 ```{r}
 gal_fit_modellist=profitRemakeModellist(gal_fit$par, Data=gal_Data)$modellist
 print(gal_fit_modellist)
 ```
+
+And we can then plot the output:
+
+```{r, fig.width=8, fig.height=5}
+profitLikeModel(parm=gal_fit$par, Data=gal_Data, makeplots=TRUE, plotchisq=TRUE)
+profitEllipsePlot(Data=gal_Data, modellist=gal_fit_modellist, pixscale=0.34, SBlim=SBlim)
+```
+
+This looks pretty good!
 
 ## Conclusions
 

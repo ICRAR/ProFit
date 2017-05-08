@@ -9,7 +9,7 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitMakeSegim(image, mask = 0, objects=0, tolerance = 4, ext = 2, sigma = 1,
-smooth = TRUE, pixcut = 5, skycut = 2, SBlim, magzero, pixscale, sky, skyRMS,
+smooth = TRUE, pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS,
 plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -48,7 +48,7 @@ Numeric scalar; the mag/asec^2 surface brightness threshold to apply. This is al
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{pixscale}{
-  Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1, then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
+  Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{sky}{
 User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
@@ -83,8 +83,9 @@ A list containing:
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
+  \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided, else NULL).}
   
-If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns:
+If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
@@ -93,9 +94,9 @@ If \option{stats}=TRUE then the \option{segstats} part of the returned list will
   \item{N}{The total number of pixels in this segment.}
   \item{N50}{The number of brightest pixels containing 50\% of the flux.}
   \item{N90}{The number of brightest pixels containing 90\% of the flux.}
-  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2.}
-  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2.}
-  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2.}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
+  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
   \item{xsd}{The weighted standard deviation in x.}
   \item{ysd}{The weighted standard deviation in y.}
   \item{covxy}{The weighted covariance in xy.}

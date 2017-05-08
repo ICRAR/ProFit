@@ -9,7 +9,7 @@ Image Segmentation Statistics
 Basic summary statistics for image segments, e.g. aperture parameters, fluxes and surface brightness estimates. These might provide useful first guesses to ProFit fitting parameters (particularly \option{flux}, \option{axrat} and \option{ang}).
 }
 \usage{
-profitSegimStats(image, segim, sky=0, magzero, pixscale)
+profitSegimStats(image, segim, sky=0, magzero, pixscale=1)
 profitSegimPlot(image, segim, mask = 0, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -30,7 +30,7 @@ Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, wh
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{pixscale}{
-  Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1, then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
+  Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}.
@@ -49,9 +49,9 @@ A data.frame with columns:
   \item{N}{The total number of pixels in this segment.}
   \item{N50}{The number of brightest pixels containing 50\% of the flux.}
   \item{N90}{The number of brightest pixels containing 90\% of the flux.}
-  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2.}
-  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2.}
-  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2.}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
+  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
   \item{xsd}{The weighted standard deviation in x.}
   \item{ysd}{The weighted standard deviation in y.}
   \item{covxy}{The weighted covariance in xy.}
