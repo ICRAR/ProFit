@@ -86,7 +86,7 @@ The sigma map will look much liek our original image, but with sky pixels set to
 Next we want to find the PSF for fitting, so we should extract a a bright but non-saturated star from the list above:
 
 ```{r, fig.width=5, fig.height=5}
-magplot(segim_expand$segstats$maj, segim_expand$segstats$N50/segim_expand$segstats$N90 ,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map), xlab='Major Axis / pix', ylab='N50/N90')
+magplot(segim_expand$segstats$maj, segim_expand$segstats$con,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat)$map), xlab='Major Axis / pix', ylab='Concentration')
 abline(h=c(0.2,0.4), lty=2)
 abline(v=c(1.5,2), lty=2)
 ```
@@ -94,7 +94,7 @@ abline(v=c(1.5,2), lty=2)
 We want to extract very blue (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
 
 ```{r}
-segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$N50/segim_expand$segstats$N90>0.2 & segim_expand$segstats$N50/segim_expand$segstats$N90<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2,]
+segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2,]
 ```
 
 There are 4 sensible looking options it seems. We can extract the second brightest of these likely stars to do our rough PSF estimate (the brightest is very close to another bright star, which will affect the fit).
