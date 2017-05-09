@@ -26,13 +26,13 @@ str(ExampleImage0)
 
 The structure is a pure image matrix. It is possible to use base `image` to view this matrix, but the defaults will make it look pretty dreadful, hard to comprehend, and will be slow to actually plot:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 image(ExampleImage0)
 ```
 
 We can make a *much* better image of this model easily using `magimage`, which chooses useful scaling for astronomical images:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 magimage(ExampleImage0)
 ```
 
@@ -76,7 +76,7 @@ str(ExampleImage1)
 
 Next we can make a greyscale image of our requested model structure:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 magimage(ExampleImage1)
 ```
 
@@ -88,7 +88,7 @@ ExamplePSF=ExamplePSF/sum(ExamplePSF)
 ExampleImagePSF1=profitMakeModel(modellist=model1, psf=ExamplePSF, dim=c(200,200))
 ```
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 magimage(ExampleImagePSF1)
 ```
 
@@ -122,7 +122,7 @@ modelBD=list(
 ExampleImage=profitMakeModel(modellist=modelBD, psf=ExamplePSF, dim=c(200,200))
 ```
 
-```{r}
+```{r, fig.width=5, fig.height=5}
 magimage(ExampleImage)
 ```
 
@@ -140,8 +140,9 @@ ExampleImageFine=profitMakeModel(modellist=modelBD, dim=c(200,200), finesample=F
 
 We can see how much of a difference this makes and where:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 magimage(ExampleImageFine$z-ExampleImage$z)
+maghist((ExampleImageFine$z-ExampleImage$z)/ExampleImageFine$z,xlim=5)
 ```
 
 This fine sampling step required manual resampling of the PSF by rescaling re and enlarging the PSF image. When fitting models, `profitSetupData` will handle these steps automatically.
@@ -177,12 +178,12 @@ As before we can run this through `profitMakeModel` and then plot the image. Thi
 
 ```{r, fig.width=5, fig.height=5}
 system.time(ExampleImagePSF2<-profitMakeModel(modellist=model2, psf=ExamplePSF, dim=c(200,200)))
-magimage(ExampleImagePSF2)
+magimage(ExampleImagePSF2, hi=1)
 ```
 
 We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~3 seconds). However, this is much faster than the naive 1x(1000/200)^2=25 seconds that we might expect. This is because the lower level C++ routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 model3=list(
 	sersic=list(
 		xcen=runif(20,0,1000),
@@ -209,13 +210,13 @@ magimage(ExampleImagePSF3)
 
 A faster image can be generated if the remax flag is turned on. With remax=10 it only takes ~2 seconds to make the model image. This might be accurate enough for many simulation purposes and can be a factor of 2 faster.
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 system.time(profitMakeModel(modellist=model3, psf=ExamplePSF, dim=c(1000,1000), remax=10))
 ```
 
 It is easy to add together model images using `profitAddMats', giving flexibility in how mock images are made:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5}
 ExampleImageAdd=profitAddMats(ExampleImagePSF3$z, ExampleImagePSF2$z, c(300,400))
 magimage(ExampleImageAdd)
 ```
