@@ -67,11 +67,31 @@ SBlim=profitFlux2SB(segim_expand$skyRMS, magzero=30, pixscale=0.34)
 print(SBlim)
 ```
 
+Given this segmentation we can look at some statistics on our apparent sky pixels.
+
+```{r}
+object_frac=length(which(segim_expand$objects))/length(image)
+qnorm(1-object_frac)
+```
+
+The above tells us that at a skycut level of ~1.6 is the point where we would expect 50% of pixels to be False-Positive (i.e. positive sky fluctuations) rather than True-Positives (associated with real sources). If we cut higher than this (which we do by default) then most of our sources at the surface brightness threshold will be real.
+
+It is also instructive to make the **qqplot** of sky pixels:
+
+```{r, fig.width=5, fig.height=5}
+temp=qqnorm(sort((image[segim_expand$objects==0]-segim_expand$sky)/segim_expand$skyRMS), plot.it = FALSE)
+magplot(0,0,xlim=c(-5,5),ylim=c(-5,5), grid=TRUE, type='n', xlab='Normal Quantile', ylab='Sky Pixel Quantile')
+lines(temp)
+abline(0,1,col='red')
+```
+
+As we should hope, the **qqplot** crosses at very close to [0,0], but we can see evidence of a sytematic excess for positive flux in our sky pixels. This is to be expected- the Universe contains only positive sources (resolved or not, faint or bright) so if we have Normal statistics to the negative side, we should always see an excess on the positive side. Given this nature of the astrophysical sky, we look to have recovered the absolute sky and RMS of the sky to within a few percent (try perturbing the sky and skyRMS values to see how this affects the **qqplot**).
+
 Now we have a decent segmentation we can estimate the image gain and the sigma map:
 
 ```{r}
 gain=profitGainEst(image,objects=segim_expand$objects, sky=segim_expand$sky, skyRMS=segim_expand$skyRMS)
-print(gain)
+gain
 ```
 
 The number found is ~0.5. Since the gain estimation routine is typically accurate to a factor of a few, it is quite likely that the image is already in photo-electron counts (i.e. gain=1), but we wil continue with our lower estimate regardless.
@@ -104,46 +124,92 @@ abline(v=c(0.4), lty=2)
 We want to extract very blue (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
 
 ```{r}
-segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.4,]
+starlist=segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.4,]
+print(starlist)
 ```
 
 There are 3 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate. When doing this in anger you might want to consider fitting all 3 stars (or however many make it through the selection cuts above). This gives you a way to marginalise over the uncertainty in the PSF (I discuss PSF uncertainty in some more detail at the end of this vignette).
 
 ```{r}
-psf_image=image[154+-15:15,319+-15:15]
-psf_sigma=sigma[154+-15:15,319+-15:15]
-psf_segim=segim_expand$segim[154+-15:15,319+-15:15]
+psf_image=profitCutout(image, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
+psf_sigma=profitCutout(sigma, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
+psf_segim=profitCutout(segim_expand$segim, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
 ```
 
 Look at our target star to check we are happy:
 
 ```{r, fig.width=5, fig.height=5}
-magimage(psf_image)
-magimage(psf_sigma)
-magimage(psf_segim)
+magimage(psf_image$cutim)
+magimage(psf_sigma$cutim)
+magimage(psf_segim$cutim)
 ```
 
 Next we make our initial model, where we take our PSF estimates from the segmentation stats:
 
 ```{r}
+psf_x=psf_image$loc[1]
+psf_y=psf_image$loc[2]
 psf_mag=segim_expand$segstats[8,'flux']
 psf_fwhm=segim_expand$segstats[8,'maj']*2
 psf_con=sqrt(segim_expand$segstats[8,'N90']/segim_expand$segstats[8,'N50'])
-psf_modellist=list(moffat=list(xcen=dim(psf_image)[1]/2, ycen=dim(psf_image)[2]/2, mag=psf_mag, fwhm=psf_fwhm, con=psf_con, axrat=1, box=0))
+
+psf_modellist=list(
+  moffat=list(
+    xcen=psf_x,
+    ycen=psf_y,
+    mag=psf_mag,
+    fwhm=psf_fwhm,
+    con=psf_con,
+    axrat=1,
+    box=0
+  )
+)
 ```
 
 We also need to set up the tofit, tolog and intervals structure
 
 ```{r}
-psf_tofit=list(moffat=list(xcen=TRUE, ycen=TRUE, mag=TRUE, fwhm=TRUE, con=TRUE, axrat=FALSE, box=FALSE))
-psf_tolog=list(moffat=list(xcen=FALSE, ycen=FALSE, mag=FALSE, fwhm=TRUE, con=TRUE, axrat=FALSE, box=FALSE))
-psf_intervals=list(moffat=list(xcen=list(c(0,dim(psf_image)[1])),ycen=list(c(0,dim(psf_image)[2])), mag=list(c(psf_mag-2,psf_mag+2)), fwhm=list(c(1,100)), con=list(c(1,100)), axrat=list(c(0.1,1)), box=list(c(-1,1))))
+psf_tofit=list(
+  moffat=list(
+    xcen=TRUE,
+    ycen=TRUE,
+    mag=TRUE,
+    fwhm=TRUE,
+    con=TRUE,
+    axrat=FALSE,
+    box=FALSE
+  )
+)
+
+psf_tolog=list(
+  moffat=list(
+    xcen=FALSE,
+    ycen=FALSE,
+    mag=FALSE,
+    fwhm=TRUE,
+    con=TRUE,
+    axrat=FALSE,
+    box=FALSE
+  )
+)
+
+psf_intervals=list(
+  moffat=list(
+    xcen=list(psf_x+c(-5,5)),
+    ycen=list(psf_y+c(-5,5)),
+    mag=list(c(psf_mag-2,psf_mag+2)),
+    fwhm=list(c(1,100)),
+    con=list(c(1,100)),
+    axrat=list(c(0.1,1)),
+    box=list(c(-1,1))
+  )
+)
 ```
 
 Since there are no other sources in the frame we can use the full **psf_image** to attempt our profile fit (so no need to provide **psf_segim**):
 
 ```{r}
-psf_Data=profitSetupData(psf_image, sigma=psf_sigma, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
+psf_Data=profitSetupData(psf_image$cutim, sigma=psf_sigma$cutim, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
 ```
 
 We can check our intial guess easily:
@@ -152,7 +218,7 @@ We can check our intial guess easily:
 profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
-It is not perfect- and certainly slightly off centre. We can do an optim fit to improve things:
+Not bad, but not perfect. We can do an optim fit to improve things:
 
 ```{r}
 psf_fit=optim(psf_Data$init, profitLikeModel, method='BFGS', Data=psf_Data, control=list(fnscale=-1))
@@ -186,24 +252,24 @@ Now we have all the key bits we need in order to fit our target galaxy!
 Much like we did with the PSF fit, we have to extract the region of interest a setup our fitting structures:
 
 ```{r}
-gal_image=image[178+-50:50, 178+-50:50]
-gal_sigma=sigma[178+-50:50, 178+-50:50]
-gal_segim=segim_expand$segim[178+-50:50, 178+-50:50]
+gal_image=profitCutout(image, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
+gal_sigma=profitCutout(sigma, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
+gal_segim=profitCutout(segim_expand$segim, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
 ```
 
 Check the cutout regions:
 
 ```{r, fig.width=5, fig.height=5}
-magimage(gal_image)
-magimage(gal_sigma)
-magimage(gal_segim)
+magimage(gal_image$cutim)
+magimage(gal_sigma$cutim)
+magimage(gal_segim$cutim)
 ```
 
 As before, we have to setup some reasonable guesses for our galaxy fit:
 
 ```{r}
-gal_x=segim_expand$segstats[6,'xcen']-178+0.5+dim(gal_image)[1]/2
-gal_y=segim_expand$segstats[6,'ycen']-178+0.5+dim(gal_image)[2]/2
+gal_x=gal_image$loc[1]
+gal_y=gal_image$loc[2]
 gal_mag=segim_expand$segstats[6,'flux']
 gal_re=sqrt(segim_expand$segstats[6,'N50']/(pi*segim_expand$segstats[6,'axrat']))
 gal_ang=segim_expand$segstats[6,'ang']
@@ -254,8 +320,8 @@ gal_tolog=list(
 
 gal_intervals=list(
   sersic=list(
-    xcen=list(lim=c(0,dim(gal_image)[1]),lim=c(0,dim(gal_image)[1])),
-    ycen=list(lim=c(0,dim(gal_image)[2]),lim=c(0,dim(gal_image)[2])),
+    xcen=list(lim=gal_x+c(-5,5),lim=gal_x+c(-5,5)),
+    ycen=list(lim=gal_y+c(-5,5),gal_y+c(-5,5)),
     mag=list(lim=c(10,30),lim=c(10,30)),
     re=list(lim=c(1,5),lim=c(1,100)),
     nser=list(lim=c(0.5,20),lim=c(0.5,20)),
@@ -269,7 +335,7 @@ gal_intervals=list(
 Now we can set up our full fitting structure with averything we have made:
 
 ```{r}
-gal_Data=profitSetupData(gal_image, sigma=gal_sigma, modellist=gal_modellist, tofit=gal_tofit, tolog=gal_tolog, magzero=30, algo.func='optim', intervals=gal_intervals, psf=psf_model, segim=gal_segim)
+gal_Data=profitSetupData(gal_image$cutim, sigma=gal_sigma$cutim, modellist=gal_modellist, tofit=gal_tofit, tolog=gal_tolog, magzero=30, algo.func='optim', intervals=gal_intervals, psf=psf_model, segim=gal_segim$cutim)
 ```
 
 ```{r, fig.width=8, fig.height=5}

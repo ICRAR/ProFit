@@ -21,6 +21,25 @@ install_github("ICRAR/ProFit")
 library(ProFit)
 ```
 
+The above should also install the required dependencies. If you have trouble with this you can try installing the requried packages manually first and then retry the above:
+
+```R
+install.packages(c('Rcpp', 'fftw', 'R2Cuba', 'RColorBrewer', 'LaplacesDemon', 'imager', 'magicaxis', 'FITSio', 'data.table'))
+install.packages('devtools')
+library(devtools)
+install_github("ICRAR/ProFit")
+library(ProFit)
+```
+
+To use the **profitMakeSegim** function for image segmentation you will need to have \code{EBImage} installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
+
+```R
+source("https://bioconductor.org/biocLite.R")
+biocLite("EBImage")
+```
+
+Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants).
+
 ## Code Example
 
 ```R

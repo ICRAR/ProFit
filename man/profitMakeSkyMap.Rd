@@ -8,7 +8,7 @@ Calculate Coarse Sky Map
 The high level function computes the absolute sky and sky RMS level over an image at a scale defined locally by the \option{box} parameter. This coarse map can then be used to compute sky/skyRMS values for the local sky anywhere on an image. This function uses \code{\link{profitSkyEstLoc}} to calculate the sky statistics for the subset boxcar regions.
 }
 \usage{
-profitMakeSkyMap(image, objects = 0, box = c(100, 100))
+profitMakeSkyMap(image, objects = 0, box = c(101, 101))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

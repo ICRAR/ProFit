@@ -2,12 +2,15 @@
   sum(x*wt, na.rm = T)/sum(wt, na.rm = T)
 }
 
-.varwt=function(x, wt){
-  return=(sum((x-.meanwt(x, wt))^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
+.varwt=function(x, wt, xcen){
+  if(missing(xcen)){xcen=.meanwt(x, wt)}
+  return=(sum((x-xcen)^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
-.covarwt=function(x, y, wt){
-  return=(sum((x-.meanwt(x, wt))*(y-.meanwt(y, wt))*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
+.covarwt=function(x, y, wt, xcen, ycen){
+  if(missing(xcen)){xcen=.meanwt(x, wt)}
+  if(missing(ycen)){ycen=.meanwt(y, wt)}
+  return=(sum((x-xcen)*(y-ycen)*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
 .cov2eigval=function(sx,sy,sxy){
@@ -22,9 +25,11 @@ eigvec=(sx^2-eigval)/sxy
   return=(eigvec)
 }
 
-.asymm=function(x, y, wt){
-  relx=(x-(floor(.meanwt(x, wt))+0.5))
-  rely=(y-(floor(.meanwt(y, wt))+0.5))
+.asymm=function(x, y, wt, xcen, ycen){
+  if(missing(xcen)){xcen=.meanwt(x, wt)}
+  if(missing(ycen)){ycen=.meanwt(y, wt)}
+  relx=round(x-xcen)
+  rely=round(y-ycen)
   comp=.match2col(cbind(relx,rely),cbind(-relx,-rely))
   return=sum(abs(wt[comp[,1]]-wt[comp[,2]]),na.rm = TRUE)/sum(wt[comp[,1]], na.rm = TRUE)
 }
@@ -163,8 +168,8 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
     segstats=NULL
   }
   if(!missing(SBlim) & !missing(magzero)){
-    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale))
-  }else if(missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale), na.rm=TRUE)
+  }else if(missing(SBlim) & !missing(magzero) & skycut>0){
     SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
   }else{
     SBlim=NULL
@@ -238,8 +243,8 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
     segstats=NULL
   }
   if(!missing(SBlim) & !missing(magzero)){
-    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale))
-  }else if(missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale), na.rm=TRUE)
+  }else if(missing(SBlim) & !missing(magzero) & skycut>0){
     SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
   }else{
     SBlim=NULL
@@ -468,31 +473,36 @@ profitGainEst=function(image, mask=0, objects=0, sky, skyRMS){
 }
 
 profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
-  xlo=loc[1]-(box[1]/2-0.5)
-  xhi=loc[1]+(box[1]/2-0.5)
-  ylo=loc[2]-(box[2]/2-0.5)
-  yhi=loc[2]+(box[2]/2-0.5)
-  if(xlo<0){xlo=0}
-  if(xhi>dim(image)[1]){xhi=dim(image)[1]}
-  if(ylo<0){ylo=0}
-  if(yhi>dim(image)[2]){yhi=dim(image)[2]}
+  # xlo=loc[1]-(box[1]/2-0.5)
+  # xhi=loc[1]+(box[1]/2-0.5)
+  # ylo=loc[2]-(box[2]/2-0.5)
+  # yhi=loc[2]+(box[2]/2-0.5)
+  # if(xlo<0){xlo=0}
+  # if(xhi>dim(image)[1]){xhi=dim(image)[1]}
+  # if(ylo<0){ylo=0}
+  # if(yhi>dim(image)[2]){yhi=dim(image)[2]}
+  # if(! missing(objects) & length(objects)==length(image)){
+  #   select=image[xlo:xhi, ylo:yhi][objects[xlo:xhi, ylo:yhi]==0]
+  # }else{
+  #   select=image[xlo:xhi, ylo:yhi]
+  # }
   if(! missing(objects) & length(objects)==length(image)){
-    select=image[xlo:xhi, ylo:yhi][objects[xlo:xhi, ylo:yhi]==0]
+    select=profitCutout(image, loc=loc, box=box)$cutim[profitCutout(image=objects, loc=loc, box=box)$cutim==0]
   }else{
-    select=image[xlo:xhi, ylo:yhi]
+    select=profitCutout(image, loc=loc, box=box)$cutim
   }
   if(plot){
-    image=image[xlo:xhi, ylo:yhi]
+    image=profitCutout(image, loc=loc, box=box)$cutim
     imout=magimage(image, ...)
     if(! missing(objects)){
-      contour(x=imout$x, y=imout$y, objects[xlo:xhi, ylo:yhi], add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
+      contour(x=imout$x, y=imout$y, profitCutout(objects, loc=loc, box=box)$cutim, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
   }
   clip=magclip(select, estimate = 'lo')
   return=list(val=c(mean(clip$x, na.rm=T), sd(clip$x, na.rm = T)), clip=clip)
 }
 
-profitMakeSkyMap=function(image, objects=0, box=c(100,100)){
+profitMakeSkyMap=function(image, objects=0, box=c(101,101)){
   xseq=seq(box[1]/2,dim(image)[1],by=box[1])
   yseq=seq(box[2]/2,dim(image)[2],by=box[2])
   tempgrid=expand.grid(xseq, yseq)
@@ -606,4 +616,21 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   if(!missing(mask) & length(mask)==length(image)){
     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
   }
+}
+
+profitCutout=function(image, loc=dim(image)/2, box=c(101,101)){
+  loc=as.numeric(loc)
+  xcen=loc[1]
+  ycen=loc[2]
+  loc=ceiling(loc)
+  xlo=ceiling(loc[1]-(box[1]/2-0.5))
+  xhi=ceiling(loc[1]+(box[1]/2-0.5))
+  ylo=ceiling(loc[2]-(box[2]/2-0.5))
+  yhi=ceiling(loc[2]+(box[2]/2-0.5))
+  if(xlo<1){xlo=1}
+  if(xhi>dim(image)[1]){xhi=dim(image)[1]}
+  if(ylo<1){ylo=1}
+  if(yhi>dim(image)[2]){yhi=dim(image)[2]}
+  output=image[xlo:xhi, ylo:yhi]
+  return=list(cutim=output, loc=c(xcen-xlo+1,ycen-ylo+1), xsel=xlo:xhi, ysel=ylo:yhi)
 }
