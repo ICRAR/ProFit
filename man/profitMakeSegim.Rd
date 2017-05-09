@@ -9,7 +9,8 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitMakeSegim(image, mask = 0, objects=0, tolerance = 4, ext = 2, sigma = 1,
-smooth = TRUE, pixcut = 5, skycut = 2, sky, skyRMS, plot = FALSE, stats = TRUE, ...)
+smooth = TRUE, pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS,
+plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,6 +41,15 @@ Integer scalar; the number of pixels required to identify an object.
   \item{skycut}{
 Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS.
 }
+  \item{SBlim}{
+Numeric scalar; the mag/asec^2 surface brightness threshold to apply. This is always used in conjunction with \option{skycut}, so set \option{skycut} to be very large (e.g. Inf) if you want a pure surface brightness threshold for the segmentation. \option{magzero} and \option{pixscale} must also be present for this to be used.
+}
+  \item{magzero}{
+  Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
+}
+  \item{pixscale}{
+  Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
+}
   \item{sky}{
 User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
@@ -50,7 +60,7 @@ User provided estimate of the RMS of the sky. If this is not provided then it wi
 Logical; should a diagnostic plot be generated?
 }
   \item{stats}{
-Logical; should statistics on the segmented objects be returned?
+Logical; should statistics on the segmented objects be returned? If \option{magzero} and \option{pixscale} have been provided then some of the outputs are computed in terms of magnitude and mag/asec^2 rather than flux and flux/pix^2 (see Value).
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
@@ -73,23 +83,26 @@ A list containing:
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
+  \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided, else NULL).}
   
-If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns:
+If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
-  \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
+  \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs. If \option{magzero} and \option{pixscale} have been provided then this column will represent magnitudes.}
   \item{N}{The total number of pixels in this segment.}
   \item{N50}{The number of brightest pixels containing 50\% of the flux.}
-  \item{N50}{The number of brightest pixels containing 90\% of the flux.}
-  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}.}
-  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}.}
-  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}.}
+  \item{N90}{The number of brightest pixels containing 90\% of the flux.}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
+  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
   \item{xsd}{The weighted standard deviation in x.}
   \item{ysd}{The weighted standard deviation in y.}
   \item{covxy}{The weighted covariance in xy.}
   \item{corxy}{The weighted correlation in xy.}
+  \item{con}{Concentration, N50/N90.}
+  \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
   \item{maj}{The weighted standard deviation along the major axis.}
   \item{min}{The weighted standard deviation along the minor axis.}
   \item{axrat}{The axial ratio as given by min/maj.}

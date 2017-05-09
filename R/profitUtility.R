@@ -1,9 +1,13 @@
+.meanwt=function(x, wt){
+  sum(x*wt, na.rm = T)/sum(wt, na.rm = T)
+}
+
 .varwt=function(x, wt){
-  return=(sum((x-mean(x))^2*wt^2,na.rm = T)/sum(wt^2,na.rm = T))
+  return=(sum((x-.meanwt(x, wt))^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
 .covarwt=function(x, y, wt){
-  return=(sum((x-mean(x))*(y-mean(y))*wt^2,na.rm = T)/sum(wt^2,na.rm = T))
+  return=(sum((x-.meanwt(x, wt))*(y-.meanwt(y, wt))*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
 .cov2eigval=function(sx,sy,sxy){
@@ -18,16 +22,48 @@ eigvec=(sx^2-eigval)/sxy
   return=(eigvec)
 }
 
+.asymm=function(x, y, wt){
+  relx=(x-(floor(.meanwt(x, wt))+0.5))
+  rely=(y-(floor(.meanwt(y, wt))+0.5))
+  comp=.match2col(cbind(relx,rely),cbind(-relx,-rely))
+  return=sum(abs(wt[comp[,1]]-wt[comp[,2]]),na.rm = TRUE)/sum(wt[comp[,1]], na.rm = TRUE)
+}
+
 .nser2ccon=function(nser=0.5, lo=0.5, hi=0.9){
   return=(((qgamma(lo, 2 * nser)/qgamma(hi, 2 * nser))^nser)^2)
 }
 
+.match2col=function(tab1, tab2){
+  return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
+}
+
 profitMag2Mu=function(mag=15, re=1, axrat=1, pixscale=1){
-  return=(mag+2.5*log10(pi*re^2*axrat)-2.5*log10(0.5)+5*log10(pixscale))
+  return(mag+2.5*log10(pi*re^2*axrat)-2.5*log10(0.5)+5*log10(pixscale))
 }
 
 profitMu2Mag=function(mu=17, re=1, axrat=1, pixscale=1){
-  return=(mu-2.5*log10(pi*re^2*axrat)+2.5*log10(0.5)-5*log10(pixscale))
+  return(mu-2.5*log10(pi*re^2*axrat)+2.5*log10(0.5)-5*log10(pixscale))
+}
+
+profitGainConvert=function(gain=1, magzero=0, magzero_new=0){
+  return(gain*10^(-0.4*(magzero_new-magzero)))
+}
+
+profitMag2Flux=function(mag=0, magzero=0){
+  return(10^(-0.4*(mag-magzero)))
+}
+
+profitFlux2Mag=function(flux=1, magzero=0){
+  return(-2.5*log10(flux)+magzero)
+}
+
+profitFlux2SB=function(flux=1, magzero=0, pixscale=1){
+  return(profitFlux2Mag(flux=flux, magzero=magzero)+5*log10(pixscale))
+}
+
+profitSB2Flux=function(SB=0, magzero=0, pixscale=1){
+  mag=SB-5*log10(pixscale)
+  return(profitMag2Flux(mag=mag, magzero=magzero))
 }
 
 profitAddMats=function(matbase,matadd,addloc=c(1,1)){
@@ -70,7 +106,7 @@ profitParseLikefunc <- function(funcname)
   }
 }
 
-profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -87,15 +123,17 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   }
   image=image_sky/skyRMS
   image[!is.finite(image)]=0
-  # if(plot){
-  #   magimage(image, ...)
-  # }
+ 
   if(smooth){
     image=as.matrix(isoblur(as.cimg(image),sigma))
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
-  image[image<skycut]=0
+  if(!missing(SBlim) & !missing(magzero)){
+    image[image<skycut | image_sky<profitSB2Flux(SBlim, magzero, pixscale)]=0
+  }else{
+    image[image<skycut]=0
+  }
   if(!missing(mask)){
     image[mask==1]=0
   }
@@ -103,19 +141,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   objects=segim>0
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
-  # if(plot){
-  #   tempcon=magimage(segim,add=T,magmap=F,col=NA)
-  #   x=tempcon$x
-  #   y=tempcon$y
-  #   segvec=which(tabulate(segim)>0)
-  #   for(i in segvec){
-  #     z=tempcon$z==i
-  #     contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
-  #   }
-  #   if(!missing(mask)){
-  #     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
-  #   }
-  # }
+
   if(plot){
     profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
   }
@@ -132,14 +158,21 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale)
   }else{
     segstats=NULL
   }
-  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS)
+  if(!missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale))
+  }else if(missing(SBlim) & !missing(magzero)){
+    SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
+  }else{
+    SBlim=NULL
+  }
+  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim, magzero, pixscale=1, sigma=1, smooth=TRUE, expandsigma=2, dim=c(15,15), expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -153,15 +186,17 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   }
   image=image_sky/skyRMS
   image[!is.finite(image)]=0
-  # if(plot){
-  #   magimage(image, ...)
-  # }
+
   if(smooth){
     image=as.matrix(isoblur(as.cimg(image),sigma))
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
-  image[image<skycut]=skycut
+  if(!missing(SBlim) & !missing(magzero)){
+    image[image<skycut | image_sky<profitSB2Flux(SBlim, magzero, pixscale)]=0
+  }else{
+    image[image<skycut]=0
+  }
   if(!missing(mask)){
     image[mask==1]=0
   }
@@ -187,21 +222,8 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
   }
   objects=segim_new>0
   
-  # if(plot){
-  #   tempcon=magimage(segim_new,add=T,magmap=F,col=NA)
-  #   x=tempcon$x
-  #   y=tempcon$y
-  #   segvec=which(tabulate(segim_new)>0)
-  #   for(i in segvec){
-  #     z=tempcon$z==i
-  #     contour(x,y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
-  #   }
-  #   if(!missing(mask)){
-  #     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
-  #   }
-  # }
   if(plot){
-    profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
+    profitSegimPlot(image=image_orig, segim=segim_new, mask=mask, sky=sky, ...)
   }
   if(missing(sky)){
     sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
@@ -211,11 +233,18 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, sigma=
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky)
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
   }else{
     segstats=NULL
   }
-  return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS)
+  if(!missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale))
+  }else if(missing(SBlim) & !missing(magzero)){
+    SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
+  }else{
+    SBlim=NULL
+  }
+  return=list(objects=objects , segim=segim_new, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
 profitSkyEst=function(image, mask=0, objects=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
@@ -360,13 +389,54 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
   return=priors
 }
 
-profitMakeSigma=function(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, readRMS=0, darkRMS=0, plot=FALSE, ...){
-  image=image-sky
-  if(!missing(objects)){
+profitMakeSigma=function(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, readRMS=0, darkRMS=0, image_units='ADU', sky_units='ADU', read_units='ADU', dark_units='ADU', output_units='ADU', plot=FALSE, ...){
+  if(!missing(objects) & length(objects)==length(image)){
     image[objects==0]=0
   }
-  image[image< skyRMS*skycut]=0
-  sigma=sqrt((gain*image)+(gain*skyRMS)^2+(gain*readRMS)^2+(gain*darkRMS)^2)/gain
+  if(image_units=='ADU'){
+    image=gain*image
+  }else if(image_units=='elec'){
+    NULL
+  }else{
+    stop(paste('image_units unit type of',image_units,'not recognised, must be ADU or elec'))
+  }
+  
+  if(sky_units=='ADU'){
+    sky=gain*sky
+    skyRMS=gain*skyRMS
+  }else if(sky_units=='elec'){
+    NULL
+  }else{
+    stop(paste('sky_units unit type of',sky_units,'not recognised, must be ADU or elec'))
+  }
+  
+  if(read_units=='ADU'){
+    readRMS=gain*readRMS
+  }else if(read_units=='elec'){
+    NULL
+  }else{
+    stop(paste('read_units unit type of',read_units,'not recognised, must be ADU or elec'))
+  }
+  
+  if(dark_units=='ADU'){
+    darkRMS=gain*darkRMS
+  }else if(dark_units=='elec'){
+    NULL
+  }else{
+    stop(paste('dark_units unit type of',dark_units,'not recognised, must be ADU or elec'))
+  }
+  
+  image=image-sky
+  image[image < skyRMS*skycut]=0
+  
+  if(output_units=='ADU'){
+    sigma=sqrt(image+skyRMS^2+readRMS^2+darkRMS^2)/gain
+  }else if(output_units=='elec'){
+    sigma=sqrt(image+skyRMS^2+readRMS^2+darkRMS^2)
+  }else{
+    stop(paste('output_units unit type of',output_units,'not recognised, must be ADU or elec'))
+  }
+  
   if(plot){
     magimage(sigma, ...)
   }
@@ -394,7 +464,7 @@ profitGainEst=function(image, mask=0, objects=0, sky, skyRMS){
   }
 
   suppressWarnings({findgain=optim(par=startgain, fn=tempfunc, method="Brent", tempval=tempval, skyRMS=skyRMS, lower=startgain-2, upper=startgain+2)})
-  return=list(gain=10^findgain$par, value=findgain$value)
+  return=10^findgain$par
 }
 
 profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
@@ -485,7 +555,7 @@ profitPoissonMonteCarlo <- function(x)
   return(x)
 }
 
-profitSegimStats=function(image, segim, sky=0){
+profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -496,12 +566,13 @@ profitSegimStats=function(image, segim, sky=0){
   tempDT=tempDT[segID>0,]
   segID=tempDT[,.BY,by=segID]$segID
   val=NULL; x=NULL; y=NULL
-  flux=tempDT[,sum(val),by=segID]$V1
-  xcen=tempDT[,sum(x*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
-  ycen=tempDT[,sum(y*val, na.rm=TRUE)/sum(val, na.rm=TRUE),by=segID]$V1
+  flux=tempDT[,sum(val,na.rm = TRUE),by=segID]$V1
+  xcen=tempDT[,.meanwt(x, val),by=segID]$V1
+  ycen=tempDT[,.meanwt(y, val),by=segID]$V1
   xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
   ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
   covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
+  asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
   corxy=covxy/(xsd*ysd)
   rad=.cov2eigval(xsd, ysd, covxy)
   rad$hi=sqrt(rad$hi)
@@ -511,13 +582,22 @@ profitSegimStats=function(image, segim, sky=0){
   Nseg=tempDT[,.N,by=segID]$N
   N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
   N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-  segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, maj=rad$hi, min=sqrt(rad$lo), axrat=rad$lo/rad$hi, ang=ang)
-  segstats=as.data.frame(segstats[order(segID),])
+  if(!missing(magzero)){
+    mag=profitFlux2Mag(flux=flux, magzero=magzero)
+    SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
+    SB_N50=profitFlux2SB(flux=flux*0.5/N50, magzero=magzero, pixscale=pixscale)
+    SB_N90=profitFlux2SB(flux=flux*0.9/N90, magzero=magzero, pixscale=pixscale)
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=mag, N=Nseg, N50=N50, N90=N90, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
+  }else{
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
+  }
+  return=as.data.frame(segstats[order(segID),])
 }
 
 profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   image=image-sky
   temp=magimage(image, ...)
+  if(min(segim,na.rm=TRUE)!=0){segim=segim-min(segim,na.rm=TRUE)}
   segvec=which(tabulate(segim)>0)
   for(i in segvec){
     z=segim==i

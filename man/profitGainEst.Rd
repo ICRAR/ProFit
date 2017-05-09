@@ -32,7 +32,7 @@ User provided estimate of the RMS of the sky. If this is not provided then it wi
 This function makes use of the fact that a true Poisson distribution cannot generate samples below 0 and the distribution shape properties of the sky pixels. In practice this means the gain estimated is low as it can be. Once the ProFit fit has been made the gain estimated can be improved based on the residuals (assuming the model does a good job of subtracting the data).
 }
 \value{
-Numeric matrix; the measurement errors per pixel (expressed in terms of sigma). This matrix is matched pixel by pixel to \option{image}.
+Numeric scalar; the estimated gain of the \option{image}.
 }
 \author{
 Aaron Robotham

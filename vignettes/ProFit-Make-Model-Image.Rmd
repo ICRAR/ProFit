@@ -45,24 +45,24 @@ First we need to setup a legal model structure, with each component type being a
 The top level list can be called whatever you like - **model** is recommended. The model can contain any number of the following components: **sersic** / **coresersic** / **moffat** / **king** / **brokenexp** / **pointsource** / **sky**. Here is a legal model structure containing 2 Sersic components, 3 stars (point sources) and a sky pedestal:
 
 ```{r}
-model1 = list(
-  sersic = list(
-		xcen   = c(180, 60),
-		ycen   = c(90, 10),
-		mag = c(15, 13),
-		re  = c(14, 5),
-		nser  = c(3, 10),
-		ang  = c(46, 80),
-		axrat  = c(0.4, 0.6),
-		box = c(0.5,-0.5)
+model1=list(
+  sersic=list(
+		xcen=c(180, 60),
+		ycen=c(90, 10),
+		mag=c(15, 13),
+		re=c(14, 5),
+		nser=c(3, 10),
+		ang=c(46, 80),
+		axrat=c(0.4, 0.6),
+		box=c(0.5,-0.5)
 	),
-	pointsource = list(
-		xcen   = c(34.3,10.1,150),
-		ycen   = c(74.2,120.5,130.4),
-		mag = c(10,13,16)
+	pointsource=list(
+		xcen=c(34.3,10.1,150),
+		ycen=c(74.2,120.5,130.4),
+		mag=c(10,13,16)
 	),
-	sky = list(
-		bg = 3e-12
+	sky=list(
+		bg=3e-12
 	)
 )
 ```
@@ -83,8 +83,8 @@ magimage(ExampleImage1)
 Notice there are no stars and the models look very sharp - this is because we have not specified a PSF with which to convolve the image. We can use `profitPointSource` to create a default circular Gaussian PSF with FWHM=2 pixels:
 
 ```{r}
-ExamplePSF = profitMakePointSource()
-ExamplePSF = ExamplePSF/sum(ExamplePSF)
+ExamplePSF=profitMakePointSource()
+ExamplePSF=ExamplePSF/sum(ExamplePSF)
 ExampleImagePSF1=profitMakeModel(modellist=model1, psf=ExamplePSF, dim=c(200,200))
 ```
 
@@ -98,7 +98,7 @@ You can also specify the PSF as a Sersic model - specifically a Gaussian, where 
 
 ```{r, fig.width=5, fig.height=5}
 model1a=model1
-model1a$psf = list(sersic=list(nser=0.5,mag=0,re=1,axrat=1,ang=0))
+model1a$psf=list(sersic=list(nser=0.5,mag=0,re=1,axrat=1,ang=0))
 ExampleImagePSF1A=profitMakeModel(modellist=model1a, psf=ExamplePSF, dim=c(200,200))
 ```
 
@@ -107,19 +107,19 @@ Note we are still using the PSF image to convolve the Sersic models, but we use 
 We can now easily make a classic bulge+disk system where the two Sersic model components sit on top of each other:
 
 ```{r}
-modelBD = list(
-	sersic = list(
-		xcen   = c(100, 100),
-		ycen   = c(100, 100),
-		mag = c(14, 12),
-		re  = c(2, 15),
-		nser  = c(4, 1),
-		ang  = c(0, 60),
-		axrat  = c(1, 0.3),
-		box = c(0,0)
+modelBD=list(
+	sersic=list(
+		xcen=c(100, 100),
+		ycen=c(100, 100),
+		mag=c(14, 12),
+		re=c(2, 15),
+		nser=c(4, 1),
+		ang=c(0, 60),
+		axrat=c(1, 0.3),
+		box=c(0,0)
 	)
 )
-ExampleImage = profitMakeModel(modellist=modelBD, psf=ExamplePSF, dim=c(200,200))
+ExampleImage=profitMakeModel(modellist=modelBD, psf=ExamplePSF, dim=c(200,200))
 ```
 
 ```{r}
@@ -132,10 +132,10 @@ Note that the accuracy of convolution is limited by the pixel dimensions relativ
 
 ```{r}
 Finesample=3L
-FinePSFmodel = model1a$psf
-FinePSFmodel$sersic$re = FinePSFmodel$sersic$re*Finesample
-ExamplePSFFine = profitMakePointSource(modellist=FinePSFmodel,image = matrix(0,27,27))
-ExampleImageFine = profitMakeModel(modellist=modelBD, dim=c(200,200),finesample = Finesample, psf=ExamplePSFFine)
+FinePSFmodel=model1a$psf
+FinePSFmodel$sersic$re=FinePSFmodel$sersic$re*Finesample
+ExamplePSFFine=profitMakePointSource(modellist=FinePSFmodel, image=matrix(0,27,27))
+ExampleImageFine=profitMakeModel(modellist=modelBD, dim=c(200,200), finesample=Finesample, psf=ExamplePSFFine)
 ```
 
 We can see how much of a difference this makes and where:
@@ -151,24 +151,24 @@ This fine sampling step required manual resampling of the PSF by rescaling re an
 We can use `profitMakeModel` to make more complex image structure very easily. The example model below will randomly produce 20 Sersic profiles, 10 PSFs and a sky background:
 
 ```{r}
-model2 = list(
-	sersic = list(
-		xcen   = runif(20,0,200),
-		ycen   = runif(20,0,200),
-		mag = runif(20,15,20),
-		re  = runif(20,1,100),
-		nser  = runif(20,0.5,8),
-		ang  = runif(20,0,180),
-		axrat  = runif(20,0.3,1),
-		box = runif(20,-0.3,0.3)
+model2=list(
+	sersic=list(
+		xcen=runif(20,0,200),
+		ycen=runif(20,0,200),
+		mag=runif(20,15,20),
+		re=runif(20,1,100),
+		nser=runif(20,0.5,8),
+		ang=runif(20,0,180),
+		axrat=runif(20,0.3,1),
+		box=runif(20,-0.3,0.3)
 	),
-	pointsource = list(
-		xcen   = runif(10,0,200),
-		ycen   = runif(10,0,200),
-		mag = runif(10,15,20)
+	pointsource=list(
+		xcen=runif(10,0,200),
+		ycen=runif(10,0,200),
+		mag=runif(10,15,20)
 	),
-	sky = list(
-		bg = 3e-12
+	sky=list(
+		bg=3e-12
 	)
 )
 ```
@@ -183,24 +183,24 @@ magimage(ExampleImagePSF2)
 We can try a bigger image (more like a typical astronomy image) but this will take longer to generate (~3 seconds). However, this is much faster than the naive 1x(1000/200)^2=25 seconds that we might expect. This is because the lower level C++ routine adaptively adjusts to calculate the pixel integrals. Pixels near the centre need more subdivisions to accurately determine the flux, whereas at large radii typically fewer calculations are required. Hence generating a much bigger image does not directly scale the computation time.
 
 ```{r, fig.width=5, fig.height=5, eval=F}
-model3 = list(
-	sersic = list(
-		xcen   = runif(20,0,1000),
-		ycen   = runif(20,0,1000),
-		mag = runif(20,15,20),
-		re  = runif(20,1,100),
-		nser  = runif(20,0.5,8),
-		ang  = runif(20,0,180),
-		axrat  = runif(20,0.3,1),
-		box = runif(20,-0.3,0.3)
+model3=list(
+	sersic=list(
+		xcen=runif(20,0,1000),
+		ycen=runif(20,0,1000),
+		mag=runif(20,15,20),
+		re=runif(20,1,100),
+		nser=runif(20,0.5,8),
+		ang=runif(20,0,180),
+		axrat=runif(20,0.3,1),
+		box=runif(20,-0.3,0.3)
 	),
-	pointsource = list(
-		xcen   = runif(10,0,1000),
-		ycen   = runif(10,0,1000),
-		mag = runif(10,15,20)
+	pointsource=list(
+		xcen=runif(10,0,1000),
+		ycen=runif(10,0,1000),
+		mag=runif(10,15,20)
 	),
-	sky = list(
-		bg = 3e-12
+	sky=list(
+		bg=3e-12
 	)
 )
 system.time(ExampleImagePSF3<-profitMakeModel(modellist=model3, psf=ExamplePSF, dim=c(1000,1000)))

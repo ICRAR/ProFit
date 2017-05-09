@@ -12,7 +12,7 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo=TRUE)
 ```
 
 ## Prepare the test data
@@ -50,7 +50,7 @@ There are 10 example galaxies included. Here we run example 1:
 
 ```{r}
 useID=ExampleIDs[1]
-psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),package="ProFit"))$imDat
+psf=readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),package="ProFit"))$imDat
 psf=psf/sum(psf)
 psfsigma=sqrt(abs(psf))/200 #To get reasonable PSF errors
 ```
@@ -59,7 +59,7 @@ We can check the image of the PSF wiht magimage:
 
 ```{r, fig.width=5, fig.height=5, eval=F}
 temp=magimage(psf,lo=0,hi=1)
-contour(temp, add=T, col='red', drawlabels = FALSE)
+contour(temp, add=T, col='red', drawlabels=FALSE)
 ```
 
 To check the profile a few 1D plots can be useful:
@@ -159,7 +159,7 @@ intervals=list(
 Now setup the Data structure we need for fitting, where we will use Normal likelihoods:
 
 ```{r}
-Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0, algo.func='optim', verbose=TRUE, like.func = 'norm')
+Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0, algo.func='optim', verbose=TRUE, like.func='norm')
 ```
 
 Check our rough model:
@@ -185,7 +185,7 @@ profitLikeModel(optimfit$par, Data,makeplots=TRUE, plotchisq=TRUE)
 You can go even further with a full MCMC fit (I can assure you that in this case it is not worth the effort, but run if you must!):
 
 ```{r, eval=FALSE}
-Data$algo.func = "LD"
+Data$algo.func="LD"
 
 LDfit=LaplacesDemon(profitLikeModel, Initial.Values=optimfit$par, Data=Data,
   Iterations=1e4, Algorithm='CHARM', Thinning=1, Specs=list(alpha.star=0.44))
@@ -205,7 +205,7 @@ PSFmodellist$moffat$xcen=12.5
 PSFmodellist$moffat$ycen=12.5
 PSFmodellist$moffat$mag=0
 psfmodel=profitMakeModel(PSFmodellist, dim=c(25,25))$z
-contour(magimage(psfmodel), add=TRUE, col='red', drawlabels = FALSE)
+contour(magimage(psfmodel), add=TRUE, col='red', drawlabels=FALSE)
 ```
 
 Notice in the above we set a few parameters to be exactly where we want, e.g. the PSF should be in the middle of our 25x25 image matrix (the fit was at 12.51 and 12.51 rather than 12.5 and 12.5) and the magnitude should be exactly 0 (i.e. the integral of the PSF sums to 1). We now have an analytic means of describing the SDSS PSF. We can use this for subsequent fitting.
@@ -214,10 +214,10 @@ Notice in the above we set a few parameters to be exactly where we want, e.g. th
 
 ```{r}
 useID=ExampleIDs[1]
-image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''), package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''), package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''), package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''), package="ProFit"))$imDat
+image=readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''), package="ProFit"))$imDat
+mask=readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''), package="ProFit"))$imDat
+sigma=readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''), package="ProFit"))$imDat
+segim=readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''), package="ProFit"))$imDat
 ```
 
 Next we extract parameters for a very rough model (not meant to look too good yet):
@@ -322,7 +322,7 @@ Setup the data structure we need for optimisation, taking a few seconds to find 
 ```{r}
 Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psfmodel,
                      modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals,
-                     magzero=0, algo.func='optim', like.func = "t", verbose=TRUE)
+                     magzero=0, algo.func='optim', like.func="t", verbose=TRUE)
 ```
 
 ## Do some fitting with the new model PSF:
@@ -358,7 +358,7 @@ Now we can try the empirical PSF instead (for comparison):
 ```{r}
 Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
   modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0,
-  algo.func='optim', like.func = "t", verbose=TRUE)
+  algo.func='optim', like.func="t", verbose=TRUE)
 ```
 
 ## Do some fitting with the empirical model PSF:
