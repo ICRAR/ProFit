@@ -73,7 +73,7 @@ sigmas[which(!linear)] = 1
 sigmas = relist(sigmas, modellist)
 
 #Make the list structure of prior function:
-priors=profitMakePriors(modellist, sigmas)
+priors=profitMakePriors(modellist, sigmas, tolog)
 
 #Check that the priors return the expected likelihood:
 stopifnot(abs(priors(modellist,modellist) - sum(dnorm(0,0,unlist(sigmas),log=TRUE)))
