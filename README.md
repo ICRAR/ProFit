@@ -109,6 +109,8 @@ To find more long-form examples, including complicated fitting use-cases, please
 browseVignettes('ProFit')
 ```
 
+Or if that does not work they are all hosted externally at <http://rpubs.com/asgr/>
+
 ## Motivation
 
 This package is designed to offer a fully featured Bayesian interface to galaxy model fitting (also called profiling). It mostly uses the same standard inputs as other popular codes (e.g. GALFIT) but can use complex priors and a number of likelihoods.
