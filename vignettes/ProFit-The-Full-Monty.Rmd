@@ -18,7 +18,7 @@ library(FITSio)
 library(EBImage)
 ```
 
-So, you want to profile a galaxy, and you have next to no information about it. Well with **ProFit** no segmentation map, no sigma map, no PSF, no gain and no sky subtraction is (almsot) no problem. Thanks to a number of utility functions we can achieve a reasonable fit bootstrapping directly from the data.
+So, you want to profile a galaxy, and you have next to no information about it. Well with **ProFit** no segmentation map, no sigma map, no PSF, no gain and no sky subtraction is (almost) no problem. Thanks to a number of utility functions we can achieve a reasonable fit bootstrapping directly from the data.
 
 As an example, our mystery data will also be in a fairly crowded region, which will either require good (and conservative) image segmentation, or multiple object fitting.
 
@@ -74,7 +74,7 @@ gain=profitGainEst(image,objects=segim_expand$objects, sky=segim_expand$sky, sky
 print(gain)
 ```
 
-The number found is ~0.5. Since the gain estimation routine is typically accurate to a factor of a few, it is quite likely that the image is already in photo-electron counts (i.e. gain=1), but we wil continue with our lower estimate regardless.
+The number found is ~0.5. Since the gain estimation routine is typically accurate to a factor of a few, it is quite likely that the image is already in photo-electron counts (i.e. gain=1), but we will continue with our lower estimate regardless.
 
 Now we have the segmentation, sky estimates and the gain, we can make a sgima map:
 
@@ -146,7 +146,7 @@ Since there are no other sources in the frame we can use the full **psf_image** 
 psf_Data=profitSetupData(psf_image, sigma=psf_sigma, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
 ```
 
-We can check our intial guess easily:
+We can check our initial guess easily:
 
 ```{r, fig.width=8, fig.height=5}
 profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots=TRUE, plotchisq=TRUE)
@@ -183,7 +183,7 @@ Now we have all the key bits we need in order to fit our target galaxy!
 
 ## Fitting the Target Galaxy with ProFit
 
-Much like we did with the PSF fit, we have to extract the region of interest a setup our fitting structures:
+Much like we did with the PSF fit, we have to extract the region of interest and setup our fitting structures:
 
 ```{r}
 gal_image=image[178+-50:50, 178+-50:50]
@@ -310,14 +310,14 @@ So there we have it- using image pixel data and no header information except for
 5. Fit a Moffat profile to this bright star and generate a model PSF
 6. Cut down our data to the region around the galaxy of interest
 7. Estimate initial B/D parameters from the segimentation map statistics
-8. Using all fo the data created (including the new PSF) fit an exponential disk + de-Vaucouleurs bulge profile
+8. Using all of the data created (including the new PSF) fit an exponential disk + de-Vaucouleurs bulge profile
 
 Nearly all of the above can be automated for user data of interest, and should act as a good outline of how you can use **ProFit** to fit a range of data where not all of the meta information is to hand.
 
 For various reasons users might get better results from using, e.g., SExtractor as part of their processing pipeline rather than the internal utility functions, but there should be enough to get you going on your virtuous path of galaxy fitting ;-)
 
-IN all of this, the biggets gotcha is no doubt achieving a decent estimate of the PSF. Here we fit to a single str using a Moffat function, btu with HST data you will almost certainly need to use Tiny-Tim, and many people advocate using shapelet fitting programs like PSF-Ex and their ilk.
+In all of this, the biggest gotcha is no doubt achieving a decent estimate of the PSF. Here we fit to a single star using a Moffat function, but with HST data you will almost certainly need to use Tiny-Tim, and many people advocate using shapelet fitting programs like PSF-Ex and their ilk.
 
-For space derived data you probably do want to use tools provided by the relevant facility, but for most ground imaging better results can be achieved through fitting analytic models to stars near your target galaxy (ideally multiple stars, so you can reject bad fits etc) and constructing an idealised PSF from the analytic model. If you are feeling *really* adventurous you could even marginalise over your uncertainty in the PSF by re-doing your fit with samples from the PSF model posterior.
+For space derived data you probably do want to use tools provided by the relevant facility, but for most ground imaging better results can be achieved through fitting analytic models to stars near your target galaxy (ideally multiple stars, so you can reject bad fits etc.) and constructing an idealised PSF from the analytic model. If you are feeling *really* adventurous you could even marginalise over your uncertainty in the PSF by re-doing your fit with samples from the PSF model posterior.
 
-The other parts of the process mentioned above are much more straigh-forward, and there are lots of routes (including the above) that will give you decent results. In my experience when things go badly wrong (a few percent of the time when trying to fully automate all of this) the main culprit is bad segmentation due to nearby very bright stars. In these situations you probably should not be trying to achieve a good fit given the data quality. Issues with the sigma maps going wrong are easily spotted when looking at the error residuals for a good fit- the main culprit here will usually be a mistake in the gain (e.g. using inverse gain as gain). Remember: image ADUs x gain = image photo-electrons! If really unsure use the provided **profitGainEst** function to sanity check your value.
+The other parts of the process mentioned above are much more straight-forward, and there are lots of routes (including the above) that will give you decent results. In my experience when things go badly wrong (a few percent of the time when trying to fully automate all of this) the main culprit is bad segmentation due to nearby very bright stars. In these situations you probably should not be trying to achieve a good fit given the data quality. Issues with the sigma maps going wrong are easily spotted when looking at the error residuals for a good fit- the main culprit here will usually be a mistake in the gain (e.g. using inverse gain as gain). Remember: image ADUs x gain = image photo-electrons! If really unsure use the provided **profitGainEst** function to sanity check your value.
