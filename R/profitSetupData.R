@@ -162,7 +162,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   init=init[which(unlist(tofit))]
   
   parm.names=names(init)
-  mon.names=c("LL","LP")
+  mon.names=c("LL","LP","time")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
   if (!is.null(openclenv)) {
     if (class(openclenv) == "externalptr") {

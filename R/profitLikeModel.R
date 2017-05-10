@@ -92,8 +92,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   if(Data$verbose){print(c(parm,LP),digits = 5)}
   if(algo.func=='') return(list(model=model,psf=psf))
   if(algo.func=='optim' | algo.func=='CMA'){out=LP}
-  if(algo.func=='LA' | algo.func=='LD'){
-    if(ist) Monitor=c(LL=LL,LP=LP,time=proc.time()["elapsed"],dof=dof) else Monitor=c(LL=LL,LP=LP)
+  if(algo.func=='LA' | algo.func=='LD')
+  {
+    Monitor=c(LL=LL,LP=LP)
+    if("time" %in% Data$mon.names) Monitor = c(Monitor,tend = proc.time()["elapsed"])
+    if(ist) Monitor=c(Monitor,dof=dof)
     out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
   }
   return(out)
