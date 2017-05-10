@@ -89,10 +89,8 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   
   # Unlist and extract the tolog elements and log where required
   parmnew=unlist(modellistnew)
-  for(i in tounlogIDs){
-    parmnew[i]=log10(parmnew[i])
-  }
-  
+  parmnew[tounlogIDs]=log10(parmnew[tounlogIDs])
+
   # Specify the new parm to be parsed back to the external optimisation function
   parmnew=parmnew[fitIDs]
   
