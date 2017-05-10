@@ -62,7 +62,7 @@ Aaron Robotham & Dan Taranu
 magimage(profitMakePointSource())
   
 # We can create a point source in a larger image:
-psf = profitMakePointSource(xcen=100,ycen=50,mag=15,model=list(
+psf = profitMakePointSource(xcen=100,ycen=50,mag=15,modellist=list(
   sersic=list(re=2,nser=0.5,mag=0,axrat=0.2, ang=0.5)),
   magzero=0,image=matrix(0,200,200), finesample=1L)
 magimage(psf)
