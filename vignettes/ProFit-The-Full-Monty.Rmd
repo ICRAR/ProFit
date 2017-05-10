@@ -151,7 +151,7 @@ psf_x=psf_image$loc[1]
 psf_y=psf_image$loc[2]
 psf_mag=segim_expand$segstats[8,'flux']
 psf_fwhm=segim_expand$segstats[8,'maj']*2
-psf_con=sqrt(segim_expand$segstats[8,'N90']/segim_expand$segstats[8,'N50'])
+psf_con=1/sqrt(segim_expand$segstats[8,'con'])
 
 psf_modellist=list(
   moffat=list(

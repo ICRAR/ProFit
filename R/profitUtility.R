@@ -30,8 +30,10 @@ eigvec=(sx^2-eigval)/sxy
   if(missing(ycen)){ycen=.meanwt(y, wt)}
   relx=round(x-xcen)
   rely=round(y-ycen)
-  comp=.match2col(cbind(relx,rely),cbind(-relx,-rely))
-  return=sum(abs(wt[comp[,1]]-wt[comp[,2]]),na.rm = TRUE)/sum(wt[comp[,1]], na.rm = TRUE)
+  frame1=data.frame(x=relx,y=rely,wt1=wt)
+  frame2=data.frame(x=-relx,y=-rely,wt2=wt)
+  comp=merge(frame1,frame2,by=c('x','y'))
+  return=sum(abs(comp$wt1-comp$wt2),na.rm = TRUE)/sum(comp$wt1, na.rm = TRUE)
 }
 
 .nser2ccon=function(nser=0.5, lo=0.5, hi=0.9){
@@ -473,19 +475,6 @@ profitGainEst=function(image, mask=0, objects=0, sky, skyRMS){
 }
 
 profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
-  # xlo=loc[1]-(box[1]/2-0.5)
-  # xhi=loc[1]+(box[1]/2-0.5)
-  # ylo=loc[2]-(box[2]/2-0.5)
-  # yhi=loc[2]+(box[2]/2-0.5)
-  # if(xlo<0){xlo=0}
-  # if(xhi>dim(image)[1]){xhi=dim(image)[1]}
-  # if(ylo<0){ylo=0}
-  # if(yhi>dim(image)[2]){yhi=dim(image)[2]}
-  # if(! missing(objects) & length(objects)==length(image)){
-  #   select=image[xlo:xhi, ylo:yhi][objects[xlo:xhi, ylo:yhi]==0]
-  # }else{
-  #   select=image[xlo:xhi, ylo:yhi]
-  # }
   if(! missing(objects) & length(objects)==length(image)){
     select=profitCutout(image, loc=loc, box=box)$cutim[profitCutout(image=objects, loc=loc, box=box)$cutim==0]
   }else{
@@ -611,6 +600,7 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   segvec=which(tabulate(segim)>0)
   for(i in segvec){
     z=segim==i
+    z=z[ceiling(temp$x), ceiling(temp$y)]
     contour(temp$x,temp$y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
   }
   if(!missing(mask) & length(mask)==length(image)){
