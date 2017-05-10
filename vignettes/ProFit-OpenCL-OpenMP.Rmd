@@ -83,8 +83,6 @@ CXX=clang++
 CXX1X=clang++
 ```
 
-Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants).
-
 ## Mac OS X
 
 For Macs (El Capitan or older certainly) the version of Clang incuded is quite old and does not support OpenMP. To get round this you have to install a newer version of LLVM from e.g. homebrew (using something like `brew install llvm'). On my machine homebrew installs to /usr/local/Cellar/llvm/4.0.0/, but this will vary by setup. In my case my Makevars file therefore looks like this:

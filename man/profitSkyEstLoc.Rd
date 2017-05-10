@@ -23,7 +23,7 @@ Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provide
 Integer vector; the [x,y] location where we want to estimate the sky and sky RMS.
 }
   \item{box}{
-Integer vector; the dimensions of the box car filter to setimate the sky with.
+Integer vector; the dimensions of the box car filter to estimate the sky with.
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?

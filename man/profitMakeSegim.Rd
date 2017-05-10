@@ -73,6 +73,8 @@ To use this function you will need to have \code{EBImage} installed. Since this 
 
 > biocLite("EBImage")
 
+Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants).
+
 The \code{profitMakeSegim} function offers a high level internal to R interface for making quick segmentation maps. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{tolerance}, \option{sigma}, \option{ext}, \option{skycut}, \option{pixcut}.
 }
 \value{
@@ -83,7 +85,7 @@ A list containing:
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
-  \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided, else NULL).}
+  \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL).}
   
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
