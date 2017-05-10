@@ -7,6 +7,8 @@ src/*.dll
 inst/doc
 .crancompress
 Makevars
+rsconnect
+vignettes/rsconnect
 
 # Eclipse files
 .cproject

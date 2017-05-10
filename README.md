@@ -8,13 +8,39 @@ ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation l
 
 ## Installation
 
-Within R you can run:
+### Getting R
+
+Firs things first, you will probably want to install a recent version of R that lets you build packages from source. The advantage of choosing this route is you can then update bleeding edge versions directly from GitHub. If you rely on the pre-build binaries on CRAN you might be waiting much longer.
+
+Debian:	`sudo apt-get install r-base r-base-dev`
+
+Fedora:	`sudo yum install R`
+
+Suse:	More of a pain, see here <https://cloud.r-project.org/bin/linux/suse/README.html>
+
+Ubuntu:	`sudo apt-get install r-base-dev`
+
+All the info on binaries is here: <https://cloud.r-project.org/bin/linux/>
+
+If you have a poorly supported version of Linux (e.g. CentOS) you will need to install R from source with the development flags (this bit is important). You can read more here: <https://cloud.r-project.org/sources.html>
+
+Now you have the development version of R installed (hopefully) I would also suggest you get yourself R-Studio. It is a very popular and well maintained R IDE that gives you a lot of helpful shortcuts to scripting and analysing with R. The latest version can be grabbed from <https://www.rstudio.com/products/rstudio/> where you almost certainly want the free Desktop version.
+
+### Getting ProFit
+
+You can start R simply by typing "R" in your terminal. I would advocate running it from R-Studio though (a much nicer IDE experience for most people).
+
+Within R you can get the pre-built binary from CRAN by running:
 
 ```R
-# Installing from CRAN
 install.packages('ProFit')
+```
 
-# Installing latest version from GitHub
+The above variant of R will work easily even when you do not have the buld tools or root permission etc.
+
+If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch:
+
+```R
 install.packages('devtools')
 library(devtools)
 install_github("ICRAR/ProFit")
@@ -82,6 +108,8 @@ To find more long-form examples, including complicated fitting use-cases, please
 ```R
 browseVignettes('ProFit')
 ```
+
+Or if that does not work they are all hosted externally at <http://rpubs.com/asgr/>
 
 ## Motivation
 
