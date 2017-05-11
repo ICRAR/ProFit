@@ -30,6 +30,8 @@ A list containing:
 
   \item{cutim}{Numeric matrix; the cutout region of interst centred around \option{loc}.}
   \item{loc}{The new \option{loc} vector that tranforms the input \option{loc} x and y location to the new \option{cutim} coordinates. This is in ProFit coordinates, so these values can be used when, e.g., constructing a ProFit modellist structure.}
+  \item{loc_orig}{The original location is provided by the input \option{loc}.}
+  \item{loc_diff}{The x and y offsets of the cutout compared to the original image, where \option{loc} + \option{loc_diff} = \option{loc_orig} exactly.}
   \item{xsel}{Integer vector; the extracted x pixels from the original \option{image} that form \option{cutim}.}
   \item{ysel}{Integer vector; the extracted y pixels from the original \option{image} that form \option{cutim}.}
 }

@@ -71,7 +71,7 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
           #For the deeper PSF case:
           subnames=names(intervals[[i]])
           for(j in subnames){
-            subsubnames=intervals[[i]][[j]]
+            subsubnames=names(intervals[[i]][[j]])
             for(k in subsubnames){
               subsubsublength=length(modellistnew[[i]][[j]][[k]])
               for(l in 1:subsubsublength){
