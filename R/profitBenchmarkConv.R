@@ -145,5 +145,5 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     fft=list(fftwplan=fftwplan, paddim = padimagedim, 
       padimagex = 1:imagedim[1], padimagey=1:imagedim[2], cropx=cropx, cropy=cropy, 
       psf = list(r=psffftr, w=psffftw, x = psfranges[1], y = psfranges[2])))
-  return(result)
+  return=result
 }

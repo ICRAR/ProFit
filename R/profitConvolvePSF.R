@@ -71,5 +71,5 @@ profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE,
   if(sky!=0){
     output=output+sky
   }
-  return(output)
+  return=output
 }

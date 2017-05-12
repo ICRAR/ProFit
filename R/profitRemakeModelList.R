@@ -94,5 +94,5 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   # Specify the new parm to be parsed back to the external optimisation function
   parmnew=parmnew[fitIDs]
   
-  return(list(parm=parmnew, modellist=modellistnew))
+  return=list(parm=parmnew, modellist=modellistnew)
 }

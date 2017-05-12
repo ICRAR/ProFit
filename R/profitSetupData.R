@@ -179,5 +179,5 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
                    magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu, openclenv=openclenv, 
                    omp_threads=omp_threads)
   class(profit.data)="profit.data"
-  return(profit.data)
+  return=profit.data
 }

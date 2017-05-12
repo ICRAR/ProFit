@@ -20,7 +20,7 @@ The image matrix to be convolved by the point spread function (PSF).
 The point spread function (PSF) image matrix that ProFit will use to convolve the image. This can have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. The PSF will be automatically rescaled so it sums to 1 before convolution to ensure flux conservation in the model.
 }
  \item{options}{
-Additional options for model convolution parsed as a list. option$method inputs allowed are Bruteconv (brute force convolution), FFTconv (FFT convolution using the R \code{\link{fft}} function) and FFTWconv (FFT using the FFTW library).
+Additional options for model convolution parsed as a list. option$method inputs allowed are Bruteconv (brute force convolution), FFTconv (FFT convolution using the R \code{\link{fft}} function) and FFTWconv (FFT using the FFTW library). If using FFTconv or FFTWconv you will also need to supply a fft list. In practice this is one of the list outputs of \code{\link{profitBenchmarkConv}} (see Examples).
 }
   \item{calcregion}{
 Logical matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
@@ -43,11 +43,11 @@ Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitBruteConv}}, \code{\link{profitMakePointSource}}
+\code{\link{profitBruteConv}}, \code{\link{profitMakePointSource}}, \code{\link{profitBenchmarkConv}}
 }
 \examples{
 model = list(
-  sersic = list(
+	sersic = list(
 		xcen   = c(180, 60),
 		ycen   = c(90, 10),
 		mag = c(15, 13),
@@ -61,13 +61,21 @@ model = list(
 
 model.image=profitMakeModel(model=model, dim=c(200,200))$z
 
-# Without convolution:
+psf=profitMakeGaussianPSF()
 
-magimage(model.image)
+#Do some benchmarking:
 
-# With convolution:
+temp=profitBenchmarkConv(model.image, psf=psf)
 
-magimage(profitConvolvePSF(image=model.image, psf=profitMakePointSource()))
+#Check the best:
+
+temp$best
+
+#And we can use all three:
+
+magimage(profitConvolvePSF(model.image, psf, options=list(method='Bruteconv')))
+magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTconv', fft=temp$fft)))
+magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTWconv', fft=temp$fft)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

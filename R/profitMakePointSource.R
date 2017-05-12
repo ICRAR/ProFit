@@ -36,5 +36,5 @@ profitMakePointSource=function(xcen,ycen,mag=0,magzero=0,
     output = profitMakeModel(modellist,dim=dimimg)$z*scale
   }
   if(add) output=profitAddMats(image,output,pixlocs)
-  return(output)
+  return=output
 }

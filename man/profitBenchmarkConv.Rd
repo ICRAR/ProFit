@@ -5,7 +5,7 @@
 Benchmark convolution of an image with a point spread function (PSF).
 }
 \description{
-This function will benchmark convolution of an image with a point spread function (PSF), returning results as well as a list of data stored by \code{\link{profitSetupData}} for optimizing calls to \code{\link{profitConvolvePSF}}.
+This function will benchmark convolution of an image with a point spread function (PSF), returning results as well as a list of data stored by \code{\link{profitSetupData}} for optimising calls to \code{\link{profitConvolvePSF}}.
 }
 \usage{
 profitBenchmarkConv(image=NULL, psf=NULL, calcregion=NULL, nbench=10L,
@@ -46,7 +46,9 @@ The maximum effort level to compute the FFTW plan. FFTW plans can take a very lo
 }
 }
 \details{
-TBA.
+This function does two important things. Firstly it determines which of three different convolution options will work fastest given the provided combination of \option{iamge} and \option{psf}. In situations where the \option{psf} has much smaller dimensions than \option{image} this will pretty much always be Brute force convolution, but when the \option{psf} becomes comparable in size to the \option{image} then one of the two FFT routines will often be faster. In the provided example all three are similar speed.
+
+The second important output of this function is preparing all the structures needed for FFT convolution if using \code{\link{profitConvolvePSF}} and selecting wither FFT or FFTW. The Examples show a clear example of hwo you use this output \option{fft} list in practice.
 }
 \value{
 List; complex structure containing:
@@ -59,8 +61,8 @@ List; complex structure containing:
   \item{time}{The average time in ms for the fastest method.}
   }
 }
-\item{method}{A character string containing the name of the best method, which defaults to best[['name']].}
-\item{fft}{A list of useful items for FFTs, including: \describe{
+\item{method}{A character string containing the name of the best method (one of Bruteconv, FFTconv, FFTWconv), which defaults to best[['name']]. \option{method} can be directly parsed into \code{\link{profitConvolvePSF}} \option{options}.}
+\item{fft}{A list of useful items for FFT. \option{fft} can be directly parsed into \code{\link{profitConvolvePSF}} \option{options}., including: \describe{
   \item{fftwplan}{The FFTW plan.}
   \item{paddim}{The dimensions of the zero-padded image, usually twice the input image dimensions and necessary to avoid periodicity artifacts.}
   \item{padimagex}{The x coordinates to place the original image in; by default the bottom-left corner of the padded image.}
@@ -79,7 +81,7 @@ List; complex structure containing:
 }
 }
 \author{
-Dan Taranu
+Dan Taranu & Aaron Robotham
 }
 
 \section{Notes}{
@@ -91,7 +93,36 @@ Dan Taranu
  \code{\link{profitBruteConv}}, \code{\link{profitConvolvePSF}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
-# TBA
+model = list(
+	sersic = list(
+		xcen   = c(180, 60),
+		ycen   = c(90, 10),
+		mag = c(15, 13),
+		re  = c(14, 5),
+		nser  = c(3, 10),
+		ang  = c(46, 80),
+		axrat  = c(0.4, 0.6),
+		box = c(0.5,-0.5)
+	)
+)
+
+model.image=profitMakeModel(model=model, dim=c(200,200))$z
+
+psf=profitMakeGaussianPSF()
+
+#Do some benchmarking:
+
+temp=profitBenchmarkConv(model.image, psf=psf)
+
+#Check the best:
+
+temp$best
+
+#And we can use all three:
+
+magimage(profitConvolvePSF(model.image, psf, options=list(method='Bruteconv')))
+magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTconv', fft=temp$fft)))
+magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTWconv', fft=temp$fft)))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

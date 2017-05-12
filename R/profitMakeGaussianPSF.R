@@ -5,6 +5,5 @@ profitMakeGaussianPSF=function(fwhm=3, dim=c(25,25), trim=1-pi/4){
     cut=floor(trim*prod(dim)/8)*8/prod(dim)
     kernel[kernel<quantile(kernel,cut)]=0
   }
-  kernel=kernel/sum(kernel)
-  return(kernel)
+  return=kernel/sum(kernel)
 }
