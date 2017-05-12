@@ -39,11 +39,11 @@
 }
 
 # Benchmarks convolution and covariance functions
-profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10L,
+profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10,
   methods = c("Bruteconv","FFTconv","FFTWconv"), imagedim=NULL, psfdim=NULL, 
   refftpsf=FALSE, fftwplan=NULL,  maxfftwplaneffort=0)
 {
-  data = .profitBenchmarkPrepData(image,psf,calcregion,imagedim,psfdim)
+  data = .profitBenchmarkPrepData(image=image, psf=psf, calcregion=calcregion, imagedim=imagedim, psfdim=psfdim)
   imagedim = dim(data$image$z)
   psfdim = dim(data$psf$z)
   padimagedim = 2*imagedim
@@ -80,8 +80,8 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   }
   if(!refftpsf) 
   {
-    psffftr = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=FALSE)
-    psffftw = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=TRUE,fftwplan=fftwplan)
+    psffftr = .profitBenchmarkPadFFT(data$psf$z,padimagedim,psfranges,fftw=FALSE)
+    psffftw = .profitBenchmarkPadFFT(data$psf$z,padimagedim,psfranges,fftw=TRUE,fftwplan=fftwplan)
   }
   
   cropx = (cropimage[1]+1):(imagedim[1]+cropimage[1]) - (imagedim[1]%%2 == 0)
@@ -101,7 +101,7 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   if("FFTconv" %in% names) {
     for(i in benchi)
     {
-      if(refftpsf) psffftr = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=FALSE)
+      if(refftpsf) psffftr = .profitBenchmarkPadFFT(data$psf$z,padimagedim,psfranges,fftw=FALSE)
       rimagepad = matrix(0,padimagedim[1],padimagedim[2])
       rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
       imagefftr = fft(rimagepad) * psffftr
@@ -114,7 +114,7 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   if("FFTWconv" %in% names) {
     for(i in benchi)
     {
-      if(refftpsf) psffftw = .profitBenchmarkPadFFT(psf,padimagedim,psfranges,fftw=TRUE,fftwplan = fftwplan)
+      if(refftpsf) psffftw = .profitBenchmarkPadFFT(data$psf$z,padimagedim,psfranges,fftw=TRUE,fftwplan = fftwplan)
       rimagepad = matrix(0,padimagedim[1],padimagedim[2])
       rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
       imagefftw = FFT(rimagepad, plan=fftwplan) * psffftw

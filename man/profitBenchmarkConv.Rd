@@ -8,7 +8,7 @@ Benchmark convolution of an image with a point spread function (PSF).
 This function will benchmark convolution of an image with a point spread function (PSF), returning results as well as a list of data stored by \code{\link{profitSetupData}} for optimising calls to \code{\link{profitConvolvePSF}}.
 }
 \usage{
-profitBenchmarkConv(image=NULL, psf=NULL, calcregion=NULL, nbench=10L,
+profitBenchmarkConv(image=NULL, psf=NULL, calcregion=NULL, nbench=10,
   methods = c("Bruteconv","FFTconv","FFTWconv"), imagedim=NULL, psfdim=NULL, 
   refftpsf=FALSE, fftwplan=NULL,  maxfftwplaneffort=0)
 }
@@ -112,7 +112,7 @@ psf=profitMakeGaussianPSF()
 
 #Do some benchmarking:
 
-temp=profitBenchmarkConv(model.image, psf=psf)
+temp=profitBenchmarkConv(model.image, psf=psf, nbench=1)
 
 #Check the best:
 
@@ -123,6 +123,29 @@ temp$best
 magimage(profitConvolvePSF(model.image, psf, options=list(method='Bruteconv')))
 magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTconv', fft=temp$fft)))
 magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTWconv', fft=temp$fft)))
+
+#Some benchmarking for different size PSFs:
+
+profitBenchmarkConv(imagedim=c(200,200), psfdim=c(11,11), nbench=1)
+profitBenchmarkConv(imagedim=c(200,200), psfdim=c(21,21), nbench=1)
+profitBenchmarkConv(imagedim=c(200,200), psfdim=c(31,31), nbench=1)
+
+#Note they are all very similar in speed when psfdim=21. The time for FFT and FFTW
+#pretty much scales with the number of pixels in the image (regardless of PSF).
+
+#Because of how they scale, there are some rough rules-of-thumb you can use:
+
+#Brute force is usually faster when psfdim<=21:
+
+profitBenchmarkConv(imagedim=c(200,200), psfdim=c(15,15), nbench=1)
+
+#FFT is usually faster when imagedim<400 & psfdim>21 & psfdim<100:
+
+profitBenchmarkConv(imagedim=c(200,200), psfdim=c(51,51), nbench=1)
+
+#FFTW is usually faster when imagedim>400 & psfdim>21
+
+profitBenchmarkConv(imagedim=c(400,400), psfdim=c(25,25), nbench=1)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
