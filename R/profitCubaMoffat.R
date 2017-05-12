@@ -34,7 +34,7 @@ profitRadialMoffat=function(r=1, mag=15, fwhm=3, con=2, ang=0, axrat=1, box=0){
           .profitMoffatScale(mag=mag, fwhm=fwhm, con=con, axrat=axrat, box=box)
 }
 
-profitCubaMoffat=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, fwhm=3, con=2, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
+profitCubaMoffat=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, fwhm=3, con=2, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10, plot=FALSE, ...){
   if(length(dim)==1){dim=rep(dim,2)}
   xpix=0:(dim[1]-1)
   ypix=0:(dim[2]-1)
@@ -43,5 +43,11 @@ profitCubaMoffat=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, fwhm=3, con=2, a
   for(i in 1:length(pixgrid[,1])){
     pixval=c(pixval, .profitMoffatExactSumPix(c(pixgrid[i,1],pixgrid[i,1]+1), c(pixgrid[i,2],pixgrid[i,2]+1), xcen=xcen, ycen=ycen, fwhm=fwhm, con=con, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol))
   }
-  return=matrix(pixval*.profitMoffatScale(mag=mag, fwhm=fwhm, con=con, axrat=axrat, box=box),dim[1],dim[2])
+  output=matrix(pixval*.profitMoffatScale(mag=mag, fwhm=fwhm, con=con, axrat=axrat, box=box),dim[1],dim[2])
+  
+  if(plot){
+	  magimage(output, ...)
+  }
+  
+  return=output
 }

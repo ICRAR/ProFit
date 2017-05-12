@@ -73,7 +73,7 @@ profitSB2Flux=function(SB=0, magzero=0, pixscale=1){
   return(profitMag2Flux(mag=mag, magzero=magzero))
 }
 
-profitAddMats=function(matbase,matadd,addloc=c(1,1)){
+profitAddMats=function(matbase, matadd, addloc=c(1,1), plot=FALSE, ...){
   newmat=matrix(0,dim(matbase)[1]+dim(matadd)[1]*2,dim(matbase)[2]+dim(matadd)[2]*2)
   xrangebase=(dim(matadd)[1]+1):(dim(matadd)[1]+dim(matbase)[1])
   yrangebase=(dim(matadd)[2]+1):(dim(matadd)[2]+dim(matbase)[2])
@@ -83,7 +83,14 @@ profitAddMats=function(matbase,matadd,addloc=c(1,1)){
   if(min(xrangeadd)>=1 & max(xrangeadd)<=dim(newmat)[1] & min(yrangeadd)>=1 & max(yrangeadd)<=dim(newmat)[2]){
     newmat[xrangeadd,yrangeadd]=newmat[xrangeadd,yrangeadd]+matadd
   }
-  return=(newmat[xrangebase,yrangebase])
+  output=(newmat[xrangebase,yrangebase])
+  
+  
+	if(plot){
+	  magimage(output, ...)
+  }
+  
+  return=output
 }
 
 profitCheckFinesample <- function(finesample)
@@ -608,7 +615,7 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   }
 }
 
-profitCutout=function(image, loc=dim(image)/2, box=c(101,101)){
+profitCutout=function(image, loc=dim(image)/2, box=c(101,101), plot=FALSE, ...){
   loc=as.numeric(loc)
   xcen=loc[1]
   ycen=loc[2]
@@ -621,6 +628,11 @@ profitCutout=function(image, loc=dim(image)/2, box=c(101,101)){
   if(xhi>dim(image)[1]){xhi=dim(image)[1]}
   if(ylo<1){ylo=1}
   if(yhi>dim(image)[2]){yhi=dim(image)[2]}
-  output=image[xlo:xhi, ylo:yhi]
-  return=list(cutim=output, loc=c(xcen-xlo+1,ycen-ylo+1), loc_orig=c(xcen,ycen), loc_diff=c(xlo-1,ylo-1), xsel=xlo:xhi, ysel=ylo:yhi)
+  cutim=image[xlo:xhi, ylo:yhi]
+  output=list(cutim=cutim, loc=c(xcen-xlo+1,ycen-ylo+1), loc_orig=c(xcen,ycen), loc_diff=c(xlo-1,ylo-1), xsel=xlo:xhi, ysel=ylo:yhi)
+  if(plot){
+    magimage(output, ...)
+  }
+  return=output
+  
 }

@@ -33,7 +33,7 @@ profitRadialFerrer=function(r=1, mag=15, rout=3, a=1, b=1, ang=0, axrat=1, box=0
           .profitFerrerScale(mag=mag, rout=rout, a=a, b=b, axrat=axrat, box=box)
 }
 
-profitCubaFerrer=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rout=3, a=1, b=1, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
+profitCubaFerrer=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rout=3, a=1, b=1, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10, plot=FALSE, ...){
   if(length(dim)==1){dim=rep(dim,2)}
   xpix=0:(dim[1]-1)
   ypix=0:(dim[2]-1)
@@ -42,5 +42,11 @@ profitCubaFerrer=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rout=3, a=1, b=1
   for(i in 1:length(pixgrid[,1])){
     pixval=c(pixval, .profitFerrerExactSumPix(c(pixgrid[i,1],pixgrid[i,1]+1), c(pixgrid[i,2],pixgrid[i,2]+1), xcen=xcen, ycen=ycen, rout=rout, a=a, b=b, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol))
   }
-  return=matrix(pixval*.profitFerrerScale(mag=mag, rout=rout, a=a, b=b, axrat=axrat, box=box),dim[1],dim[2])
+  output=matrix(pixval*.profitFerrerScale(mag=mag, rout=rout, a=a, b=b, axrat=axrat, box=box),dim[1],dim[2])
+  
+  if(plot){
+	  magimage(output, ...)
+  }
+  
+  return=output
 }

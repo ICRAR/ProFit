@@ -8,7 +8,7 @@ Cutout Image Subset
 A helper function that cuts out regions of a larger image and propogates the relative coorindates of the target centre.
 }
 \usage{
-profitCutout(image, loc = dim(image)/2, box = c(101, 101))
+profitCutout(image, loc = dim(image)/2, box = c(101, 101), plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +20,12 @@ Numeric vector; the [x,y] location where we want to estimate the sky and sky RMS
 }
   \item{box}{
 Integer vector; the dimensions of the box to cut out from \option{image} centred on \option{loc}.
+}
+  \item{plot}{
+Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
 }
 \details{

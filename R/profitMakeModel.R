@@ -6,7 +6,7 @@ profitMakeModel = function(modellist,
                            calcregion, docalcregion=FALSE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
                            convopt=list(method="Bruteconv"),
-                           openclenv=NULL, omp_threads=NULL) {
+                           openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
 
 	stopifnot(is.integer(finesample) && finesample >= 1)
 
@@ -337,5 +337,9 @@ profitMakeModel = function(modellist,
 	rval$y = seq(pixdim/2,dim[2]-pixdim/2,by=pixdim)
 	rval$z = basemat
 
+	if(plot){
+	  magimage(rval, ...)
+	}
+	
 	return=rval
 }

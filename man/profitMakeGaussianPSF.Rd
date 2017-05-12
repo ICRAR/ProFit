@@ -8,7 +8,7 @@ Make a 2D Gaussian PSF (point source profile or point spread function)
 Creates an analytic 2D Gaussian PSF with a given full-width at half-maximum.
 }
 \usage{
-profitMakeGaussianPSF(fwhm = 3, dim = c(25,25), trim = 1 - pi/4)
+profitMakeGaussianPSF(fwhm = 3, dim = c(25,25), trim = 1 - pi/4, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +20,12 @@ Integer vector; the dimensions of the image to be generated. Typically this shou
 }
   \item{trim}{
 Numeric scalar; fraction of pixels to keep. This is done by using quantile to find the pixel value and setting pixels below this to zero. This is done to obtain a more circular kernel (often handy), where the defaults will approximately fill a square image with a circle of diameter \option{dim}.
+}
+  \item{plot}{
+Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
 }
 \details{

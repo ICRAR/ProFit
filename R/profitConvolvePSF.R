@@ -1,5 +1,5 @@
 profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE, 
-  options=list(method="Bruteconv"), sky=0){
+  options=list(method="Bruteconv"), sky=0, plot=FALSE, ...){
   if(sky!=0){
     image=image-sky
   }
@@ -71,5 +71,10 @@ profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE,
   if(sky!=0){
     output=output+sky
   }
+  
+  if(plot){
+	  magimage(output, ...)
+	}
+	
   return=output
 }

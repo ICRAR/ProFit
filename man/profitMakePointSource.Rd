@@ -10,7 +10,7 @@ Create an image of a point source at an arbitrary location (can be fractional pi
 \usage{
 profitMakePointSource(xcen, ycen, mag = 0, magzero = 0,
   modellist = list(sersic = list(mag = 0, re = 1, nser = 0.5, axrat=1, ang=0)),
-  psf=NULL, image=matrix(0, 9, 9), finesample=1L, add=FALSE)
+  psf=NULL, image=matrix(0, 9, 9), finesample=1L, add=FALSE, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,6 +40,12 @@ An integer factor to fine-sample the model by, for compatibility with \code{\lin
 }
   \item{add}{
   Logical flag to determine if the output should return the sum of this pointsource and the data in \option{image}.
+}
+  \item{plot}{
+Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
 }
 \details{

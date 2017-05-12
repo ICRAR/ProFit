@@ -9,7 +9,7 @@ A high level interface to fast convolution that takes a user supplied image and 
 }
 \usage{
 profitConvolvePSF(image, psf, calcregion, docalcregion=FALSE, 
-  options=list(method="Bruteconv"), sky = 0)
+  options=list(method="Bruteconv"), sky = 0, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,6 +30,12 @@ Logical; should the \option{calcregion} logical matrix be used to define a subse
 }
   \item{sky}{
 Numeric scalar;  the sky level of the image. Thsi is important to ensure the convolution works well at the edges, since the padded regions outside the image bounds will be effectively set to the \option{sky} value. If this is much higher of lower than the true sky then you may see artefacts.
+}
+  \item{plot}{
+Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
 }
 \details{

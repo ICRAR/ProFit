@@ -13,7 +13,7 @@ Useful functions related to the Sersic profile. \code{profitCubaSersic} computes
 }
 \usage{
 profitCubaSersic(xcen = dim[1]/2, ycen = dim[2]/2, mag = 15, re = 1, nser = 4, ang = 0,
-axrat = 1, box = 0, dim = c(25, 25), rel.tol=1e-3, abs.tol= 1e-10)
+axrat = 1, box = 0, dim = c(25, 25), rel.tol=1e-3, abs.tol= 1e-10, plot = FALSE, ...)
 profitRadialSersic(r = 1, mag = 15, re = 1, nser = 4, ang = 0, axrat = 1, box = 0)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -53,6 +53,12 @@ Scalar; the requested relative accuracy. Default, 0.001.
 }
   \item{abs.tol}{
 Scalar; the requested absolute accuracy. The algorithm stops when either the relative or the absolute accuracies are met. Default, near 1e-10.  
+}
+  \item{plot}{
+Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
 }
 \details{

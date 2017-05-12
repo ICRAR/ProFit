@@ -33,7 +33,7 @@ profitRadialSersic=function(r=1, mag=15, re=1, nser=4, ang=0, axrat=1, box=0){
           .profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, box=box, bn=bn)
 }
 
-profitCubaSersic=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, re=1, nser=4, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
+profitCubaSersic=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, re=1, nser=4, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10, plot=FALSE, ...){
   bn= qgamma(0.5, 2 * nser)
   xpix=0:(dim[1]-1)
   ypix=0:(dim[2]-1)
@@ -42,5 +42,11 @@ profitCubaSersic=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, re=1, nser=4, an
   for(i in 1:length(pixgrid[,1])){
     pixval=c(pixval, .profitSersicExactSumPix(c(pixgrid[i,1],pixgrid[i,1]+1), c(pixgrid[i,2],pixgrid[i,2]+1), xcen=xcen, ycen=ycen, re=re, nser=nser, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, bn=bn))
   }
-  return=matrix(pixval*.profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, box=box, bn=bn),dim[1],dim[2])
+  output=matrix(pixval*.profitSersicScale(mag=mag, re=re, nser=nser, axrat=axrat, box=box, bn=bn),dim[1],dim[2])
+  
+  if(plot){
+	  magimage(output, ...)
+  }
+  
+  return=output
 }

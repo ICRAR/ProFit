@@ -9,7 +9,7 @@ Low level brute force image convolution
 A low level direct C++ implementation of brute force convolution that takes a user supplied image and point spread function (PSF) as inputs. In most situations users should make convolutions using the higher level \code{\link{profitConvolvePSF}} provided.
 }
 \usage{
-profitBruteConv(image, psf, calcregion=matrix(1,1,1), docalcregion=FALSE)
+profitBruteConv(image, psf, calcregion=matrix(1,1,1), docalcregion=FALSE, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -24,6 +24,12 @@ Matrix; logical image matrix the same size as the input \option{image} matrix. I
 }
   \item{docalcregion}{
 Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
+}
+  \item{plot}{
+Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{\dots}{
+Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
 }
 \details{

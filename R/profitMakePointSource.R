@@ -1,6 +1,6 @@
 profitMakePointSource=function(xcen,ycen,mag=0,magzero=0,
   modellist=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
-  psf=NULL,image=matrix(0,9,9),finesample=1L, add=FALSE)
+  psf=NULL,image=matrix(0,9,9),finesample=1L, add=FALSE, plot=FALSE, ...)
 {
   profitCheckFinesample(finesample)
   haspsfimg = !is.null(psf)
@@ -36,5 +36,10 @@ profitMakePointSource=function(xcen,ycen,mag=0,magzero=0,
     output = profitMakeModel(modellist,dim=dimimg)$z*scale
   }
   if(add) output=profitAddMats(image,output,pixlocs)
+  
+  if(plot){
+	  magimage(output, ...)
+  }
+  
   return=output
 }

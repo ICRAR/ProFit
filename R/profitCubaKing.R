@@ -38,7 +38,7 @@ profitRadialKing=function(r=1, mag=15, rc=1, rt=3, a=2, ang=0, axrat=1, box=0){
           .profitKingScale(mag=mag, rc=rc, rt=rt, a=a, axrat=axrat, box=box)
 }
 
-profitCubaKing=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rc=1, rt=3, a=2, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10){
+profitCubaKing=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rc=1, rt=3, a=2, ang=0, axrat=1, box=0, dim=c(25,25), rel.tol=1e-3, abs.tol= 1e-10, plot=FALSE, ...){
   xpix=0:(dim[1]-1)
   ypix=0:(dim[2]-1)
   pixgrid=expand.grid(xpix,ypix)
@@ -46,5 +46,11 @@ profitCubaKing=function(xcen=dim[1]/2, ycen=dim[2]/2, mag=15, rc=1, rt=3, a=2, a
   for(i in 1:length(pixgrid[,1])){
     pixval=c(pixval, .profitKingExactSumPix(c(pixgrid[i,1],pixgrid[i,1]+1), c(pixgrid[i,2],pixgrid[i,2]+1), xcen=xcen, ycen=ycen, rc=rc, rt=rt, a=a, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol))
   }
-  return=matrix(pixval*.profitKingScale(mag=mag, rc=rc, rt=rt, a=a, axrat=axrat, box=box),dim[1],dim[2])
+  output=matrix(pixval*.profitKingScale(mag=mag, rc=rc, rt=rt, a=a, axrat=axrat, box=box),dim[1],dim[2])
+  
+  if(plot){
+	  magimage(output, ...)
+  }
+  
+  return=output
 }
