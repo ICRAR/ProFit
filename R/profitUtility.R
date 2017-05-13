@@ -629,7 +629,7 @@ profitCutout=function(image, loc=dim(image)/2, box=c(101,101), plot=FALSE, ...){
   if(ylo<1){ylo=1}
   if(yhi>dim(image)[2]){yhi=dim(image)[2]}
   cutim=image[xlo:xhi, ylo:yhi]
-  output=list(cutim=cutim, loc=c(xcen-xlo+1,ycen-ylo+1), loc_orig=c(xcen,ycen), loc_diff=c(xlo-1,ylo-1), xsel=xlo:xhi, ysel=ylo:yhi)
+  output=list(cutim=cutim, loc=c(xcen-xlo+1,ycen-ylo+1), loc.orig=c(xcen,ycen), loc.diff=c(xlo-1,ylo-1), xsel=xlo:xhi, ysel=ylo:yhi)
   if(plot){
     magimage(output, ...)
   }
