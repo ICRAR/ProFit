@@ -65,7 +65,7 @@ Aaron Robotham & Dan Taranu
 }
 \examples{
 # Create a PSF with a suitable width:
-magimage(profitMakePointSource())
+profitMakePointSource(plot=TRUE)
   
 # We can create a point source in a larger image:
 psf = profitMakePointSource(xcen=100,ycen=50,mag=15,modellist=list(
@@ -88,7 +88,7 @@ par(mfrow=c(1,1))
 
 # Now interpolate the last empirical PSF (less accurate than creating it from scratch):
 
-magimage(profitMakePointSource(xcen=7,ycen=7,mag=0,psf=psf,image=image,model=NULL))
+profitMakePointSource(xcen=7,ycen=7,mag=0,psf=psf,image=image,model=NULL, plot=TRUE)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

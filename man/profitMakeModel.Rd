@@ -249,18 +249,18 @@ modellist = list(
 
 # Without a PSF provided only the extended sources are shown, with no convolution:
 
-magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
+profitMakeModel(modellist=modellist, dim=c(200,200), plot=TRUE)
 
 # With a PSF provided the PSFs are displayed and the extended sources are convolved with
 # the PSF:
 
-magimage(profitMakeModel(modellist=modellist, psf=profitMakePointSource(),
-dim=c(200,200)))
+profitMakeModel(modellist=modellist, psf=profitMakePointSource(),
+dim=c(200,200), plot=TRUE)
 
 # Using a GPU to create the image:
 \dontrun{
 tempCL=profitOpenCLEnv()
-magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
+profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL, plot=TRUE)
 
 # The time elapsed is the key thing to check. The system time tends to be higher for
 # OpenCL due to the large number of system calls made to the GPU.
