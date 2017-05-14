@@ -90,19 +90,19 @@ Numeric matrix; required, the image we want to decorate.
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-image=read.fits(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))
 
 #First using the outer margins for tick labels:
 
 par(mar=c(3.1,3.1,0.1,0.1))
-profitImageWCS(image$dat[[1]], header=image$hdr[[1]])
-profitImageWCS(image$dat[[1]], header=image$hdr[[1]], type='deg')
+profitImageWCS(image$imDat, header=image$hdr)
+profitImageWCS(image$imDat, header=image$hdr, type='deg')
 
 #Now removing the margins and putting labels inside the image:
 
 par(mar=c(0,0,0,0))
-profitImageWCS(image$dat[[1]], header=image$hdr[[1]], margin=FALSE, type='sex')
-profitImageWCS(image$dat[[1]], header=image$hdr[[1]], margin=FALSE, type='deg')
+profitImageWCS(image$imDat, header=image$hdr, margin=FALSE, type='sex')
+profitImageWCS(image$imDat, header=image$hdr, margin=FALSE, type='deg')
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
