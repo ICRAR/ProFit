@@ -134,17 +134,17 @@ print(starlist)
 There are 3 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate. When doing this in anger you might want to consider fitting all 3 stars (or however many make it through the selection cuts above). This gives you a way to marginalise over the uncertainty in the PSF (I discuss PSF uncertainty in some more detail at the end of this vignette).
 
 ```{r}
-psf_image=profitCutout(image, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
-psf_sigma=profitCutout(sigma, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
-psf_segim=profitCutout(segim_expand$segim, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
+psf_image=magcutout(image, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
+psf_sigma=magcutout(sigma, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
+psf_segim=magcutout(segim_expand$segim, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
 ```
 
 Look at our target star to check we are happy:
 
 ```{r, fig.width=5, fig.height=5}
-magimage(psf_image$cutim)
-magimage(psf_sigma$cutim)
-magimage(psf_segim$cutim)
+magimage(psf_image$image)
+magimage(psf_sigma$image)
+magimage(psf_segim$image)
 ```
 
 Next we make our initial model, where we take our PSF estimates from the segmentation stats:
@@ -212,7 +212,7 @@ psf_intervals=list(
 Since there are no other sources in the frame we can use the full **psf_image** to attempt our profile fit (so no need to provide **psf_segim**):
 
 ```{r}
-psf_Data=profitSetupData(psf_image$cutim, sigma=psf_sigma$cutim, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
+psf_Data=profitSetupData(psf_image$image, sigma=psf_sigma$image, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
 ```
 
 We can check our initial guess easily:
@@ -365,8 +365,8 @@ Maybe useful to zoom in a bit:
 psf_modellist_fit2=profitRemakeModellist(parm=psf_fit2$par, Data=psf_Data2)$modellist
 psf_model_full2=profitMakeModel(psf_modellist_fit2,dim=dim(image),magzero=30)$z
 for(i in 1:3){
-  magimage(profitCutout(image, loc=starlist[i,c('xcen','ycen')], box=c(51,51))$cutim, col=rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)[1:50]))
-  magimage(profitCutout(image-psf_model_full2, loc=starlist[i,c('xcen','ycen')], box=c(51,51))$cutim, col=rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)))
+  magimage(magcutout(image, loc=starlist[i,c('xcen','ycen')], box=c(51,51))$image, col=rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)[1:50]))
+  magimage(magcutout(image-psf_model_full2, loc=starlist[i,c('xcen','ycen')], box=c(51,51))$image, col=rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)))
 }
 ```
 
@@ -389,17 +389,17 @@ magimage(psf_model2)
 Much like we did with the PSF fit, we have to extract the region of interest and setup our fitting structures:
 
 ```{r}
-gal_image=profitCutout(image, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
-gal_sigma=profitCutout(sigma, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
-gal_segim=profitCutout(segim_expand$segim, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
+gal_image=magcutout(image, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
+gal_sigma=magcutout(sigma, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
+gal_segim=magcutout(segim_expand$segim, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
 ```
 
 Check the cutout regions:
 
 ```{r, fig.width=5, fig.height=5}
-magimage(gal_image$cutim)
-magimage(gal_sigma$cutim)
-magimage(gal_segim$cutim)
+magimage(gal_image$image)
+magimage(gal_sigma$image)
+magimage(gal_segim$image)
 ```
 
 As before, we have to setup some reasonable guesses for our galaxy fit:
@@ -472,7 +472,7 @@ gal_intervals=list(
 Now we can set up our full fitting structure with averything we have made (notice we use our simpler PSF model here):
 
 ```{r}
-gal_Data=profitSetupData(gal_image$cutim, sigma=gal_sigma$cutim, modellist=gal_modellist, tofit=gal_tofit, tolog=gal_tolog, magzero=30, algo.func='optim', intervals=gal_intervals, psf=psf_model, segim=gal_segim$cutim)
+gal_Data=profitSetupData(gal_image$image, sigma=gal_sigma$image, modellist=gal_modellist, tofit=gal_tofit, tolog=gal_tolog, magzero=30, algo.func='optim', intervals=gal_intervals, psf=psf_model, segim=gal_segim$image)
 ```
 
 ```{r, fig.width=8, fig.height=5}

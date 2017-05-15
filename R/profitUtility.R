@@ -483,15 +483,15 @@ profitGainEst=function(image, mask=0, objects=0, sky, skyRMS){
 
 profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
   if(! missing(objects) & length(objects)==length(image)){
-    select=profitCutout(image, loc=loc, box=box)$cutim[profitCutout(image=objects, loc=loc, box=box)$cutim==0]
+    select=magcutout(image, loc=loc, box=box)$image[magcutout(image=objects, loc=loc, box=box)$image==0]
   }else{
-    select=profitCutout(image, loc=loc, box=box)$cutim
+    select=magcutout(image, loc=loc, box=box)$image
   }
   if(plot){
-    image=profitCutout(image, loc=loc, box=box)$cutim
+    image=magcutout(image, loc=loc, box=box)$image
     imout=magimage(image, ...)
     if(! missing(objects)){
-      contour(x=imout$x, y=imout$y, profitCutout(objects, loc=loc, box=box)$cutim, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
+      contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box)$image, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
   }
   clip=magclip(select, estimate = 'lo')
