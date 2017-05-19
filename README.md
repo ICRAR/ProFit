@@ -38,7 +38,37 @@ install.packages('ProFit')
 
 The above variant of R will work easily even when you do not have the buld tools or root permission etc.
 
-If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch:
+If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch. First you should make sure you have a sensible looking Makevars file in ~/.R/Makevars:
+
+For GCC it should probably look like this:
+
+```
+CC = gcc
+CXX = g++
+CXX1X = g++
+CXX11 = g++
+
+CFLAGS = -O3 -Wall -mtune=native -march=native -Ofast -std=gnu99
+CXXFLAGS = -O3 -Wall -mtune=native -march=native -Ofast -std=c++0x
+CXX1XFLAGS = -O3 -Wall -mtune=native -march=native  -Ofast -std=c++0x
+CXX11FLAGS = -O3 -Wall -mtune=native -march=native  -Ofast -std=c++0x
+```
+
+For Clang it should probably look like this:
+
+```
+CC = clang
+CXX = clang++
+CXX1X = clang++
+CXX11 = clang++
+
+CFLAGS = -O3 -Wall -mtune=native -march=native -Ofast
+CXXFLAGS = -O3 -Wall -mtune=native -march=native -Ofast
+CXX1XFLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
+CXX11FLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
+```
+
+With this setup, you can then have a go at building ProFit from source:
 
 ```R
 install.packages('devtools')
@@ -54,17 +84,22 @@ install.packages(c('Rcpp', 'fftw', 'R2Cuba', 'RColorBrewer', 'LaplacesDemon', 'i
 install.packages('devtools')
 library(devtools)
 install_github("ICRAR/ProFit")
-library(ProFit)
 ```
 
 To use the **profitMakeSegim** function for image segmentation you will need to have \code{EBImage} installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
 
 ```R
-source("https://bioconductor.org/biocLite.R")
+source("http://bioconductor.org/biocLite.R")
 biocLite("EBImage")
 ```
 
-Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants).
+Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **Cairo**, **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants). For **Cairo** you might need to install the development version, so check this if you are having issues.
+
+Assuming this has all installed successfully, you should now be able to load ProFit within R with the usual:
+
+```R
+library(ProFit)
+```
 
 ## Code Example
 

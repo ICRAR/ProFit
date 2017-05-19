@@ -75,12 +75,32 @@ When you build **ProFit** it will try to detect whether your default compiler su
 
 ## Linux
 
-For Linux using a fairly new (2016+) version of GCC or Clang this should work quite easily. If you want to use, e.g., Clang then you should make (or edit) your R Makevars file. For a modern Linux install it should probably look like this:
+For Linux using a fairly new (2016+) version of GCC or Clang this should work quite easily. If you want to use, e.g., GCC then you should make (or edit) your R Makevars file. For a modern Linux install it should probably look like this:
 
 ```
-CC=clang
-CXX=clang++
-CXX1X=clang++
+CC = gcc
+CXX = g++
+CXX1X = g++
+CXX11 = g++
+
+CFLAGS = -O3 -Wall -mtune=native -march=native -Ofast -std=gnu99
+CXXFLAGS = -O3 -Wall -mtune=native -march=native -Ofast -std=c++0x
+CXX1XFLAGS = -O3 -Wall -mtune=native -march=native  -Ofast -std=c++0x
+CXX11FLAGS = -O3 -Wall -mtune=native -march=native  -Ofast -std=c++0x
+```
+
+For Clang it will probably look like this:
+
+```
+CC = clang
+CXX = clang++
+CXX1X = clang++
+CXX11 = clang++
+
+CFLAGS = -O3 -Wall -mtune=native -march=native -Ofast
+CXXFLAGS = -O3 -Wall -mtune=native -march=native -Ofast
+CXX1XFLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
+CXX11FLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
 ```
 
 ## Mac OS X
@@ -88,14 +108,16 @@ CXX1X=clang++
 For Macs (El Capitan or older certainly) the version of Clang incuded is quite old and does not support OpenMP. To get round this you have to install a newer version of LLVM from e.g. homebrew (using something like `brew install llvm'). On my machine homebrew installs to /usr/local/Cellar/llvm/4.0.0/, but this will vary by setup. In my case my Makevars file therefore looks like this:
 
 ```
-CC=/usr/local/Cellar/llvm/4.0.0/bin/clang
-CXX=/usr/local/Cellar/llvm/4.0.0/bin/clang++
-CXX1X=/usr/local/Cellar/llvm/4.0.0/bin/clang++
-CXX11=/usr/local/Cellar/llvm/4.0.0/bin/clang++
-CXXFLAGS=-O3 -pedantic -march=native -Ofast
-CXX1XFLAGS=-O3 -Wall -march=native -Ofast
-CXX11FLAGS=-O3 -Wall -march=native -Ofast
-LDFLAGS=-L/usr/local/Cellar/llvm/4.0.0/lib -Wl,-rpath,/usr/local/Cellar/llvm/4.0.0/lib
+CC = /usr/local/Cellar/llvm/4.0.0/bin/clang
+CXX = /usr/local/Cellar/llvm/4.0.0/bin/clang++
+CXX1X = /usr/local/Cellar/llvm/4.0.0/bin/clang++
+CXX11 = /usr/local/Cellar/llvm/4.0.0/bin/clang++
+
+CFLAGS = -O3 -Wall -mtune=native -march=native -Ofast
+CXXFLAGS = -O3 -Wall -mtune=native -march=native -Ofast
+CXX1XFLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
+CXX11FLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
+LDFLAGS = -L/usr/local/Cellar/llvm/4.0.0/lib -Wl,-rpath,/usr/local/Cellar/llvm/4.0.0/lib
 ```
 
 This took a bit of fiddling to figure out (especially the last line), and is basically a side-effect of the compiler linking getting more complicated as soon as you start using a non-standard Clang compiler.

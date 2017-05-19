@@ -207,14 +207,14 @@ profitMakeSegimDilate=function(image, segim, mask=0, size=9, shape='disc', expan
   kern = EBImage::makeBrush(size, shape=shape)
   
   if(expand=='all'){
-    segim_new=as.Image(segim)
+    segim_new=EBImage::as.Image(segim)
     segim_new[segim_new>0]=max(segim_new)+1-segim_new[segim_new>0]
     segim_new=EBImage::dilate(segim_new, kern)
     segim_new[segim_new>0]=max(segim_new)+1-segim_new[segim_new>0]
     segim_new=EBImage::imageData(segim_new)
     segim_new[segim!=0]=segim[segim!=0]
   }else{
-    segim_new=as.Image(segim)
+    segim_new=EBImage::as.Image(segim)
     segim_new[segim_new!=expand]=0
     segim_new=EBImage::dilate(segim_new, kern)
     segim_new=EBImage::imageData(segim_new)

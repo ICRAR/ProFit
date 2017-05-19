@@ -69,7 +69,7 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 \details{
 To use this function you will need to have \code{EBImage} installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
 
-> source("https://bioconductor.org/biocLite.R")
+> source("http://bioconductor.org/biocLite.R")
 
 > biocLite("EBImage")
 
