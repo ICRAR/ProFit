@@ -16,6 +16,7 @@ library(knitr)
 library(ProFit)
 library(FITSio)
 library(EBImage)
+library(imager)
 ```
 
 Having a good segmentation map is important for the successful running of ProFit. Luckily ProFit now comes with some utility functions to help you get there. We can start with a simple example:

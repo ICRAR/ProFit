@@ -16,6 +16,7 @@ library(knitr)
 library(ProFit)
 library(FITSio)
 library(EBImage)
+library(imager)
 library(RColorBrewer)
 ```
 

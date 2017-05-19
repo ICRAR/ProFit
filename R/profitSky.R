@@ -1,3 +1,26 @@
+.interp.2d=function (x, y, obj) 
+{
+    xobj = obj$x
+    yobj = obj$y
+    zobj = obj$z
+    nx = length(xobj)
+    ny = length(yobj)
+    lx = approx(xobj, 1:nx, x, rule = 2)$y
+    ly = approx(yobj, 1:ny, y, rule = 2)$y
+    lx1 = floor(lx)
+    ly1 = floor(ly)
+    ex = lx - lx1
+    ey = ly - ly1
+    ex[lx1 == nx] = 1
+    ey[ly1 == ny] = 1
+    lx1[lx1 == nx] = nx - 1
+    ly1[ly1 == ny] = ny - 1
+    return = cbind(X = x, Y = y, Z = zobj[cbind(lx1, ly1)] * 
+        (1 - ex) * (1 - ey) + zobj[cbind(lx1 + 1, ly1)] * ex * 
+        (1 - ey) + zobj[cbind(lx1, ly1 + 1)] * (1 - ex) * ey + 
+        zobj[cbind(lx1 + 1, ly1 + 1)] * ex * ey)
+}
+
 profitSkyEst=function(image, mask=0, objects=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
   radweight=-radweight
   xlen=dim(image)[1]
@@ -67,7 +90,9 @@ profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plo
     }
   }
   clip=magclip(select, estimate = 'lo')
-  return=list(val=c(mean(clip$x, na.rm=T), sd(clip$x, na.rm = T)), clip=clip)
+  tempmed=median(clip$x, na.rm=TRUE)
+  tempsd=as.numeric(diff(quantile(clip$x, pnorm(c(-1,0)), na.rm=TRUE)))
+  return=list(val=c(tempmed, tempsd), clip=clip)
 }
 
 profitMakeSkyMap=function(image, objects=0, box=c(101,101)){
@@ -75,8 +100,40 @@ profitMakeSkyMap=function(image, objects=0, box=c(101,101)){
   yseq=seq(box[2]/2,dim(image)[2],by=box[2])
   tempgrid=expand.grid(xseq, yseq)
   tempsky={}
-for(i in 1:dim(tempgrid)[1]){tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, loc=as.numeric(tempgrid[i,]), box=box)$val)}
+  for(i in 1:dim(tempgrid)[1]){
+    tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, loc=as.numeric(tempgrid[i,]), box=box)$val)
+  }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
+}
+
+profitMakeSkyGrid=function(image, objects=0, box=c(101,101), type='bilinear'){
+  if(!requireNamespace("imager", quietly = TRUE)){
+    stop('The akima package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
+  }
+  xseq=seq(box[1]/2,dim(image)[1],by=box[1])
+  yseq=seq(box[2]/2,dim(image)[2],by=box[2])
+  tempgrid=expand.grid(xseq, yseq)
+  tempsky={}
+  for(i in 1:dim(tempgrid)[1]){
+    tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, loc=as.numeric(tempgrid[i,]), box=box)$val)
+  }
+  tempmat_sky=matrix(tempsky[,1],length(xseq))
+  tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
+
+  bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
+  
+  if(type=='bilinear'){
+    temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))[,3]
+    temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))[,3]
+  }else if(type=='bicubic'){
+    temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
+    temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
+  }
+
+  temp_bi_sky=matrix(temp_bi_sky, dim(image)[1])
+  temp_bi_skyRMS=matrix(temp_bi_skyRMS, dim(image)[1])
+
+  return=list(sky=temp_bi_sky, skyRMS=temp_bi_skyRMS)
 }

@@ -65,7 +65,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   image[!is.finite(image)]=0
  
   if(smooth){
-    image=as.matrix(isoblur(as.cimg(image),sigma))
+    image=as.matrix(imager::isoblur(imager::as.cimg(image),sigma))
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -128,7 +128,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
   image[!is.finite(image)]=0
 
   if(smooth){
-    image=as.matrix(isoblur(as.cimg(image),sigma))
+    image=as.matrix(imager::isoblur(imager::as.cimg(image),sigma))
   }
   xlen=dim(image)[1]
   ylen=dim(image)[2]

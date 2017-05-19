@@ -123,15 +123,15 @@ Aaron Robotham
 \examples{
 \dontrun{
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-segim=profitMakeSegim(image,plot=TRUE)
+segim=profitMakeSegim(image, plot=TRUE)
 
 #Providing a mask entirely removes regions of the image for segmentation:
 mask=matrix(0,209,155)
 mask[1:80,]=1
-profitMakeSegim(image,mask=mask,plot=TRUE)
+profitMakeSegim(image, mask=mask, plot=TRUE)
 
 #Providing a previously created object map can sometimes help with detection (not here):
-profitMakeSegim(image,mask=mask,object=segim$objects,plot=TRUE)
+profitMakeSegim(image, mask=mask, object=segim$objects, plot=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

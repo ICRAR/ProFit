@@ -15,9 +15,6 @@ importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
              "smooth.spline", "var", "integrate", "density", "pnorm", "quantile", "sd",
            "optimise", "optim", "qnorm", "rpois")
 importFrom("utils", "relist")
-#importFrom("dbscan", "dbscan")
 importFrom("RColorBrewer", "brewer.pal")
 importFrom("R2Cuba", "cuhre")
-importFrom("imager", "as.cimg", "enorm", "imgradient", "isoblur")
-#importFrom("data.table", "data.table", ".BY", ".N")
-#importFrom("EBImage", "watershed", "imageData", "as.Image")
+#importFrom("imager", "as.cimg", "enorm", "imgradient", "isoblur")

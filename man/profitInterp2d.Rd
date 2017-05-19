@@ -13,10 +13,10 @@ profitInterp2d(x, y, image)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{
-The x position at which to make the interpolation.
+The x position at which to make the interpolation with respect to the x centre of \option{image}.
 }
   \item{y}{
-The x position at which to make the interpolation.
+The x position at which to make the interpolation with respect to the x centre of \option{image}.
 }
   \item{image}{
 The image matrix to be used for the interpolation.
@@ -25,9 +25,7 @@ The image matrix to be used for the interpolation.
 \details{
 In practice this is a low level routine unlikely to be used by the user. \code{\link{profitMakePointSource}} should be used to generate point sources and PSFs.
 
-By ProFit convention the bottom-left part of the bottom-left pixel when plotting the image matrix is c(0,0) and the top-right part of the bottom-left pixel is c(1,1), i.e. the mid-point of pixels are half integer values in x and y.
-
-To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument refers to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
+For this function (and really, it is for user ease when interpolating a PSF) [0,0] is always the R image centre of the input \option{image}. This means it would be at the usual [1.5,2] position of a 3x4 image matrix.
 }
 \value{
 Matrix; a three column matrix where column 1 is the requested x interpolation locations, column 2 is the requested y interpolation locations and column 3 is the interpolated values.

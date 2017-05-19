@@ -32,11 +32,11 @@ Some minor mixes.
 
 v1.0.4 GitHub only (latest)
 
-FEATURE: A large number of utility functions added to aid in creating inputs for profitSetupData. In particular profitMakeSegim and profitMakeSegimExpand (for segmenting an image and making a segim map, this requires EBImage to be installed), profitSkyEst (for estimating the sky), profitGainEst (for estimating the gain), profitMakeSigma (for making a sigma map), and profitImBlur / profitImGrad / profitImDiff for transforming images. Also profitSkyEstLoc (local sky) and profitMakeSkyMap (coarse sky map generator). Various very short utility functions added.
+FEATURE: A large number of utility functions added to aid in creating inputs for profitSetupData. In particular profitMakeSegim and profitMakeSegimExpand (for segmenting an image and making a segim map, this requires EBImage to be installed), profitSkyEst (for estimating the sky), profitGainEst (for estimating the gain), profitMakeSigma (for making a sigma map), and profitImBlur / profitImGrad / profitImDiff for transforming images. Also profitSkyEstLoc (local sky) and profitMakeSkyMap (coarse sky map generator) and profitMakeSkyGrid (fine sky map generator). Various very short utility functions added.
 
 FEATURE: profitDeprojectImageEllipse for circularising galaxies.
 
-FEATURE: Added new vignettes o making segmentation maps, sigma maps, and the Full Monty of estimating all ProFit inputs from just image pixel data.
+FEATURE: Added new vignettes on making segmentation maps, sigma maps, and the Full Monty of estimating all ProFit inputs from just image pixel data.
 
 FIXED: profitMakeGaussianPSF had a mistake with the fwhm parameter (the radius it created was x2 too big). This was reported by Sarah Casura
 
