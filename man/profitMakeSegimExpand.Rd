@@ -1,5 +1,6 @@
 \name{profitMakeSegimExpand}
 \alias{profitMakeSegimExpand}
+\alias{profitMakeSegimDilate}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Segmentation Map Expansion
@@ -9,8 +10,10 @@ A high level utility to achieve decent quality image segmentation based on the e
 }
 \usage{
 profitMakeSegimExpand(image, segim, mask = 0, objects = 0, skycut = 1, SBlim, magzero,
-pixscale = 1, sigma = 1, smooth = TRUE, expandsigma = 2, dim = c(15, 15),expand = "all",
-sky, skyRMS, plot = FALSE, stats = TRUE, ...)
+pixscale = 1, sigma = 1, smooth = TRUE, expandsigma = 5, expand = "all", sky, skyRMS,
+plot = FALSE, stats = TRUE, ...)
+profitMakeSegimDilate(image, segim, mask = 0, size = 9, shape = "disc", expand = "all",
+magzero, pixscale = 1, sky = 0, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -45,13 +48,16 @@ Numeric scalar; standard deviation of the blur used when \option{smooth}=TRUE.
 Logical; should smoothing be done on the target \option{image}?
 }
   \item{expandsigma}{
-Numeric scalar; standard deviation of the blur used when expanding out the \option{segim}.
-}
-  \item{dim}{
-Integer vector; the dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
+Numeric scalar; standard deviation of the blur used when expanding out the \option{segim}. Roughly spoeaking if \option{skycut} is set to a low number (say -5) then the expansion will not be prevented by the local sky level and it will grod by the number of pixels specified by \option{expandsigma}.
 }
   \item{expand}{
 Vector; specifies which segmentation regions should be expanded. If left with the default \option{expand}='all' then all segments will be expanded.
+}
+  \item{size}{
+Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels. Should be an odd number else will be rounded up to the nearest odd number. See \code{makeBrush}.
+}
+  \item{shape}{
+Character scalar; the shape of the diltion kernel. See \code{makeBrush}.
 }
   \item{sky}{
 User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
@@ -70,7 +76,9 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \details{
-The basic behaviour of this function is to intellegently expand out image segments already identified by, e.g., \code{\link{profitMakeSegim}}. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{dim}, \option{expandsigma}, \option{sigma}.
+The basic behaviour of \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is to intellegently expand out image segments already identified by, e.g., \code{\link{profitMakeSegim}}. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{dim}, \option{expandsigma}, \option{sigma}.
+
+The main difference between \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is the former grows the expansion a bit more organically, whereas the latter always gives new pixels to the brighter object if in doubt. That said, \code{profitMakeSegimDilate} often gives very similar solutions and runs about 10+ times faster, so might be the only option for larger images.
 }
 \value{
 A list containing:
@@ -78,8 +86,8 @@ A list containing:
   \item{segim}{Integer matrix; the segmentation map matched pixel by pixel to \option{image}.}
   \item{objects}{Logical matrix; the object map matched pixel by pixel to \option{image}. 1 means there is an object at this pixel, 0 means it is a sky pixel. Can be used as a mask in various other functions that require objects to be masked out.}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
-  \item{sky}{The estimated sky level of the \option{image}.}
-  \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL).}
+  \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
+  \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
   
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
@@ -118,7 +126,9 @@ image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFi
 segim=profitMakeSegim(image, plot=TRUE, skycut=2)
 profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=1)
 profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=0)
-profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=-1, expandsigma=3)
+profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=-Inf, sigma=3)
+
+profitMakeSegimDilate(image, segim$segim, plot=TRUE)
 
 #This expantion process is a *much* better idea then simply setting the original skycut
 #to a low value like 1/0:

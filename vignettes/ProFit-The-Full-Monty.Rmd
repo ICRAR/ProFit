@@ -71,7 +71,7 @@ print(SBlim)
 Given this segmentation we can look at some statistics on our apparent sky pixels.
 
 ```{r}
-object_frac=length(which(segim_expand$objects))/length(image)
+object_frac=length(which(segim_expand$objects==1))/length(image)
 qnorm(1-object_frac)
 ```
 
@@ -124,7 +124,7 @@ magbar('topleft', title='Axrat', titleshift=1)
 abline(v=c(0.4), lty=2)
 ```
 
-We want to extract very blue (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
+We want to extract very red (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
 
 ```{r}
 starlist=segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.4,]
