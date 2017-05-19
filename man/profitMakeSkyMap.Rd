@@ -44,7 +44,8 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))$imDat
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
+package="ProFit"))$imDat
 magimage(image)
 skymap = profitMakeSkyMap(image, box=c(89,89))
 magimage(skymap$sky)

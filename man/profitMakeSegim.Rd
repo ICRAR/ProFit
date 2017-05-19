@@ -122,11 +122,12 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
+package="ProFit"))$imDat
 segim=profitMakeSegim(image, plot=TRUE)
 
 #Providing a mask entirely removes regions of the image for segmentation:
-mask=matrix(0,209,155)
+mask=matrix(0,dim(image)[1],dim(image)[2])
 mask[1:80,]=1
 profitMakeSegim(image, mask=mask, plot=TRUE)
 

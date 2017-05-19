@@ -122,15 +122,18 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
+package="ProFit"))$imDat
 segim=profitMakeSegim(image, plot=TRUE, skycut=2)
 profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=1)
 profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=0)
 profitMakeSegimExpand(image, segim$segim, plot=TRUE, skycut=-Inf, sigma=3)
 
 profitMakeSegimDilate(image, segim$segim, plot=TRUE)
+profitMakeSegimDilate(image, segim$segim, plot=TRUE, size = 15)
+profitMakeSegimDilate(image, segim$segim, plot=TRUE, size = 21)
 
-#This expantion process is a *much* better idea then simply setting the original skycut
+#This expansion process is a *much* better idea then simply setting the original skycut
 #to a low value like 1/0:
 profitMakeSegim(image, plot=TRUE, skycut = 1)
 profitMakeSegim(image, plot=TRUE, skycut = 0)
