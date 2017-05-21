@@ -21,7 +21,7 @@ Numeric matrix; required, the image we want to analyse.
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{box}{
-Integer vector; the dimensions of the box car filter to setimate the sky with.
+Integer vector; the dimensions of the box car filter to estimate the sky with.
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.

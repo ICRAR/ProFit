@@ -256,11 +256,17 @@ Now we have all the key bits we need in order to fit our target galaxy!
 A more complicated alternative is to fit all the good stars (3 in this case) with the same profile simultaneously. Basically we have 3 PSFs distributed around our image, but we want to fit them all with the same PSF, modulo different xcen, ycen and mag:
 
 ```{r}
+psf_x=starlist$xcen
+psf_y=starlist$ycen
+psf_mag=starlist$flux
+psf_fwhm=starlist[1,'maj']*2
+psf_con=1/sqrt(starlist[1,'con'])
+
 psf_modellist2=list(
   pointsource = list(
-    xcen = starlist$xcen,
-    ycen = starlist$ycen,
-    mag = starlist$flux
+    xcen = psf_x,
+    ycen = psf_y,
+    mag = psf_mag
   ),
   psf=list(
     moffat=list(
@@ -274,11 +280,15 @@ psf_modellist2=list(
 )
 ```
 
-We need to make our own region map since our object to fit will not be centrally located:
+We need to make our own region map since our object to fit will not be centrally located. First we should expand our segments of interest (not always vital- it depends whether you think there is much PSF flux hidden in broad wings or not):
+
+```{r, fig.width=5, fig.height=5}
+segim_expand_psf=profitMakeSegimExpand(image, segim$segim, expand=starlist$segID, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, plot=TRUE)
+```
 
 ```{r}
-psf_region=segim_expand$segim
-psf_region[]=segim_expand$segim %in% starlist$segID
+psf_region=matrix(0, dim(image)[1], dim(image)[2])
+psf_region[segim_expand$segim %in% starlist$segID]=1
 ```
 
 We now need to prepare a more complicated fitting structure. We want to fit the 3 stars with the same PSF, modulo different xcen, ycen and mag:

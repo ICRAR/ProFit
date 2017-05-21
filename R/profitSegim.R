@@ -36,6 +36,24 @@ eigvec=(sx^2-eigval)/sxy
   return=2*sum(abs(comp$wt1-comp$wt2),na.rm = TRUE)/sum(comp$wt1, comp$wt2, na.rm = TRUE)
 }
 
+.selectCoG=function(fluxcheck, threshold=1.05){
+  tempout={}
+  for(i in 1:dim(fluxcheck)[1]){
+    tempsel=which(fluxcheck[i,]>1 & fluxcheck[i,]<threshold)+1
+    if(length(tempsel)==0){
+      if(any(fluxcheck[i,]<1)){
+        tempsel=min(which(fluxcheck[i,]<1))
+      }else{
+        tempsel=which.min(fluxcheck[i,])+1
+      }
+    }else{
+      tempsel=min(tempsel)
+    }
+    tempout=c(tempout, tempsel)
+  }
+  return=tempout
+}
+
 #Not currently used:
 .nser2ccon=function(nser=0.5, lo=0.5, hi=0.9){
   return=(((qgamma(lo, 2 * nser)/qgamma(hi, 2 * nser))^nser)^2)
@@ -78,6 +96,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
     image[mask==1]=0
   }
   segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
+  
   objects=segim>0
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
@@ -85,10 +104,9 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   if(plot){
     profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
   }
-  objects=segim>0
-  temp=matrix(0, xlen, ylen)
-  temp[objects]=1
-  objects=temp
+  
+  objects=segim
+  objects[objects!=0]=1
   
   if(missing(sky)){
     sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
@@ -142,7 +160,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
   }
   #kernel=profitMakeGaussianPSF(fwhm = expandsigma, dim=dim)
   maxmat=matrix(min(image, na.rm=T), xlen, ylen)
-  segim_new=matrix(-1,xlen,ylen)
+  segim_new=matrix(0,xlen,ylen)
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
   if(expand[1]=='all'){expand=segvec}
@@ -162,10 +180,8 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
     maxmat[segsel]=tempmult[segsel]
   }
   
-  objects=segim_new>0
-  temp=matrix(0, dim(segim_new)[1], dim(segim_new)[2])
-  temp[objects]=1
-  objects=temp
+  objects=segim_new
+  objects[objects!=0]=1
   
   if(plot){
     profitSegimPlot(image=image_orig, segim=segim_new, mask=mask, sky=sky, ...)
@@ -227,10 +243,8 @@ profitMakeSegimDilate=function(image, segim, mask=0, size=9, shape='disc', expan
     segstats=NULL
   }
   
-  objects=segim_new>0
-  temp=matrix(0, dim(segim_new)[1], dim(segim_new)[2])
-  temp[objects]=1
-  objects=temp
+  objects=segim_new
+  objects[objects!=0]=1
   
   if(plot){
     profitSegimPlot(image=image, segim=segim_new, mask=mask, sky=sky, ...)
@@ -291,4 +305,67 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   if(!missing(mask) & length(mask)==length(image)){
     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
   }
+}
+
+proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(101, 101), plot=FALSE, stats=TRUE, ...){
+  
+  if(missing(segim)){
+    segim=profitMakeSegim(image=image, mask=mask, objects=objects, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, plot=FALSE, stats=FALSE)
+    sky=segim$sky
+    skyRMS=segim$skyRMS
+    segim=segim$segim
+  }else{
+    if(missing(sky)){sky=0}
+    if(missing(skyRMS)){skyRMS=NA}
+  }
+  segstats=profitSegimStats(image=image, segim=segim, sky=sky)
+  flux_mat=cbind(segstats$flux)
+  segim_array=abind(segim, along=3)
+  
+  for(i in 1:iters){
+    segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE)
+    flux_mat=cbind(flux_mat, segim$segstats$flux)
+    segim_array=abind(segim_array, segim$segim)
+  }
+  
+  fluxcheck=flux_mat[,2:iters]/flux_mat[,1:(iters-1)]
+  selseg=.selectCoG(fluxcheck, threshold)
+  
+  segim_new=segim$segim
+  segim_new[]=0
+  origfrac={}
+  for(i in 1:length(selseg)){
+    segim_new[segim_array[,,selseg[i]]==segstats[i,'segID']]=segstats[i,'segID']
+    origfrac=c(origfrac,flux_mat[i,1]/flux_mat[i,selseg[i]])
+  }
+  
+  if(stats & !missing(image)){
+    if(redosky){
+      objects=segim_new
+      objects[objects!=0]=1
+      sky_new=profitMakeSkyGrid(image=image, objects=objects, box=box)
+      sky=sky_new$sky
+      skyRMS=sky_new$skyRMS
+    }
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
+    segstats=cbind(segstats, iter=selseg, origfrac=origfrac)
+  }else{
+    segstats=NULL
+  }
+  
+  objects=segim_new
+  objects[objects!=0]=1
+  
+  if(plot){
+    profitSegimPlot(image=image, segim=segim_new, mask=mask, sky=sky, ...)
+  }
+  
+  if(!missing(SBlim) & !missing(magzero)){
+    SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale), na.rm=TRUE)
+  }else if(missing(SBlim) & !missing(magzero) & skycut>0){
+    SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
+  }else{
+    SBlim=NULL
+  }
+  return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
