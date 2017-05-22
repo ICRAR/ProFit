@@ -38,6 +38,8 @@ Further arguments to be passed to \code{\link{magimage}}.
 }
 \details{
 \code{profitSegimStats} provides summary statistics for the individual segments of the image, e.g. properties of the apertures, and the sum of the flux etc. This is used inside of \code{\link{profitMakeSegim}} and \code{\link{profitMakeSegimExpand}}, but it may be useful to use seperately if manual modifications are made to the segmentation, or two segmentations (e.g. a hot and cold mode segmentation) need to be combined.
+
+The interpretation of some of these outputs will depend a lot on the data being analysed, so it is for the user to decide on sensible next steps (e.g. using the outputs to select stars etc). One output of interest might be \option{flux_reflect}. This attempts to correct for missing flux where segments start colliding. This probably returns an upper limit to the flux since in some regions it can even be double counted if the two sources that have colliding segmentation maps are very close together and similar in brightness, so somewhere between \option{flux} and \option{flux_reflect} the truth probably lies. If you want a better estimate of the flux division then you should really be using the profiling routine of \code{ProFit}.
 }
 \value{
 A data.frame with columns:
@@ -58,6 +60,7 @@ A data.frame with columns:
   \item{corxy}{The weighted correlation in xy.}
   \item{con}{Concentration, N50/N90.}
   \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
+  \item{flux_reflect}{Corrects the flux for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
   \item{maj}{The weighted standard deviation along the major axis.}
   \item{min}{The weighted standard deviation along the minor axis.}
   \item{axrat}{The axial ratio as given by min/maj.}
@@ -73,13 +76,20 @@ Aaron Robotham
 \code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
 }
 \examples{
-image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-segim=profitMakeSegim(image,plot=TRUE)
+\dontrun{
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
+package="ProFit"))$imDat
+segim=profitMakeSegim(image, magzero=30, plot=TRUE)
 print(segim$segstats)
 
-segim$segim[15:30, 20:35]=max(segim$segim)+1
-print(profitSegimStats(image, segim$segim, sky=segim$sky))
+#Note row 6 (the central galaxy) gains 0.15 mag of flux due to the missing flux when
+#rotated through 180 degrees. The reflected value of 18.4 is closer to the full profile
+#solution (~18.35) than the non-reflected flux (18.55).
+
+segim$segim[35:55, 80:100]=max(segim$segim)+1
+print(profitSegimStats(image, segim$segim, sky=segim$sky, magzero=30))
 profitSegimPlot(image, segim$segim)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

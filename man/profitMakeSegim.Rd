@@ -87,7 +87,7 @@ A list containing:
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
   \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL).}
   
-If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
+If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is called and the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
@@ -105,6 +105,7 @@ If \option{stats}=TRUE then the \option{segstats} part of the returned list will
   \item{corxy}{The weighted correlation in xy.}
   \item{con}{Concentration, N50/N90.}
   \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
+  \item{flux_reflect}{Corrects the flux for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
   \item{maj}{The weighted standard deviation along the major axis.}
   \item{min}{The weighted standard deviation along the minor axis.}
   \item{axrat}{The axial ratio as given by min/maj.}
