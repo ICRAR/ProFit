@@ -21,18 +21,28 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       priorsum=Data$priors(modellistnew,Data$modellist)
     }
     
+    # This is strictly the PSF for convolution with extended sources
+    # It should evaluate as false if only point sources are being fit, because then there's
+    # no need to generate a PSF image or verify the PSF dimensions
     if(Data$fitpsf) {
-      psf = profitMakePointSource(modellist=modellistnew$psf, finesample = finesample) 
+      dimpsf = dim(Data$psf)
+      psf = profitMakePointSource(modellist=modellistnew$psf, finesample = finesample,
+        image = matrix(0, dimpsf[1], dimpsf[2]))
+      sumpsf = sum(psf)
+      psfsumdiff = !abs(sumpsf-1) < 1e-3
+      if(psfsumdiff)  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-3; ",
+        "please adjust your PSF model or psf dimensions until it is properly normalized."))
+      psf = psf/sumpsf
     } else {
       psf = Data$psf
     }
     
     if(Data$usecalcregion){
-      model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=Data$psf, dim=dim(image),
+      model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=psf, dim=dim(image),
         whichcomponents = whichcomponents, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
         magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv, omp_threads=Data$omp_threads)
     }else{
-      model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=Data$psf, dim=dim(image),
+      model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=psf, dim=dim(image),
         whichcomponents = whichcomponents, rough=rough,
         magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv, omp_threads=Data$omp_threads)
     }
