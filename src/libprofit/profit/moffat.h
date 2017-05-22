@@ -102,6 +102,9 @@ protected:
 	double con;
 	// @}
 
+private:
+  double fluxfrac(double fraction) const;
+
 #ifdef PROFIT_OPENCL
 
 protected:

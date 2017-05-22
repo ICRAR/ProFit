@@ -71,6 +71,11 @@ void MoffatProfile::validate() {
 
 }
 
+double MoffatProfile::fluxfrac(double fraction) const {
+  double rfrac = this->rscale*sqrt(pow(1.-fraction,1./(1.-this->con)));
+	return rfrac;
+}
+
 double MoffatProfile::get_lumtot(double r_box) {
 	double con = this->con;
 	return pow(this->rscale, 2) * M_PI * axrat/(con-1)/r_box;
@@ -81,13 +86,12 @@ double MoffatProfile::get_rscale() {
 }
 
 double MoffatProfile::adjust_rscale_switch() {
-	double rscale_switch = this->fwhm*4;
-	rscale_switch = max(min(rscale_switch, 20.), 2.);
-	return rscale_switch / this->rscale;
+	double rscale_switch = max(max(this->fluxfrac(0.99)/ this->rscale,3*this->fwhm),3.);
+	return rscale_switch;
 }
 
 double MoffatProfile::adjust_rscale_max() {
-	return 8;
+	return ceil(fluxfrac(0.9999)/this->rscale);
 }
 
 double MoffatProfile::adjust_acc() {
