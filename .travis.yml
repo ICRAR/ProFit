@@ -33,7 +33,9 @@ r_packages: rmarkdown
 
 # Additional packages that are not fetched from CRAN
 bioc_packages: EBImage
-r_github_packages: asgr/magicaxis
+r_github_packages:
+ - asgr/magicaxis
+ - asgr/celestial
 
 # ProFit needs fftw3
 addons:
