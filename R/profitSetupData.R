@@ -1,4 +1,4 @@
-profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE, openclenv=NULL, omp_threads = NULL){
+profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE, openclenv=NULL, omp_threads = NULL){
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
   
@@ -77,13 +77,19 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   {
     psftype = "analytical"
     haspsf= TRUE
-    dimpsf = dim(psf)*finesample
-    psf = profitMakePointSource(modellist=modellist$psf,finesample=finesample,image=matrix(0,dimpsf[1],dimpsf[2]))
-    sumpsf = sum(psf)
-    psfsumdiff = !abs(sumpsf-1) < 1e-3
-    if(psfsumdiff)  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-3; ",
-      "please adjust your PSF model or psf dimensions until it is properly normalized."))
-    psf = psf/sumpsf
+    # Check if PSF dimensions are sensible if fitting extended sources
+    if(all(names(modellist) %in% c("pointsource", "psf","sky"))) psf = matrix(1,1,1)
+    else
+    {
+      stopifnot(!is.null(psfdim))
+      psfdim = psfdim*finesample
+      psf = profitMakePointSource(modellist=modellist$psf,finesample=finesample,image=matrix(0,psfdim[1],psfdim[2]))
+      sumpsf = sum(psf)
+      psfsumdiff = !abs(sumpsf-1) < 1e-3
+      if(psfsumdiff)  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-3; ",
+        "please adjust your PSF model or psf dimensions until it is properly normalized."))
+      psf = psf/sumpsf
+    }
   } else if(haspsf) {
     psftype = "empirical"
   } else {

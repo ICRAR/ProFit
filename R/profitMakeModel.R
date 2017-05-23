@@ -58,16 +58,24 @@ profitMakeModel = function(modellist,
 	# unless they are fitting the PSF - in which case it may need to be
 	# re-generated constantly
 	haspsfmodel = !is.null(modellist$psf)
-	if( haspsfmodel && !haspsf & any(!names(modellist) %in% c("pointsource", "psf"))) {
-		haspsf = TRUE
-		psf = profitMakePointSource(image=matrix(0,25,25), mag=0, modellist = modellist$psf)
+	if( haspsfmodel && !haspsf)
+	{
+	  haspsf = TRUE
+	  # If there are ANY extended sources, make a PSF
+	  # Otherwise, you don't actually need a PSF image for anything and there's no need to
+	  # add any padding to the model
+	  if(all(names(modellist) %in% c("pointsource", "psf","sky"))) {
+	    psf = matrix(1,1,1)
+	  } else {
+	    psf = profitMakePointSource(image=matrix(0,psfdim[1],psfdim[2]), mag=0, modellist = modellist$psf)
+	    sumpsf = sum(psf)
+      psfsumdiff = abs(sumpsf-1)
+      if(!(psfsumdiff < 1e-3))  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-3; ",
+        "please adjust your PSF model or psf dimensions until it is properly normalized."))
+      psf = psf/sumpsf
+	  }
 	}
 	
-	if( haspsfmodel && !haspsf & all(names(modellist) %in% c("pointsource", "psf"))) {
-		haspsf = TRUE
-		psf = matrix(0,psfdim[1],psfdim[2])
-	}
-
 	if( haspsf ) {
 		psfpad = floor(dim(psf)/2)
 	}

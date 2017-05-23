@@ -9,7 +9,7 @@ This is a utility function to get the user inputs in the format required for mod
 }
 \usage{
 profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, priors,
-intervals, constraints, psf=NULL, finesample=1L, psffinesampled=FALSE, magzero=0,
+intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE, magzero=0,
 algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L,
 benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE,
 openclenv = NULL, omp_threads = NULL)
@@ -50,7 +50,9 @@ List; optional, interval limits for each parameter, using a similar list structu
 Function; optional, takes the new trial \option{modellist} and returns a list with exactly the same structure. This exists for the purpose of allowing complex relationships between parameters. A simple example is given in the Vignettes of not allowing the bulge Re to become larger than the disk Re. You could also use it to specify the offset of, e.g., a Ferrer profile to be linked to that of the Sersic bulge. Your imagination is the limit, as long as the basic structure returns has the same skeleton as \option{modellist}.
 }
   \item{psf}{
-An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{modellist}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
+Matrix; optional. An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{modellist}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
+}
+\item{psfdim}{Numeric; optional. Dimensions of the PSF image to generate when fitting an analytic PSF and convolving extended sources. Defaults to the diimensions of \option{psf}. Ignored if there are no extended sources or analytic PSF.
 }
   \item{finesample}{
 An integer factor to determine how much finer of a grid the model image and PSF should be evaluated on. Because the PSF is discretized, convolution introduces additional discretization of the model, diminishing the accuracy of the convolved model. If this parameter is set to an integer greater than one, the model and PSF (but see \option{psffinesampled}) will be upsampled prior to convolution, and then downsampled after convolution. The fine sampling factor must be an integer to avoid non-integral re-binning artifacts when downsampling. Large finesample factors will significantly increase convolution time and accuracy, while moderately increasing model generation time and accuracy, so it is recommended to set \option{nbenchmark} to at least a few when using this option.
