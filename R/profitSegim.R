@@ -32,8 +32,25 @@ eigvec=(sx^2-eigval)/sxy
   rely=round(y-ycen)
   frame1=data.frame(x=relx,y=rely,wt1=wt)
   frame2=data.frame(x=-relx,y=-rely,wt2=wt)
-  comp=merge(frame1,frame2,by=c('x','y'))
-  return=2*sum(abs(comp$wt1-comp$wt2),na.rm = TRUE)/sum(comp$wt1, comp$wt2, na.rm = TRUE)
+  comp=merge(frame1,frame2,by=c('x','y'), all=TRUE)
+  overlap=is.na(comp$wt1)==FALSE & is.na(comp$wt2)==FALSE
+  asymm=2*sum(abs(comp[overlap,'wt1']-comp[overlap,'wt2']), na.rm=TRUE)/sum(comp[overlap,'wt1'], comp[overlap,'wt2'], na.rm=TRUE)
+  return=asymm
+}
+
+.reflect=function(x, y, wt, xcen, ycen){
+  if(missing(xcen)){xcen=.meanwt(x, wt)}
+  if(missing(ycen)){ycen=.meanwt(y, wt)}
+  relx=round(x-xcen)
+  rely=round(y-ycen)
+  frame1=data.frame(x=relx,y=rely,wt1=wt)
+  frame2=data.frame(x=-relx,y=-rely,wt2=wt)
+  comp=merge(frame1,frame2,by=c('x','y'),all=TRUE)
+  overlap=is.na(comp$wt1)==FALSE & is.na(comp$wt2)==FALSE
+  asymm=2*sum(abs(comp[overlap,'wt1']-comp[overlap,'wt2']), na.rm=TRUE)/sum(comp[overlap,'wt1'], comp[overlap,'wt2'], na.rm=TRUE)
+  len=dim(frame1)[1]
+  flux_reflect=sum(comp[overlap,'wt1'], na.rm=TRUE)+2*sum(frame1[is.na(comp$wt2),'wt1'], na.rm=TRUE)
+  return=flux_reflect
 }
 
 .selectCoG=function(fluxcheck, threshold=1.05){
@@ -271,6 +288,7 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
   covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
   asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
+  flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
   corxy=covxy/(xsd*ysd)
   rad=.cov2eigval(xsd, ysd, covxy)
   rad$hi=sqrt(rad$hi)
@@ -285,9 +303,10 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
     SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
     SB_N50=profitFlux2SB(flux=flux*0.5/N50, magzero=magzero, pixscale=pixscale)
     SB_N90=profitFlux2SB(flux=flux*0.9/N90, magzero=magzero, pixscale=pixscale)
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=mag, N=Nseg, N50=N50, N90=N90, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
+    mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=mag, N=Nseg, N50=N50, N90=N90, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, flux_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
   }else{
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, flux_reflect=flux_reflect, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
   }
   return=as.data.frame(segstats[order(segID),])
 }

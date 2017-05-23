@@ -202,8 +202,8 @@ psf_intervals=list(
     xcen=list(psf_x+c(-5,5)),
     ycen=list(psf_y+c(-5,5)),
     mag=list(psf_mag+c(-2,2)),
-    fwhm=list(c(1,100)),
-    con=list(c(1,100)),
+    fwhm=list(c(1,10)),
+    con=list(c(1,10)),
     axrat=list(c(0.1,1)),
     box=list(c(-1,1))
   )
@@ -224,7 +224,7 @@ profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots=TRUE, plotchisq=TRU
 
 Not bad, but not perfect. We can do an optim fit to improve things:
 
-```{r}
+```{r, include=FALSE}
 psf_fit=optim(psf_Data$init, profitLikeModel, method='BFGS', Data=psf_Data, control=list(fnscale=-1))
 ```
 
@@ -337,8 +337,8 @@ psf_intervals2=list(
   psf=list(
     moffat=list(
       mag=list(c(-1, 1)),
-      fwhm=list(c(1,100)),
-      con=list(c(1,100)),
+      fwhm=list(c(1,10)),
+      con=list(c(1,10)),
       axrat=list(c(0.1,1)),
       box=list(c(-1,1))
     )
