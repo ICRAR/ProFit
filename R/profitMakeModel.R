@@ -5,7 +5,7 @@ profitMakeModel = function(modellist,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
-                           convopt=list(method="Bruteconv"),
+                           convopt=list(method="Bruteconv"), psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
 
 	stopifnot(is.integer(finesample) && finesample >= 1)
@@ -58,9 +58,14 @@ profitMakeModel = function(modellist,
 	# unless they are fitting the PSF - in which case it may need to be
 	# re-generated constantly
 	haspsfmodel = !is.null(modellist$psf)
-	if( haspsfmodel && !haspsf ) {
+	if( haspsfmodel && !haspsf & any(!names(modellist) %in% c("pointsource", "psf"))) {
 		haspsf = TRUE
-		psf = profitMakePointSource(image=matrix(0,dim[1],dim[2]), mag=0, modellist = modellist$psf)
+		psf = profitMakePointSource(image=matrix(0,25,25), mag=0, modellist = modellist$psf)
+	}
+	
+	if( haspsfmodel && !haspsf & all(names(modellist) %in% c("pointsource", "psf"))) {
+		haspsf = TRUE
+		psf = matrix(0,psfdim[1],psfdim[2])
 	}
 
 	if( haspsf ) {

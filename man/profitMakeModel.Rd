@@ -13,7 +13,8 @@ whichcomponents=list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "
 coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
 acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion,
 docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
-convopt=list(method="Bruteconv"), openclenv = NULL, omp_threads = NULL, plot = FALSE, ...)
+convopt=list(method="Bruteconv"), psfdim = c(25, 25), openclenv = NULL,
+omp_threads = NULL, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -42,10 +43,10 @@ Desired minimum per pixel accuracy within the upscaling region defined by \optio
 Integer specifying the number of times to subdivide the model image and therefore finely sample it (compared to the dimensions specified in \option{dim}), for more accurate PSF convolution. Must be one or higher. Note that the \option{psf} image and \option{modellist} PSF are not automatically fine sampled; this is only done by \code{\link{profitSetupData}}.
 }
   \item{returnfine}{
-  Logical flag to return the finely-sampled model instead of downsampling to the specified \option{dim}.
+Logical flag to return the finely-sampled model instead of downsampling to the specified \option{dim}.
 }
   \item{returncrop}{
-  Logical flag to return the appropriately PSF-padded \option{modellist} instead of cropping to the specified \option{dim}.
+Logical flag to return the appropriately PSF-padded \option{modellist} instead of cropping to the specified \option{dim}.
 }
   \item{calcregion}{
 Matrix; logical image matrix the same size as the input \option{image} matrix. If \option{docalcregion}=TRUE, then pixels in \option{calcregion} that are TRUE (or 1) will have the convolution calculated, pixels with FALSE (or 0) values will be set to 0. This is included to increase computation speed in situations where only a small region of the full image contains the galaxy of interest for fitting. In this case pixels a long way from the segmentation region for the galaxy will not need to be convolved in order to calculate the correct likelihood within the segmentation.
@@ -63,7 +64,10 @@ If provided the profile is computed out to this many times Re, after this point 
 Logical; where the profile has been truncated via \option{remax} this specifies whether the profile should be rescaled since the total integrated flux will be less than without truncation. In practice this means image values are increases by 1/0.9999 for the default case (where the profile is truncated at the point where 99.99\% of flux is contained).  
 }
   \item{convopt}{
-  A list specifying options for convolution. Currently ignored.
+A list specifying options for convolution. Currently ignored.
+}
+  \item{psfdim}{
+The size of the PSF image to be constructed if a psf modellist is being provided to construct an analytic PSF model.
 }
   \item{openclenv}{
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).

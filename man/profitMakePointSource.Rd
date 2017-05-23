@@ -10,7 +10,7 @@ Create an image of a point source at an arbitrary location (can be fractional pi
 \usage{
 profitMakePointSource(xcen, ycen, mag = 0, magzero = 0,
   modellist = list(sersic = list(mag = 0, re = 1, nser = 0.5, axrat=1, ang=0)),
-  psf=NULL, image=matrix(0, 9, 9), finesample=1L, add=FALSE, plot = FALSE, ...)
+  psf=NULL, image=matrix(0, 25, 25), finesample=1L, add=FALSE, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
