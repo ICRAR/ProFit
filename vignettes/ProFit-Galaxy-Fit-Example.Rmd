@@ -267,7 +267,7 @@ modeloptim=profitRemakeModellist(parm=optimfit$par, Data=Data)$modellist
 profitEllipsePlot(Data,modeloptim,pixscale=0.2,FWHM=0.5,SBlim=26)
 ```
 
-Using constraints it is possible to force relative sizes between componenets etc. Here we do not want the bulge Re to become larger than the disk Re. We make the function and then put it in the Data list manually. You cannot properly use constraints using R's optim function, but you can using LaplaceApproximation and LaplacesDemon because they receive modifications to the input parameters.
+Using constraints it is possible to force relative sizes between components etc. Here we do not want the bulge Re to become larger than the disk Re. We make the function and then put it in the Data list manually. You cannot properly use constraints using R's optim function, but you can use LaplaceApproximation and LaplacesDemon because they receive modifications to the input parameters.
 
 ```{r}
 constraints=function(modellist){
