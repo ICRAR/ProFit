@@ -269,16 +269,16 @@ double SersicProfile::adjust_rscale_switch() {
 	 */
 	double nser = this->nser;
 	double rscale_switch = ceil(fluxfrac(1. - nser*nser/2e3));
-	rscale_switch = max(min(rscale_switch, 20.), 2.);
-	return rscale_switch / this->re;
+	rscale_switch = max(min(rscale_switch, 20.), 2.)/this->re;
+	return rscale_switch;
 }
 
 double SersicProfile::adjust_rscale_max() {
-	return ceil(fluxfrac(0.9999));
+	return ceil(max(fluxfrac(0.9999),2.)/this->re);
 }
 
 double SersicProfile::adjust_acc() {
-	double acc = 0.2 / this->nser;
+	double acc = acc/sqrt(this->nser);
 	return max(0.1, acc) / this->axrat;
 }
 
