@@ -91,7 +91,9 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 \details{
 This high level function is both a source detection and a segmented aperture growing function. The latter is achieved through consecutive dilation and flux measurement operations. It is not super fast, but it is designed to be fairly robust and fast enough for most use cases.
 
-\code{proFound} initially makes a segmentation map using the \code{\link{profitMakeSegim}} function. It then makes repeated dilations and flux measurements of this segmentation map, and calculates the convergent flux segment for each source. These are combined to make a final segmentation map with associated source statistics (if requested).
+\code{proFound} initially makes a segmentation map using the \code{\link{profitMakeSegim}} function. It then makes repeated dilations and flux measurements of this segmentation map using \code{\link{profitMakeSegimDilate}}, and calculates the convergent flux segment for each source. These are combined to make a final segmentation map with associated source statistics (if requested).
+
+\code{\link{profitMakeSegimDilate}} is similar in nature to the pixel growing \code{objmask} routine in \code{IRAF} (see the \option{ngrow} and \option{agrow} description at \urk{http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?objmasks}). This similarity was discovered after implementation, but it is worth noting that the higher level curve of growth function \code{proFound} is not trivially replicated by other astronomy tools.
 }
 \value{
 A list containing:

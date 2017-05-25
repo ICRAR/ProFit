@@ -76,7 +76,11 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \details{
-The basic behaviour of \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is to intellegently expand out image segments already identified by, e.g., \code{\link{profitMakeSegim}}. The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{dim}, \option{expandsigma}, \option{sigma}.
+The basic behaviour of \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is to intellegently expand out image segments already identified by, e.g., \code{\link{profitMakeSegim}}.
+
+The \code{profitMakeSegimExpand} defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{dim}, \option{expandsigma}, \option{sigma}.
+
+\code{profitMakeSegimDilate} is similar in nature to the pixel growing \code{objmask} routine in \code{IRAF} (see the \option{ngrow} and \option{agrow} description at \urk{http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?objmasks}). This similarity was discovered after implementation, but it is worth noting that the higher level curve of growth function \code{\link{proFound}} is not trivially replicated by other astronomy tools.
 
 The main difference between \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is the former grows the expansion a bit more organically, whereas the latter always gives new pixels to the brighter object if in doubt. That said, \code{profitMakeSegimDilate} often gives very similar solutions and runs about 10+ times faster, so might be the only option for larger images.
 }

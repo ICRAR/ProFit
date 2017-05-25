@@ -110,7 +110,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
     image[image<skycut]=0
   }
   if(!missing(mask)){
-    image[mask==1]=0
+    image[mask!=0]=0
   }
   segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
   
@@ -173,7 +173,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
     image[image<skycut]=0
   }
   if(!missing(mask)){
-    image[mask==1]=0
+    image[mask!=0]=0
   }
   #kernel=profitMakeGaussianPSF(fwhm = expandsigma, dim=dim)
   maxmat=matrix(min(image, na.rm=T), xlen, ylen)
