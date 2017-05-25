@@ -1,0 +1,3 @@
+[submodule "src/libprofit"]
+	path = src/libprofit
+	url = https://github.com/ICRAR/libprofit
