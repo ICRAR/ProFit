@@ -290,7 +290,7 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
   flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
   corxy=covxy/(xsd*ysd)
-  rad=.cov2eigval(xsd, ysd, covxy)
+  rad=abs(.cov2eigval(xsd, ysd, covxy))
   rad$hi=sqrt(rad$hi)
   rad$lo=sqrt(rad$lo)
   grad=.cov2eigvec(xsd, ysd, covxy)
