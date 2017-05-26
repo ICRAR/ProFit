@@ -337,6 +337,7 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
 proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(101, 101), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
   
   if(missing(segim)){
+    if(verbose){print('Making initial segim')}
     segim=profitMakeSegim(image=image, mask=mask, objects=objects, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, plot=FALSE, stats=FALSE)
     sky=segim$sky
     skyRMS=segim$skyRMS
@@ -345,10 +346,12 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
     if(missing(sky)){sky=0}
     if(missing(skyRMS)){skyRMS=NA}
   }
+  if(verbose){print('Making initial segstats')}
   segstats=profitSegimStats(image=image, segim=segim, sky=sky)
   flux_mat=cbind(segstats$flux)
   segim_array=abind(segim, along=3)
   
+  if(verbose){print('Doing dilations:')}
   for(i in 1:iters){
     if(verbose){print(paste('Iteration',i,'of',iters,'.'))}
     segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE)
@@ -356,27 +359,37 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
     segim_array=abind(segim_array, segim$segim)
   }
   
+  if(verbose){print('Finding CoG convergence')}
+  
   fluxcheck=flux_mat[,2:iters]/flux_mat[,1:(iters-1)]
   selseg=.selectCoG(fluxcheck, threshold)
   
   segim_new=segim$segim
   segim_new[]=0
-  origfrac={}
-  for(i in 1:length(selseg)){
-    segim_new[segim_array[,,selseg[i]]==segstats[i,'segID']]=segstats[i,'segID']
-    origfrac=c(origfrac,flux_mat[i,1]/flux_mat[i,selseg[i]])
+  
+  # for(i in 1:length(selseg)){
+  #   segim_new[segim_array[,,selseg[i]]==segstats[i,'segID']]=segstats[i,'segID']
+  #   origfrac=c(origfrac,flux_mat[i,1]/flux_mat[i,selseg[i]])
+  # }
+  
+  if(verbose){print('Building final segim')}
+  for(i in 1:iters){
+    select=segim_array[,,i] %in% segstats[selseg==i,'segID']
+    segim_new[select]=segim_array[,,i][select]
   }
   
   if(stats & !missing(image)){
     if(redosky){
+      if(verbose){print('Making final sky grid')}
       objects=segim_new
       objects[objects!=0]=1
       sky_new=profitMakeSkyGrid(image=image, objects=objects, box=box)
       sky=sky_new$sky
       skyRMS=sky_new$skyRMS
     }
+    if(verbose){print('Making final segstats')}
     segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
-    segstats=cbind(segstats, iter=selseg, origfrac=origfrac)
+    segstats=cbind(segstats, iter=selseg, origfrac=flux_mat[,1]/flux_mat[cbind(1:length(selseg),selseg)])
   }else{
     segstats=NULL
   }
@@ -385,6 +398,7 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
   objects[objects!=0]=1
   
   if(plot){
+    if(verbose){print('Plotting segments')}
     profitSegimPlot(image=image, segim=segim_new, mask=mask, sky=sky, ...)
   }
   
@@ -395,5 +409,6 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
   }else{
     SBlim=NULL
   }
+  if(verbose){print('Finished!')}
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
