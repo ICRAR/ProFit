@@ -290,23 +290,31 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
   flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
   corxy=covxy/(xsd*ysd)
-  rad=abs(.cov2eigval(xsd, ysd, covxy))
-  rad$hi=sqrt(rad$hi)
-  rad$lo=sqrt(rad$lo)
+  rad=.cov2eigval(xsd, ysd, covxy)
+  rad$hi=sqrt(abs(rad$hi))
+  rad$lo=sqrt(abs(rad$lo))
+  axrat=rad$lo/rad$hi
   grad=.cov2eigvec(xsd, ysd, covxy)
   ang=(90-atan(grad)*180/pi)%%180
   Nseg=tempDT[,.N,by=segID]$N
-  N50=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-  N90=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
+  N50seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
+  N90seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
+  Rseg=sqrt(Nseg/(axrat*pi))
+  R50seg=sqrt(N50seg/(axrat*pi))
+  R90seg=sqrt(N90seg/(axrat*pi))
+  con=R50seg/R90seg
   if(!missing(magzero)){
     mag=profitFlux2Mag(flux=flux, magzero=magzero)
     SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
-    SB_N50=profitFlux2SB(flux=flux*0.5/N50, magzero=magzero, pixscale=pixscale)
-    SB_N90=profitFlux2SB(flux=flux*0.9/N90, magzero=magzero, pixscale=pixscale)
+    SB_N50=profitFlux2SB(flux=flux*0.5/N50seg, magzero=magzero, pixscale=pixscale)
+    SB_N90=profitFlux2SB(flux=flux*0.9/N90seg, magzero=magzero, pixscale=pixscale)
     mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=mag, N=Nseg, N50=N50, N90=N90, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, flux_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
   }else{
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50, N90=N90, SB_N=flux/Nseg, SB_N50=flux*0.5/N50, SB_N90=flux*0.9/N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=N50/N90, asymm=asymm, flux_reflect=flux_reflect, maj=rad$hi, min=rad$lo, axrat=rad$lo/rad$hi, ang=ang)
+    SB_N=flux/Nseg
+    SB_N50=flux*0.5/N50seg
+    SB_N90=flux*0.9/N90seg
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
   }
   return=as.data.frame(segstats[order(segID),])
 }
@@ -326,7 +334,7 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
   }
 }
 
-proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(101, 101), plot=FALSE, stats=TRUE, ...){
+proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(101, 101), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
   
   if(missing(segim)){
     segim=profitMakeSegim(image=image, mask=mask, objects=objects, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, plot=FALSE, stats=FALSE)
@@ -342,6 +350,7 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
   segim_array=abind(segim, along=3)
   
   for(i in 1:iters){
+    if(verbose){print(paste('Iteration',i,'of',iters,'.'))}
     segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE)
     flux_mat=cbind(flux_mat, segim$segstats$flux)
     segim_array=abind(segim_array, segim$segim)

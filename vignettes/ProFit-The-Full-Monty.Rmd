@@ -113,7 +113,7 @@ Next we want to find the PSF for fitting, so we should extract a a bright but no
 ```{r, fig.width=5, fig.height=5}
 magplot(segim_expand$segstats$maj, segim_expand$segstats$con,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat, flip=TRUE)$map), xlab='Major Axis / pix', ylab='Concentration')
 magbar('topleft', title='Axrat', titleshift=1)
-abline(h=c(0.2,0.4), lty=2)
+abline(h=c(0.4,0.65), lty=2)
 abline(v=c(1.5,2), lty=2)
 
 magplot(segim_expand$segstats$SB_N50, segim_expand$segstats$con, ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat, flip=TRUE)$map), xlab='SB[50] / mag/asec^2', ylab='Concentration', grid=TRUE)
@@ -128,7 +128,7 @@ abline(v=c(0.4), lty=2)
 We want to extract very red (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
 
 ```{r}
-starlist=segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.2 & segim_expand$segstats$con<0.4 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.4,]
+starlist=segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.4 & segim_expand$segstats$con<0.65 & segim_expand$segstats$maj>1.5 & segim_expand$segstats$maj<2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.4,]
 print(starlist)
 ```
 

@@ -80,7 +80,7 @@ The basic behaviour of \code{profitMakeSegimExpand} and  \code{profitMakeSegimDi
 
 The \code{profitMakeSegimExpand} defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{dim}, \option{expandsigma}, \option{sigma}.
 
-\code{profitMakeSegimDilate} is similar in nature to the pixel growing \code{objmask} routine in \code{IRAF} (see the \option{ngrow} and \option{agrow} description at \urk{http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?objmasks}). This similarity was discovered after implementation, but it is worth noting that the higher level curve of growth function \code{\link{proFound}} is not trivially replicated by other astronomy tools.
+\code{profitMakeSegimDilate} is similar in nature to the pixel growing \code{objmask} routine in \code{IRAF} (see the \option{ngrow} and \option{agrow} description at \url{http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?objmasks}). This similarity was discovered after implementation, but it is worth noting that the higher level curve of growth function \code{\link{proFound}} is not trivially replicated by other astronomy tools.
 
 The main difference between \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is the former grows the expansion a bit more organically, whereas the latter always gives new pixels to the brighter object if in doubt. That said, \code{profitMakeSegimDilate} often gives very similar solutions and runs about 10+ times faster, so might be the only option for larger images.
 }
@@ -99,9 +99,12 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs. If \option{magzero} and \option{pixscale} have been provided then this column will represent magnitudes.}
-  \item{N}{The total number of pixels in this segment.}
+  \item{N}{The total number of pixels in this segment, i.e. contains 100\% of the flux.}
   \item{N50}{The number of brightest pixels containing 50\% of the flux.}
   \item{N90}{The number of brightest pixels containing 90\% of the flux.}
+  \item{R}{The approximate elliptical major axis containing 100\% of the flux.}
+  \item{R50}{The approximate elliptical major axis containing 50\% of the flux.}
+  \item{R90}{The approximate elliptical major axis containing 90\% of the flux.}
   \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
   \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
   \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
@@ -109,11 +112,11 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{ysd}{The weighted standard deviation in y.}
   \item{covxy}{The weighted covariance in xy.}
   \item{corxy}{The weighted correlation in xy.}
-  \item{con}{Concentration, N50/N90.}
+  \item{con}{Concentration, R50/R90.}
   \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
   \item{flux_reflect}{Corrects the flux for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
-  \item{maj}{The weighted standard deviation along the major axis.}
-  \item{min}{The weighted standard deviation along the minor axis.}
+  \item{maj}{The weighted standard deviation along the major axis (i.e. the first moment, so ~2 times this would be a typical major axis Kron radius).}
+  \item{min}{The weighted standard deviation along the minor axis (i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius).}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
 }
