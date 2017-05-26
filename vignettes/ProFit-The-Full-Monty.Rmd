@@ -154,8 +154,8 @@ Next we make our initial model, where we take our PSF estimates from the segment
 psf_x=psf_image$loc[1]
 psf_y=psf_image$loc[2]
 psf_mag=starlist[1,'flux']
-psf_fwhm=starlist[1,'maj']*2
-psf_con=1/sqrt(starlist[1,'con'])
+psf_fwhm=starlist[1,'R50']*2
+psf_con=1/starlist[1,'con']
 
 psf_modellist=list(
   moffat=list(
@@ -259,8 +259,8 @@ A more complicated alternative is to fit all the good stars (3 in this case) wit
 psf_x=starlist$xcen
 psf_y=starlist$ycen
 psf_mag=starlist$flux
-psf_fwhm=starlist[1,'maj']*2
-psf_con=1/sqrt(starlist[1,'con'])
+psf_fwhm=starlist[1,'R50']*2
+psf_con=1/starlist[1,'con']
 
 psf_modellist2=list(
   pointsource = list(
