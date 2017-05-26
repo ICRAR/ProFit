@@ -95,7 +95,7 @@ profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plo
   return=list(val=c(tempmed, tempsd), clip=clip)
 }
 
-profitMakeSkyMap=function(image, objects=0, box=c(101,101)){
+profitMakeSkyMap=function(image, objects=0, box=c(100,100)){
   xseq=seq(box[1]/2,dim(image)[1],by=box[1])
   yseq=seq(box[2]/2,dim(image)[2],by=box[2])
   tempgrid=expand.grid(xseq, yseq)
@@ -105,10 +105,12 @@ profitMakeSkyMap=function(image, objects=0, box=c(101,101)){
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
+  tempmat_sky[is.na(tempmat_sky)]=mean(tempmat_sky, na.rm = TRUE)
+  tempmat_skyRMS[is.na(tempmat_skyRMS)]=mean(tempmat_skyRMS, na.rm = TRUE)
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
 }
 
-profitMakeSkyGrid=function(image, objects=0, box=c(101,101), type='bilinear'){
+profitMakeSkyGrid=function(image, objects=0, box=c(100,100), type='bilinear'){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The akima package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -121,7 +123,9 @@ profitMakeSkyGrid=function(image, objects=0, box=c(101,101), type='bilinear'){
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
-
+  tempmat_sky[is.na(tempmat_sky)]=mean(tempmat_sky, na.rm = TRUE)
+  tempmat_skyRMS[is.na(tempmat_skyRMS)]=mean(tempmat_skyRMS, na.rm = TRUE)
+  
   bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
   
   if(type=='bilinear'){

@@ -10,7 +10,7 @@ This is the highest level source detection function provided in \code{ProFit}, c
 \usage{
 proFound(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1,
 smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
-threshold = 1.05, magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(101, 101),
+threshold = 1.05, magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
 verbose = FALSE, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.

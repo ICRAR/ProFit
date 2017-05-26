@@ -34,7 +34,7 @@ eigvec=(sx^2-eigval)/sxy
   frame2=data.frame(x=-relx,y=-rely,wt2=wt)
   comp=merge(frame1,frame2,by=c('x','y'), all=TRUE)
   overlap=is.na(comp$wt1)==FALSE & is.na(comp$wt2)==FALSE
-  asymm=2*sum(abs(comp[overlap,'wt1']-comp[overlap,'wt2']), na.rm=TRUE)/sum(comp[overlap,'wt1'], comp[overlap,'wt2'], na.rm=TRUE)
+  asymm=2*sum(abs(comp[overlap,'wt1']-comp[overlap,'wt2']), na.rm=TRUE)/sum(abs(comp[overlap,'wt1']+comp[overlap,'wt2']), na.rm=TRUE)
   return=asymm
 }
 
@@ -241,9 +241,10 @@ profitMakeSegimDilate=function(image, segim, mask=0, size=9, shape='disc', expan
   
   if(expand=='all'){
     segim_new=EBImage::as.Image(segim)
-    segim_new[segim_new>0]=max(segim_new)+1-segim_new[segim_new>0]
+    maxorig=max(segim_new)
+    segim_new[segim_new>0]=maxorig+1-segim_new[segim_new>0]
     segim_new=EBImage::dilate(segim_new, kern)
-    segim_new[segim_new>0]=max(segim_new)+1-segim_new[segim_new>0]
+    segim_new[segim_new>0]=maxorig+1-segim_new[segim_new>0]
     segim_new=EBImage::imageData(segim_new)
     segim_new[segim!=0]=segim[segim!=0]
   }else{
@@ -353,7 +354,7 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
   
   if(verbose){print('Doing dilations:')}
   for(i in 1:iters){
-    if(verbose){print(paste('Iteration',i,'of',iters,'.'))}
+    if(verbose){print(paste('Iteration',i,'of',iters))}
     segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE)
     flux_mat=cbind(flux_mat, segim$segstats$flux)
     segim_array=abind(segim_array, segim$segim)
