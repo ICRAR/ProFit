@@ -88,7 +88,7 @@ Full FITS header in table or vector format. If this is provided then the segment
 Logical; should the iteration number be printed out? Since big image can take a long time to run, you might want to monitor progress.  
 }
   \item{plot}{
-Logical; should a diagnostic plot be generated?
+Logical; should a diagnostic plot be generated? This is useful when you only have a small number of sources (roughly a few hundred). With more than this it can start to take a long time to make the plot!
 }
   \item{stats}{
 Logical; should statistics on the segmented objects be returned? If \option{magzero} and \option{pixscale} have been provided then some of the outputs are computed in terms of magnitude and mag/asec^2 rather than flux and flux/pix^2 (see Value).
@@ -159,7 +159,7 @@ package="ProFit"))
 
 segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
 header=image$hdr, plot=TRUE)
-segim2=proFound(image$ImDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr,
+segim2=proFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr,
 plot=TRUE)
 
 magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
@@ -170,5 +170,5 @@ magplot(segim2$segstats$flux, segim2$segstats$origfrac, grid=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Segmentation }% use one of  RShowDoc("KEYWORDS")
+\keyword{ Detection }% __ONLY ONE__ keyword per line

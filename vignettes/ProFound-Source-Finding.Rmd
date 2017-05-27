@@ -1,0 +1,143 @@
+---
+title: "ProFound-Source-Finding"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFound: Source Finding}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The **ProFit** R package comes with the **ProFound** source finding and image utilites suite. This covers the following functions:
+
+### Very High Level
+
+- proFound: Source finder and CoG growing utility
+
+### High Level
+
+- profitMakeSegim: Watershed image segmentation
+- profitMakeSkyGrid: Calculate smoothed (e.g. bicubic) sky maps
+- profitSkyEst: Sky estimator using circular annuli (robust to bright sources)
+
+
+### Mid Level
+
+- profitMakeSegimExpand: Segmentation map expansion
+- profitMakeSegimDilate: Segmentation map dilation
+- profitSegimStats: Image segmentation statistics (e.g. flux, apertures etc)
+- profitSegimPlots: Image segmentation plots
+- profitMakeSkyMap: Calculate coarse sky maps
+- profitSkyEstLoc: Local sky estimator using source clipping
+- profitGainEst: Estimate image gain
+
+### Low Level
+
+- profitGainConvert: Update gain values when changing zero-points
+- profitImBlur: Fast image blur
+- profitImDiff: Fast image difference
+- profitImGrad: Fast image gradients
+- profitFlux2Mag: Convert from flux to magnitude
+- profitMag2Flux: Convert from magnitude to flux
+- profitFlux2SB: Convert from flux to surface brightness
+- profitSB2Flux: Convert from surface brightness to flux
+- profitMag2Mu: Convert from magnitude to central surface brightness
+- profitMag2Mu: Convert from central surface brightness to magnitude
+- profitInterp2d: Image interpolation
+
+## ProFound
+
+The **proFound** function might be the only function many people need to use in order to extract photometry from a target image. In brief, in fully automatic mode using default option, it does the following things:
+
+- Makes a rough sky map
+- Using this rough sky map, makes an initial segmentation image
+- Using this segmentation image, makes a better sky map
+- Using this better sky map, extracts basic photometric properties
+- Using the current segmentation image it starts to dilate a re-measure photometric properties for the image segments (this stage iterates for 6 times by default)
+- Using the iterative dilation statistics, every object is checked for flux convergence
+- A final segmentation image is made, combining the segments when each source has converged in flux
+- Using this final segmentation image, make a final sky map
+- Using the final segmentation image and final sky map, computes final photometric properties
+- Returns a list containing input image pixel matched **segim**, **objects**, **sky** and **skyRMS**, as well as the **segstats** data-frame of photometric properties for every detected source
+
+Load some libraries:
+
+```{r}
+library(ProFit)
+library(FITSio)
+```
+
+First read in some data and give it a look:
+
+```{r, fig.width=5, fig.height=5}
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',package="ProFit"))
+magimageWCS(image)
+```
+
+A basic example of the lower level **profitMakeSegim** versus the higher level **proFound**:
+
+```{r, fig.width=5, fig.height=5}
+out_segim=segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
+header=image$hdr, plot=TRUE)
+out_profound=proFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr, verbose=TRUE, plot=TRUE)
+```
+
+Notice in the two outputs (the first being **profitMakeSegim**, the second being **proFound**) that some segment have converged quickly (i.e. not grown much) but others have expanded a lot in order to capture all the flux present. **proFound** in default mode with modern survey imaging data tends to extract very close to a true total magnitude, without too much error introduced by sky noise (a consequence of over-growing apertures).
+
+Because it was run in verbose mode, the major **proFound** steps mentioned above were printed out. For large images (a few thousand by a few thousand pixels plus) this is useful since it can take a few minutes to run with all the bells and whistles turned on, and it is nice to see it making progress. Note for more than a couple of hundred sources, you almost certainly do not want to plot the output, since this will be slow.
+
+
+Note because we parsed **proFound** a header we have RA and Dec coordinates in the photometric properties data-frame. We also parsed the appropriate magnitude zero-point and pixel scale so the mag properties are correctly scaled, and R/R50/R90 are in arc-seconds rather than pixels. It is is worth checking the output:
+ 
+```{r}
+out_profound$segstats[1:10,]
+```
+
+Next we will check the before and after photometry for the brightest 40 sources (the lists differ a bit in detail due to the different sky estimation routines used):
+
+```{r, fig.width=5, fig.height=5}
+magplot(out_segim$segstats[1:40,c("R50", "SB_N90")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), log='x', xlim=c(0.4,5), ylim=c(22,25), grid=TRUE, xlab='R50 / asec', ylab='mag / asec^2')
+points(out_profound$segstats[1:40,c("R50", "SB_N90")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), pch=16)
+arrows(out_segim$segstats$R50[1:40], out_segim$segstats$SB_N90[1:40], out_profound$segstats$R50[1:40], out_profound$segstats$SB_N90[1:40], col='lightgrey', length=0)
+rect(0.9, 23.5, 1.3, 24.3)
+legend('bottomleft', legend=c('proFound', 'profitMakeSegim'), pch=c(16,1))
+magbar('topright', title='Axrat', titleshift=1)
+
+magplot(out_segim$segstats[1:40,c("R50", "con")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), log='x', xlim=c(0.4,5), ylim=c(0,1), grid=TRUE, xlab='R50 / asec', ylab='Concentration')
+points(out_profound$segstats[1:40,c("R50", "con")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), pch=16)
+arrows(out_segim$segstats$R50[1:40], out_segim$segstats$con[1:40], out_profound$segstats$R50[1:40], out_profound$segstats$con[1:40], col='lightgrey', length=0)
+rect(0.9, 0.4, 1.3, 0.6)
+legend('bottomleft', legend=c('proFound', 'profitMakeSegim'), pch=c(16,1))
+magbar('topright', title='Axrat', titleshift=1)
+
+magplot(out_segim$segstats[1:40,c("R50", "mag")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), log='x', xlim=c(0.4,5), ylim=c(17,24), grid=TRUE, xlab='R50 / asec', ylab='Mag')
+points(out_profound$segstats[1:40,c("R50", "mag")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), pch=16)
+arrows(out_segim$segstats$R50[1:40], out_segim$segstats$mag[1:40], out_profound$segstats$R50[1:40], out_profound$segstats$mag[1:40], col='lightgrey', length=0)
+rect(0.9, 20, 1.3, 22)
+legend('bottomleft', legend=c('proFound', 'profitMakeSegim'), pch=c(16,1))
+magbar('topright', title='Axrat', titleshift=1)
+```
+
+It is notable that low surface brightness objects are seen to systematically grow when processing the image with **proFound**. The box represents the location of likely stars, where redder objects are more circular sources. It is clear that **proFound** moves stars onto a more uniform value of R50 (remember for a Gaussian PSF FWHM=2*R50).
+
+The **proFound** function also returns a sky and sky RMS image matched to the input image:
+
+```{r, fig.width=5, fig.height=4}
+maghist(out_profound$sky, xlab='Sky')
+maghist(out_profound$skyRMS, xlab='Sky RMS')
+```
+
+```{r, fig.width=5, fig.height=5}
+magimageWCS(image)
+magimageWCS(out_profound$sky, header=image$hdr)
+magimageWCS(out_profound$skyRMS, header=image$hdr)
+```
+
+The background mask we used here (the default 100x100 option) looks to be a bit too small, since there is obvious correlation between the original image and the sky map. However, even with a slightly too small sky grid the photometric outputs should be mostly pretty robust- differing by at worst a couple of counts per pixel. This is much less than the typical sky RMS (roughly 9 throughout).
+
+```{r, fig.width=5, fig.height=4}
+maghist(out_profound$segstats[,'N']/out_profound$segstats[,'flux'], xlab=' Worst case fraction error')
+```
+
+In summary, you probably want to use **proFound**, unless you really know what you are doing!
