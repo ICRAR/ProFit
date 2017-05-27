@@ -9,7 +9,7 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, plot = FALSE,
+pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, header, plot = FALSE,
 stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -56,6 +56,9 @@ User provided estimate of the absolute sky level. If this is not provided then i
   \item{skyRMS}{
 User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
+  \item{header}{
+Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases.
+}
   \item{plot}{
 Logical; should a diagnostic plot be generated?
 }
@@ -92,6 +95,8 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
+  \item{RAcen}{The flux weighted degrees Right Ascension centre for this segment (only present if a \option{header} is provided).}
+  \item{Deccen}{The flux weighted degrees Declination centre for this segment (only present if a \option{header} is provided).}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
   \item{mag}{The \option{flux} converted to mag using \option{magzero}.}
   \item{N}{The total number of pixels in this segment, i.e. contains 100\% of the flux.}

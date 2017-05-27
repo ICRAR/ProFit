@@ -81,7 +81,7 @@ eigvec=(sx^2-eigval)/sxy
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, header, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -133,7 +133,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
   }else{
     segstats=NULL
   }
@@ -147,7 +147,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -215,7 +215,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   }
   
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
   }else{
     segstats=NULL
   }
@@ -231,7 +231,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, header, plot=FALSE, stats=TRUE, ...){
   
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
@@ -256,7 +256,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   }
   
   if(stats & !missing(image)){
-    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
   }else{
     segstats=NULL
   }
@@ -271,7 +271,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats)
 }
 
-profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1){
+profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, header){
   image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -310,7 +310,14 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1){
   SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
   SB_N50=profitFlux2SB(flux=flux*0.5/N50seg, magzero=magzero, pixscale=pixscale)
   SB_N90=profitFlux2SB(flux=flux*0.9/N90seg, magzero=magzero, pixscale=pixscale)
-  segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
+  if(!missing(header)){
+    coord=magWCSxy2radec(xcen, ycen, header=header)
+    RAcen=coord[,1]
+    Deccen=coord[,2]
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, RAcen=RAcen, Deccen=Deccen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
+  }else{
+    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
+  }
   # }else{
   #   SB_N=flux/Nseg
   #   SB_N50=flux*0.5/N50seg
@@ -335,7 +342,7 @@ profitSegimPlot=function(image, segim, mask, sky=0, ...){
   }
 }
 
-proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
+proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), header, verbose=FALSE, plot=FALSE, stats=TRUE, ...){
   
   if(missing(sky) | missing(skyRMS)){
     if(verbose){print('Making a rough sky map')}
@@ -406,7 +413,7 @@ proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1
       skyRMS=sky_new$skyRMS
     }
     if(verbose){print('Making final segstats')}
-    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
     segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
   }else{
     segstats=NULL

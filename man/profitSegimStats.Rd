@@ -9,7 +9,7 @@ Image Segmentation Statistics
 Basic summary statistics for image segments, e.g. aperture parameters, fluxes and surface brightness estimates. These might provide useful first guesses to ProFit fitting parameters (particularly \option{flux}, \option{axrat} and \option{ang}).
 }
 \usage{
-profitSegimStats(image, segim, sky=0, magzero, pixscale=1)
+profitSegimStats(image, segim, sky=0, magzero, pixscale=1, header)
 profitSegimPlot(image, segim, mask, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -32,6 +32,9 @@ Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, wh
   \item{pixscale}{
   Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
+  \item{header}{
+Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases.  
+}
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}.
 }
@@ -47,6 +50,8 @@ A data.frame with columns:
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
+  \item{RAcen}{The flux weighted degrees Right Ascension centre for this segment (only present if a \option{header} is provided).}
+  \item{Deccen}{The flux weighted degrees Declination centre for this segment (only present if a \option{header} is provided).}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
   \item{mag}{The \option{flux} converted to mag using \option{magzero}.}
   \item{N}{The total number of pixels in this segment, i.e. contains 100\% of the flux.}

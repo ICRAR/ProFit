@@ -224,7 +224,7 @@ profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots=TRUE, plotchisq=TRU
 
 Not bad, but not perfect. We can do an optim fit to improve things:
 
-```{r, include=FALSE}
+```{r}
 psf_fit=optim(psf_Data$init, profitLikeModel, method='BFGS', Data=psf_Data, control=list(fnscale=-1))
 ```
 

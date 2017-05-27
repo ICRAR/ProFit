@@ -11,7 +11,7 @@ This is the highest level source detection function provided in \code{ProFit}, c
 proFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
 pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6, threshold = 1.05,
 converge = 'flux', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
-verbose = FALSE, plot = FALSE, stats = TRUE, ...)
+header, verbose = FALSE, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -81,6 +81,9 @@ Logical; should the sky and sky RMS grids be re-computed using the final segment
   \item{box}{
 Integer vector; the dimensions of the box car filter to estimate the sky with. Only relevant if \option{redosky}=TRUE.
 }
+  \item{header}{
+Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases.
+}
   \item{verbose}{
 Logical; should the iteration number be printed out? Since big image can take a long time to run, you might want to monitor progress.  
 }
@@ -115,6 +118,8 @@ If \option{stats}=TRUE then the \option{segstats} part of the returned list will
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
+  \item{RAcen}{The flux weighted degrees Right Ascension centre for this segment (only present if a \option{header} is provided).}
+  \item{Deccen}{The flux weighted degrees Declination centre for this segment (only present if a \option{header} is provided).}
   \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
   \item{mag}{The \option{flux} converted to mag using \option{magzero}.}
   \item{N}{The total number of pixels in this segment, i.e. contains 100\% of the flux.}
@@ -150,10 +155,12 @@ Aaron Robotham
 \examples{
 \dontrun{
 image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
-package="ProFit"))$imDat
+package="ProFit"))
 
-segim=profitMakeSegim(image, skycut=1.5, magzero=30, pixscale=0.339, plot=TRUE)
-segim2=proFound(image, skycut=1.5, magzero=30, pixscale=0.339, plot=TRUE)
+segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
+header=image$hdr, plot=TRUE)
+segim2=proFound(image$ImDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr,
+plot=TRUE)
 
 magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
 magplot(segim2$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
