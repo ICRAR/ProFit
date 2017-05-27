@@ -153,8 +153,8 @@ Next we make our initial model, where we take our PSF estimates from the segment
 ```{r}
 psf_x=psf_image$loc[1]
 psf_y=psf_image$loc[2]
-psf_mag=starlist[1,'flux']
-psf_fwhm=starlist[1,'R50']*2
+psf_mag=starlist[1,'mag']
+psf_fwhm=starlist[1,'R50']*2/0.339
 psf_con=1/starlist[1,'con']
 
 psf_modellist=list(
@@ -258,8 +258,8 @@ A more complicated alternative is to fit all the good stars (3 in this case) wit
 ```{r}
 psf_x=starlist$xcen
 psf_y=starlist$ycen
-psf_mag=starlist$flux
-psf_fwhm=starlist[1,'R50']*2
+psf_mag=starlist$mag
+psf_fwhm=starlist[1,'R50']*2/0.339
 psf_con=1/starlist[1,'con']
 
 psf_modellist2=list(
@@ -332,7 +332,7 @@ psf_intervals2=list(
   pointsource = list(
     xcen=list(starlist$xcen[1]+c(-5,5), starlist$xcen[2]+c(-5,5), starlist$xcen[3]+c(-5,5)),
     ycen=list(starlist$ycen[1]+c(-5,5), starlist$ycen[2]+c(-5,5), starlist$ycen[3]+c(-5,5)),
-    mag=list(starlist$flux[1]+c(-2,2), starlist$flux[2]+c(-2,2), starlist$flux[3]+c(-2,2))
+    mag=list(starlist$mag[1]+c(-2,2), starlist$mag[2]+c(-2,2), starlist$mag[3]+c(-2,2))
   ),
   psf=list(
     moffat=list(
@@ -418,8 +418,8 @@ As before, we have to setup some reasonable guesses for our galaxy fit:
 ```{r}
 gal_x=gal_image$loc[1]
 gal_y=gal_image$loc[2]
-gal_mag=segim_expand$segstats[6,'flux']
-gal_re=sqrt(segim_expand$segstats[6,'N50']/(pi*segim_expand$segstats[6,'axrat']))
+gal_mag=segim_expand$segstats[6,'mag']
+gal_re=segim_expand$segstats[6,'R50']/0.339
 gal_ang=segim_expand$segstats[6,'ang']
 gal_axrat=segim_expand$segstats[6,'axrat']
 

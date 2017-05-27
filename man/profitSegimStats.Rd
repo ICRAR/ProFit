@@ -47,25 +47,27 @@ A data.frame with columns:
   \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
   \item{xcen}{The flux weighted x centre for this segment.}
   \item{ycen}{The flux weighted y centre for this segment.}
-  \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs. If \option{magzero} and \option{pixscale} have been provided then this column will represent magnitudes.}
+  \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
+  \item{mag}{The \option{flux} converted to mag using \option{magzero}.}
   \item{N}{The total number of pixels in this segment, i.e. contains 100\% of the flux.}
   \item{N50}{The number of brightest pixels containing 50\% of the flux.}
   \item{N90}{The number of brightest pixels containing 90\% of the flux.}
-  \item{R}{The approximate elliptical major axis containing 100\% of the flux.}
-  \item{R50}{The approximate elliptical major axis containing 50\% of the flux.}
-  \item{R90}{The approximate elliptical major axis containing 90\% of the flux.}
-  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
-  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
-  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90}. If \option{magzero} and \option{pixscale} have been provided then this column will represent mag/asec^2. If just \option{magzero} has been provided then it will be mag/pix^2.}
-  \item{xsd}{The weighted standard deviation in x.}
-  \item{ysd}{The weighted standard deviation in y.}
-  \item{covxy}{The weighted covariance in xy.}
-  \item{corxy}{The weighted correlation in xy.}
-  \item{con}{Concentration, R50/R90.}
+  \item{R}{The approximate elliptical major axis containing 100\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec).}
+  \item{R50}{The approximate elliptical major axis containing 50\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec).}
+  \item{R90}{The approximate elliptical major axis containing 90\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec).}
+  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2).}
+  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2).}
+  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2).}
+  \item{xsd}{The weighted standard deviation in x  (always in units of pix).}
+  \item{ysd}{The weighted standard deviation in y  (always in units of pix).}
+  \item{covxy}{The weighted covariance in xy  (always in units of pix).}
+  \item{corxy}{The weighted correlation in xy  (always in units of pix).}
+  \item{con}{Concentration, \option{R50}/\option{R90}.}
   \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
-  \item{flux_reflect}{Corrects the flux for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
-  \item{maj}{The weighted standard deviation along the major axis (i.e. the first moment, so ~2 times this would be a typical major axis Kron radius).}
-  \item{min}{The weighted standard deviation along the minor axis (i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius).}
+  \item{flux_reflect}{The flux corrected for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
+  \item{mag}{The \option{flux_reflect} converted to mag using \option{magzero}.}
+  \item{maj}{The weighted standard deviation along the major axis, i.e. the first moment, so ~2 times this would be a typical major axis Kron radius (always in units of pix).}
+  \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
 

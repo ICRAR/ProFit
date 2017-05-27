@@ -81,7 +81,7 @@ eigvec=(sx^2-eigval)/sxy
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -147,7 +147,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -231,7 +231,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero, pixscale=1, sky=0, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, plot=FALSE, stats=TRUE, ...){
   
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
@@ -271,7 +271,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats)
 }
 
-profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
+profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1){
   image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -300,23 +300,23 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   Nseg=tempDT[,.N,by=segID]$N
   N50seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
   N90seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-  Rseg=sqrt(Nseg/(axrat*pi))
-  R50seg=sqrt(N50seg/(axrat*pi))
-  R90seg=sqrt(N90seg/(axrat*pi))
+  Rseg=sqrt(Nseg/(axrat*pi))*pixscale
+  R50seg=sqrt(N50seg/(axrat*pi))*pixscale
+  R90seg=sqrt(N90seg/(axrat*pi))*pixscale
   con=R50seg/R90seg
-  if(!missing(magzero)){
-    mag=profitFlux2Mag(flux=flux, magzero=magzero)
-    SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
-    SB_N50=profitFlux2SB(flux=flux*0.5/N50seg, magzero=magzero, pixscale=pixscale)
-    SB_N90=profitFlux2SB(flux=flux*0.9/N90seg, magzero=magzero, pixscale=pixscale)
-    mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
-  }else{
-    SB_N=flux/Nseg
-    SB_N50=flux*0.5/N50seg
-    SB_N90=flux*0.9/N90seg
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
-  }
+  # if(!missing(magzero)){
+  mag=profitFlux2Mag(flux=flux, magzero=magzero)
+  mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
+  SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
+  SB_N50=profitFlux2SB(flux=flux*0.5/N50seg, magzero=magzero, pixscale=pixscale)
+  SB_N90=profitFlux2SB(flux=flux*0.9/N90seg, magzero=magzero, pixscale=pixscale)
+  segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
+  # }else{
+  #   SB_N=flux/Nseg
+  #   SB_N50=flux*0.5/N50seg
+  #   SB_N90=flux*0.9/N90seg
+  #   segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
+  # }
   return=as.data.frame(segstats[order(segID),])
 }
 

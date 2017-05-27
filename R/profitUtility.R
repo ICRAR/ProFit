@@ -15,7 +15,9 @@ profitMag2Flux=function(mag=0, magzero=0){
 }
 
 profitFlux2Mag=function(flux=1, magzero=0){
-  return(-2.5*log10(flux)+magzero)
+  output=rep(NA,length(flux))
+  output[flux>0]=-2.5*log10(flux[flux>0])+magzero
+  return(output)
 }
 
 profitFlux2SB=function(flux=1, magzero=0, pixscale=1){
