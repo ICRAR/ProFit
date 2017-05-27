@@ -10,7 +10,7 @@ This is the highest level source detection function provided in \code{ProFit}, c
 \usage{
 proFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
 pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6, threshold = 1.05,
-converge = 'R50', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
+converge = 'flux', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
 verbose = FALSE, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -61,7 +61,7 @@ Integer scalar; the maximum number of curve of growth dilations should be made. 
 Numeric scalar; After the curve of growth dilations, \option{theshold} is the relative change of the converging property (see \option{converge}) that flags convergence. If consecutive iterations have a relative difference within this ratio then the dilation is stopped, and this iteration is used to define the segmentation of the object. The effect of this is that different objects will be dilated for a different number of iterations. Usually fainter sources require more.
 }
   \item{converge}{
-Characrter scalar; the segmentation property to compare for relative convergence. The options are in principle any column that is output by \code{\link{profitSegimStats}}, but in practice it should be something that increases slowly with dilation and tends to converge when the total flux is being captured. Good options are therefore 'flux', 'R50' (default) and 'R90'.
+Characrter scalar; the segmentation property to compare for relative convergence. The options are in principle any column that is output by \code{\link{profitSegimStats}}, but in practice it should be something that increases slowly with dilation and tends to converge when the total flux is being captured. Good options are therefore 'flux' (default), 'R50' and 'R90'.
 }
   \item{magzero}{
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.

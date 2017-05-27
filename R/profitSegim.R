@@ -335,7 +335,7 @@ profitSegimPlot=function(image, segim, mask, sky=0, ...){
   }
 }
 
-proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='R50', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
+proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
   
   if(missing(sky) | missing(skyRMS)){
     if(verbose){print('Making a rough sky map')}
