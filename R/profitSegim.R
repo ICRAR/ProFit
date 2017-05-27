@@ -33,8 +33,8 @@ eigvec=(sx^2-eigval)/sxy
   frame1=data.frame(x=relx,y=rely,wt1=wt)
   frame2=data.frame(x=-relx,y=-rely,wt2=wt)
   comp=merge(frame1,frame2,by=c('x','y'), all=TRUE)
-  overlap=is.na(comp$wt1)==FALSE & is.na(comp$wt2)==FALSE
-  asymm=2*sum(abs(comp[overlap,'wt1']-comp[overlap,'wt2']), na.rm=TRUE)/sum(abs(comp[overlap,'wt1']+comp[overlap,'wt2']), na.rm=TRUE)
+  overlap=which(comp$wt1>0 & comp$wt2>0)
+  asymm=sum(abs(comp[overlap,'wt1']-comp[overlap,'wt2']), na.rm=TRUE)/sum(abs(comp[overlap,'wt1']+comp[overlap,'wt2']), na.rm=TRUE)
   return=asymm
 }
 
@@ -53,15 +53,15 @@ eigvec=(sx^2-eigval)/sxy
   return=flux_reflect
 }
 
-.selectCoG=function(fluxcheck, threshold=1.05){
+.selectCoG=function(diffmat, threshold=1.05){
   tempout={}
-  for(i in 1:dim(fluxcheck)[1]){
-    tempsel=which(fluxcheck[i,]>1 & fluxcheck[i,]<threshold)+1
+  for(i in 1:dim(diffmat)[1]){
+    tempsel=which(diffmat[i,]>1 & diffmat[i,]<threshold)+1
     if(length(tempsel)==0){
-      if(any(fluxcheck[i,]<1)){
-        tempsel=min(which(fluxcheck[i,]<1))
+      if(any(diffmat[i,]<1)){
+        tempsel=min(which(diffmat[i,]<1))
       }else{
-        tempsel=which.min(fluxcheck[i,])+1
+        tempsel=which.min(diffmat[i,])+1
       }
     }else{
       tempsel=min(tempsel)
@@ -81,7 +81,7 @@ eigvec=(sx^2-eigval)/sxy
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero, pixscale=1, sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -147,7 +147,7 @@ profitMakeSegim=function(image, mask=0, objects=0, tolerance=4, ext=2, sigma=1, 
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim, magzero, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, plot=FALSE, stats=TRUE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -231,7 +231,7 @@ profitMakeSegimExpand=function(image, segim, mask=0, objects=0, skycut=1, SBlim,
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimDilate=function(image, segim, mask=0, size=9, shape='disc', expand='all', magzero, pixscale=1, sky=0, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero, pixscale=1, sky=0, plot=FALSE, stats=TRUE, ...){
   
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
@@ -320,7 +320,7 @@ profitSegimStats=function(image, segim, sky=0, magzero, pixscale=1){
   return=as.data.frame(segstats[order(segID),])
 }
 
-profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
+profitSegimPlot=function(image, segim, mask, sky=0, ...){
   image=image-sky
   temp=magimage(image, ...)
   if(min(segim,na.rm=TRUE)!=0){segim=segim-min(segim,na.rm=TRUE)}
@@ -330,51 +330,68 @@ profitSegimPlot=function(image, segim, mask=0, sky=0, ...){
     z=z[ceiling(temp$x), ceiling(temp$y)]
     contour(temp$x,temp$y,z,add=T,col=rainbow(1e3)[sample(1e3,1)],zlim=c(0,1),drawlabels=FALSE,nlevels=1)
   }
-  if(!missing(mask) & length(mask)==length(image)){
+  if(!missing(mask)){
     magimage(mask, lo=0, hi=1, col=c(NA,hsv(alpha=0.3)), add=T)
   }
 }
 
-proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(101, 101), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
+proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='R50', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), verbose=FALSE, plot=FALSE, stats=TRUE, ...){
+  
+  if(missing(sky) | missing(skyRMS)){
+    if(verbose){print('Making a rough sky map')}
+    roughsky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box)
+    if(missing(sky)){
+      sky=roughsky$sky
+    }
+    if(missing(skyRMS)){
+      skyRMS=roughsky$skyRMS
+    }
+  }
   
   if(missing(segim)){
     if(verbose){print('Making initial segim')}
-    segim=profitMakeSegim(image=image, mask=mask, objects=objects, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, plot=FALSE, stats=FALSE)
-    sky=segim$sky
-    skyRMS=segim$skyRMS
+    segim=profitMakeSegim(image=image, objects=objects, mask=mask, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, plot=FALSE, stats=FALSE)
     segim=segim$segim
-  }else{
-    if(missing(sky)){sky=0}
-    if(missing(skyRMS)){skyRMS=NA}
   }
+  
+  if(verbose){print('Making a better sky map')}
+  bettersky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box)
+  if(missing(sky)){
+    sky=bettersky$sky
+  }
+  if(missing(skyRMS)){
+    skyRMS=bettersky$skyRMS
+  }
+  
   if(verbose){print('Making initial segstats')}
   segstats=profitSegimStats(image=image, segim=segim, sky=sky)
-  flux_mat=cbind(segstats$flux)
-  segim_array=abind(segim, along=3)
+  compmat=cbind(segstats[,converge])
+  segim_array=array(0, dim=c(dim(segim),iters+1))
+  segim_array[,,1]=segim
   
   if(verbose){print('Doing dilations:')}
   for(i in 1:iters){
     if(verbose){print(paste('Iteration',i,'of',iters))}
     segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE)
-    flux_mat=cbind(flux_mat, segim$segstats$flux)
-    segim_array=abind(segim_array, segim$segim)
+    compmat=cbind(compmat, segim$segstats[,converge])
+    segim_array[,,i+1]=segim$segim
   }
   
   if(verbose){print('Finding CoG convergence')}
   
-  fluxcheck=flux_mat[,2:iters]/flux_mat[,1:(iters-1)]
-  selseg=.selectCoG(fluxcheck, threshold)
+  diffmat=compmat[,2:iters]/compmat[,1:(iters-1)]
+  selseg=.selectCoG(diffmat, threshold)
   
   segim_new=segim$segim
   segim_new[]=0
   
   # for(i in 1:length(selseg)){
   #   segim_new[segim_array[,,selseg[i]]==segstats[i,'segID']]=segstats[i,'segID']
-  #   origfrac=c(origfrac,flux_mat[i,1]/flux_mat[i,selseg[i]])
+  #   origfrac=c(origfrac,compmat[i,1]/compmat[i,selseg[i]])
   # }
   
   if(verbose){print('Building final segim')}
-  for(i in 1:iters){
+  for(i in 1:(iters+1)){
     select=segim_array[,,i] %in% segstats[selseg==i,'segID']
     segim_new[select]=segim_array[,,i][select]
   }
@@ -390,7 +407,7 @@ proFound=function(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, s
     }
     if(verbose){print('Making final segstats')}
     segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale)
-    segstats=cbind(segstats, iter=selseg, origfrac=flux_mat[,1]/flux_mat[cbind(1:length(selseg),selseg)])
+    segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
   }else{
     segstats=NULL
   }

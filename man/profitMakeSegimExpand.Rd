@@ -9,10 +9,10 @@ Segmentation Map Expansion
 A high level utility to achieve decent quality image segmentation based on the expansion of a pre-existing segmentation map. It uses smoothing and local flux weighted comparisons to grow the current segmentation map so as to better identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitMakeSegimExpand(image, segim, mask = 0, objects = 0, skycut = 1, SBlim, magzero,
+profitMakeSegimExpand(image, segim, mask, objects, skycut = 1, SBlim, magzero,
 pixscale = 1, sigma = 1, smooth = TRUE, expandsigma = 5, expand = "all", sky, skyRMS,
 plot = FALSE, stats = TRUE, ...)
-profitMakeSegimDilate(image, segim, mask = 0, size = 9, shape = "disc", expand = "all",
+profitMakeSegimDilate(image, segim, mask, size = 9, shape = "disc", expand = "all",
 magzero, pixscale = 1, sky = 0, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.

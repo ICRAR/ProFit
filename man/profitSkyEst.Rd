@@ -8,7 +8,7 @@ Local Sky Estimator
 A high level utility to estimate the sky properties of a supplied \option{image}. This is closely related to the equivilant routines available in the LAMBDAR R package.
 }
 \usage{
-profitSkyEst(image, mask = 0, objects=0, cutlo = cuthi/2,
+profitSkyEst(image, objects, mask, cutlo = cuthi/2,
 cuthi = sqrt(sum((dim(image)/2)^2)), skycut = 'auto', clipiters = 5, radweight = 0,
 plot = FALSE, ...)
 }
@@ -17,11 +17,11 @@ plot = FALSE, ...)
   \item{image}{
 Numeric matrix; required, the image we want to analyse. The galaxy should be approximately central within this image since annuli weighting is done to avoid brighter central regions dominated by galaxy flux.
 }
-  \item{mask}{
-Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
-}
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.  
+}
+  \item{mask}{
+Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{cutlo}{
 Numeric scalar; radius where the code will start to calculate the sky annuli around the central object. Should be large enough to avoid significant object flux, i.e. a few times the flux 90 radius. Default is half of \option{cuthi}.

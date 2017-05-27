@@ -8,9 +8,9 @@ Watershed Image Segmentation
 A high level utility to achieve decent quality image segmentation. It uses a mixture of image smoothing and watershed segmentation propogation to identify distinct objects for use in, e.g., \code{\link{profitSetupData}} (where the \option{segim} list item output of \code{profitMakeSegim} would be parsed to the \option{segim} input of \code{\link{profitSetupData}}).
 }
 \usage{
-profitMakeSegim(image, mask = 0, objects=0, tolerance = 4, ext = 2, sigma = 1,
-smooth = TRUE, pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS,
-plot = FALSE, stats = TRUE, ...)
+profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
+pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, plot = FALSE,
+stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

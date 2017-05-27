@@ -8,7 +8,7 @@ Calculate Sky in Subest
 Calculate the sky and sky RMS for a subset region of a larger image, as used in \code{\link{profitMakeSkyMap}}.
 }
 \usage{
-profitSkyEstLoc(image, objects = 0, loc = dim(image)/2, box = c(100, 100), plot = FALSE,
+profitSkyEstLoc(image, objects, mask, loc = dim(image)/2, box = c(100, 100), plot = FALSE,
 ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -18,6 +18,9 @@ Numeric matrix; required, the image we want to analyse.
 }
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
+}
+  \item{mask}{
+Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{loc}{
 Integer vector; the [x,y] location where we want to estimate the sky and sky RMS.
@@ -45,7 +48,7 @@ A 2 component list containing:
 Aaron Robotham
 }
 \seealso{
-\code{\link{profitSkyEst}}, \code{\link{profitMakeSkyMap}}
+\code{\link{profitSkyEst}}, \code{\link{profitMakeSkyMap}}, \code{\link{profitMakeSkyGrid}}
 }
 \examples{
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat

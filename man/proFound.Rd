@@ -8,9 +8,9 @@ ProFound Source Detection
 This is the highest level source detection function provided in \code{ProFit}, calculating both the initial segmentation map and reasonable estimates for the total flux apertures for each source in an automatic manner.
 }
 \usage{
-proFound(image, segim, mask = 0, objects = 0, tolerance = 4, ext = 2, sigma = 1,
-smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
-threshold = 1.05, magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
+proFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
+pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6, threshold = 1.05,
+converge = 'R50', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
 verbose = FALSE, plot = FALSE, stats = TRUE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -58,7 +58,10 @@ Character scalar; the shape of the diltion kernel. See \code{makeBrush}. Parsed 
 Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{proFound}.
 }
   \item{threshold}{
-Numeric scalar; After the curve of growth dilations, \option{theshold} is the relative change of flux that flags convergence. If consecutive iterations have a relative flux within this ratio then the dilation is stopped, and this iteration is used to define the segmentation of the object. The effect of this is that different objects will be dilated for a different number of iterations. Usually fainter sources require more.
+Numeric scalar; After the curve of growth dilations, \option{theshold} is the relative change of the converging property (see \option{converge}) that flags convergence. If consecutive iterations have a relative difference within this ratio then the dilation is stopped, and this iteration is used to define the segmentation of the object. The effect of this is that different objects will be dilated for a different number of iterations. Usually fainter sources require more.
+}
+  \item{converge}{
+Characrter scalar; the segmentation property to compare for relative convergence. The options are in principle any column that is output by \code{\link{profitSegimStats}}, but in practice it should be something that increases slowly with dilation and tends to converge when the total flux is being captured. Good options are therefore 'flux', 'R50' (default) and 'R90'.
 }
   \item{magzero}{
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
@@ -146,11 +149,13 @@ Aaron Robotham
 image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
 package="ProFit"))$imDat
 
-segim=profitMakeSegim(image, skycut=1.5, plot=TRUE)
+segim=profitMakeSegim(image, skycut=1.5, magzero=30, pixscale=0.339, plot=TRUE)
 segim2=proFound(image, skycut=1.5, magzero=30, pixscale=0.339, plot=TRUE)
 
+magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
+magplot(segim2$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
+
 magplot(segim2$segstats$flux, segim2$segstats$origfrac, grid=TRUE)
-magplot(segim2$segstats$flux, 2.5*log10(segim2$segstats$origfrac), grid=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

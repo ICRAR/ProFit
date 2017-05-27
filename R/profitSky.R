@@ -21,7 +21,7 @@
         zobj[cbind(lx1 + 1, ly1 + 1)] * ex * ey)
 }
 
-profitSkyEst=function(image, mask=0, objects=0, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
+profitSkyEst=function(image, objects, mask, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
   radweight=-radweight
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -31,9 +31,15 @@ profitSkyEst=function(image, mask=0, objects=0, cutlo=cuthi/2, cuthi=sqrt(sum((d
   #Keep only pixels inside the radius bounds given by cutlo and cuthi
   keep=temprad>=cutlo & temprad<=cuthi
   #Trim
-  tempref=tempref[keep & (mask==0 & objects==0),]
+  if(!missing(mask)){
+    keep=keep & mask==0
+  }
+  if(!missing(objects)){
+    keep=keep & objects==0
+  }
+  tempref=tempref[keep,]
   tempval=image[tempref]
-  temprad=temprad[keep & (mask==0 & objects==0)]
+  temprad=temprad[keep]
   clip=magclip(tempval, sigma=skycut, estimate='lo')
   tempval=tempval[clip$clip]
   temprad=temprad[clip$clip]
@@ -76,17 +82,30 @@ profitSkyEst=function(image, mask=0, objects=0, cutlo=cuthi/2, cuthi=sqrt(sum((d
   return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian)
 }
 
-profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
-  if(! missing(objects) & length(objects)==length(image)){
-    select=magcutout(image, loc=loc, box=box)$image[magcutout(image=objects, loc=loc, box=box)$image==0]
+profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
+  if(!missing(objects) | !missing(mask)){
+    if(!missing(objects)){
+      tempobj=magcutout(image=objects, loc=loc, box=box)$image==0
+    }else{
+      tempobj=TRUE
+    }
+    if(!missing(mask)){
+      tempmask=magcutout(image=mask, loc=loc, box=box)$image==0
+    }else{
+      tempmask=TRUE
+    }
+    select=magcutout(image, loc=loc, box=box)$image[tempobj & tempmask]
   }else{
     select=magcutout(image, loc=loc, box=box)$image
   }
   if(plot){
     image=magcutout(image, loc=loc, box=box)$image
     imout=magimage(image, ...)
-    if(! missing(objects)){
-      contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box)$image, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
+    if(!missing(mask)){
+      contour(x=imout$x, y=imout$y, magcutout(mask, loc=loc, box=box)$image, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
+    }
+    if(!missing(objects)){
+      contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box)$image, add=T, col='blue', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
   }
   clip=magclip(select, estimate = 'lo')
@@ -95,13 +114,13 @@ profitSkyEstLoc=function(image, objects=0, loc=dim(image)/2, box=c(100,100), plo
   return=list(val=c(tempmed, tempsd), clip=clip)
 }
 
-profitMakeSkyMap=function(image, objects=0, box=c(100,100)){
+profitMakeSkyMap=function(image, objects, mask, box=c(100,100)){
   xseq=seq(box[1]/2,dim(image)[1],by=box[1])
   yseq=seq(box[2]/2,dim(image)[2],by=box[2])
   tempgrid=expand.grid(xseq, yseq)
   tempsky={}
   for(i in 1:dim(tempgrid)[1]){
-    tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, loc=as.numeric(tempgrid[i,]), box=box)$val)
+    tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box)$val)
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
@@ -110,7 +129,7 @@ profitMakeSkyMap=function(image, objects=0, box=c(100,100)){
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
 }
 
-profitMakeSkyGrid=function(image, objects=0, box=c(100,100), type='bilinear'){
+profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), type='bilinear'){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The akima package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -119,7 +138,7 @@ profitMakeSkyGrid=function(image, objects=0, box=c(100,100), type='bilinear'){
   tempgrid=expand.grid(xseq, yseq)
   tempsky={}
   for(i in 1:dim(tempgrid)[1]){
-    tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, loc=as.numeric(tempgrid[i,]), box=box)$val)
+    tempsky=rbind(tempsky, profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box)$val)
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))

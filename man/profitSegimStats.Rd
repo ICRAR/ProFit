@@ -10,7 +10,7 @@ Basic summary statistics for image segments, e.g. aperture parameters, fluxes an
 }
 \usage{
 profitSegimStats(image, segim, sky=0, magzero, pixscale=1)
-profitSegimPlot(image, segim, mask = 0, sky = 0, ...)
+profitSegimPlot(image, segim, mask, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -76,7 +76,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
+\code{\link{proFound}}, \code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
 }
 \examples{
 \dontrun{
