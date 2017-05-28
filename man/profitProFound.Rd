@@ -1,5 +1,5 @@
-\name{proFound}
-\alias{proFound}
+\name{profitProFound}
+\alias{profitProFound}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 ProFound Source Detection
@@ -8,7 +8,7 @@ ProFound Source Detection
 This is the highest level source detection function provided in \code{ProFit}, calculating both the initial segmentation map and reasonable estimates for the total flux apertures for each source in an automatic manner.
 }
 \usage{
-proFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
+profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
 pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6, threshold = 1.05,
 converge = 'flux', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
 header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
@@ -19,7 +19,7 @@ header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 Numeric matrix; required, the image we want to analyse.
 }
   \item{segim}{
-Numeric matrix; a sepcified segmentation map of the image. This matrix *must* be the same dimensions as image if supplied. If this is option is used then \code{proFound} will not compute its initial segmentation map using \code{\link{profitMakeSegim}}, which is then dilated. Instead it will use the one parsed through \option{segim}.
+Numeric matrix; a sepcified segmentation map of the image. This matrix *must* be the same dimensions as image if supplied. If this is option is used then \code{profitProFound} will not compute its initial segmentation map using \code{\link{profitMakeSegim}}, which is then dilated. Instead it will use the one parsed through \option{segim}.
 }
   \item{mask}{
 Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
@@ -55,7 +55,7 @@ Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels.
 Character scalar; the shape of the diltion kernel. See \code{makeBrush}. Parsed to \code{\link{profitMakeSegimDilate}}.
 }
   \item{iters}{
-Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{proFound}.
+Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{profitProFound}.
 }
   \item{threshold}{
 Numeric scalar; After the curve of growth dilations, \option{theshold} is the relative change of the converging property (see \option{converge}) that flags convergence. If consecutive iterations have a relative difference within this ratio then the dilation is stopped, and this iteration is used to define the segmentation of the object. The effect of this is that different objects will be dilated for a different number of iterations. Usually fainter sources require more.
@@ -103,9 +103,9 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 \details{
 This high level function is both a source detection and a segmented aperture growing function. The latter is achieved through consecutive dilation and flux measurement operations. It is not super fast, but it is designed to be fairly robust and fast enough for most use cases.
 
-\code{proFound} initially makes a segmentation map using the \code{\link{profitMakeSegim}} function. It then makes repeated dilations and flux measurements of this segmentation map using \code{\link{profitMakeSegimDilate}}, and calculates the convergent flux segment for each source. These are combined to make a final segmentation map with associated source statistics (if requested).
+\code{profitProFound} initially makes a segmentation map using the \code{\link{profitMakeSegim}} function. It then makes repeated dilations and flux measurements of this segmentation map using \code{\link{profitMakeSegimDilate}}, and calculates the convergent flux segment for each source. These are combined to make a final segmentation map with associated source statistics (if requested).
 
-\code{\link{profitMakeSegimDilate}} is similar in nature to the pixel growing \code{objmask} routine in \code{IRAF} (see the \option{ngrow} and \option{agrow} description at \url{http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?objmasks}). This similarity was discovered after implementation, but it is worth noting that the higher level curve of growth function \code{proFound} is not trivially replicated by other astronomy tools.
+\code{\link{profitMakeSegimDilate}} is similar in nature to the pixel growing \code{objmask} routine in \code{IRAF} (see the \option{ngrow} and \option{agrow} description at \url{http://stsdas.stsci.edu/cgi-bin/gethelp.cgi?objmasks}). This similarity was discovered after implementation, but it is worth noting that the higher level curve of growth function \code{profitProFound} is not trivially replicated by other astronomy tools.
 }
 \value{
 A list containing:
@@ -153,7 +153,7 @@ If \option{stats}=TRUE then the \option{segstats} part of the returned list will
 Aaron Robotham
 }
 \seealso{
-\code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimDilate}}
+\code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimDilate}}, \code{\link{profitMakeSegimExpand}}, \code{\link{profitSegimStats}}, \code{\link{profitSegimPlot}}
 }
 \examples{
 \dontrun{
@@ -162,7 +162,7 @@ package="ProFit"))
 
 segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
 header=image$hdr, plot=TRUE)
-segim2=proFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr,
+segim2=profitProFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr,
 plot=TRUE)
 
 magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)

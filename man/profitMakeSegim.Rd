@@ -132,7 +132,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitMakeSegimExpand}}
+\code{\link{profitMakeSegimExpand}}, \code{\link{profitProFound}}, \code{\link{profitSegimStats}}, \code{\link{profitSegimPlot}}
 }
 \examples{
 \dontrun{

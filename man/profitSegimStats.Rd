@@ -88,7 +88,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{proFound}}, \code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
+\code{\link{profitProFound}}, \code{\link{profitMakeSegim}}, \code{\link{profitMakeSegimExpand}}
 }
 \examples{
 \dontrun{

@@ -13,7 +13,7 @@ The **ProFit** R package comes with the **ProFound** source finding and image ut
 
 ### Very High Level
 
-- proFound: Source finder and CoG growing utility
+- profitProFound: Source finder and CoG growing utility (this is what we refer to as ProFound elsewhere, as a short-hand)
 
 ### High Level
 
@@ -48,7 +48,7 @@ The **ProFit** R package comes with the **ProFound** source finding and image ut
 
 ## ProFound
 
-The **proFound** function might be the only function many people need to use in order to extract photometry from a target image. In brief, in fully automatic mode using default option, it does the following things:
+The **profitProFound** function might be the only function many people need to use in order to extract photometry from a target image. In brief, in fully automatic mode using default option, it does the following things:
 
 - Makes a rough sky map
 - Using this rough sky map, makes an initial segmentation image
@@ -80,20 +80,20 @@ Give it a quick look:
 magimageWCS(image)
 ```
 
-A basic example of the lower level **profitMakeSegim** versus the higher level **proFound**:
+A basic example of the lower level **profitMakeSegim** versus the higher level **profitProFound**:
 
 ```{r, fig.width=5, fig.height=5}
 out_segim=segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
 header=image$hdr, plot=TRUE)
-out_profound=proFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr, verbose=TRUE, plot=TRUE)
+out_profound=profitProFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr, verbose=TRUE, plot=TRUE)
 ```
 
-Notice in the two outputs (the first being **profitMakeSegim**, the second being **proFound**) that some segment have converged quickly (i.e. not grown much) but others have expanded a lot in order to capture all the flux present. **proFound** in default mode with modern survey imaging data tends to extract very close to a true total magnitude, without too much error introduced by sky noise (a consequence of over-growing apertures).
+Notice in the two outputs (the first being **profitMakeSegim**, the second being **profitProFound**) that some segment have converged quickly (i.e. not grown much) but others have expanded a lot in order to capture all the flux present. **profitProFound** in default mode with modern survey imaging data tends to extract very close to a true total magnitude, without too much error introduced by sky noise (a consequence of over-growing apertures).
 
-Because it was run in verbose mode, the major **proFound** steps mentioned above were printed out. For large images (a few thousand by a few thousand pixels plus) this is useful since it can take a few minutes to run with all the bells and whistles turned on, and it is nice to see it making progress. Note for more than a couple of hundred sources, you almost certainly do not want to plot the output, since this will be slow.
+Because it was run in verbose mode, the major **profitProFound** steps mentioned above were printed out. For large images (a few thousand by a few thousand pixels plus) this is useful since it can take a few minutes to run with all the bells and whistles turned on, and it is nice to see it making progress. Note for more than a couple of hundred sources, you almost certainly do not want to plot the output, since this will be slow.
 
 
-Note because we parsed **proFound** a header we have RA and Dec coordinates in the photometric properties data-frame. We also parsed the appropriate magnitude zero-point and pixel scale so the mag properties are correctly scaled, and R/R50/R90 are in arc-seconds rather than pixels. It is is worth checking the output:
+Note because we parsed **profitProFound** a header we have RA and Dec coordinates in the photometric properties data-frame. We also parsed the appropriate magnitude zero-point and pixel scale so the mag properties are correctly scaled, and R/R50/R90 are in arc-seconds rather than pixels. It is is worth checking the output:
  
 ```{r}
 out_profound$segstats[1:10,]
@@ -106,27 +106,27 @@ magplot(out_segim$segstats[1:40,c("R50", "SB_N90")], col=hsv(magmap(out_segim$se
 points(out_profound$segstats[1:40,c("R50", "SB_N90")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), pch=16)
 arrows(out_segim$segstats$R50[1:40], out_segim$segstats$SB_N90[1:40], out_profound$segstats$R50[1:40], out_profound$segstats$SB_N90[1:40], col='lightgrey', length=0)
 rect(0.9, 23.5, 1.3, 24.3)
-legend('bottomleft', legend=c('proFound', 'profitMakeSegim'), pch=c(16,1))
+legend('bottomleft', legend=c('profitProFound', 'profitMakeSegim'), pch=c(16,1))
 magbar('topright', title='Axrat', titleshift=1)
 
 magplot(out_segim$segstats[1:40,c("R50", "con")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), log='x', xlim=c(0.4,5), ylim=c(0,1), grid=TRUE, xlab='R50 / asec', ylab='Concentration')
 points(out_profound$segstats[1:40,c("R50", "con")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), pch=16)
 arrows(out_segim$segstats$R50[1:40], out_segim$segstats$con[1:40], out_profound$segstats$R50[1:40], out_profound$segstats$con[1:40], col='lightgrey', length=0)
 rect(0.9, 0.4, 1.3, 0.6)
-legend('bottomleft', legend=c('proFound', 'profitMakeSegim'), pch=c(16,1))
+legend('bottomleft', legend=c('profitProFound', 'profitMakeSegim'), pch=c(16,1))
 magbar('topright', title='Axrat', titleshift=1)
 
 magplot(out_segim$segstats[1:40,c("R50", "mag")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), log='x', xlim=c(0.4,5), ylim=c(17,24), grid=TRUE, xlab='R50 / asec', ylab='Mag')
 points(out_profound$segstats[1:40,c("R50", "mag")], col=hsv(magmap(out_segim$segstats$axrat, flip=TRUE)$map), pch=16)
 arrows(out_segim$segstats$R50[1:40], out_segim$segstats$mag[1:40], out_profound$segstats$R50[1:40], out_profound$segstats$mag[1:40], col='lightgrey', length=0)
 rect(0.9, 20, 1.3, 22)
-legend('bottomleft', legend=c('proFound', 'profitMakeSegim'), pch=c(16,1))
+legend('bottomleft', legend=c('profitProFound', 'profitMakeSegim'), pch=c(16,1))
 magbar('topright', title='Axrat', titleshift=1)
 ```
 
-It is notable that low surface brightness objects are seen to systematically grow when processing the image with **proFound**. The box represents the location of likely stars, where redder objects are more circular sources. It is clear that **proFound** moves stars onto a more uniform value of R50 (remember for a Gaussian PSF FWHM=2*R50).
+It is notable that low surface brightness objects are seen to systematically grow when processing the image with **profitProFound**. The box represents the location of likely stars, where redder objects are more circular sources. It is clear that **profitProFound** moves stars onto a more uniform value of R50 (remember for a Gaussian PSF FWHM=2*R50).
 
-The **proFound** function also returns a sky and sky RMS image matched to the input image:
+The **profitProFound** function also returns a sky and sky RMS image matched to the input image:
 
 ```{r, fig.width=5, fig.height=4}
 maghist(out_profound$sky, xlab='Sky')
@@ -145,4 +145,4 @@ The background mask we used here (the default 100x100 option) looks to be a bit 
 maghist(out_profound$segstats[,'N']/out_profound$segstats[,'flux'], xlab=' Worst case fraction error')
 ```
 
-In summary, you probably want to use **proFound**, unless you really know what you are doing!
+In summary, you probably want to use **profitProFound**, unless you really know what you are doing!

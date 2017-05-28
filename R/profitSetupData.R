@@ -117,8 +117,9 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
     }
     psf = psf/sum(psf)
   }
-  modelimg = profitMakeModel(modellist,dim=dim(image),finesample=finesample,psf=psf,returnfine = TRUE, returncrop = FALSE, openclenv=openclenv,omp_threads=omp_threads)
+  
   calcregion = profitUpsample(region,finesample)
+  
   if(haspsf)
   {
     psfpad = floor(dim(psf)/2)
@@ -135,6 +136,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   
   if(haspsf & nbenchmarkconv>0)
   {
+    modelimg = profitMakeModel(modellist,dim=dim(image),finesample=finesample,psf=psf,returnfine = TRUE, returncrop = FALSE, openclenv=openclenv,omp_threads=omp_threads)
     dimmodel = dim(modelimg$z)
     dimregion = dim(calcregion)
     dimdiff = (dimmodel - dimregion)/2
