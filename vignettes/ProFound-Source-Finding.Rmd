@@ -68,10 +68,15 @@ library(ProFit)
 library(FITSio)
 ```
 
-First read in some data and give it a look:
+First read in some data.
+
+```{r}
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',package="ProFit"))
+```
+
+Give it a quick look:
 
 ```{r, fig.width=5, fig.height=5}
-image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',package="ProFit"))
 magimageWCS(image)
 ```
 

@@ -17,5 +17,3 @@ importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
 importFrom("utils", "relist")
 importFrom("RColorBrewer", "brewer.pal")
 importFrom("R2Cuba", "cuhre")
-importFrom("abind", "abind")
-#importFrom("imager", "as.cimg", "enorm", "imgradient", "isoblur")
