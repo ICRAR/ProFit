@@ -81,7 +81,7 @@ eigvec=(sx^2-eigval)/sxy
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, header, plot=FALSE, stats=TRUE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, header, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -133,7 +133,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
     segstats=NULL
   }
@@ -147,7 +147,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -215,7 +215,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   }
   
   if(stats){
-    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
     segstats=NULL
   }
@@ -231,7 +231,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, header, plot=FALSE, stats=TRUE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, header, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
   
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
@@ -256,7 +256,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   }
   
   if(stats & !missing(image)){
-    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
     segstats=NULL
   }
@@ -271,7 +271,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats)
 }
 
-profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, header){
+profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=FALSE, header){
   image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -288,8 +288,13 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, header){
   xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
   ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
   covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
-  asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
-  flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
+  if(rotstats){
+    asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
+    flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
+  }else{
+    asymm=NA
+    flux_reflect=NA
+  }
   corxy=covxy/(xsd*ysd)
   rad=.cov2eigval(xsd, ysd, covxy)
   rad$hi=sqrt(abs(rad$hi))
@@ -342,15 +347,18 @@ profitSegimPlot=function(image, segim, mask, sky=0, ...){
   }
 }
 
-proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), header, verbose=FALSE, plot=FALSE, stats=TRUE, ...){
+proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero, pixscale=1, sky, skyRMS, redosky=TRUE, box=c(100, 100), header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
   
-  if(missing(sky) | missing(skyRMS)){
+  hassky=!missing(sky)
+  hasskyRMS=!missing(skyRMS)
+  
+  if(hassky==FALSE | hasskyRMS==FALSE){
     if(verbose){print('Making a rough sky map')}
     roughsky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box)
-    if(missing(sky)){
+    if(hassky==FALSE){
       sky=roughsky$sky
     }
-    if(missing(skyRMS)){
+    if(hasskyRMS==FALSE){
       skyRMS=roughsky$skyRMS
     }
   }
@@ -361,13 +369,15 @@ proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1
     segim=segim$segim
   }
   
-  if(verbose){print('Making a better sky map')}
-  bettersky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box)
-  if(missing(sky)){
-    sky=bettersky$sky
-  }
-  if(missing(skyRMS)){
-    skyRMS=bettersky$skyRMS
+  if(hassky==FALSE | hasskyRMS==FALSE){
+    if(verbose){print('Making a better sky map')}
+    bettersky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box)
+    if(hassky==FALSE){
+      sky=bettersky$sky
+    }
+    if(hasskyRMS==FALSE){
+      skyRMS=bettersky$skyRMS
+    }
   }
   
   if(verbose){print('Making initial segstats')}
@@ -379,7 +389,7 @@ proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1
   if(verbose){print('Doing dilations:')}
   for(i in 1:iters){
     if(verbose){print(paste('Iteration',i,'of',iters))}
-    segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE)
+    segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, plot=FALSE, stats=TRUE, rotstats=FALSE)
     compmat=cbind(compmat, segim$segstats[,converge])
     segim_array[,,i+1]=segim$segim
   }
@@ -413,7 +423,7 @@ proFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1
       skyRMS=sky_new$skyRMS
     }
     if(verbose){print('Making final segstats')}
-    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, header=header)
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
     segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
   }else{
     segstats=NULL

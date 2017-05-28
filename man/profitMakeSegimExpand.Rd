@@ -11,9 +11,9 @@ A high level utility to achieve decent quality image segmentation based on the e
 \usage{
 profitMakeSegimExpand(image, segim, mask, objects, skycut = 1, SBlim, magzero,
 pixscale = 1, sigma = 1, smooth = TRUE, expandsigma = 5, expand = "all", sky, skyRMS,
-header, plot = FALSE, stats = TRUE, ...)
+header, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 profitMakeSegimDilate(image, segim, mask, size = 9, shape = "disc", expand = "all",
-magzero, pixscale = 1, sky = 0, header, plot = FALSE, stats = TRUE, ...)
+magzero, pixscale = 1, sky = 0, header, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -73,6 +73,9 @@ Logical; should a diagnostic plot be generated? This is useful when you only hav
 }
   \item{stats}{
 Logical; should statistics on the segmented objects be returned?
+}
+  \item{rotstats}{
+Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.

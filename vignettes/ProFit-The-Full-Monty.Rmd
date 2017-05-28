@@ -57,7 +57,7 @@ The output is approximately in descending flux order. This data happened to have
 The next step is to expand out the segmantation for our target galaxy. this is a good idea because we want our model fit to descend into sky dominated pixels and not to be tightly defined by bright central pixels:
 
 ```{r, fig.width=5, fig.height=5}
-segim_expand=profitMakeSegimExpand(image, segim$segim, expand=6, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, plot=TRUE)
+segim_expand=profitMakeSegimExpand(image, segim$segim, expand=6, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, rotstats=TRUE, plot=TRUE)
 ```
 
 Notice because we set expand=6 only our object of interest (with segID=6) has been expanded. The other sources are left as they were.

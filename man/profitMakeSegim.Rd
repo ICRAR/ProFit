@@ -10,7 +10,7 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
 pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, header, plot = FALSE,
-stats = TRUE, ...)
+stats = TRUE, rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -64,6 +64,9 @@ Logical; should a diagnostic plot be generated? This is useful when you only hav
 }
   \item{stats}{
 Logical; should statistics on the segmented objects be returned? If \option{magzero} and \option{pixscale} have been provided then some of the outputs are computed in terms of magnitude and mag/asec^2 rather than flux and flux/pix^2 (see Value).
+}
+  \item{rotstats}{
+Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.

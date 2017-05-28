@@ -9,7 +9,7 @@ Image Segmentation Statistics
 Basic summary statistics for image segments, e.g. aperture parameters, fluxes and surface brightness estimates. These might provide useful first guesses to ProFit fitting parameters (particularly \option{flux}, \option{axrat} and \option{ang}).
 }
 \usage{
-profitSegimStats(image, segim, sky=0, magzero, pixscale=1, header)
+profitSegimStats(image, segim, sky=0, magzero, pixscale=1, rotstats = FALSE, header)
 profitSegimPlot(image, segim, mask, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -31,6 +31,9 @@ Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, wh
 }
   \item{pixscale}{
   Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
+}
+  \item{rotstats}{
+Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
