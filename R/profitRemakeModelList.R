@@ -64,7 +64,7 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
               intervalmin=intervals[[i]][[j]][[k]][1]
               intervalmax=intervals[[i]][[j]][[k]][2]
               currentval=modellistnew[[i]][[j]][k]
-              modellistnew[[i]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = FALSE), na.rm = FALSE)
+              modellistnew[[i]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = TRUE), na.rm = TRUE)
             }
           }
         }else{

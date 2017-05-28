@@ -74,7 +74,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     vardata = var(cutsig,na.rm = TRUE)
     dof=2*vardata/(vardata-1)
     #dof=interval(dof,0,Inf)
-    dof=max(0, min(Inf, dof, na.rm = FALSE), na.rm = FALSE)
+    dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
     LL=sum(dt(cutsig,dof,log=TRUE))
   } else if(like.func=="pois") {
     scale=max(abs(image)/abs(sigma)^2)
