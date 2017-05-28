@@ -77,7 +77,7 @@ image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',package="Pr
 Give it a quick look:
 
 ```{r, fig.width=5, fig.height=5}
-magimageWCS(image)
+magimageWCS(image$imDat, image$hdr)
 ```
 
 A basic example of the lower level **profitMakeSegim** versus the higher level **proFound**:
@@ -134,9 +134,9 @@ maghist(out_profound$skyRMS, xlab='Sky RMS')
 ```
 
 ```{r, fig.width=5, fig.height=5}
-magimageWCS(image)
-magimageWCS(out_profound$sky, header=image$hdr)
-magimageWCS(out_profound$skyRMS, header=image$hdr)
+magimageWCS(image$imDat, image$hdr)
+magimageWCS(out_profound$sky, image$hdr)
+magimageWCS(out_profound$skyRMS, image$hdr)
 ```
 
 The background mask we used here (the default 100x100 option) looks to be a bit too small, since there is obvious correlation between the original image and the sky map. However, even with a slightly too small sky grid the photometric outputs should be mostly pretty robust- differing by at worst a couple of counts per pixel. This is much less than the typical sky RMS (roughly 9 throughout).
