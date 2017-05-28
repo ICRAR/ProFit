@@ -14,12 +14,16 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
     if(hasskyRMS==FALSE){
       skyRMS=roughsky$skyRMS
     }
+  }else{
+    if(verbose){(print("Skipping initial sky map - User provided sky and sky RMS"))}
   }
   
   if(missing(segim)){
-    if(verbose){print(paste('Making initial segim -',proc.time()[3]-timestart,'sec'))}
+    if(verbose){print(paste('Making initial segmentation image -',proc.time()[3]-timestart,'sec'))}
     segim=profitMakeSegim(image=image, objects=objects, mask=mask, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, plot=FALSE, stats=FALSE)
     segim=segim$segim
+  }else{
+    if(verbose){print("Skipping making segim - User provided segim")}
   }
   
   if(hassky==FALSE | hasskyRMS==FALSE){
@@ -31,6 +35,8 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
     if(hasskyRMS==FALSE){
       skyRMS=bettersky$skyRMS
     }
+  }else{
+    if(verbose){print("Skipping better sky map - User provided sky and sky RMS")}
   }
   
   if(verbose){print(paste('Making initial segstats -',proc.time()[3]-timestart,'sec'))}
@@ -55,11 +61,6 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   segim_new=segim$segim
   segim_new[]=0
   
-  # for(i in 1:length(selseg)){
-  #   segim_new[segim_array[,,selseg[i]]==segstats[i,'segID']]=segstats[i,'segID']
-  #   origfrac=c(origfrac,compmat[i,1]/compmat[i,selseg[i]])
-  # }
-  
   if(verbose){print(paste('Building final segim -',proc.time()[3]-timestart,'sec'))}
   for(i in 1:(iters+1)){
     select=segim_array[,,i] %in% segstats[selseg==i,'segID']
@@ -74,11 +75,15 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
       sky_new=profitMakeSkyGrid(image=image, objects=objects, box=box)
       sky=sky_new$sky
       skyRMS=sky_new$skyRMS
+    }else{
+      if(verbose){print("Skipping final sky map - redosky set to FALSE")}
     }
+    
     if(verbose){print(paste('Making final segstats -',proc.time()[3]-timestart,'sec'))}
     segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
     segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
   }else{
+    if(verbose){print("Skipping sementation statistics - segstats set to FALSE")}
     segstats=NULL
   }
   
@@ -88,6 +93,8 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   if(plot){
     if(verbose){print(paste('Plotting segments -',proc.time()[3]-timestart,'sec'))}
     profitSegimPlot(image=image, segim=segim_new, mask=mask, sky=sky, ...)
+  }else{
+    if(verbose){print("Skipping segmentation plot - plot set to FALSE")}
   }
   
   if(!missing(SBlim) & !missing(magzero)){
@@ -97,6 +104,6 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   }else{
     SBlim=NULL
   }
-  if(verbose){print(paste('Finished -',proc.time()[3]-timestart,'sec'))}
+  if(verbose){print(paste('Finished! -',proc.time()[3]-timestart,'sec'))}
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim)
 }
