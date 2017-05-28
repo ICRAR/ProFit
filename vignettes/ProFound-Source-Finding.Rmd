@@ -77,7 +77,7 @@ image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',package="Pr
 Give it a quick look:
 
 ```{r, fig.width=5, fig.height=5}
-magimageWCS(image$imDat, image$hdr)
+magimageWCS(image)
 ```
 
 A basic example of the lower level **profitMakeSegim** versus the higher level **proFound**:

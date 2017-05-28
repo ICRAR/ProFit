@@ -6,6 +6,7 @@ import("FITSio")
 import("LaplacesDemon")
 import("magicaxis")
 import("data.table")
+import("celestial")
 
 importFrom("grDevices", "colorRampPalette", "heat.colors", "hsv", "rainbow")
 importFrom("graphics", "abline", "axis", "box", "contour", "hist",
