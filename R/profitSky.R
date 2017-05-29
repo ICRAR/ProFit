@@ -15,10 +15,10 @@
     ey[ly1 == ny] = 1
     lx1[lx1 == nx] = nx - 1
     ly1[ly1 == ny] = ny - 1
-    return = cbind(X = x, Y = y, Z = zobj[cbind(lx1, ly1)] * 
-        (1 - ex) * (1 - ey) + zobj[cbind(lx1 + 1, ly1)] * ex * 
-        (1 - ey) + zobj[cbind(lx1, ly1 + 1)] * (1 - ex) * ey + 
-        zobj[cbind(lx1 + 1, ly1 + 1)] * ex * ey)
+    return = zobj[cbind(lx1, ly1)] * (1 - ex) * (1 - ey) +
+             zobj[cbind(lx1 + 1, ly1)] * ex * (1 - ey) +
+             zobj[cbind(lx1, ly1 + 1)] * (1 - ex) * ey + 
+             zobj[cbind(lx1 + 1, ly1 + 1)] * ex * ey
 }
 
 profitSkyEst=function(image, objects, mask, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
@@ -148,8 +148,11 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), type='bilinear'
   bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
   
   if(type=='bilinear'){
-    temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))[,3]
-    temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))[,3]
+    temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))
+    temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))
+    #Note the following does not work well - akima clips out the outer regions (darn- would be faster!)
+    #temp_bi_sky=akima::bilinear(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
+    #temp_bi_skyRMS=akima::bilinear(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
   }else if(type=='bicubic'){
     temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
     temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z

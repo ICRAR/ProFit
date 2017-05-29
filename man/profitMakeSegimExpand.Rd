@@ -11,9 +11,10 @@ A high level utility to achieve decent quality image segmentation based on the e
 \usage{
 profitMakeSegimExpand(image, segim, mask, objects, skycut = 1, SBlim, magzero,
 pixscale = 1, sigma = 1, smooth = TRUE, expandsigma = 5, expand = "all", sky, skyRMS,
-header, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 profitMakeSegimDilate(image, segim, mask, size = 9, shape = "disc", expand = "all",
-magzero, pixscale = 1, sky = 0, header, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+magzero, pixscale = 1, sky = 0, header, verbose = FALSE, plot = FALSE, stats = TRUE,
+rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -68,6 +69,9 @@ User provided estimate of the RMS of the sky. If this is not provided then it wi
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
 }
+  \item{verbose}{
+Logical; should verbose output be displayed to the user? Since big image can take a long time to run, you might want to monitor progress.  
+}
   \item{plot}{
 Logical; should a diagnostic plot be generated? This is useful when you only have a small number of sources (roughly a few hundred). With more than this it can start to take a long time to make the plot!
 }
@@ -98,6 +102,7 @@ A list containing:
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
+  \item{call}{The original function call.}
   
 If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is called and the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 

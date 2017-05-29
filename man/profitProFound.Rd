@@ -1,5 +1,9 @@
-\name{profitProFound}
+\name{ProFound}
 \alias{profitProFound}
+\alias{ProFound}
+\alias{profound}
+\alias{proFound}
+\alias{Profound}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 ProFound Source Detection
@@ -85,7 +89,7 @@ Integer vector; the dimensions of the box car filter to estimate the sky with. O
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
 }
   \item{verbose}{
-Logical; should the iteration number be printed out? Since big image can take a long time to run, you might want to monitor progress.  
+Logical; should verbose output be displayed to the user? Since big image can take a long time to run, you might want to monitor progress.  
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated? This is useful when you only have a small number of sources (roughly a few hundred). With more than this it can start to take a long time to make the plot!
@@ -115,6 +119,7 @@ A list containing:
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
+  \item{call}{The original function call.}
   
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
@@ -161,9 +166,9 @@ image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
 package="ProFit"))
 
 segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
-header=image$hdr, plot=TRUE)
-segim2=profitProFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339, header=image$hdr,
-plot=TRUE)
+header=image$hdr, verbose=TRUE, plot=TRUE)
+segim2=profitProFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
+header=image$hdr, verbose=TRUE, plot=TRUE)
 
 magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
 magplot(segim2$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)

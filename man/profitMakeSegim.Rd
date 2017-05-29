@@ -9,8 +9,8 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, header, plot = FALSE,
-stats = TRUE, rotstats = FALSE, ...)
+pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, header,
+verbose = FALSE ,plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -59,6 +59,9 @@ User provided estimate of the RMS of the sky. If this is not provided then it wi
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
 }
+  \item{verbose}{
+Logical; should verbose output be displayed to the user? Since big image can take a long time to run, you might want to monitor progress.  
+}
   \item{plot}{
 Logical; should a diagnostic plot be generated? This is useful when you only have a small number of sources (roughly a few hundred). With more than this it can start to take a long time to make the plot!
 }
@@ -92,6 +95,7 @@ A list containing:
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
   \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL).}
+  \item{call}{The original function call.}
   
 If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is called and the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 

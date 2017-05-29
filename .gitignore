@@ -9,6 +9,7 @@ inst/doc
 Makevars
 rsconnect
 vignettes/rsconnect
+ProFit.Rproj
 
 # Eclipse files
 .cproject
