@@ -141,9 +141,9 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   names(tinms) = names
   print(result)
   result = list(result=result,times=tinms,method=names[best],
-    best=list(name=names[best],time=times[best]),
+    best=list(name=names[best],time=tinms[best]),
     fft=list(fftwplan=fftwplan, paddim = padimagedim, 
       padimagex = 1:imagedim[1], padimagey=1:imagedim[2], cropx=cropx, cropy=cropy, 
-      psf = list(r=psffftr, w=psffftw, x = psfranges[1], y = psfranges[2])))
+      psf = list(r=psffftr, w=psffftw, x = psfranges[[1]], y = psfranges[[2]])))
   return=result
 }
