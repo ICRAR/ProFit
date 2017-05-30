@@ -53,24 +53,6 @@ eigvec=(sx^2-eigval)/sxy
   return=flux_reflect
 }
 
-.selectCoG=function(diffmat, threshold=1.05){
-  tempout={}
-  for(i in 1:dim(diffmat)[1]){
-    tempsel=which(diffmat[i,]>1 & diffmat[i,]<threshold)+1
-    if(length(tempsel)==0){
-      if(any(diffmat[i,]<1)){
-        tempsel=min(which(diffmat[i,]<1))
-      }else{
-        tempsel=which.min(diffmat[i,])+1
-      }
-    }else{
-      tempsel=min(tempsel)
-    }
-    tempout=c(tempout, tempsel)
-  }
-  return=tempout
-}
-
 #Not currently used:
 .nser2ccon=function(nser=0.5, lo=0.5, hi=0.9){
   return=(((qgamma(lo, 2 * nser)/qgamma(hi, 2 * nser))^nser)^2)

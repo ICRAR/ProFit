@@ -12,10 +12,11 @@ ProFound Source Detection
 This is the highest level source detection function provided in \code{ProFit}, calculating both the initial segmentation map and reasonable estimates for the total flux apertures for each source in an automatic manner.
 }
 \usage{
-profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6, threshold = 1.05,
-converge = 'flux', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE, box = c(100, 100),
-header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1,
+smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
+threshold = 1.05, converge = 'flux', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE,
+redoskysize = 21, box = c(100, 100), header, verbose = FALSE, plot = FALSE, stats = TRUE,
+rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -80,7 +81,10 @@ User provided estimate of the absolute sky level. If this is not provided then i
 User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{redosky}{
-Logical; should the sky and sky RMS grids be re-computed using the final segmentation map? This uses \code{\link{profitMakeSkyGrid}} to compute the sky and sky RMS grids.
+Logical; should the sky and sky RMS grids be re-computed using the final segmentation map? This uses \code{\link{profitMakeSkyGrid}} to compute the sky and sky RMS grids. If \option{redosky}=TRUE then the output will include the agressively masked \option{objects_redo} image, if \option{redosky}=FALSE then \option{objects_redo} will be NA.
+}
+  \item{redoskysize}{
+Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels to apply to the \option{object} mask before performing the final sky estimates (only relevant if \option{redosky}=TRUE). Should be an odd number else will be rounded up to the nearest odd number. See \code{makeBrush}. Parsed to \code{\link{profitMakeSegimDilate}}. This dilated \option{objects} mask is returned as \option{objects_redo}. As a rule of thumb you probably want 50\% of your image pixels to be masked as objects, much more than this and you might not be able to sample enough sky pixels, much more less and the sky estimates might be biased by object flux in the wings.
 }
   \item{box}{
 Integer vector; the dimensions of the box car filter to estimate the sky with. Only relevant if \option{redosky}=TRUE.
@@ -169,6 +173,16 @@ segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
 header=image$hdr, verbose=TRUE, plot=TRUE)
 segim2=profitProFound(image$imDat, skycut=1.5, magzero=30, pixscale=0.339,
 header=image$hdr, verbose=TRUE, plot=TRUE)
+
+#You can check to see if the final mask is aggressive enough. Notice the halos
+#surrounding bright sources when just using the objects mask.
+
+temp=image$imDat
+temp[segim2$objects>0]=0
+magimage(temp)
+temp=image$imDat
+temp[segim2$objects_redo>0]=0
+magimage(temp)
 
 magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
 magplot(segim2$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)

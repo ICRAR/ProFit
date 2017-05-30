@@ -10,7 +10,7 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
 pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, header,
-verbose = FALSE ,plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
