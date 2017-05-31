@@ -14,9 +14,9 @@ This is the highest level source detection function provided in \code{ProFit}, c
 \usage{
 profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1,
 smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
-threshold = 1.05, converge = 'flux', magzero, pixscale = 1, sky, skyRMS, redosky = TRUE,
-redoskysize = 21, box = c(100, 100), header, verbose = FALSE, plot = FALSE, stats = TRUE,
-rotstats = FALSE, ...)
+threshold = 1.05, converge = 'flux', magzero = 0, pixscale = 1, sky, skyRMS,
+redosky = TRUE, redoskysize = 21, box = c(100, 100), header, verbose = FALSE,
+plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

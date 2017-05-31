@@ -77,14 +77,14 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   hasskyRMS=!missing(skyRMS)
   image_orig=image
   if(hassky==FALSE){
-    if(verbose){print(paste(" - Making initial local estimate of the sky -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making initial local estimate of the sky -", round(proc.time()[3]-timestart,3), "sec"))}
     sky=profitSkyEst(image=image, mask=mask, objects=objects, plot=FALSE)$sky
   }else{
     if(verbose){print(" - Skipping making initial local estimate of the sky - User provided sky")}
   }
   image_sky=image-sky
   if(hasskyRMS==FALSE){
-    if(verbose){print(paste(" - Making initial local estimate of the sky RMS -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making initial local estimate of the sky RMS -", round(proc.time()[3]-timestart,3), "sec"))}
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }else{
     if(verbose){print(" - Skipping making initial local estimate of the sky RMS - User provided sky RMS")}
@@ -93,7 +93,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   image[!is.finite(image)]=0
  
   if(smooth){
-    if(verbose){print(paste(" - Smoothing the image -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Smoothing the image -", round(proc.time()[3]-timestart,3), "sec"))}
     image=as.matrix(imager::isoblur(imager::as.cimg(image),sigma))
   }else{
     if(verbose){print(" - Skipping smoothing - smooth set to FALSE")}
@@ -108,7 +108,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   if(!missing(mask)){
     image[mask!=0]=0
   }
-  if(verbose){print(paste(" - Watershed de-blending -", proc.time()[3] - timestart, "sec"))}
+  if(verbose){print(paste(" - Watershed de-blending -", round(proc.time()[3]-timestart,3), "sec"))}
   segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
   
   objects=segim>0
@@ -116,7 +116,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   segim[segim %in% which(segtab<pixcut)]=0
 
   if(plot){
-    if(verbose){print(paste(" - Plotting segments -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Plotting segments -", round(proc.time()[3]-timestart,3), "sec"))}
     profitSegimPlot(image=image_orig, segim=segim, mask=mask, sky=sky, ...)
   }else{
     if(verbose){print(" - Skipping segmentation plot - plot set to FALSE")}
@@ -126,20 +126,20 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   objects[objects!=0]=1
   
   if(hassky==FALSE){
-    if(verbose){print(paste(" - Making final local estimate of the sky -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making final local estimate of the sky -", round(proc.time()[3]-timestart,3), "sec"))}
     sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
   }else{
     if(verbose){print(" - Skipping making final local estimate of the sky - User provided sky")}
   }
   image_sky=image_orig-sky
   if(hasskyRMS==FALSE){
-    if(verbose){print(paste(" - Making final local estimate of the sky RMS -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making final local estimate of the sky RMS -", round(proc.time()[3]-timestart,3), "sec"))}
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }else{
     if(verbose){print(" - Skipping making initial local estimate of the sky RMS - User provided sky RMS")}
   }
   if(stats){
-    if(verbose){print(paste(" - Calculating segstats -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))}
     segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE")}
@@ -152,7 +152,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   }else{
     SBlim=NULL
   }
-  if(verbose){print(paste(" - profitMakeSegim is finished! -", proc.time()[3] - timestart, "sec"))}
+  if(verbose){print(paste(" - profitMakeSegim is finished! -", round(proc.time()[3]-timestart,3), "sec"))}
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
@@ -167,14 +167,14 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   hasskyRMS=!missing(skyRMS)
   image_orig=image
   if(hassky==FALSE){
-    if(verbose){print(paste(" - Making initial local estimate of the sky -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making initial local estimate of the sky -", round(proc.time()[3]-timestart,3), "sec"))}
     sky=profitSkyEst(image=image, mask=mask, objects=objects, plot=FALSE)$sky
   }else{
     if(verbose){print(" - Skipping making initial local estimate of the sky - User provided sky")}
   }
   image_sky=image-sky
   if(hasskyRMS==FALSE){
-    if(verbose){print(paste(" - Making initial local estimate of the sky RMS -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making initial local estimate of the sky RMS -", round(proc.time()[3]-timestart,3), "sec"))}
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }else{
     if(verbose){print(" - Skipping making initial local estimate of the sky RMS - User provided sky RMS")}
@@ -183,7 +183,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   image[!is.finite(image)]=0
 
   if(smooth){
-    if(verbose){print(paste(" - Smoothing image -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Smoothing image -", round(proc.time()[3]-timestart,3), "sec"))}
     image=as.matrix(imager::isoblur(imager::as.cimg(image),sigma))
   }else{
     if(verbose){print(" - Skipping smoothing - smooth set to FALSE")}
@@ -204,7 +204,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
   if(expand[1]=='all'){expand=segvec}
-  if(verbose){print(paste(" - Expanding segments -", proc.time()[3] - timestart, "sec"))}
+  if(verbose){print(paste(" - Expanding segments -", round(proc.time()[3]-timestart,3), "sec"))}
   for(i in segvec){
     segtemp=segim
     segtemp[segim==i]=1
@@ -225,14 +225,14 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   objects[objects!=0]=1
   
   if(plot){
-    if(verbose){print(paste(" - Plotting segments -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Plotting segments -", round(proc.time()[3]-timestart,3), "sec"))}
     profitSegimPlot(image=image_orig, segim=segim_new, mask=mask, sky=sky, ...)
   }else{
     if(verbose){print(" - Skipping segmentation plot - plot set to FALSE")}
   }
   
   if(hassky==FALSE){
-    if(verbose){print(paste(" - Making final local estimate of the sky -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making final local estimate of the sky -", round(proc.time()[3]-timestart,3), "sec"))}
     sky=profitSkyEst(image=image_orig, mask=mask, objects=objects, plot=FALSE)$sky
   }else{
     if(verbose){print(" - Skipping making final local estimate of the sky - User provided sky")}
@@ -241,14 +241,14 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   image_sky=image_orig-sky
   
   if(hasskyRMS==FALSE){
-    if(verbose){print(paste(" - Making final local estimate of the sky RMS -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Making final local estimate of the sky RMS -", round(proc.time()[3]-timestart,3), "sec"))}
     skyRMS=profitSkyEst(image=profitImDiff(image_sky,3), mask=mask, objects=objects, plot=FALSE)$skyRMS
   }else{
     if(verbose){print(" - Skipping making final local estimate of the sky RMS - User provided sky")}
   }
   
   if(stats){
-    print(paste(" - Calculating segstats -", proc.time()[3] - timestart, "sec"))
+    print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))
     segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
     print(" - Skipping segmentation statistics - segstats set to FALSE")
@@ -262,7 +262,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   }else{
     SBlim=NULL
   }
-  if(verbose){print(paste(" - profitMakeSegimExpand is finished! -", proc.time()[3] - timestart, "sec"))}
+  if(verbose){print(paste(" - profitMakeSegimExpand is finished! -", round(proc.time()[3]-timestart,3), "sec"))}
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
@@ -277,11 +277,11 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   
   kern = EBImage::makeBrush(size, shape=shape)
   
-  if(verbose){print(paste(" - Dilating segments -", proc.time()[3] - timestart, "sec"))}
+  if(verbose){print(paste(" - Dilating segments -", round(proc.time()[3]-timestart,3), "sec"))}
   
   if(expand=='all'){
     segim_new=EBImage::as.Image(segim)
-    maxorig=max(segim_new)
+    maxorig=max(segim_new, na.rm=TRUE)
     segim_new[segim_new>0]=maxorig+1-segim_new[segim_new>0]
     segim_new=EBImage::dilate(segim_new, kern)
     segim_new[segim_new>0]=maxorig+1-segim_new[segim_new>0]
@@ -296,7 +296,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   }
   
   if(stats & !missing(image)){
-    if(verbose){print(paste(" - Calculating segstats -", proc.time()[3] - timestart, "sec"))}
+    if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))}
     segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE")}
@@ -309,7 +309,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   if(plot){
     profitSegimPlot(image=image, segim=segim_new, mask=mask, sky=sky, ...)
   }
-  if(verbose){print(paste(" - profitMakeSegimDilate is finished! -", proc.time()[3] - timestart, "sec"))}
+  if(verbose){print(paste(" - profitMakeSegimDilate is finished! -", round(proc.time()[3]-timestart,3), "sec"))}
   return=list(segim=segim_new, objects=objects, segstats=segstats, call=call)
 }
 
