@@ -73,9 +73,17 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
   }
+  
+  if(missing(pixscale) & !missing(header)){
+    pixscale=profitGetPixScale(header)
+    if(verbose){print(paste(' - Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
+  }
+  
   hassky=!missing(sky)
   hasskyRMS=!missing(skyRMS)
+  
   image_orig=image
+  
   if(hassky==FALSE){
     if(verbose){print(paste(" - Making initial local estimate of the sky -", round(proc.time()[3]-timestart,3), "sec"))}
     sky=profitSkyEst(image=image, mask=mask, objects=objects, plot=FALSE)$sky
@@ -163,9 +171,17 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
+  
+  if(missing(pixscale) & !missing(header)){
+    pixscale=profitGetPixScale(header)
+    if(verbose){print(paste(' - Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
+  }
+  
   hassky=!missing(sky)
   hasskyRMS=!missing(skyRMS)
+  
   image_orig=image
+  
   if(hassky==FALSE){
     if(verbose){print(paste(" - Making initial local estimate of the sky -", round(proc.time()[3]-timestart,3), "sec"))}
     sky=profitSkyEst(image=image, mask=mask, objects=objects, plot=FALSE)$sky
@@ -199,7 +215,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
     image[mask!=0]=0
   }
   #kernel=profitMakeGaussianPSF(fwhm = expandsigma, dim=dim)
-  maxmat=matrix(min(image, na.rm=T), xlen, ylen)
+  maxmat=matrix(min(image, na.rm=TRUE), xlen, ylen)
   segim_new=matrix(0,xlen,ylen)
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
@@ -275,6 +291,11 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
   }
   
+  if(missing(pixscale) & !missing(header)){
+    pixscale=profitGetPixScale(header)
+    if(verbose){print(paste(' - Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
+  }
+  
   kern = EBImage::makeBrush(size, shape=shape)
   
   if(verbose){print(paste(" - Dilating segments -", round(proc.time()[3]-timestart,3), "sec"))}
@@ -314,6 +335,10 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
 }
 
 profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=FALSE, header){
+  if(missing(pixscale) & !missing(header)){
+    pixscale=profitGetPixScale(header)
+  }
+  
   image=image-sky
   xlen=dim(image)[1]
   ylen=dim(image)[2]
@@ -324,19 +349,26 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=F
   tempDT=tempDT[segID>0,]
   segID=tempDT[,.BY,by=segID]$segID
   val=NULL; x=NULL; y=NULL
+  
   flux=tempDT[,sum(val,na.rm = TRUE),by=segID]$V1
+  mag=profitFlux2Mag(flux=flux, magzero=magzero)
+  
   xcen=tempDT[,.meanwt(x, val),by=segID]$V1
   ycen=tempDT[,.meanwt(y, val),by=segID]$V1
   xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
   ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
   covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
+  
   if(rotstats){
     asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
     flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
+    mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
   }else{
     asymm=NA
     flux_reflect=NA
+    mag_reflect=NA
   }
+  
   corxy=covxy/(xsd*ysd)
   rad=.cov2eigval(xsd, ysd, covxy)
   rad$hi=sqrt(abs(rad$hi))
@@ -344,33 +376,30 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=F
   axrat=rad$lo/rad$hi
   grad=.cov2eigvec(xsd, ysd, covxy)
   ang=(90-atan(grad)*180/pi)%%180
+  
   Nseg=tempDT[,.N,by=segID]$N
   N50seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
   N90seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
+  
   Rseg=sqrt(Nseg/(axrat*pi))*pixscale
   R50seg=sqrt(N50seg/(axrat*pi))*pixscale
   R90seg=sqrt(N90seg/(axrat*pi))*pixscale
+  
   con=R50seg/R90seg
-  # if(!missing(magzero)){
-  mag=profitFlux2Mag(flux=flux, magzero=magzero)
-  mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
+
   SB_N=profitFlux2SB(flux=flux/Nseg, magzero=magzero, pixscale=pixscale)
   SB_N50=profitFlux2SB(flux=flux*0.5/N50seg, magzero=magzero, pixscale=pixscale)
   SB_N90=profitFlux2SB(flux=flux*0.9/N90seg, magzero=magzero, pixscale=pixscale)
+  
   if(!missing(header)){
     coord=magWCSxy2radec(xcen, ycen, header=header)
     RAcen=coord[,1]
     Deccen=coord[,2]
+    
     segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, RAcen=RAcen, Deccen=Deccen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
   }else{
     segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
   }
-  # }else{
-  #   SB_N=flux/Nseg
-  #   SB_N50=flux*0.5/N50seg
-  #   SB_N90=flux*0.9/N90seg
-  #   segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
-  # }
   return=as.data.frame(segstats[order(segID),])
 }
 

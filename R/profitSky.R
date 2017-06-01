@@ -49,7 +49,7 @@ profitSkyEst=function(image, objects, mask, cutlo=cuthi/2, cuthi=sqrt(sum((dim(i
   tempylims=tempmedian$ysd
   tempy=tempmedian$y
   #Calculate worst case sky error- the sd of the medians calculated
-  skyerr=sd(tempy)
+  skyerr=sd(tempy, na.rm=TRUE)
   #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
   weights=1/((tempmedian$x^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
   #Find the weighted mean of the medians

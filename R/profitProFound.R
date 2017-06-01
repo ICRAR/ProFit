@@ -21,6 +21,11 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   if(verbose){print('Running profitProFound:')}
   timestart=proc.time()[3]
   
+  if(missing(pixscale) & !missing(header)){
+    pixscale=profitGetPixScale(header)
+    if(verbose){print(paste('Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
+  }
+  
   hassky=!missing(sky)
   hasskyRMS=!missing(skyRMS)
   

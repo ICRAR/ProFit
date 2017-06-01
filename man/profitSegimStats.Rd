@@ -92,9 +92,8 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
-package="ProFit"))$imDat
-segim=profitMakeSegim(image, magzero=30, plot=TRUE)
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))
+segim=profitMakeSegim(image$imDat, magzero=30, header=image$hdr, verbose=TRUE, plot=TRUE, rotstats=TRUE)
 print(segim$segstats)
 
 #Note row 6 (the central galaxy) gains 0.15 mag of flux due to the missing flux when
@@ -102,8 +101,8 @@ print(segim$segstats)
 #solution (~18.35) than the non-reflected flux (18.55).
 
 segim$segim[35:55, 80:100]=max(segim$segim)+1
-print(profitSegimStats(image, segim$segim, sky=segim$sky, magzero=30))
-profitSegimPlot(image, segim$segim)
+print(profitSegimStats(image$imDat, segim$segim, sky=segim$sky, header=image$hdr))
+profitSegimPlot(image$imDat, segim$segim)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
