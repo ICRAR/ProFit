@@ -19,7 +19,7 @@ License: \tab GPL-3+\cr
 Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon, abind\cr
 LinkingTo: \tab Rcpp\cr
 Depends: \tab R (>= 3.0), Rcpp (>= 0.11.6), magicaxis, FITSio, data.table\cr
-Suggests: \tab knitr, rmarkdown, foreach, doParallel, EBImage, akima, imagere\cr
+Suggests: \tab knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager\cr
 }
 }
 
@@ -29,7 +29,7 @@ Suggests: \tab knitr, rmarkdown, foreach, doParallel, EBImage, akima, imagere\cr
 Maintainer: \packageMaintainer{ProFit}
 }
 \references{
-Robotham A.S.G. et al., in prep
+Robotham A.S.G., et al., 2017, MNRAS, 466, 1513
 }
 \keyword{profile}
 
