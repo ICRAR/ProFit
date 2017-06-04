@@ -70,7 +70,7 @@ profitMakeModel = function(modellist,
 	    psf = profitMakePointSource(image=matrix(0,psfdim[1],psfdim[2]), mag=0, modellist = modellist$psf)
 	    sumpsf = sum(psf)
       psfsumdiff = abs(sumpsf-1)
-      if(!(psfsumdiff < 1e-3))  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-3; ",
+      if(!(psfsumdiff < 1e-2))  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 0.01; ",
         "please adjust your PSF model or psf dimensions until it is properly normalized."))
       psf = psf/sumpsf
 	  }

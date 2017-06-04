@@ -85,8 +85,8 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
       psfdim = psfdim*finesample
       psf = profitMakePointSource(modellist=modellist$psf,finesample=finesample,image=matrix(0,psfdim[1],psfdim[2]))
       sumpsf = sum(psf)
-      psfsumdiff = !abs(sumpsf-1) < 1e-3
-      if(psfsumdiff)  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-3; ",
+      psfsumdiff = !abs(sumpsf-1) < 1e-2
+      if(psfsumdiff)  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-2; ",
         "please adjust your PSF model or psf dimensions until it is properly normalized."))
       psf = psf/sumpsf
     }
@@ -124,10 +124,16 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   {
     psfpad = floor(dim(psf)/2)
     dimcr = dim(calcregion)
-    newregion = matrix(0,dimcr[1]+2*psfpad[1],dimcr[2]+2*psfpad[2])
-    newregion[(1+psfpad[1]):(dimcr[1]+psfpad[1]),(1+psfpad[2]):(dimcr[2]+psfpad[2])] = calcregion
-    calcregion=profitConvolvePSF(newregion,psf+1)
-    calcregion=calcregion>0
+    calcxy = dimcr+2*psfpad
+    if(is.null(benchmarkconvmethods) || ("Bruteconv" %in% benchmarkconvmethods))
+    {
+      newregion = matrix(0,calcxy[1],calcxy[2])
+      newregion[(1+psfpad[1]):(dimcr[1]+psfpad[1]),(1+psfpad[2]):(dimcr[2]+psfpad[2])] = calcregion
+      calcregion=profitConvolvePSF(newregion,psf+1,options=list(method="Bruteconv"))
+      calcregion=calcregion>0
+    } else {
+      calcregion = matrix(TRUE,calcxy[1],calcxy[2])
+    }
   }
   # Note this actually stores whether we are fitting the PSF image for convolution with extended sources
   # It should probably be renamed fitpsfimg but will remain as such for backwards compatibility for now
