@@ -108,7 +108,7 @@ profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100),
       contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box)$image, add=T, col='blue', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
   }
-  clip=magclip(select, estimate = 'lo')
+  suppressWarnings({clip=magclip(select, estimate = 'lo')})
   tempmed=median(clip$x, na.rm=TRUE)
   tempsd=as.numeric(diff(quantile(clip$x, pnorm(c(-1,0)), na.rm=TRUE)))
   return=list(val=c(tempmed, tempsd), clip=clip)
@@ -145,21 +145,26 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), type='bilinear'
   tempmat_sky[is.na(tempmat_sky)]=mean(tempmat_sky, na.rm = TRUE)
   tempmat_skyRMS[is.na(tempmat_skyRMS)]=mean(tempmat_skyRMS, na.rm = TRUE)
   
-  bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
+  if(dim(tempmat_sky)[1]>1){
+    bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
+    
+    if(type=='bilinear'){
+      temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))
+      temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))
+      #Note the following does not work well - akima clips out the outer regions (darn- would be faster!)
+      #temp_bi_sky=akima::bilinear(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
+      #temp_bi_skyRMS=akima::bilinear(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
+    }else if(type=='bicubic'){
+      temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
+      temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
+    }
   
-  if(type=='bilinear'){
-    temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))
-    temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))
-    #Note the following does not work well - akima clips out the outer regions (darn- would be faster!)
-    #temp_bi_sky=akima::bilinear(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
-    #temp_bi_skyRMS=akima::bilinear(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
-  }else if(type=='bicubic'){
-    temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
-    temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
+    temp_bi_sky=matrix(temp_bi_sky, dim(image)[1])
+    temp_bi_skyRMS=matrix(temp_bi_skyRMS, dim(image)[1])
+  }else{
+    temp_bi_sky=matrix(tempmat_sky[1,1], dim(image)[1], dim(image)[2])
+    temp_bi_skyRMS=matrix(tempmat_skyRMS[1,1], dim(image)[1], dim(image)[2])
   }
-
-  temp_bi_sky=matrix(temp_bi_sky, dim(image)[1])
-  temp_bi_skyRMS=matrix(temp_bi_skyRMS, dim(image)[1])
-
+  
   return=list(sky=temp_bi_sky, skyRMS=temp_bi_skyRMS)
 }
