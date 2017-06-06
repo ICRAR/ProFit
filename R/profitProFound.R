@@ -80,7 +80,7 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   
   if(verbose){print(paste('Finding CoG convergence -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
   
-  diffmat=compmat[,2:iters]/compmat[,1:(iters-1)]
+  diffmat=rbind(compmat[,2:iters]/compmat[,1:(iters-1)])
   selseg=.selectCoG(diffmat, threshold)
   
   segim_new=segim$segim

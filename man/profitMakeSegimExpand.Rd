@@ -129,7 +129,7 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{con}{Concentration, \option{R50}/\option{R90}.}
   \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
   \item{flux_reflect}{The flux corrected for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
-  \item{mag}{The \option{flux_reflect} converted to mag using \option{magzero}.}
+  \item{mag_reflect}{The \option{flux_reflect} converted to mag using \option{magzero}.}
   \item{maj}{The weighted standard deviation along the major axis, i.e. the first moment, so ~2 times this would be a typical major axis Kron radius (always in units of pix).}
   \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
   \item{axrat}{The axial ratio as given by min/maj.}

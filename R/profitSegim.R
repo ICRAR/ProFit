@@ -117,7 +117,11 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
     image[mask!=0]=0
   }
   if(verbose){print(paste(" - Watershed de-blending -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
-  segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
+  if(any(image>0)){
+    segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
+  }else{
+    segim=image
+  }
   
   objects=segim>0
   segtab=tabulate(segim)
@@ -146,11 +150,11 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   }else{
     if(verbose){print(" - Skipping making initial local estimate of the sky RMS - User provided sky RMS", quote=FALSE)}
   }
-  if(stats){
+  if(stats & any(image>0)){
     if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
     segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
   }else{
-    if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE", quote=FALSE)}
+    if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE or no segments", quote=FALSE)}
     segstats=NULL
   }
   if(!missing(SBlim) & !missing(magzero)){

@@ -22,10 +22,10 @@ Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 mea
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. Pixels set to 0 are interpretted as sky, and set to zero for calculating object shot-noise. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
+Numeric scalar; user provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
+Numeric scalar; user provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}.  
 }
 }
 \details{
