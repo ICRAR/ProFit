@@ -93,6 +93,8 @@ source("http://bioconductor.org/biocLite.R")
 biocLite("EBImage")
 ```
 
+Be warned, it will probably ask you to update a whole bunch of stuff. Just say **no** and only install \code{EBImage} for now. If something else needs updating or is missing you will get a warning when trying to use it, and you can update those packages as neccessary. If you say yes you will probably sit there for an hour whilst it builds dozens of packages from source.
+
 Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **Cairo**, **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants). For **Cairo** you might need to install the development version, so check this if you are having issues.
 
 Assuming this has all installed successfully, you should now be able to load ProFit within R with the usual:
