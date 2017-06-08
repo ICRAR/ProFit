@@ -28,6 +28,8 @@ Now you have the development version of R installed (hopefully) I would also sug
 
 ### Getting ProFit
 
+#### Binary Install
+
 You can start R simply by typing "R" in your terminal. I would advocate running it from R-Studio though (a much nicer IDE experience for most people).
 
 Within R you can get the pre-built binary from CRAN by running:
@@ -38,7 +40,11 @@ install.packages('ProFit')
 
 The above variant of R will work easily even when you do not have the buld tools or root permission etc.
 
-If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch. First you should make sure you have a sensible looking Makevars file in ~/.R/Makevars:
+#### Source Install
+
+If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch. You need a version of GCC or Clang that supports vaguely modern C++11 features. For Linux users this should be the case for any OS installed in the last 5 years, but for OSX the tool chain tends to be a fair amount older. If you have 10.9 (Mavericks) or newer and the associated X-Code (6+) then you should probably be fine. Other options might be to install a set of more recent tools from Homebrew (see instructions on installing a more modern Clang in the OpenCP and OpenMP document).
+
+First you should make sure you have a sensible looking Makevars file in ~/.R/Makevars:
 
 For GCC it should probably look like this:
 
