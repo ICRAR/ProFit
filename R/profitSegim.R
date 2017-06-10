@@ -14,15 +14,19 @@
 }
 
 .cov2eigval=function(sx,sy,sxy){
-b=-sx^2-sy^2
-c=sx^2*sy^2-sxy^2
+  b=-sx^2-sy^2
+  c=sx^2*sy^2-sxy^2
   return=(list(hi=(-b+sqrt(b^2-4*c))/2,lo=(-b-sqrt(b^2-4*c))/2))
 }
 
 .cov2eigvec=function(sx,sy,sxy){
-eigval=.cov2eigval(sx,sy,sxy)$hi
-eigvec=(sx^2-eigval)/sxy
-  return=(eigvec)
+  eigval=.cov2eigval(sx,sy,sxy)$hi
+  eigvec=(sx^2-eigval)/sxy
+  return=eigvec
+}
+
+.eigvec2ang=function(eigvec){
+  return=(90-atan(eigvec)*180/pi)%%180
 }
 
 .asymm=function(x, y, wt, xcen, ycen){
@@ -378,8 +382,8 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=F
   rad$hi=sqrt(abs(rad$hi))
   rad$lo=sqrt(abs(rad$lo))
   axrat=rad$lo/rad$hi
-  grad=.cov2eigvec(xsd, ysd, covxy)
-  ang=(90-atan(grad)*180/pi)%%180
+  eigvec=.cov2eigvec(xsd, ysd, covxy)
+  ang=.eigvec2ang(eigvec)
   
   Nseg=tempDT[,.N,by=segID]$N
   N50seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1

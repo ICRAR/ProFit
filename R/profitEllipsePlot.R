@@ -1,3 +1,67 @@
+profitGetEllipse=function(x, y, val, xcen, ycen, scale=sqrt(2)){
+  if(is.matrix(x)){
+    if(dim(x)[2]==3){
+      y=x[,2]
+      val=x[,3]
+      x=x[,1]
+    }
+  }
+  if(missing(xcen)){xcen=.meanwt(x, val)}
+  if(missing(ycen)){ycen=.meanwt(y, val)}
+  xsd=sqrt(.varwt(x,val))
+  ysd=sqrt(.varwt(y,val))
+  covxy=.covarwt(x,y,val)
+  rad=.cov2eigval(xsd, ysd, covxy)
+  rad$hi=sqrt(abs(rad$hi))
+  rad$lo=sqrt(abs(rad$lo))
+  axrat=rad$lo/rad$hi
+  eigvec=.cov2eigvec(xsd, ysd, covxy)
+  ang=.eigvec2ang(eigvec)
+  return=c(xcen=xcen, ycen=ycen, radhi=rad$hi*scale, radlo=rad$lo*scale, axrat=axrat, ang=ang, xsd=xsd, ysd=ysd, covxy=covxy)
+}
+
+profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale=1, fixcen=TRUE, plot=TRUE, ...){
+  tempxy=which(segim==segID, arr.ind = T)-0.5
+  tempxy=cbind(tempxy,image[segim==segID])
+  tempxy=tempxy[order(tempxy[,3],decreasing = T),]
+  tempxy=cbind(tempxy,cumsum(tempxy[,3])/sum(tempxy[,3],na.rm=T))
+  tempellipses={}
+  segelllipses=matrix(0,dim(segim)[1],dim(segim)[2])
+  if(fixcen){
+    tempellipse=profitGetEllipse(tempxy[,1:3])
+    xcen=as.numeric(tempellipse['xcen'])
+    ycen=as.numeric(tempellipse['ycen'])
+    for(i in seq(0,1-1/levels,by=1/levels)){
+      segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:2])]=round(i*levels+1,0)
+      tempellipses=rbind(tempellipses,
+                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:3], xcen=xcen, ycen=ycen), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+0.05)))
+                        )
+    }
+  }else{
+    for(i in seq(0,1-1/levels,by=1/levels)){
+      segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:2])]=round(i*levels+1,0)
+      tempellipses=rbind(tempellipses,
+                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:3]), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+0.05)))
+                        )
+    }
+  }
+  SB=profitFlux2SB(tempellipses[,'flux']/tempellipses[,'N'], magzero=magzero, pixscale=pixscale)
+  tempellipses=cbind(segellipseID=1:length(tempellipses[,1]), tempellipses, SB=SB)
+  tempellipses=as.data.frame(tempellipses)
+  if(plot){
+    profitGetEllipsesPlot(image=image, ellipses=tempellipses, ...)
+  }
+  return=list(ellipses=tempellipses, segellipses=segelllipses)
+}
+
+profitGetEllipsesPlot=function(image, ellipses, segellipse='all', ...){
+  magimage(image, ...)
+  if(segellipse[1]=='all'){segellipse=1:length(ellipses[,1])}
+  for(i in segellipse){
+    draw.ellipse(ellipses[ellipses$segellipseID==i,'xcen'], ellipses[ellipses$segellipseID==i,'ycen'], ellipses[ellipses$segellipseID==i,'radhi'], ellipses[ellipses$segellipseID==i,'radlo'], ellipses[ellipses$segellipseID==i,'ang']+90, border='red')
+  }
+}
+
 profitEllipse=function(x, y, flux, xcen=0, ycen=0, ang=0, axrat=1, box=0){
   if(is.matrix(x)){
     z=x
