@@ -90,7 +90,8 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   bmi = 1
   times = numeric()
   times[bmi] = proc.time()[['elapsed']]
-  if("Bruteconv" %in% names) {
+  dobrute = "Bruteconv" %in% names 
+  if(dobrute) {
     docalcregion = !is.null(calcregion)
     for(i in benchi) imagebrutec1 = profitBruteConv(data$image$z,data$psf$z,data$calcregion,docalcregion)
   
@@ -124,6 +125,24 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
     }
     bmi = bmi + 1
     times[bmi] = proc.time()[['elapsed']]
+  }
+  
+  if(dobrute)
+  {
+    for(ffttype in c("FFTconv","FFTWconv"))
+    {
+      if(ffttype %in% names)
+      {
+        if(ffttype == "FFTconv") diffabs = imagefftr
+        else diffabs = imagefftw
+        diffabs = diffabs - imagebrutec1
+        diffabsr = range(diffabs)
+        print(paste0("Diff. ",ffttype," range: ", sprintf("%.4e %.4e", diffabsr[1], diffabsr[2])))
+        diffabs = diffabs/imagebrutec1
+        diffabsr = range(diffabs)
+        print(paste0("Rel. diff. ",ffttype," range: ", sprintf("%.4e %.4e", diffabsr[1], diffabsr[2])))
+      }
+    }
   }
   
   ntimes = length(times)
