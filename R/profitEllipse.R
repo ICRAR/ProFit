@@ -1,27 +1,47 @@
-profitGetEllipse=function(x, y, val, xcen, ycen, scale=sqrt(2)){
+.ellipsesd=function(par=c(0,0,0), x, y, xcen, ycen){
+  return=sd(profitEllipse(x=x, y=y, flux=1, xcen=xcen, ycen=ycen, ang=par[1], axrat=10^par[2], box=par[3])[,1])
+}
+
+profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), dobox=FALSE){
   if(is.matrix(x)){
     if(dim(x)[2]==3){
       y=x[,2]
-      val=x[,3]
+      z=x[,3]
       x=x[,1]
     }
   }
-  if(missing(xcen)){xcen=.meanwt(x, val)}
-  if(missing(ycen)){ycen=.meanwt(y, val)}
-  xsd=sqrt(.varwt(x,val))
-  ysd=sqrt(.varwt(y,val))
-  covxy=.covarwt(x,y,val)
+  if(missing(xcen)){xcen=.meanwt(x, z)}
+  if(missing(ycen)){ycen=.meanwt(y, z)}
+  xsd=sqrt(.varwt(x,z))
+  ysd=sqrt(.varwt(y,z))
+  covxy=.covarwt(x,y,z)
+  corxy=covxy/(xsd*ysd)
   rad=.cov2eigval(xsd, ysd, covxy)
   rad$hi=sqrt(abs(rad$hi))
   rad$lo=sqrt(abs(rad$lo))
-  radav=.meanwt(sqrt((x-xcen)^2+(y-ycen)^2), val)
+  radav=.meanwt(sqrt((x-xcen)^2+(y-ycen)^2), z)
   axrat=rad$lo/rad$hi
   eigvec=.cov2eigvec(xsd, ysd, covxy)
   ang=.eigvec2ang(eigvec)
-  return=c(xcen=xcen, ycen=ycen, radhi=rad$hi*scale, radlo=rad$lo*scale, radav=radav, axrat=axrat, ang=ang, xsd=xsd, ysd=ysd, covxy=covxy)
+  if(dobox){
+    lower=c(0,-2,-1)
+    upper=c(180,0,1)
+    tempoptim=optim(par=c(ang, log10(axrat), box=0), fn=.ellipsesd, x=x, y=y, xcen=xcen, ycen=ycen, method='L-BFGS-B', lower=lower, upper=upper)$par
+    if(tempoptim[1]>lower[1] & tempoptim[1]<upper[1] & tempoptim[2]>lower[2] & tempoptim[2]<upper[2] & tempoptim[3]>lower[3] & tempoptim[3]<upper[3]){
+      ang=tempoptim[1]
+      axrat=10^tempoptim[2]
+      box=tempoptim[3]
+    }else{
+      box=0
+    }
+  }else{
+    box=0
+  }
+  return=c(xcen=xcen, ycen=ycen, radhi=rad$hi*scale, radlo=rad$lo*scale, radav=radav, axrat=axrat, ang=ang, box=box, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy)
 }
 
-profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale=1, fixcen=TRUE, plot=TRUE, ...){
+profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale=1, fixcen=TRUE, dobox=FALSE, plot=TRUE, ...){
+  if(missing(segim)){segim=segID}
   tempxy=which(segim==segID, arr.ind = T)-0.5
   tempxy=cbind(tempxy,image[segim==segID])
   tempxy=tempxy[order(tempxy[,3],decreasing = T),]
@@ -34,21 +54,21 @@ profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale
     xcen=as.numeric(tempellipse['xcen'])
     ycen=as.numeric(tempellipse['ycen'])
     for(i in isolevels){
-      segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:2])]=round(i*levels+1,0)
+      segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:2])]=round(i*levels+1,0)
       tempellipses=rbind(tempellipses,
-                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:3], xcen=xcen, ycen=ycen), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+0.05)))
+                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:3], xcen=xcen, ycen=ycen, dobox=dobox), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+1/levels)))
                         )
     }
   }else{
     for(i in isolevels){
-      segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:2])]=round(i*levels+1,0)
+      segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:2])]=round(i*levels+1,0)
       tempellipses=rbind(tempellipses,
-                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,1:3]), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+0.05)))
+                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:3]), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+1/levels)))
                         )
     }
   }
   SB=profitFlux2SB(tempellipses[,'flux']/tempellipses[,'N'], magzero=magzero, pixscale=pixscale)
-  tempellipses=cbind(segellipseID=1:length(tempellipses[,1]), fluxfrac=isolevels, tempellipses, SB=SB)
+  tempellipses=cbind(segellipseID=1:length(tempellipses[,1]), fluxfrac=isolevels+1/levels, tempellipses, SB=SB)
   tempellipses=as.data.frame(tempellipses)
   if(plot){
     profitGetEllipsesPlot(image=image, ellipses=tempellipses, ...)
@@ -56,26 +76,35 @@ profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale
   return=list(ellipses=tempellipses, segellipses=segelllipses)
 }
 
-profitGetEllipsesPlot=function(image, ellipses, segellipse='all', col=rep(rainbow(10,s=0.5),4), border='auto', lty=1, lwd=1, ...){
+profitGetEllipsesPlot=function(image, ellipses, segellipseID='all', col=rep(rainbow(10,s=0.5),4), border='auto', lty='auto', lwd='auto', ...){
   magimage(image, col=col, ...)
-  if(segellipse[1]=='all'){segellipse=1:length(ellipses[,1])}
-  for(i in segellipse){
-    if(border=='auto'){
-      if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)<0.5){
-        lty=1; lwd=0.5; tempborder='black'
-      }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)==0.5){
-        lty=1; lwd=2; tempborder='black'
-      }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)>0.5 & round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)<0.9){
-        lty=1; lwd=1; tempborder='black'
-      }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)==0.9){
-        lty=1; lwd=2; tempborder='black'
-      }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)>0.9){
-        lty=2; lwd=1; tempborder='black'
-      }
-    }else{
-      tempborder=border
+  if(!requireNamespace("plotrix", quietly = TRUE)){
+    stop('The plotrix package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
+  }
+  if(segellipseID[1]=='all'){segellipseID=1:length(ellipses[,1])}
+  for(i in segellipseID){
+    if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)<0.5){
+      if(border=='auto'){tempborder='black'}else{tempborder=border}
+      if(lty=='auto'){templty=1}else{templty=lty}
+      if(lwd=='auto'){templwd=0.5}else{templwd=lwd}
+    }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)==0.5){
+      if(border=='auto'){tempborder='black'}else{tempborder=border}
+      if(lty=='auto'){templty=1}else{templty=lty}
+      if(lwd=='auto'){templwd=2}else{templwd=lwd}
+    }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)>0.5 & round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)<0.9){
+      if(border=='auto'){tempborder='black'}else{tempborder=border}
+      if(lty=='auto'){templty=1}else{templty=lty}
+      if(lwd=='auto'){templwd=1}else{templwd=lwd}
+    }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)==0.9){
+      if(border=='auto'){tempborder='black'}else{tempborder=border}
+      if(lty=='auto'){templty=1}else{templty=lty}
+      if(lwd=='auto'){templwd=2}else{templwd=lwd}
+    }else if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)>0.9){
+      if(border=='auto'){tempborder='black'}else{tempborder=border}
+      if(lty=='auto'){templty=2}else{templty=lty}
+      if(lwd=='auto'){templwd=1}else{templwd=lwd}
     }
-    draw.ellipse(ellipses[ellipses$segellipseID==i,'xcen'], ellipses[ellipses$segellipseID==i,'ycen'], ellipses[ellipses$segellipseID==i,'radhi'], ellipses[ellipses$segellipseID==i,'radlo'], ellipses[ellipses$segellipseID==i,'ang']+90, border=tempborder, lty=lty, lwd=lwd)
+    plotrix::draw.ellipse(ellipses[ellipses$segellipseID==i,'xcen'], ellipses[ellipses$segellipseID==i,'ycen'], ellipses[ellipses$segellipseID==i,'radhi'], ellipses[ellipses$segellipseID==i,'radlo'], ellipses[ellipses$segellipseID==i,'ang']+90, border=tempborder, lty=templty, lwd=templwd)
   }
 }
 
@@ -96,7 +125,7 @@ profitEllipse=function(x, y, flux, xcen=0, ycen=0, ang=0, axrat=1, box=0){
   xmod=rad*sin(angmod)
   ymod=rad*cos(angmod)
   xmod=xmod/axrat
-  radmod=(xmod^(2+box)+ymod^(2+box))^(1/(2+box))
+  radmod=(abs(xmod)^(2+box)+abs(ymod)^(2+box))^(1/(2+box))
   output=cbind(rad=radmod, flux=flux)
   output=output[order(radmod),]
   return(output)

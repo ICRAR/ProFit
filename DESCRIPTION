@@ -10,5 +10,5 @@ License: GPL-3
 Imports: fftw, R2Cuba, RColorBrewer, LaplacesDemon
 Depends: R (>= 3.0), Rcpp (>= 0.11.6), magicaxis (>= 2.0.2), celestial (>= 1.4.1), FITSio, data.table
 LinkingTo: Rcpp
-Suggests: knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager
+Suggests: knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager, plotrix
 VignetteBuilder: knitr
