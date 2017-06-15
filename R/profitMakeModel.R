@@ -121,9 +121,6 @@ profitMakeModel = function(modellist,
 		}
 	}
 
-	# What type of convolution we do
-	convolve = !is.null(convopt) && !is.null(convopt$convolver)
-
 	# Let's start collecting profiles now...
 	profiles = list()
 	# Collect the profiles that the user specified
@@ -255,7 +252,7 @@ profitMakeModel = function(modellist,
 		  for(pname in profilenames) {
 		    ncomp = length(whichcomponents[[pname]])
 		    if(length(modellist[[pname]]) > 0 && (ncomp > 0)) {
-		      profiles[[pname]][['convolve']] = rep(convolve, ncomp)
+		      profiles[[pname]][['convolve']] = rep(haspsf, ncomp)
 		    }
 		  }
 		}
@@ -289,7 +286,10 @@ profitMakeModel = function(modellist,
 	if( !is.null(omp_threads) ) {
 		model[['omp_threads']] = omp_threads
 	}
-	if (convolve) {
+
+	# If no convolver is explicitly given the Model will automatically create
+	# one internally (if necessary). Thus, it's fine to not always specify one
+	if (!is.null(convopt) && !is.null(convopt$convolver)) {
 		model[['convolver']] = convopt$convolver
 	}
 
