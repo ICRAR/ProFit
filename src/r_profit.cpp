@@ -575,7 +575,7 @@ extern "C" {
 	 */
 //	static const R_CallMethodDef callMethods[]  = {
 //		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
-//		{"R_profit_make_convolve", (DL_FUNC) &R_profit_convolve, 4},
+//		{"R_profit_convolve", (DL_FUNC) &R_profit_convolve, 4},
 //		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
 //		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
 //		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
