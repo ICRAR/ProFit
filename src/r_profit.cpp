@@ -408,6 +408,71 @@ SEXP _R_profit_has_fftw() {
 }
 
 /*
+ * Convolver exposure support follows
+ * ----------------------------------------------------------------------------
+ */
+struct convolver_wrapper {
+	shared_ptr<Convolver> convolver;
+};
+
+static
+void _R_profit_convolver_finalizer(SEXP ptr) {
+
+	if(!R_ExternalPtrAddr(ptr)) {
+		return;
+	}
+
+	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(ptr));
+	wrapper->convolver.reset();
+	delete wrapper;
+	R_ClearExternalPtr(ptr); /* not really needed */
+
+}
+
+static
+SEXP _R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP omp_threads,
+                              SEXP use_fft, SEXP reuse_psf_fft, SEXP fft_effort)
+{
+
+	Model m;
+	m.width = (unsigned int)INTEGER(image_dimensions)[0];
+	m.height = (unsigned int)INTEGER(image_dimensions)[1];
+	m.psf = _read_image(psf, &m.psf_width, &m.psf_height);
+
+#ifdef PROFIT_OPENMP
+	if( omp_threads != R_NilValue ) {
+		m.omp_threads = (unsigned int)Rf_asInteger(omp_threads);
+	}
+#endif /* PROFIT_OPENMP */
+#ifdef PROFIT_FFTW
+	if (use_fft != R_NilValue ) {
+		m.use_fft = (bool)Rf_asLogical(use_fft);
+	}
+	if (reuse_psf_fft != R_NilValue ) {
+		m.reuse_psf_fft = (bool)Rf_asLogical(reuse_psf_fft);
+	}
+	if (fft_effort != R_NilValue) {
+		m.fft_effort = FFTPlan::effort_t((unsigned int)Rf_asInteger(fft_effort));
+	}
+#endif /* PROFIT_FFTW */
+
+	convolver_wrapper *wrapper = new convolver_wrapper();
+	std::string error;
+	try {
+		wrapper->convolver = m.create_convolver();
+	} catch (std::exception &e) {
+		Rf_error(e.what());
+		return R_NilValue;
+	}
+
+	SEXP r_convolver = R_MakeExternalPtr(wrapper, Rf_install("Convolver"), R_NilValue);
+	PROTECT(r_convolver);
+	R_RegisterCFinalizerEx(r_convolver, _R_profit_convolver_finalizer, TRUE);
+	UNPROTECT(1);
+	return r_convolver;
+}
+
+/*
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
  */
@@ -462,6 +527,23 @@ SEXP _R_profit_make_model(SEXP model_list) {
 			Rf_error("Calc region has different dimensions than the image");
 			return R_NilValue;
 		}
+	}
+
+	/* A convolver, if any */
+	SEXP convolver = _get_list_element(model_list, "convolver");
+	if (convolver != R_NilValue) {
+		if( TYPEOF(convolver) != EXTPTRSXP ) {
+			Rf_error("Given convolver not of proper type\n");
+			return R_NilValue;
+		}
+
+		convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(convolver));
+		if (!wrapper) {
+			Rf_error("No Convolver found in convolver list item");
+			return R_NilValue;
+		}
+
+		m.convolver = wrapper->convolver;
 	}
 
 #ifdef PROFIT_OPENCL
@@ -563,6 +645,11 @@ extern "C" {
 		return _R_profit_make_model(model_list);
 	}
 
+	SEXP R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP omp_threads,
+	                             SEXP use_fft, SEXP reuse_psf_fft, SEXP fft_effort) {
+		return _R_profit_make_convolver(image_dimensions, psf, omp_threads, use_fft, reuse_psf_fft, fft_effort);
+	}
+
 	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
 		return _R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region);
 	}
@@ -594,6 +681,7 @@ extern "C" {
 	 */
 //	static const R_CallMethodDef callMethods[]  = {
 //		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
+//		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 6},
 //		{"R_profit_convolve", (DL_FUNC) &R_profit_convolve, 4},
 //		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
 //		{"R_profit_has_fftw", (DL_FUNC) &R_profit_has_fftw, 0},
