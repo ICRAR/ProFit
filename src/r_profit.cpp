@@ -500,7 +500,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	vector<double> model_image;
 	try {
 		model_image = m.evaluate();
-	} catch (invalid_parameter &e) {
+	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while calculating model: " << e.what() << endl;
 		Rf_error(ss.str().c_str());
