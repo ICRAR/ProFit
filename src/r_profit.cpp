@@ -393,6 +393,21 @@ SEXP _R_profit_has_openmp() {
 }
 
 /*
+ * FFTW-related functionality follows
+ * ----------------------------------------------------------------------------
+ */
+static
+SEXP _R_profit_has_fftw() {
+	return Rf_ScalarLogical(
+#ifdef PROFIT_FFTW
+		TRUE
+#else
+		FALSE
+#endif /* PROFIT_FFTW */
+	);
+}
+
+/*
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
  */
@@ -556,6 +571,10 @@ extern "C" {
 		return _R_profit_has_openmp();
 	}
 
+	SEXP R_profit_has_fftw() {
+		return _R_profit_has_fftw();
+	}
+
 	SEXP R_profit_openclenv_info() {
 		return _R_profit_openclenv_info();
 	}
@@ -577,20 +596,26 @@ extern "C" {
 //		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
 //		{"R_profit_convolve", (DL_FUNC) &R_profit_convolve, 4},
 //		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
+//		{"R_profit_has_fftw", (DL_FUNC) &R_profit_has_fftw, 0},
 //		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
 //		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
 //		{NULL, NULL, 0}
 //	};
 //
-//	void R_init_ProFit(DllInfo *dll) {
-//		/* Using registered symbols only from now on */
+	void R_init_ProFit(DllInfo *dll) {
+#ifdef PROFIT_FFTW
+		FFTPlan::initialize();
+#endif
+		/* Using registered symbols only from now on */
 //		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
 //		R_useDynamicSymbols(dll, FALSE);
 //		R_forceSymbols(dll, TRUE);
-//	}
-//
-//	void R_unload_ProFit(DllInfo *info) {
-//		/* no-op */
-//	}
+	}
+
+	void R_unload_ProFit(DllInfo *info) {
+#ifdef PROFIT_FFTW
+		FFTPlan::finalize();
+#endif
+	}
 
 }
