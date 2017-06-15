@@ -80,13 +80,14 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitGetEllipsesPlot}}, \code{\link{profitGetEllipse}}
+\code{\link{profitGetEllipsesPlot}}, \code{\link{profitGetEllipse}}, \code{\link{profitDrawEllipse}}
 }
 \examples{
 \dontrun{
-image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", 'KiDS/G266035segim.fits', package="ProFit"))$imDat
-ellipses = profitGetEllipses(image=image, segim=segim, segID=4)
+image = readFITS(system.file("extdata", 'KiDS/G278109fitim.fits', package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", 'KiDS/G278109segim.fits', package="ProFit"))$imDat
+ellipses_nobox = profitGetEllipses(image=image, segim=segim, levels=20, dobox=FALSE)
+ellipses_box = profitGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

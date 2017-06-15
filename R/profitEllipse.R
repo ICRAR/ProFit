@@ -2,7 +2,7 @@
   return=sd(profitEllipse(x=x, y=y, flux=1, xcen=xcen, ycen=ycen, ang=par[1], axrat=10^par[2], box=par[3])[,1])
 }
 
-profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), dobox=FALSE){
+profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), pixscale=1, dobox=FALSE, plot=FALSE, ...){
   if(is.matrix(x)){
     if(dim(x)[2]==3){
       y=x[,2]
@@ -37,7 +37,10 @@ profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), dobox=FALSE){
   }else{
     box=0
   }
-  return=c(xcen=xcen, ycen=ycen, radhi=rad$hi*scale, radlo=rad$lo*scale, radav=radav, axrat=axrat, ang=ang, box=box, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy)
+  if(plot){
+    profitDrawEllipse(xcen=xcen, ycen=ycen, rad=rad$hi*scale, axrat=axrat, ang=ang, box=box, ...)
+  }
+  return=c(xcen=xcen, ycen=ycen, radhi=rad$hi*scale*pixscale, radlo=rad$lo*scale*pixscale, radav=radav*pixscale, axrat=axrat, ang=ang, box=box, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy)
 }
 
 profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale=1, fixcen=TRUE, dobox=FALSE, plot=TRUE, ...){
@@ -56,14 +59,14 @@ profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale
     for(i in isolevels){
       segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:2])]=round(i*levels+1,0)
       tempellipses=rbind(tempellipses,
-                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:3], xcen=xcen, ycen=ycen, dobox=dobox), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+1/levels)))
+                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:3], xcen=xcen, ycen=ycen, pixscale=pixscale, dobox=dobox), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+1/levels)))
                         )
     }
   }else{
     for(i in isolevels){
       segelllipses[ceiling(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:2])]=round(i*levels+1,0)
       tempellipses=rbind(tempellipses,
-                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:3]), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+1/levels)))
+                        c(profitGetEllipse(tempxy[tempxy[,4]>i & tempxy[,4]<i+1/levels,1:3], pixscale=pixscale, dobox=dobox), flux=sum(tempxy[tempxy[,4]>i & tempxy[,4]<i+0.05,3], na.rm=T), N=length(which(tempxy[,4]>i & tempxy[,4]<i+1/levels)))
                         )
     }
   }
@@ -71,16 +74,13 @@ profitGetEllipses=function(image, segim, segID=1, levels=10, magzero=0, pixscale
   tempellipses=cbind(segellipseID=1:length(tempellipses[,1]), fluxfrac=isolevels+1/levels, tempellipses, SB=SB)
   tempellipses=as.data.frame(tempellipses)
   if(plot){
-    profitGetEllipsesPlot(image=image, ellipses=tempellipses, ...)
+    profitGetEllipsesPlot(image=image, ellipses=tempellipses, pixscale=pixscale, ...)
   }
   return=list(ellipses=tempellipses, segellipses=segelllipses)
 }
 
-profitGetEllipsesPlot=function(image, ellipses, segellipseID='all', col=rep(rainbow(10,s=0.5),4), border='auto', lty='auto', lwd='auto', ...){
+profitGetEllipsesPlot=function(image, ellipses, segellipseID='all', pixscale=1, col=rep(rainbow(10,s=0.5),4), border='auto', lty='auto', lwd='auto', ...){
   magimage(image, col=col, ...)
-  if(!requireNamespace("plotrix", quietly = TRUE)){
-    stop('The plotrix package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
-  }
   if(segellipseID[1]=='all'){segellipseID=1:length(ellipses[,1])}
   for(i in segellipseID){
     if(round(ellipses[ellipses$segellipseID==i,'fluxfrac'],2)<0.5){
@@ -104,7 +104,23 @@ profitGetEllipsesPlot=function(image, ellipses, segellipseID='all', col=rep(rain
       if(lty=='auto'){templty=2}else{templty=lty}
       if(lwd=='auto'){templwd=1}else{templwd=lwd}
     }
-    plotrix::draw.ellipse(ellipses[ellipses$segellipseID==i,'xcen'], ellipses[ellipses$segellipseID==i,'ycen'], ellipses[ellipses$segellipseID==i,'radhi'], ellipses[ellipses$segellipseID==i,'radlo'], ellipses[ellipses$segellipseID==i,'ang']+90, border=tempborder, lty=templty, lwd=templwd)
+    profitDrawEllipse(xcen=ellipses[ellipses$segellipseID==i,'xcen'], ycen=ellipses[ellipses$segellipseID==i,'ycen'], rad=ellipses[ellipses$segellipseID==i,'radhi']/pixscale, axrat=ellipses[ellipses$segellipseID==i,'axrat'], ang=ellipses[ellipses$segellipseID==i,'ang'], box=ellipses[ellipses$segellipseID==i,'box'], col=tempborder, lty=templty, lwd=templwd)
+  }
+}
+
+profitDrawEllipse=function(xcen=0, ycen=0, rad=1, axrat=1, ang=0, box=0, ...){
+  tempellipse=data.frame(xcen=xcen, ycen=ycen, rad=rad, axrat=axrat, ang=ang, box=box)
+  tempcirc=seq(0, 2*pi, length=1000)
+  xtemp=cos(tempcirc)
+  ytemp=sin(tempcirc)
+  for(i in 1:length(xcen)){
+    boxscale=1/((abs(xtemp)^(2+tempellipse$box[i])+abs(ytemp)^(2+tempellipse$box[i]))^(1/(2+tempellipse$box[i])))
+    angtemp = (pi/180)*(tempellipse$ang[i]+90)
+    radlo = tempellipse$rad[i]*tempellipse$axrat[i]
+    radhi = tempellipse$rad[i]
+    x = xcen + boxscale*(radhi * cos(tempcirc) * cos(angtemp) - radlo * sin(tempcirc) * sin(angtemp))
+    y = ycen + boxscale*(radhi * cos(tempcirc) * sin(angtemp) + radlo * sin(tempcirc) * cos(angtemp))
+    lines(x=x, y=y, ...)
   }
 }
 

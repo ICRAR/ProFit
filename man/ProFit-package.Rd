@@ -14,7 +14,7 @@
 Package: \tab ProFit\cr
 Type: \tab Package\cr
 Version: \tab 1.0.4\cr
-Date: \tab 2017-04-25\cr
+Date: \tab 2017-06-15\cr
 License: \tab GPL-3+\cr
 Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon, abind\cr
 LinkingTo: \tab Rcpp\cr

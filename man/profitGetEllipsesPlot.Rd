@@ -8,8 +8,9 @@ Create diagnostic plot of estimated iso-photal ellipses
 Generates a useful plot merging a rapidly changing colour mapping with the estimated elipses.
 }
 \usage{
-profitGetEllipsesPlot(image, ellipses, segellipseID = "all",
-col = rep(rainbow(10, s = 0.5), 4), border = "auto", lty = 'auto', lwd = 'auto', ...)
+profitGetEllipsesPlot(image, ellipses, segellipseID = "all", pixscale = 1,
+col = rep(rainbow(10, s = 0.5), 4), border = "auto", lty = 'auto',
+lwd = 'auto', ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,6 +22,9 @@ Data.frame; the ellipse information, but in practice the \option{ellipse} list o
 }
   \item{segellipseID}{
 Integer vector; the segellipseID to be plotted. The default of 'all' will display all ellipses.
+}
+  \item{pixscale}{
+Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). This should only be used if the radii columns in \option{ellipses} have already been scaled by the pixel scale.
 }
   \item{col}{
 The colour palette to be used for the background \option{image}. The default is chosen to be high contrast, to make it easier to comapre the computed ellipses with the underlying iso-photes.
@@ -49,7 +53,7 @@ Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitGetEllipses}}, \code{\link{profitGetEllipse}}
+\code{\link{profitGetEllipses}}, \code{\link{profitGetEllipse}}, \code{\link{profitDrawEllipse}}
 }
 \examples{
 \dontrun{
