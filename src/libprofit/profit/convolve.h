@@ -30,6 +30,7 @@
 #include <memory>
 #include <vector>
 
+#include "profit/common.h"
 #include "profit/fft.h"
 
 namespace profit
@@ -97,7 +98,7 @@ public:
 	std::vector<double> convolve(
 	         const std::vector<double> &src, unsigned int src_width, unsigned int src_height,
 	         const std::vector<double> &krn, unsigned int krn_width, unsigned int krn_height,
-	         const std::vector<bool> &mask);
+	         const std::vector<bool> &mask) override;
 
 };
 
