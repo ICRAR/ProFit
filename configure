@@ -140,9 +140,9 @@ cmakedefine_sed_replacement() {
 	name=$1
 	eval value=\$$1
 	if [ "${value}" = "yes" ]; then
-		echo "s/#cmakedefine $name/#define $name/"
+		echo "s/#cmakedefine $name\$/#define $name/"
 	else
-		echo "s/#cmakedefine $name/#undef $name/"
+		echo "s/#cmakedefine $name\$/#undef $name/"
 	fi
 }
 
