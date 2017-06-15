@@ -13,7 +13,7 @@ whichcomponents=list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "
 coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
 acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion,
 docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
-convopt=list(method="Bruteconv"), psfdim = c(25, 25), openclenv = NULL,
+convopt=NULL, psfdim = c(25, 25), openclenv = NULL,
 omp_threads = NULL, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -64,7 +64,7 @@ If provided the profile is computed out to this many times Re, after this point 
 Logical; where the profile has been truncated via \option{remax} this specifies whether the profile should be rescaled since the total integrated flux will be less than without truncation. In practice this means image values are increases by 1/0.9999 for the default case (where the profile is truncated at the point where 99.99\% of flux is contained).  
 }
   \item{convopt}{
-A list specifying options for convolution. Currently ignored.
+A list specifying options for convolution. Currently the only named item used is convolver (which can be obtained via \code{\link{profitMakeConvolver}}; if specified, it is used to perform the convolution of the model (if convolution is required).
 }
   \item{psfdim}{
 The size of the PSF image to be constructed if a psf modellist is being provided to construct an analytic PSF model.
@@ -227,7 +227,7 @@ Aaron Robotham & Dan Taranu
 }
 
 \seealso{
-\code{\link{profitConvolvePSF}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaCoreSersic}} \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaKing}}, \code{\link{profitCubaBrokenExp}}, \code{\link{profitRemakeModellist}}
+\code{\link{profitMakeConvolver}}, \code{\link{profitCubaSersic}}, \code{\link{profitCubaCoreSersic}} \code{\link{profitCubaMoffat}}, \code{\link{profitCubaFerrer}}, \code{\link{profitCubaKing}}, \code{\link{profitCubaBrokenExp}}, \code{\link{profitRemakeModellist}}
 }
 \examples{
 modellist = list(
