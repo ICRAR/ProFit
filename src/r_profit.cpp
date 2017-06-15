@@ -430,8 +430,8 @@ void _R_profit_convolver_finalizer(SEXP ptr) {
 }
 
 static
-SEXP _R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP omp_threads,
-                              SEXP use_fft, SEXP reuse_psf_fft, SEXP fft_effort)
+SEXP _R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP use_fft,
+                              SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads)
 {
 
 	Model m;
@@ -645,9 +645,9 @@ extern "C" {
 		return _R_profit_make_model(model_list);
 	}
 
-	SEXP R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP omp_threads,
-	                             SEXP use_fft, SEXP reuse_psf_fft, SEXP fft_effort) {
-		return _R_profit_make_convolver(image_dimensions, psf, omp_threads, use_fft, reuse_psf_fft, fft_effort);
+	SEXP R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP use_fft,
+	                             SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads) {
+		return _R_profit_make_convolver(image_dimensions, psf, use_fft, reuse_psf_fft, fft_effort, omp_threads);
 	}
 
 	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {

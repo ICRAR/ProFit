@@ -28,11 +28,11 @@ profitHasFFTW = function() {
 	.Call('R_profit_has_fftw')
 }
 
-profitMakeConvolver = function(image_dimensions, psf, omp_threads = 1,
-	use_fft = FALSE, reuse_psf_fft = TRUE, fft_effort = 0)
+profitMakeConvolver = function(image_dimensions, psf, use_fft = FALSE,
+		reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1)
 {
 	i = as.integer
 	l = as.logical
-	.Call('R_profit_make_convolver', i(image_dimensions), psf, omp_threads,
-	                                 l(use_fft), l(reuse_psf_fft), i(fft_effort))
+	.Call('R_profit_make_convolver', i(image_dimensions), psf, l(use_fft),
+	      l(reuse_psf_fft), i(fft_effort), i(omp_threads))
 }
