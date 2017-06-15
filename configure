@@ -98,6 +98,44 @@ OMP
 	echo "NOT_FOUND"
 }
 
+has_fftw_headers() {
+	has_headers=no
+	echo "#include <fftw3.h>\nint main(){return 0;}" > $tmpdir/fftw_headers.c
+	$CC $CFLAGS -c $tmpdir/fftw_headers.c -o $tmpdir/fftw_headers.o 2> /dev/null
+	if [ $? -eq 0 ]; then
+		has_headers=yes
+	fi
+	echo $has_headers
+}
+
+has_fftw_lib() {
+	has_lib=no
+	echo "int main(){ fftw_cleanup(); }" > $tmpdir/fftw_lib.c
+	$CC $CFLAGS -c $tmpdir/fftw_lib.c -o $tmpdir/fftw_lib.o 2> /dev/null
+	if [ $? -eq 0 ]; then
+		$CC $LDFLAGS $tmpdir/fftw_lib.o -o $tmpdir/fftw_lib -lfftw3 2> /dev/null
+		if [ $? -eq 0 ]; then
+			has_lib="yes"
+		fi
+	fi
+	echo $has_lib
+}
+
+has_fftw_omp_lib() {
+	has_lib=no
+	if [ "$PROFIT_OPENMP" = "yes" ]; then
+		echo "int main(){ fftw_plan_with_nthreads(); }" > $tmpdir/fftw_omp_lib.c
+		$CC $CFLAGS -c $tmpdir/fftw_omp_lib.c -o $tmpdir/fftw_omp_lib.o 2> /dev/null
+		if [ $? -eq 0 ]; then
+			$CC $LDFLAGS $tmpdir/fftw_omp_lib.o -o $tmpdir/fftw_omp_lib -lfftw3 -lfftw3_omp 2> /dev/null
+			if [ $? -eq 0 ]; then
+				has_lib="yes"
+			fi
+		fi
+	fi
+	echo $has_lib
+}
+
 cmakedefine_sed_replacement() {
 	name=$1
 	eval value=\$$1
@@ -170,7 +208,6 @@ tmpdir=.profit_tmp
 # Check for OpenCL headers, libs and max OpenCL version
 # Skip if required
 #
-cl_cflags=""
 cl_libflags=""
 if [ -n "${PROFIT_NO_OPENCL}" ]; then
 	echo "- Skipping OpenCL detection"
@@ -220,10 +257,36 @@ else
 fi
 
 #
+# Check for FFTW support, skip if required
+#
+fftw_libflags=""
+if [ -n "${PROFIT_NO_FFTW}" ]; then
+	echo "- Skipping FFTW detection"
+else
+	fftw_headers=`has_fftw_headers`
+	if [ "$fftw_headers" = "yes" ]; then
+		echo "- Found FFTW headers"
+		fftw_lib=`has_fftw_lib`
+		if [ "$fftw_lib" = "yes" ]; then
+			echo "- Found FFTW lib"
+			fftw_libflags="-lfftw3"
+			PROFIT_FFTW=yes
+			fftw_omp_lib=`has_fftw_omp_lib`
+			if [ "$fftw_omp_lib" = "yes" ]; then
+				echo "- Found FFTW OpenMP support lib"
+				PROFIT_FFTW_OPENMP=yes
+				fftw_libflags="$fftw_libflags -lfftw3_omp"
+			fi
+		fi
+	fi
+fi
+
+
+#
 # Cleanup and replace the values in Makevars.in and produce Makevars
 #
 rm -rf $tmpdir
-profit_CPPFLAGS="$cl_cflags $omp_cflags"
-profit_LIBS="$cl_libflags $omp_libflags"
+profit_CPPFLAGS="$omp_cflags"
+profit_LIBS="$cl_libflags $omp_libflags $fftw_libflags"
 generate_makevars
 generate_config_h
