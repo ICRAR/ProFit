@@ -32,8 +32,6 @@
 #include "profit/utils.h"
 
 
-using namespace std;
-
 namespace profit
 {
 
@@ -50,6 +48,11 @@ namespace profit
  *       B = box parameter
  */
 double BrokenExponentialProfile::evaluate_at(double x, double y) const {
+
+	using std::abs;
+	using std::exp;
+	using std::pow;
+
 	double box = this->box + 2.;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	return exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
@@ -76,6 +79,10 @@ void BrokenExponentialProfile::validate() {
 }
 
 double BrokenExponentialProfile::integrate_at(double r) const {
+
+	using std::exp;
+	using std::pow;
+
 	return r * exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
 }
 
@@ -109,14 +116,14 @@ double BrokenExponentialProfile::adjust_acc() {
 	return this->acc;
 }
 
-BrokenExponentialProfile::BrokenExponentialProfile(const Model &model, const string &name) :
+BrokenExponentialProfile::BrokenExponentialProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	h1(1), h2(1), rb(1), a(1)
 {
 	// no-op
 }
 
-bool BrokenExponentialProfile::parameter_impl(const string &name, double val) {
+bool BrokenExponentialProfile::parameter_impl(const std::string &name, double val) {
 
 	if( RadialProfile::parameter_impl(name, val) ) {
 		return true;

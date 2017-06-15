@@ -6,10 +6,13 @@ src/*.so
 src/*.dll
 inst/doc
 .crancompress
-Makevars
 rsconnect
 vignettes/rsconnect
 ProFit.Rproj
+
+# These are generated at build time
+Makevars
+src/libprofit/profit/config.h
 
 # Eclipse files
 .cproject

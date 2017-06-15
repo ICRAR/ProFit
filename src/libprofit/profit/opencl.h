@@ -33,6 +33,7 @@
 #include <memory>
 #include <string>
 
+#include "profit/config.h"
 #include "profit/common.h"
 
 /*
@@ -59,7 +60,7 @@
 /*
  * GCC 6 gives lots of "ignoring attributes on template arguments" warnings
  * Until the cl2.hpp header files doesn't get a proper fix (it's taken from
- * the officla Kronos github) we simply turn the warnings off.
+ * the official Kronos github) we simply turn the warnings off.
  */
 #if defined __GNUC__ && __GNUC__>=6
 # pragma GCC diagnostic ignored "-Wignored-attributes"
@@ -214,6 +215,6 @@ std::shared_ptr<OpenCL_env> get_opencl_environment(
 
 } /* namespace profit */
 
-#endif /* PROFIT_MODEL_H */
+#endif /* PROFIT_OPENCL_H */
 
 #endif /* PROFIT_OPENCL */

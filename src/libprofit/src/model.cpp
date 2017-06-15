@@ -41,8 +41,6 @@
 #include "profit/utils.h"
 
 
-using namespace std;
-
 namespace profit {
 
 Model::Model() :
@@ -52,6 +50,7 @@ Model::Model() :
 	psf(), psf_width(0), psf_height(0),
 	psf_scale_x(1), psf_scale_y(1),
 	calcmask(),
+	convolver(),
 	dry_run(false),
 #ifdef PROFIT_OPENCL
 	opencl_env(),
@@ -59,6 +58,11 @@ Model::Model() :
 #ifdef PROFIT_OPENMP
 	omp_threads(0),
 #endif /* PROFIT_OPENMP */
+#ifdef PROFIT_FFTW
+	use_fft(false),
+	reuse_psf_fft(false),
+	fft_effort(FFTPlan::ESTIMATE),
+#endif /* PROFIT_FFTW */
 	profiles()
 {
 	// no-op
@@ -68,9 +72,11 @@ bool Model::has_profiles() const {
 	return this->profiles.size() > 0;
 }
 
-shared_ptr<Profile> Model::add_profile(const string &profile_name) {
+std::shared_ptr<Profile> Model::add_profile(const std::string &profile_name) {
 
-	shared_ptr<Profile> profile;
+	using std::make_shared;
+
+	std::shared_ptr<Profile> profile;
 	if( profile_name == "sky" ) {
 		profile = make_shared<SkyProfile>(*this, profile_name);
 	}
@@ -96,7 +102,7 @@ shared_ptr<Profile> Model::add_profile(const string &profile_name) {
 		profile = make_shared<PsfProfile>(*this, profile_name);
 	}
 	else {
-		ostringstream ss;
+		std::ostringstream ss;
 		ss << "Unknown profile name: " << profile_name;
 		throw invalid_parameter(ss.str());
 	}
@@ -105,7 +111,7 @@ shared_ptr<Profile> Model::add_profile(const string &profile_name) {
 	return profile;
 }
 
-vector<double> Model::evaluate() {
+std::vector<double> Model::evaluate() {
 
 	/* Check limits */
 	if( !this->width ) {
@@ -128,7 +134,7 @@ vector<double> Model::evaluate() {
 	for(auto profile: this->profiles) {
 		if( profile->do_convolve() ) {
 			if( this->psf.empty() ) {
-				ostringstream ss;
+				std::ostringstream ss;
 				ss << "Profile " << profile->get_name() << " requires convolution but no psf was provided";
 				throw invalid_parameter(ss.str());
 			}
@@ -139,7 +145,7 @@ vector<double> Model::evaluate() {
 				throw invalid_parameter("Model's psf height is 0");
 			}
 			if( this->psf_width * this->psf_height != this->psf.size() ) {
-				ostringstream ss;
+				std::ostringstream ss;
 				ss << "PSF dimensions (" << psf_width << "x" << psf_height <<
 				      ") don't correspond to PSF length (" << psf.size() << ")";
 				throw invalid_parameter(ss.str());
@@ -148,7 +154,7 @@ vector<double> Model::evaluate() {
 		}
 	}
 
-	vector<double> image(this->width * this->height, 0);
+	std::vector<double> image(this->width * this->height, 0);
 
 	/*
 	 * Validate all profiles.
@@ -171,9 +177,9 @@ vector<double> Model::evaluate() {
 	 * probably we should study what is the best way to go here (e.g.,
 	 * parallelize only if we have more than 2 or 3 profiles)
 	 */
-	vector<vector<double>> profile_images;
+	std::vector<std::vector<double>> profile_images;
 	for(auto &profile: this->profiles) {
-		vector<double> profile_image(this->width * this->height, 0);
+		std::vector<double> profile_image(this->width * this->height, 0);
 		profile->evaluate(profile_image);
 		profile_images.push_back(move(profile_image));
 	}
@@ -194,9 +200,12 @@ vector<double> Model::evaluate() {
 		it++;
 	}
 	if( do_convolve ) {
-		vector<double> psf(this->psf);
+		std::vector<double> psf(this->psf);
 		normalize(psf);
-		image = convolve(image, this->width, this->height, psf, this->psf_width, this->psf_height, this->calcmask);
+		if (!convolver) {
+			convolver = create_convolver();
+		}
+		image = convolver->convolve(image, width, height, psf, psf_width, psf_height, calcmask);
 	}
 	it = profile_images.begin();
 	for(auto &profile: this->profiles) {
@@ -210,8 +219,28 @@ vector<double> Model::evaluate() {
 	return image;
 }
 
-map<string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
-	map<string, std::shared_ptr<ProfileStats>> stats;
+
+std::shared_ptr<Convolver> Model::create_convolver() const
+{
+#ifndef PROFIT_FFTW
+	return std::make_shared<BruteForceConvolver>();
+#else
+	if (!use_fft) {
+		return std::make_shared<BruteForceConvolver>();
+	}
+
+	int threads = 1;
+#ifdef PROFIT_FFTW_OPENMP
+	threads = omp_threads;
+#endif /* PROFIT_FFTW_OPENMP */
+	return std::make_shared<FFTConvolver>(width, height, psf_width, psf_height,
+	                                      fft_effort, threads, reuse_psf_fft);
+#endif /* PROFIT_FFTW */
+}
+
+
+std::map<std::string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
+	std::map<std::string, std::shared_ptr<ProfileStats>> stats;
 	for(auto p: profiles) {
 		stats[p->get_name()] = p->get_stats();
 	}
@@ -219,8 +248,8 @@ map<string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
 }
 
 #ifdef PROFIT_DEBUG
-map<string, map<int, int>> Model::get_profile_integrations() const {
-	map<string, map<int, int>> profile_integrations;
+std::map<std::string, std::map<int, int>> Model::get_profile_integrations() const {
+	std::map<std::string, std::map<int, int>> profile_integrations;
 	for(auto p: profiles) {
 		RadialProfile *rp = dynamic_cast<RadialProfile *>(p.get());
 		if( rp ) {

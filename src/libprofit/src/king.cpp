@@ -32,8 +32,6 @@
 #include "profit/utils.h"
 
 
-using namespace std;
-
 namespace profit
 {
 
@@ -51,6 +49,9 @@ namespace profit
  *       B = box parameter
  */
 double KingProfile::evaluate_at(double x, double y) const {
+
+	using std::abs;
+	using std::pow;
 
 	double box = this->box + 2.;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
@@ -79,6 +80,9 @@ void KingProfile::validate() {
 }
 
 double KingProfile::integrate_at(double r) const {
+
+	using std::pow;
+
 	if( r < rt ) {
 		return r * pow(1/pow(1 + pow(r/rc, 2), 1/a) - 1/pow(1 + pow(rt/rc, 2), 1/a), a);
 	}
@@ -113,14 +117,14 @@ double KingProfile::adjust_acc() {
 	return this->acc;
 }
 
-KingProfile::KingProfile(const Model &model, const string &name) :
+KingProfile::KingProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	rc(1), rt(3), a(2)
 {
 	// no-op
 }
 
-bool KingProfile::parameter_impl(const string &name, double val) {
+bool KingProfile::parameter_impl(const std::string &name, double val) {
 
 	if( RadialProfile::parameter_impl(name, val) ) {
 		return true;

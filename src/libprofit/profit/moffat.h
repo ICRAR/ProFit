@@ -26,6 +26,7 @@
 #ifndef PROFIT_MOFFAT_H
 #define PROFIT_MOFFAT_H
 
+#include "profit/config.h"
 #include "profit/radial.h"
 
 namespace profit

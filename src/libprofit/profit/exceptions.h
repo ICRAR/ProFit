@@ -30,6 +30,8 @@
 #include <exception>
 #include <string>
 
+#include "profit/config.h"
+
 namespace profit
 {
 
@@ -67,6 +69,25 @@ private:
 
 };
 #endif /* PROFIT_OPENCL */
+
+
+#ifdef PROFIT_FFTW
+/**
+ * Exception class thrown when an error occurs while dealing with FFT.
+ */
+class fft_error : public std::exception
+{
+
+public:
+	fft_error(const std::string &what);
+	~fft_error() throw();
+	const char *what() const throw();
+
+private:
+	std::string m_what;
+
+};
+#endif /* PROFIT_FFTW */
 
 } /* namespace profit */
 

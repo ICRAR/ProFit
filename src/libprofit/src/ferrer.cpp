@@ -33,8 +33,6 @@
 #include "profit/utils.h"
 
 
-using namespace std;
-
 namespace profit
 {
 
@@ -50,6 +48,10 @@ namespace profit
  *              B = box parameter
  */
 double FerrerProfile::evaluate_at(double x, double y) const {
+
+	using std::abs;
+	using std::pow;
+
 	double box = this->box + 2.;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	double r_factor = r/rscale;
@@ -76,6 +78,8 @@ void FerrerProfile::validate() {
 }
 
 double FerrerProfile::get_lumtot(double r_box) {
+
+	using std::pow;
 
 	/*
 	 * Wolfram Alpha gave for g_factor:
@@ -114,7 +118,7 @@ double FerrerProfile::adjust_acc() {
 	return this->acc;
 }
 
-FerrerProfile::FerrerProfile(const Model &model, const string &name) :
+FerrerProfile::FerrerProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	rout(3), a(1), b(1)
 {
@@ -122,7 +126,7 @@ FerrerProfile::FerrerProfile(const Model &model, const string &name) :
 	this->acc = 1;
 }
 
-bool FerrerProfile::parameter_impl(const string &name, double val) {
+bool FerrerProfile::parameter_impl(const std::string &name, double val) {
 
 	if( RadialProfile::parameter_impl(name, val) ) {
 		return true;

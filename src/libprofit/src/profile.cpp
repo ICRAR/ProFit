@@ -33,8 +33,6 @@
 #include "profit/profile.h"
 
 
-using namespace std;
-
 namespace profit {
 
 ProfileStats::ProfileStats() :
@@ -59,7 +57,7 @@ RadialProfileStats::RadialProfileStats() :
 	// no-op
 }
 
-Profile::Profile(const Model &model, const string &name) :
+Profile::Profile(const Model &model, const std::string &name) :
 	model(model),
 	name(name),
 	stats(),
@@ -77,36 +75,36 @@ bool Profile::do_convolve() const {
 	return convolve;
 }
 
-const string& Profile::get_name() const {
+const std::string& Profile::get_name() const {
 	return name;
 }
 
-shared_ptr<ProfileStats> Profile::get_stats() const {
+std::shared_ptr<ProfileStats> Profile::get_stats() const {
 	return stats;
 }
 
 template <typename T>
-void Profile::set_parameter(const string &name, T val) {
+void Profile::set_parameter(const std::string &name, T val) {
 	if( !parameter_impl(name, val) ) {
-		ostringstream os;
+		std::ostringstream os;
 		os << "Unknown " << typeid(val).name() << " parameter '" << name << "'";
 		throw invalid_parameter(os.str());
 	}
 }
 
-void Profile::parameter(const string &name, bool val) {
+void Profile::parameter(const std::string &name, bool val) {
 	set_parameter<bool>(name, val);
 }
 
-void Profile::parameter(const string &name, double val) {
+void Profile::parameter(const std::string &name, double val) {
 	set_parameter<double>(name, val);
 }
 
-void Profile::parameter(const string &name, unsigned int val) {
+void Profile::parameter(const std::string &name, unsigned int val) {
 	set_parameter<unsigned int>(name, val);
 }
 
-bool Profile::parameter_impl(const string &name, bool val) {
+bool Profile::parameter_impl(const std::string &name, bool val) {
 
 	if( name == "convolve" ) {
 		convolve = val;
@@ -116,11 +114,11 @@ bool Profile::parameter_impl(const string &name, bool val) {
 	return false;
 }
 
-bool Profile::parameter_impl(const string &name, double val) {
+bool Profile::parameter_impl(const std::string &name, double val) {
 	return false;
 }
 
-bool Profile::parameter_impl(const string &name, unsigned int val) {
+bool Profile::parameter_impl(const std::string &name, unsigned int val) {
 	return false;
 }
 

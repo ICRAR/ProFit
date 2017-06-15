@@ -32,6 +32,9 @@
 #include <string>
 #include <vector>
 
+#include "profit/config.h"
+#include "profit/convolve.h"
+#include "profit/fft.h"
 #include "profit/opencl.h"
 
 namespace profit
@@ -91,6 +94,18 @@ public:
 	 *          ``image[y*width + x]``
 	 */
 	std::vector<double> evaluate();
+
+	/**
+	 * Creates and returns a new Convolver instance suitable to be used by this
+	 * Model's settings (i.e., image width/height, psf width/heigh, and number
+	 * of OpenMP threads, if supported).
+	 *
+	 * This method does not set the internal convolver to the returned instance;
+	 * this must be done by the user.
+	 *
+	 * @return A convolver suitable to be used with this model's settings.
+	 */
+	std::shared_ptr<Convolver> create_convolver() const;
 
 #ifdef PROFIT_DEBUG
 	std::map<std::string, std::map<int, int>> get_profile_integrations() const;
@@ -163,6 +178,13 @@ public:
 	std::vector<bool> calcmask;
 
 	/**
+	 * The object used to carry out the convolution, if necessary.
+	 * If a convolver is present before calling `evaluate` then it is used.
+	 * If missing, then a new one is created internally.
+	 */
+	std::shared_ptr<Convolver> convolver;
+
+	/**
 	 * Whether the actual evaluation of profiles should be skipped or not.
 	 * Profile validation still occurs.
 	 */
@@ -180,6 +202,26 @@ public:
 	 */
 	unsigned int omp_threads;
 #endif /* PROFIT_OPENMP */
+
+#ifdef PROFIT_FFTW
+	/**
+	 * Whether or not this Model try to use FFT-based convolution.
+	 * If a convolver is set, it overrides this setting.
+	 */
+	bool use_fft;
+
+	/**
+	 * Whether or not a copy of the FFT'd version of the PSF should be kept
+	 * by the FFT-based convolver (if used).
+	 */
+	bool reuse_psf_fft;
+
+	/**
+	 * How much effort should be used to create the FFT plans used by the
+	 * convolver. Used only if `use_fft` is set and no convolver is set.
+	 */
+	FFTPlan::effort_t fft_effort;
+#endif /* PROFIT_FFTW */
 
 private:
 
