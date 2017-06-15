@@ -406,8 +406,8 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	vector<bool> mask;
 
 	SEXP dimensions = _get_list_element(model_list, "dimensions");
-	img_w = (unsigned int)REAL(dimensions)[0];
-	img_h = (unsigned int)REAL(dimensions)[1];
+	img_w = (unsigned int)INTEGER(dimensions)[0];
+	img_h = (unsigned int)INTEGER(dimensions)[1];
 
 	SEXP magzero = _get_list_element(model_list, "magzero");
 	if( magzero == R_NilValue ) {

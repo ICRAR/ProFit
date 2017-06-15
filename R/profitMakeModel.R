@@ -271,7 +271,7 @@ profitMakeModel = function(modellist,
 	# Build the top-level model structure
 	model = list(
 		magzero = magzero,
-		dimensions = dimbase,
+		dimensions = as.integer(dimbase),
 		scale_x = scale_x,
 		scale_y = scale_y,
 		profiles = profiles,
