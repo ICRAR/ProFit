@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <string>
+#include <stdexcept>
 
 #include "profit/exceptions.h"
 #include "profit/fft.h"
