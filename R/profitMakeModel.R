@@ -5,7 +5,7 @@ profitMakeModel = function(modellist,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
-                           convopt=list(method="Bruteconv"), psfdim=c(25,25),
+                           convopt=NULL, psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
 
 	stopifnot(is.integer(finesample) && finesample >= 1)
@@ -121,12 +121,11 @@ profitMakeModel = function(modellist,
 		}
 	}
 
+	# What type of convolution we do
+	convolve = !is.null(convopt) && !is.null(convopt$convolver)
+
 	# Let's start collecting profiles now...
 	profiles = list()
-
-	stopifnot(!is.null(convopt$method) && is.character(convopt$method))
-	usebruteconv = convopt$method == "Bruteconv"
-
 	# Collect the profiles that the user specified
 	for(cname in profilenames) {
 	  ncomponents = 0
@@ -256,7 +255,7 @@ profitMakeModel = function(modellist,
 		  for(pname in profilenames) {
 		    ncomp = length(whichcomponents[[pname]])
 		    if(length(modellist[[pname]]) > 0 && (ncomp > 0)) {
-		      profiles[[pname]][['convolve']] = rep(usebruteconv, ncomp)
+		      profiles[[pname]][['convolve']] = rep(convolve, ncomp)
 		    }
 		  }
 		}
@@ -290,12 +289,8 @@ profitMakeModel = function(modellist,
 	if( !is.null(omp_threads) ) {
 		model[['omp_threads']] = omp_threads
 	}
-
-	# Hack to avoid adding point sources to the image if requesting FFT convolution, because libprofit doesn't support it (yet)
-	# TODO: Remove this after adding FFTW convolution to libprofit. R's built-in FFT never seems to be faster so it can go
-	if(!usebruteconv) {
-	  model$profiles$psf = NULL
-	  model$profiles$sky = NULL
+	if (convolve) {
+		model[['convolver']] = convopt$convolver
 	}
 
 	# Go, go, go!
@@ -304,19 +299,6 @@ profitMakeModel = function(modellist,
 		return(NULL)
 	}
 	dim(basemat) = dimbase
-	if(!usebruteconv) {
-    basemat = profitConvolvePSF(basemat, psf, calcregion, docalcregion, options = convopt)
-    # Re-add point sources/sky if they exist
-    model$profiles = list()
-    model$psf = NULL
-    if(!is.null(profiles$psf)) model$profiles$psf = profiles$psf
-    if(!is.null(profiles$sky)) model$profiles$sky = profiles$sky
-    if(length(model$profiles) > 0) {
-      # Work-around for now until this is fixed in libprofit
-      model$calcregion = T | calcregion
-      basemat = basemat + .Call("R_profit_make_model",model)
-    }
-	}
 
 	# Up to this point basemat has been convolved already
 	# That means that we're explicitly ignoring the convopt parameter
