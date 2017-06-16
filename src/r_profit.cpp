@@ -694,33 +694,43 @@ extern "C" {
 	}
 
 	/*
+	 * Defined in ProFit.cpp and generated in RcppExports.cpp
+	 * Needed here so we can register all exported symbols
+	 */
+	SEXP ProFit_profitDownsample(SEXP, SEXP);
+	SEXP ProFit_profitUpsample(SEXP, SEXP);
+
+	/*
 	 * Registering the methods above at module loading time
 	 * This should speed symbol lookup, and anyway it's considered a better
 	 * practice.
-	 *
-	 * TODO: The Rcpp-related routines should be included in this list too
-	 *       which is currently not the case. We need to decide how to list
-	 *       them here; otherwise .Calls to them from R will not succeed
 	 */
-//	static const R_CallMethodDef callMethods[]  = {
-//		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
-//		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 6},
-//		{"R_profit_convolve", (DL_FUNC) &R_profit_convolve, 4},
-//		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
-//		{"R_profit_has_fftw", (DL_FUNC) &R_profit_has_fftw, 0},
-//		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
-//		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
-//		{NULL, NULL, 0}
-//	};
-//
+	static const R_CallMethodDef callMethods[]  = {
+
+		/* Defined in this module */
+		{"R_profit_make_model",     (DL_FUNC) &R_profit_make_model,     1},
+		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 6},
+		{"R_profit_convolve",       (DL_FUNC) &R_profit_convolve,       4},
+		{"R_profit_has_openmp",     (DL_FUNC) &R_profit_has_openmp,     0},
+		{"R_profit_has_fftw",       (DL_FUNC) &R_profit_has_fftw,       0},
+		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
+		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
+
+		/* Defined in ProFit.cpp and generated in RcppExports.cpp */
+		{"ProFit_profitDownsample", (DL_FUNC) &ProFit_profitDownsample, 2},
+		{"ProFit_profitUpsample",   (DL_FUNC) &ProFit_profitUpsample,   2},
+
+		/* Sentinel */
+		{NULL, NULL, 0}
+	};
+
 	void R_init_ProFit(DllInfo *dll) {
 #ifdef PROFIT_FFTW
 		FFTPlan::initialize();
 #endif
 		/* Using registered symbols only from now on */
-//		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
-//		R_useDynamicSymbols(dll, FALSE);
-//		R_forceSymbols(dll, TRUE);
+		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
+		R_useDynamicSymbols(dll, FALSE);
 	}
 
 	void R_unload_ProFit(DllInfo *info) {
