@@ -93,7 +93,8 @@ Aaron Robotham
 \examples{
 \dontrun{
 image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))
-segim=profitMakeSegim(image$imDat, magzero=30, header=image$hdr, verbose=TRUE, plot=TRUE, rotstats=TRUE)
+segim=profitMakeSegim(image$imDat, magzero=30, header=image$hdr, verbose=TRUE, plot=TRUE,
+                      rotstats=TRUE)
 print(segim$segstats)
 
 #Note row 6 (the central galaxy) gains 0.15 mag of flux due to the missing flux when
