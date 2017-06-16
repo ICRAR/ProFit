@@ -86,8 +86,21 @@ Aaron Robotham
 \dontrun{
 image = readFITS(system.file("extdata", 'KiDS/G278109fitim.fits', package="ProFit"))$imDat
 segim = readFITS(system.file("extdata", 'KiDS/G278109segim.fits', package="ProFit"))$imDat
-ellipses_nobox = profitGetEllipses(image=image, segim=segim, levels=20, dobox=FALSE)
-ellipses_box = profitGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE)
+ellipses_nobox = profitGetEllipses(image=image, segim=segim, levels=20, dobox=FALSE,
+pixscale=0.2)
+ellipses_box = profitGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE,
+pixscale=0.2)
+
+magplot(ellipses_box$ellipses$radhi, ellipses_nobox$ellipses$SB, ylim=c(25,17),
+grid=TRUE, type='l')
+#A simple bulge+disk surface brightness profile:
+rlocs=seq(0.1,30,by=0.1)
+bulge=profitRadialSersic(rlocs, mag=17.5, re=2, nser=6)
+disk=profitRadialSersic(rlocs, mag=17.3, re=13, nser=1)
+lines(rlocs, profitFlux2SB(bulge, pixscale=0.2), col='red')
+lines(rlocs, profitFlux2SB(disk, pixscale=0.2), col='blue')
+lines(rlocs, profitFlux2SB(bulge+disk, pixscale=0.2), col='green')
+#To get correct magnitudes you would need to modify the components by the axrat.
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
