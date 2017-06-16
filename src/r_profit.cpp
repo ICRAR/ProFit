@@ -17,10 +17,33 @@ using namespace std;
 
 static
 vector<double> _read_image(SEXP r_image, unsigned int *im_width, unsigned int *im_height) {
+
 	*im_width = Rf_nrows(r_image);
 	*im_height = Rf_ncols(r_image);
-	double *r_image_ptr = REAL(r_image);
-	vector<double> image(r_image_ptr, r_image_ptr + (*im_width * *im_height));
+	unsigned int size = *im_width * *im_height;
+
+	double *image_real_ptr;
+	int *image_int_ptr;
+	vector<double> image;
+	switch (TYPEOF(r_image)) {
+
+		case REALSXP:
+			image_real_ptr = REAL(r_image);
+			image = vector<double>(image_real_ptr, image_real_ptr + size);
+			break;
+
+		case INTSXP:
+			image_int_ptr = INTEGER(r_image);
+			image = vector<double>(size);
+			std::copy(image_int_ptr, image_int_ptr + size, image.begin());
+			break;
+
+		default:
+			Rf_error("Image not in one of the supported formats (integer, double)");
+			image = {};
+			break;
+	}
+
 	return image;
 }
 
@@ -36,7 +59,7 @@ vector<bool> _read_mask(SEXP r_mask, unsigned int *m_width, unsigned int *m_heig
 static
 SEXP _get_list_element(SEXP list, const char *name) {
 	SEXP names = Rf_getAttrib(list, R_NamesSymbol);
-	for(unsigned int i=0; i!=Rf_length(list); i++) {
+	for(int i=0; i < Rf_length(list); i++) {
 		if( !strcmp(name, CHAR(STRING_ELT(names, i))) ) {
 			return VECTOR_ELT(list, i);
 		}
