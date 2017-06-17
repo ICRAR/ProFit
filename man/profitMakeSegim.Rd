@@ -9,8 +9,9 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, SBlim, magzero, pixscale = 1, sky, skyRMS, header,
-verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+pixcut = 5, skycut = 2, SBlim, magzero = 0, pixscale = 1, sky, skyRMS, header,
+verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, sortcol = "segID",
+decreasing = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -71,6 +72,12 @@ Logical; should statistics on the segmented objects be returned? If \option{magz
   \item{rotstats}{
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
+  \item{sortcol}{
+Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
+}
+  \item{decreasing}{
+Logical; if FALSE (default) the segmentation statistics data.frame will be sorted in increasing order, if TRUE the data.frame will be sorted in decreasing order.
+}
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
 }
@@ -127,6 +134,10 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
+  \item{flux_err}{The estimated total error in the flux for the segment.}
+  \item{mag_err}{The estimated total error in the magnitude for the segment.}
+  \item{flux_err_sky}{The sky subtraction component of the flux error.}
+  \item{flux_err_skyRMS}{The sky RMS component of the flux error.}
 }
 \references{
 See ?EBImage::watershed

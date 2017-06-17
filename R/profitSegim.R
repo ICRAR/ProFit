@@ -67,7 +67,7 @@
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){print(' - Running profitMakeSegim:', quote=FALSE)}
   timestart = proc.time()[3]
@@ -156,7 +156,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   }
   if(stats & any(image>0)){
     if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE or no segments", quote=FALSE)}
     segstats=NULL
@@ -172,7 +172,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){print(' - Running profitMakeSegimExpand:', quote=FALSE)}
   timestart = proc.time()[3]
@@ -272,10 +272,10 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   }
   
   if(stats){
-    print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)
-    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
+    if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
   }else{
-    print(" - Skipping segmentation statistics - segstats set to FALSE", quote=FALSE)
+    if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE", quote=FALSE)}
     segstats=NULL
   }
   
@@ -290,7 +290,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){print(' - Running profitMakeSegimDilate:', quote=FALSE)}
   timestart = proc.time()[3]
@@ -326,7 +326,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   
   if(stats & !missing(image)){
     if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
-    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE", quote=FALSE)}
     segstats=NULL
@@ -342,7 +342,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats, call=call)
 }
 
-profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=FALSE, header){
+profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, pixscale=1, rotstats=FALSE, header, sortcol='segID', decreasing=FALSE){
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
   }
@@ -353,23 +353,36 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=F
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
   locs=expand.grid(1:xlen,1:ylen)-0.5
-  tempDT=data.table(x=locs[,1],y=locs[,2],val=as.numeric(image),segID=as.integer(segim))
+  tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky), skyRMS=as.numeric(skyRMS))
   tempDT=tempDT[segID>0,]
   segID=tempDT[,.BY,by=segID]$segID
-  val=NULL; x=NULL; y=NULL
   
-  flux=tempDT[,sum(val,na.rm = TRUE),by=segID]$V1
+  x=NULL; y=NULL; flux=NULL; sky=NULL; skyRMS=NULL
+  
+  flux=tempDT[,sum(flux, na.rm=TRUE),by=segID]$V1
   mag=profitFlux2Mag(flux=flux, magzero=magzero)
   
-  xcen=tempDT[,.meanwt(x, val),by=segID]$V1
-  ycen=tempDT[,.meanwt(y, val),by=segID]$V1
-  xsd=tempDT[,sqrt(.varwt(x,val)),by=segID]$V1
-  ysd=tempDT[,sqrt(.varwt(y,val)),by=segID]$V1
-  covxy=tempDT[,.covarwt(x,y,val),by=segID]$V1
+  Nseg=tempDT[,.N,by=segID]$N
+  N50seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux)>=0.5)),by=segID]$V1
+  N90seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux)>=0.1)),by=segID]$V1
+  
+  flux_err_sky=tempDT[,sd(sky, na.rm=TRUE),by=segID]$V1*Nseg
+  flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)),by=segID]$V1
+  flux_err=sqrt(flux_err_sky^2+flux_err_skyRMS^2)
+  mag_err=(2.5/log(10))*abs(flux_err/flux)
+  
+  xcen=tempDT[,.meanwt(x, flux),by=segID]$V1
+  ycen=tempDT[,.meanwt(y, flux),by=segID]$V1
+  xsd=tempDT[,sqrt(.varwt(x,flux)),by=segID]$V1
+  ysd=tempDT[,sqrt(.varwt(y,flux)),by=segID]$V1
+  covxy=tempDT[,.covarwt(x,y,flux),by=segID]$V1
+  
+  pad=10^ceiling(log10(ylen))
+  uniqueID=ceiling(xcen)*pad+ceiling(ycen)
   
   if(rotstats){
-    asymm=tempDT[,.asymm(x,y,val),by=segID]$V1
-    flux_reflect=tempDT[,.reflect(x,y,val),by=segID]$V1
+    asymm=tempDT[,.asymm(x,y,flux),by=segID]$V1
+    flux_reflect=tempDT[,.reflect(x,y,flux),by=segID]$V1
     mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
   }else{
     asymm=NA
@@ -385,10 +398,6 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=F
   eigvec=.cov2eigvec(xsd, ysd, covxy)
   ang=.eigvec2ang(eigvec)
   
-  Nseg=tempDT[,.N,by=segID]$N
-  N50seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.5)),by=segID]$V1
-  N90seg=tempDT[,length(which(cumsum(sort(val))/sum(val)>=0.1)),by=segID]$V1
-  
   Rseg=sqrt(Nseg/(axrat*pi))*pixscale
   R50seg=sqrt(N50seg/(axrat*pi))*pixscale
   R90seg=sqrt(N90seg/(axrat*pi))*pixscale
@@ -403,12 +412,13 @@ profitSegimStats=function(image, segim, sky=0, magzero=0, pixscale=1, rotstats=F
     coord=magWCSxy2radec(xcen, ycen, header=header)
     RAcen=coord[,1]
     Deccen=coord[,2]
-    
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, RAcen=RAcen, Deccen=Deccen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
   }else{
-    segstats=data.table(segID=segID, xcen=xcen, ycen=ycen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang)
+    RAcen=NA
+    Deccen=NA
   }
-  return=as.data.frame(segstats[order(segID),])
+    
+    segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, RAcen=RAcen, Deccen=Deccen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS)
+  return=as.data.frame(segstats[order(segstats[[sortcol]], decreasing=decreasing),])
 }
 
 profitSegimPlot=function(image, segim, mask, sky=0, ...){

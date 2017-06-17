@@ -16,7 +16,7 @@
   return=tempout
 }
 
-profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100, 100), header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
+profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100, 100), header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol="segID", decreasing=FALSE, ...){
   call=match.call()
   if(verbose){print('Running profitProFound:', quote=FALSE)}
   timestart=proc.time()[3]
@@ -111,7 +111,7 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
     
     if(stats & !missing(image)){
       if(verbose){print(paste('Calculating final segstats -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
-      segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
+      segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
       segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
     }else{
       if(verbose){print("Skipping sementation statistics - segstats set to FALSE", quote=FALSE)}

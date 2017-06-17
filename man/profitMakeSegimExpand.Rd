@@ -3,18 +3,19 @@
 \alias{profitMakeSegimDilate}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Segmentation Map Expansion
+Segmentation Map Expansion and Dilation
 }
 \description{
 A high level utility to achieve decent quality image segmentation based on the expansion of a pre-existing segmentation map. It uses smoothing and local flux weighted comparisons to grow the current segmentation map so as to better identify distinct objects for use in, e.g., \code{\link{profitSetupData}}.
 }
 \usage{
-profitMakeSegimExpand(image, segim, mask, objects, skycut = 1, SBlim, magzero,
+profitMakeSegimExpand(image, segim, mask, objects, skycut = 1, SBlim, magzero = 0,
 pixscale = 1, sigma = 1, smooth = TRUE, expandsigma = 5, expand = "all", sky, skyRMS,
-header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, sortcol = "segID",
+decreasing = FALSE, ...)
 profitMakeSegimDilate(image, segim, mask, size = 9, shape = "disc", expand = "all",
-magzero, pixscale = 1, sky = 0, header, verbose = FALSE, plot = FALSE, stats = TRUE,
-rotstats = FALSE, ...)
+magzero = 0, pixscale = 1, sky = 0, skyRMS = 0, header, verbose = FALSE, plot = FALSE,
+stats = TRUE, rotstats = FALSE, sortcol = "segID", decreasing = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -61,10 +62,10 @@ Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels.
 Character scalar; the shape of the diltion kernel. See \code{makeBrush}.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
@@ -80,6 +81,12 @@ Logical; should statistics on the segmented objects be returned?
 }
   \item{rotstats}{
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
+}
+  \item{sortcol}{
+Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
+}
+  \item{decreasing}{
+Logical; if FALSE (default) the segmentation statistics data.frame will be sorted in increasing order, if TRUE the data.frame will be sorted in decreasing order.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
@@ -134,6 +141,10 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
+  \item{flux_err}{The estimated total error in the flux for the segment.}
+  \item{mag_err}{The estimated total error in the magnitude for the segment.}
+  \item{flux_err_sky}{The sky subtraction component of the flux error.}
+  \item{flux_err_skyRMS}{The sky RMS component of the flux error.}
 }
 
 \author{
