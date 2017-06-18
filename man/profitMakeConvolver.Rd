@@ -73,27 +73,33 @@ Rodrigo Tobar
 \code{\link{profitHasFFTW}}
 }
 \examples{
-psf = matrix(1:10000, 100, 100)
+psf = profitMakeGaussianPSF(dim=c(100,100))
 has_fft = profitHasFFTW()
 convolver = NULL
 if (has_fft) {
-	convolver = profitMakeConvolver(c(300, 300), psf, use_fft=TRUE, fft_effort=0, omp_threads=2)
+	convolver = profitMakeConvolver(c(400, 400), psf, use_fft=TRUE, fft_effort=1,
+	omp_threads=2)
 }
 model = list(
-	sersic = list(
-		xcen   = c(180, 60),
-		ycen   = c(90, 10),
-		mag = c(15, 13),
-		re  = c(14, 5),
-		nser  = c(3, 10),
-		ang  = c(46, 80),
-		axrat  = c(0.4, 0.6),
-		box = c(0.5,-0.5)
-	)
+  sersic = list(
+    xcen   = c(80, 210),
+    ycen   = c(190, 50),
+    mag = c(15, 13),
+    re  = c(14, 5),
+    nser  = c(3, 10),
+    ang  = c(46, 80),
+    axrat  = c(0.4, 0.6),
+    box = c(0.5,-0.5)
+  )
 )
 
+system.time({image_noFFTW=profitMakeModel(model=model, dim=c(300,300), psf=psf)$z})
+system.time({image_FFTW=profitMakeModel(model=model, dim=c(300,300), psf=psf,
+convopt=list(convolver=convolver))$z})
 
-model.image = profitMakeModel(model=model, dim=c(200,200), psf=psf, convolver=convolver)$z
+magimage(image_noFFTW)
+magimage(image_FFTW)
+magimage(image_noFFTW-image_FFTW)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
