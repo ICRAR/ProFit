@@ -1,5 +1,7 @@
-.ellipsesd=function(par=c(0,0,0), x, y, xcen, ycen){
-  return=sd(profitEllipse(x=x, y=y, flux=1, xcen=xcen, ycen=ycen, ang=par[1], axrat=10^par[2], box=par[3])[,1])
+.ellipsesd=function(par=c(1,0,0,0), x, y, xcen, ycen, wt=1){
+  x=(x-xcen)/par[1]
+  y=(y-ycen)/par[1]
+  return=.varwt(x=profitEllipse(x=x, y=y, flux=1, xcen=0, ycen=0, ang=par[2], axrat=10^par[3], box=par[4])[,1], xcen=1, wt=wt)
 }
 
 profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), pixscale=1, dobox=FALSE, plot=FALSE, ...){
@@ -10,11 +12,11 @@ profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), pixscale=1, dobox=
       x=x[,1]
     }
   }
-  if(missing(xcen)){xcen=.meanwt(x, z)}
-  if(missing(ycen)){ycen=.meanwt(y, z)}
-  xsd=sqrt(.varwt(x,z))
-  ysd=sqrt(.varwt(y,z))
-  covxy=.covarwt(x,y,z)
+  if(missing(xcen)){xcen=.meanwt(x, wt=z)}
+  if(missing(ycen)){ycen=.meanwt(y, wt=z)}
+  xsd=sqrt(.varwt(x, wt=z))
+  ysd=sqrt(.varwt(y, wt=z))
+  covxy=.covarwt(x, y, wt=z)
   corxy=covxy/(xsd*ysd)
   rad=.cov2eigval(xsd, ysd, covxy)
   rad$hi=sqrt(abs(rad$hi))
@@ -24,13 +26,16 @@ profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), pixscale=1, dobox=
   eigvec=.cov2eigvec(xsd, ysd, covxy)
   ang=.eigvec2ang(eigvec)
   if(dobox){
-    lower=c(0,-2,-1)
-    upper=c(180,0,1)
-    tempoptim=optim(par=c(ang, log10(axrat), box=0), fn=.ellipsesd, x=x, y=y, xcen=xcen, ycen=ycen, method='L-BFGS-B', lower=lower, upper=upper)$par
-    if(tempoptim[1]>lower[1] & tempoptim[1]<upper[1] & tempoptim[2]>lower[2] & tempoptim[2]<upper[2] & tempoptim[3]>lower[3] & tempoptim[3]<upper[3]){
-      ang=tempoptim[1]
-      axrat=10^tempoptim[2]
-      box=tempoptim[3]
+    lower=c(rad$hi/10,0,-2,-1)
+    upper=c(rad$hi*10,180,0,1)
+    tempoptim=optim(par=c(rad$hi, ang, log10(axrat), box=0), fn=.ellipsesd, x=x, y=y, xcen=xcen, ycen=ycen, wt=z, method='L-BFGS-B', lower=lower, upper=upper)$par
+    if(tempoptim[1]>lower[1] & tempoptim[1]<upper[1] & tempoptim[2]>lower[2] & tempoptim[2]<upper[2] & tempoptim[3]>lower[3] & tempoptim[3]<upper[3] & tempoptim[4]>lower[4] & tempoptim[4]<upper[4]){
+      rad$hi=tempoptim[1]
+      ang=tempoptim[2]
+      axrat=10^tempoptim[3]
+      box=tempoptim[4]
+      rad$lo=rad$hi*axrat
+      scale=1
     }else{
       box=0
     }

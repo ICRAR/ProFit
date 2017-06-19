@@ -16,7 +16,7 @@
   return=tempout
 }
 
-profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100, 100), header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, ...){
+profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100, 100), type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol="segID", decreasing=FALSE, ...){
   call=match.call()
   if(verbose){print('Running profitProFound:', quote=FALSE)}
   timestart=proc.time()[3]
@@ -31,7 +31,7 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   
   if(hassky==FALSE | hasskyRMS==FALSE){
     if(verbose){print(paste('Making initial sky map -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
-    roughsky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box)
+    roughsky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box, type=type)
     if(hassky==FALSE){
       sky=roughsky$sky
     }
@@ -54,7 +54,7 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
       if(verbose){print(paste('Doing initial aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
       objects_redo=profitMakeSegimDilate(image=image, segim=segim$objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){print(paste('Making better sky map -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
-      bettersky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box)
+      bettersky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, type=type)
       if(hassky==FALSE){
         sky=bettersky$sky
       }
@@ -101,7 +101,7 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
       if(verbose){print(paste('Doing final aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
       objects_redo=profitMakeSegimDilate(image=image, segim=objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){print(paste('Making final sky map -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
-      sky_new=profitMakeSkyGrid(image=image, objects=objects_redo, box=box)
+      sky_new=profitMakeSkyGrid(image=image, objects=objects_redo, box=box, type=type)
       sky=sky_new$sky
       skyRMS=sky_new$skyRMS
     }else{
@@ -111,7 +111,8 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
     
     if(stats & !missing(image)){
       if(verbose){print(paste('Calculating final segstats -',round(proc.time()[3]-timestart,3),'sec'), quote=FALSE)}
-      segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header)
+      segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
+      
       segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
     }else{
       if(verbose){print("Skipping sementation statistics - segstats set to FALSE", quote=FALSE)}

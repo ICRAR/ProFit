@@ -14,9 +14,10 @@ This is the highest level source detection function provided in \code{ProFit}, c
 \usage{
 profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1,
 smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
-threshold = 1.05, converge = 'flux', magzero = 0, pixscale = 1, sky, skyRMS,
-redosky = TRUE, redoskysize = 21, box = c(100, 100), header, verbose = FALSE,
-plot = FALSE, stats = TRUE, rotstats = FALSE, ...)
+threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
+redosky = TRUE, redoskysize = 21, box = c(100, 100), type = "bilinear", header,
+verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
+sortcol = "segID", decreasing = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -71,14 +72,17 @@ Characrter scalar; the segmentation property to compare for relative convergence
   \item{magzero}{
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
+  \item{gain}{
+Numeric scalar; the gain (in photo-electrons per ADU). This is only used to compute object shot-noise component of the flux error (else this is set to 0).
+}
   \item{pixscale}{
   Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitMakeSkyGrid}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitMakeSkyGrid}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{redosky}{
 Logical; should the sky and sky RMS grids be re-computed using the final segmentation map? This uses \code{\link{profitMakeSkyGrid}} to compute the sky and sky RMS grids. If \option{redosky}=TRUE then the output will include the agressively masked \option{objects_redo} image, if \option{redosky}=FALSE then \option{objects_redo} will be NA.
@@ -88,6 +92,9 @@ Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels 
 }
   \item{box}{
 Integer vector; the dimensions of the box car filter to estimate the sky with. Only relevant if \option{redosky}=TRUE.
+}
+  \item{type}{
+Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.  
 }
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
@@ -103,6 +110,15 @@ Logical; should statistics on the segmented objects be returned? If \option{magz
 }
   \item{rotstats}{
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
+}
+  \item{boundstats}{
+Logical; if TRUE then the fraction of outer segment pixels that are touching sky is computer. If this fraction is 1 then all outer pixels are touching sky pixels, and the segstats will be quite unambiguous, the larger the lower the fraction the greater the complexity of the segmentation region. If FALSE then returns NA instead (saving computation time).
+}
+  \item{sortcol}{
+Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
+}
+  \item{decreasing}{
+Logical; if FALSE (default) the segmentation statistics data.frame will be sorted in increasing order, if TRUE the data.frame will be sorted in decreasing order.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
@@ -155,6 +171,12 @@ If \option{stats}=TRUE then the \option{segstats} part of the returned list will
   \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
+  \item{flux_err}{The estimated total error in the flux for the segment.}
+  \item{mag_err}{The estimated total error in the magnitude for the segment.}
+  \item{flux_err_sky}{The sky subtraction component of the flux error.}
+  \item{flux_err_skyRMS}{The sky RMS component of the flux error.}
+  \item{flux_err_shot}{The object shot-noise component of the flux error (only if \option{gain} is provided).}
+  \item{boundary}{The fraction of outer segment pixels that are touching the sky, higher generally meaning more robust segmentation statistics.}
   \item{iter}{The iteration number when the source was flagged as having convergent flux.}
   \item{origfrac}{The ratio between the final converged flux and the initial \code{\link{profitMakeSegim}} iso-contour estimate.}
 }

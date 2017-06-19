@@ -9,7 +9,8 @@ Image Segmentation Statistics
 Basic summary statistics for image segments, e.g. aperture parameters, fluxes and surface brightness estimates. These might provide useful first guesses to ProFit fitting parameters (particularly \option{flux}, \option{axrat} and \option{ang}).
 }
 \usage{
-profitSegimStats(image, segim, sky=0, magzero, pixscale=1, rotstats = FALSE, header)
+profitSegimStats(image, segim, sky = 0, skyRMS = 0, magzero = 0, gain, pixscale = 1,
+header, sortcol = "segID", decreasing = FALSE, rotstats = FALSE, boundstats = FALSE)
 profitSegimPlot(image, segim, mask, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -21,7 +22,10 @@ Numeric matrix; required, the image we want to analyse.
 Numeric matrix; required, the segmentation map of the \option{image}. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{sky}{
-User provided estimate of the absolute sky level.
+User provided estimate of the absolute sky level. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+}
+  \item{skyRMS}{
+User provided estimate of the RMS of the sky. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{mask}{
 Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}. 
@@ -29,14 +33,26 @@ Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, wh
   \item{magzero}{
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
+  \item{gain}{
+Numeric scalar; the gain (in photo-electrons per ADU). This is only used to compute object shot-noise component of the flux error (else this is set to 0).
+}
   \item{pixscale}{
   Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{rotstats}{
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
+  \item{boundstats}{
+Logical; if TRUE then the fraction of outer segment pixels that are touching sky is computer. If this fraction is 1 then all outer pixels are touching sky pixels, and the segstats will be quite unambiguous, the larger the lower the fraction the greater the complexity of the segmentation region. If FALSE then returns NA instead (saving computation time).
+}
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
+}
+  \item{sortcol}{
+Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
+}
+  \item{decreasing}{
+Logical; if FALSE (default) the segmentation statistics data.frame will be sorted in increasing order, if TRUE the data.frame will be sorted in decreasing order.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}.
@@ -80,7 +96,12 @@ A data.frame with columns:
   \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
   \item{axrat}{The axial ratio as given by min/maj.}
   \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
-
+  \item{flux_err}{The estimated total error in the flux for the segment.}
+  \item{mag_err}{The estimated total error in the magnitude for the segment.}
+  \item{flux_err_sky}{The sky subtraction component of the flux error.}
+  \item{flux_err_skyRMS}{The sky RMS component of the flux error.}
+  \item{flux_err_shot}{The object shot-noise component of the flux error (only if \option{gain} is provided).}
+  \item{boundary}{The fraction of outer segment pixels that are touching the sky, higher generally meaning more robust segmentation statistics.}
 \code{profitSegimplot} is a simple function that overlays the image segments on the original \option{image}.
 }
 \author{
@@ -93,7 +114,8 @@ Aaron Robotham
 \examples{
 \dontrun{
 image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))
-segim=profitMakeSegim(image$imDat, magzero=30, header=image$hdr, verbose=TRUE, plot=TRUE, rotstats=TRUE)
+segim=profitMakeSegim(image$imDat, magzero=30, header=image$hdr, verbose=TRUE, plot=TRUE,
+                      rotstats=TRUE)
 print(segim$segstats)
 
 #Note row 6 (the central galaxy) gains 0.15 mag of flux due to the missing flux when
