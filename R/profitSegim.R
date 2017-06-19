@@ -67,7 +67,7 @@
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, gain, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){print(' - Running profitMakeSegim:', quote=FALSE)}
   timestart = proc.time()[3]
@@ -122,7 +122,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   }
   if(verbose){print(paste(" - Watershed de-blending -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
   if(any(image>0)){
-    segim=EBImage::imageData(EBImage::watershed(EBImage::as.Image(image),tolerance=tolerance,ext=ext))
+    segim=EBImage::imageData(EBImage::watershed(image,tolerance=tolerance,ext=ext))
   }else{
     segim=image
   }
@@ -156,7 +156,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   }
   if(stats & any(image>0)){
     if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
-    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
+    segstats=profitSegimStats(image=image_orig, segim=segim, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE or no segments", quote=FALSE)}
     segstats=NULL
@@ -172,7 +172,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){print(' - Running profitMakeSegimExpand:', quote=FALSE)}
   timestart = proc.time()[3]
@@ -273,7 +273,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   
   if(stats){
     if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
-    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE", quote=FALSE)}
     segstats=NULL
@@ -290,7 +290,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){print(' - Running profitMakeSegimDilate:', quote=FALSE)}
   timestart = proc.time()[3]
@@ -309,7 +309,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   if(verbose){print(paste(" - Dilating segments -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
   
   if(expand=='all'){
-    segim_new=EBImage::as.Image(segim)
+    segim_new=segim
     maxorig=max(segim_new, na.rm=TRUE)
     segim_new[segim_new>0]=maxorig+1-segim_new[segim_new>0]
     segim_new=EBImage::dilate(segim_new, kern)
@@ -317,7 +317,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
     segim_new=EBImage::imageData(segim_new)
     segim_new[segim!=0]=segim[segim!=0]
   }else{
-    segim_new=EBImage::as.Image(segim)
+    segim_new=segim
     segim_new[segim_new!=expand]=0
     segim_new=EBImage::dilate(segim_new, kern)
     segim_new=EBImage::imageData(segim_new)
@@ -326,7 +326,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   
   if(stats & !missing(image)){
     if(verbose){print(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"), quote=FALSE)}
-    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, pixscale=pixscale, rotstats=rotstats, header=header, sortcol=sortcol, decreasing=decreasing)
+    segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
   }else{
     if(verbose){print(" - Skipping segmentation statistics - segstats set to FALSE", quote=FALSE)}
     segstats=NULL
@@ -342,7 +342,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats, call=call)
 }
 
-profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, pixscale=1, rotstats=FALSE, header, sortcol='segID', decreasing=FALSE){
+profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE){
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
   }
@@ -366,9 +366,14 @@ profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, pixscale=1, 
   N50seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux)>=0.5)),by=segID]$V1
   N90seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux)>=0.1)),by=segID]$V1
   
-  flux_err_sky=tempDT[,sd(sky, na.rm=TRUE),by=segID]$V1*Nseg
-  flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)),by=segID]$V1
-  flux_err=sqrt(flux_err_sky^2+flux_err_skyRMS^2)
+  flux_err_sky=tempDT[,sd(sky, na.rm=TRUE), by=segID]$V1*Nseg
+  flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)), by=segID]$V1
+  if(!missing(gain)){
+    flux_err_shot=sqrt(flux)/gain
+  }else{
+    flux_err_shot=0
+  }
+  flux_err=sqrt(flux_err_sky^2+flux_err_skyRMS^2+flux_err_shot^2)
   mag_err=(2.5/log(10))*abs(flux_err/flux)
   
   xcen=tempDT[,.meanwt(x, flux),by=segID]$V1
@@ -416,8 +421,41 @@ profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, pixscale=1, 
     RAcen=NA
     Deccen=NA
   }
+  
+  if(boundstats){
+    # tempdilate=EBImage::imageData(EBImage::dilate(1-objects, kern=matrix(1,3,3)))
+    # segimdilate=segim
+    # segimdilate[tempdilate==0]=0
+    # tabdilate=tabulate(segimdilate)
+    # tabdilate=cbind(1:length(tabdilate),tabdilate)
     
-    segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, RAcen=RAcen, Deccen=Deccen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS)
+    # temperode=EBImage::imageData(EBImage::erode(objects, kern=matrix(1,3,3)))
+    # segimerode=segim_new
+    # segimerode[temperode==1]=0
+    # taberode=tabulate(segimerode)
+    # taberode=cbind(1:length(taberode),taberode)
+    
+    segim_inner=segim[2:(xlen-1),2:(ylen-1)]
+    
+    inner_segim=segim_inner>0 & segim[2:(xlen-1)+1,2:(ylen-1)]==segim_inner & segim[2:(xlen-1)-1,2:(ylen-1)]==segim_inner & segim[2:(xlen-1),2:(ylen-1)+1]==segim_inner & segim[2:(xlen-1),2:(ylen-1)-1]==segim_inner
+    segim_edge=segim_inner
+    segim_edge[inner_segim==1]=0
+    tab_edge=tabulate(segim_edge)
+    tab_edge=cbind(1:length(tab_edge),tab_edge)
+    
+    outer_sky=segim_inner>0 & (segim[2:(xlen-1)+1,2:(ylen-1)]==0 | segim[2:(xlen-1)-1,2:(ylen-1)]==0 | segim[2:(xlen-1),2:(ylen-1)+1]==0 | segim[2:(xlen-1),2:(ylen-1)-1]==0)
+    segim_sky=segim_inner
+    segim_sky[outer_sky==0]=0
+    tab_sky=tabulate(segim_sky)
+    tab_sky=cbind(1:length(tab_sky),tab_sky)
+    
+    tab_morph=cbind(segID, tab_edge[match(segID,tab_edge[,1]),2], tab_sky[match(segID,tab_sky[,1]),2])
+    boundary=tab_morph[,3]/tab_morph[,2]
+  }else{
+    boundary=NA
+  }
+    
+  segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, RAcen=RAcen, Deccen=Deccen, flux=flux, mag=mag, N=Nseg, N50=N50seg, N90=N90seg, R=Rseg, R50=R50seg, R90=R90seg, SB_N=SB_N, SB_N50=SB_N50, SB_N90=SB_N90, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS, flux_err_shot=flux_err_shot, boundary=boundary)
   return=as.data.frame(segstats[order(segstats[[sortcol]], decreasing=decreasing),])
 }
 

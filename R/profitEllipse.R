@@ -35,6 +35,7 @@ profitGetEllipse=function(x, y, z, xcen, ycen, scale=sqrt(2), pixscale=1, dobox=
       axrat=10^tempoptim[3]
       box=tempoptim[4]
       rad$lo=rad$hi*axrat
+      scale=1
     }else{
       box=0
     }

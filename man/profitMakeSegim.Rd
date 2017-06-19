@@ -9,9 +9,9 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 }
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
-pixcut = 5, skycut = 2, SBlim, magzero = 0, pixscale = 1, sky, skyRMS, header,
-verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, sortcol = "segID",
-decreasing = FALSE, ...)
+pixcut = 5, skycut = 2, SBlim, magzero = 0, gain, pixscale = 1, sky, skyRMS, header,
+verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE,  boundstats = FALSE,
+sortcol = "segID", decreasing = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -48,6 +48,9 @@ Numeric scalar; the mag/asec^2 surface brightness threshold to apply. This is al
   \item{magzero}{
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
+  \item{gain}{
+Numeric scalar; the gain (in photo-electrons per ADU). This is only used to compute object shot-noise component of the flux error (else this is set to 0).
+}
   \item{pixscale}{
   Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
@@ -71,6 +74,9 @@ Logical; should statistics on the segmented objects be returned? If \option{magz
 }
   \item{rotstats}{
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
+}
+  \item{boundstats}{
+Logical; if TRUE then the fraction of outer segment pixels that are touching sky is computer. If this fraction is 1 then all outer pixels are touching sky pixels, and the segstats will be quite unambiguous, the larger the lower the fraction the greater the complexity of the segmentation region. If FALSE then returns NA instead (saving computation time).
 }
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
@@ -138,6 +144,8 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{mag_err}{The estimated total error in the magnitude for the segment.}
   \item{flux_err_sky}{The sky subtraction component of the flux error.}
   \item{flux_err_skyRMS}{The sky RMS component of the flux error.}
+  \item{flux_err_shot}{The object shot-noise component of the flux error (only if \option{gain} is provided).}
+  \item{boundary}{The fraction of outer segment pixels that are touching the sky, higher generally meaning more robust segmentation statistics.}
 }
 \references{
 See ?EBImage::watershed
