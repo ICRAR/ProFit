@@ -61,7 +61,7 @@ Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels.
 Character scalar; the shape of the diltion kernel. See \code{makeBrush}. Parsed to \code{\link{profitMakeSegimDilate}}.
 }
   \item{iters}{
-Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{profitProFound}.
+Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{profitProFound}. If this is set to zero then the initial \option{segim} image wither provided or computed internally via \code{\link{profitMakeSegim}} will be used instead.
 }
   \item{threshold}{
 Numeric scalar; After the curve of growth dilations, \option{theshold} is the relative change of the converging property (see \option{converge}) that flags convergence. If consecutive iterations have a relative difference within this ratio then the dilation is stopped, and this iteration is used to define the segmentation of the object. The effect of this is that different objects will be dilated for a different number of iterations. Usually fainter sources require more.
@@ -137,11 +137,15 @@ This high level function is both a source detection and a segmented aperture gro
 \value{
 A list containing:
 
-  \item{segim}{Integer matrix; the segmentation map matched pixel by pixel to \option{image}.}
+  \item{segim}{Integer matrix; the dilated and converged segmentation map matched pixel by pixel to \option{image}.}
+  \item{segim_orig}{Integer matrix; the pre-dilated segmentation map matched pixel by pixel to \option{image}.}
   \item{objects}{Logical matrix; the object map matched pixel by pixel to \option{image}. 1 means there is an object at this pixel, 0 means it is a sky pixel. Can be used as a mask in various other functions that require objects to be masked out.}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
+  \item{magzero}{The assumed magnitude zero point. This is relevant to various outputs returned by the segmentation statistics.}
+  \item{gain}{The assumed image gain (if NULL it was not used). This is relevant to various outputs returned by the segmentation statistics.}
+  \item{pixscale}{The assumed pixel scale. This is relevant to various outputs returned by the segmentation statistics.}
   \item{call}{The original function call.}
   
 If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):

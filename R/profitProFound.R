@@ -16,7 +16,7 @@
   return=tempout
 }
 
-profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=grid, grid=c(100,100), type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol="segID", decreasing=FALSE, ...){
+profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=grid, grid=c(100,100), type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol="segID", decreasing=FALSE, ...){
   call=match.call()
   if(verbose){message('Running profitProFound:')}
   timestart=proc.time()[3]
@@ -64,14 +64,22 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
   if(missing(segim)){
     if(verbose){message(paste('Making initial segmentation image -',round(proc.time()[3]-timestart,3),'sec'))}
     segim=profitMakeSegim(image=image, objects=objects, mask=mask, tolerance=tolerance, ext=ext, sigma=sigma, smooth=smooth, pixcut=pixcut, skycut=skycut, SBlim=SBlim,  sky=sky, skyRMS=skyRMS, verbose=verbose, plot=FALSE, stats=FALSE)
+    objects=segim$objects
+    segim=segim$segim
   }else{
     if(verbose){message("Skipping making an initial segmentation image - User provided segim")}
+    if(missing(objects)){
+      objects=segim
+      objects[objects != 0] = 1
+    }
   }
   
-  if(any(segim$segim>0)){
+  segim_orig=segim
+  
+  if(any(segim>0)){
     if(hassky==FALSE | hasskyRMS==FALSE){
       if(verbose){message(paste('Doing initial aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'))}
-      objects_redo=profitMakeSegimDilate(image=image, segim=segim$objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
+      objects_redo=profitMakeSegimDilate(image=image, segim=objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){message(paste('Making better sky map -',round(proc.time()[3]-timestart,3),'sec'))}
       bettersky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type)
       if(hassky==FALSE){
@@ -84,32 +92,41 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
       if(verbose){message("Skipping making better sky map - User provided sky and sky RMS")}
     }
     
-    if(verbose){message(paste('Calculating initial segstats -',round(proc.time()[3]-timestart,3),'sec'))}
-    segstats=profitSegimStats(image=image, segim=segim$segim, sky=sky)
-    compmat=cbind(segstats[,converge])
-    segim_array=array(0, dim=c(dim(segim$segim),iters+1))
-    segim_array[,,1]=segim$segim
-    
-    if(verbose){message('Doing dilations:')}
-    for(i in 1:iters){
-      if(verbose){message(paste('Iteration',i,'of',iters,'-',round(proc.time()[3]-timestart,3),'sec'))}
-      segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=TRUE, rotstats=FALSE)
-      compmat=cbind(compmat, segim$segstats[,converge])
-      segim_array[,,i+1]=segim$segim
-    }
-    
-    if(verbose){message(paste('Finding CoG convergence -',round(proc.time()[3]-timestart,3),'sec'))}
-    
-    diffmat=rbind(compmat[,2:iters]/compmat[,1:(iters-1)])
-    selseg=.selectCoG(diffmat, threshold)
-    
-    segim_new=segim$segim
-    segim_new[]=0
-    
-    if(verbose){message(paste('Constructing final segim -',round(proc.time()[3]-timestart,3),'sec'))}
-    for(i in 1:(iters+1)){
-      select=segim_array[,,i] %in% segstats[selseg==i,'segID']
-      segim_new[select]=segim_array[,,i][select]
+    if(iters>0){
+      if(verbose){message(paste('Calculating initial segstats -',round(proc.time()[3]-timestart,3),'sec'))}
+      segstats=profitSegimStats(image=image, segim=segim, sky=sky)
+      compmat=cbind(segstats[,converge])
+      segim_array=array(0, dim=c(dim(segim),iters+1))
+      segim_array[,,1]=segim
+      if(verbose){message('Doing dilations:')}
+      for(i in 1:iters){
+        if(verbose){message(paste('Iteration',i,'of',iters,'-',round(proc.time()[3]-timestart,3),'sec'))}
+        segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=TRUE, rotstats=FALSE)
+        compmat=cbind(compmat, segim$segstats[,converge])
+        segim_array[,,i+1]=segim$segim
+      }
+      
+      if(verbose){message(paste('Finding CoG convergence -',round(proc.time()[3]-timestart,3),'sec'))}
+      
+      diffmat=rbind(compmat[,2:iters]/compmat[,1:(iters-1)])
+      selseg=.selectCoG(diffmat, threshold)
+      
+      segim_new=segim$segim
+      segim_new[]=0
+      
+      if(verbose){message(paste('Constructing final segim -',round(proc.time()[3]-timestart,3),'sec'))}
+      for(i in 1:(iters+1)){
+        select=segim_array[,,i] %in% segstats[selseg==i,'segID']
+        segim_new[select]=segim_array[,,i][select]
+      }
+      
+      origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)]
+      
+    }else{
+      if(verbose){message('Iters set to 0 - keeping segim un-dilated')}
+      segim_new=segim
+      selseg=0
+      origfrac=1
     }
     
     objects=segim_new
@@ -129,10 +146,20 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
     }
     
     if(stats & !missing(image)){
-      if(verbose){message(paste('Calculating final segstats -',round(proc.time()[3]-timestart,3),'sec'))}
+      if(verbose){message(paste('Calculating final segstats for',length(which(tabulate(segim_new)>0)),'objects -',round(proc.time()[3]-timestart,3),'sec'))}
+      if(verbose){message(paste(' - magzero =', round(magzero,3)))}
+      if(verbose){
+        if(is.null(gain)){
+          message(paste(' - gain = NULL (ignored)'))
+        }else{
+          message(paste(' - gain =', round(gain,3)))
+        }
+      }
+      if(verbose){message(paste(' - pixscale =', round(pixscale,3)))}
+      if(verbose){message(paste(' - rotstats =', rotstats))}
+      if(verbose){message(paste(' - boundstats =', boundstats))}
       segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
-      
-      segstats=cbind(segstats, iter=selseg, origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)])
+      segstats=cbind(segstats, iter=selseg, origfrac=origfrac)
     }else{
       if(verbose){message("Skipping sementation statistics - segstats set to FALSE")}
       segstats=NULL
@@ -153,10 +180,10 @@ profitProFound=function(image, segim, objects, mask, tolerance = 4, ext = 2, sig
       SBlim=NULL
     }
     if(verbose){message(paste('profitProFound is finished! -',round(proc.time()[3]-timestart,3),'sec'))}
-    return=list(segim=segim_new, objects=objects, objects_redo=objects_redo, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
+    return=list(segim=segim_new, segim_orig=segim_orig, objects=objects, objects_redo=objects_redo, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, magzero=magzero, gain=gain, pixscale=pixscale, call=call)
   }else{
     if(verbose){message('No objects in segmentation map - skipping dilations and CoG')}
     if(verbose){message(paste('profitProFound is finished! -',round(proc.time()[3]-timestart,3),'sec'))}
-    return=list(segim=segim$segim, objects=segim$segim, objects_redo=segim$segim, segstats=NULL, sky=sky, skyRMS=skyRMS, SBlim=NA, call=call)
+    return=list(segim=segim$segim, segim_orig=segim_orig, objects=segim$segim, objects_redo=segim$segim, segstats=NULL, sky=sky, skyRMS=skyRMS, SBlim=NA,  magzero=magzero, gain=gain, pixscale=pixscale, call=call)
   }
 }

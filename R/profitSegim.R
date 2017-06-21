@@ -67,7 +67,7 @@
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, gain, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, gain=NULL, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){message(' - Running profitMakeSegim:')}
   timestart = proc.time()[3]
@@ -127,7 +127,6 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
     segim=image
   }
   
-  objects=segim>0
   segtab=tabulate(segim)
   segim[segim %in% which(segtab<pixcut)]=0
 
@@ -172,7 +171,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain=NULL, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){message(' - Running profitMakeSegimExpand:')}
   timestart = proc.time()[3]
@@ -290,7 +289,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain=NULL, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
   call=match.call()
   if(verbose){message(' - Running profitMakeSegimDilate:')}
   timestart = proc.time()[3]
@@ -342,7 +341,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats, call=call)
 }
 
-profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE){
+profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain=NULL, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE){
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
   }
@@ -368,7 +367,7 @@ profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain, pixsca
   
   flux_err_sky=tempDT[,sd(sky, na.rm=TRUE), by=segID]$V1*N100seg
   flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)), by=segID]$V1
-  if(!missing(gain)){
+  if(!is.null(gain)){
     flux_err_shot=sqrt(flux)/gain
   }else{
     flux_err_shot=0
