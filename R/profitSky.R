@@ -130,7 +130,7 @@ profitMakeSkyMap=function(image, objects, mask, box=grid, grid=c(100,100)){
 }
 
 profitMakeSkyGrid=function(image, objects, mask, box=grid, grid=c(100,100), type='bilinear'){
-  if(!requireNamespace("imager", quietly = TRUE)){
+  if(!requireNamespace("akima", quietly = TRUE)){
     stop('The akima package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
   xseq=seq(grid[1]/2,dim(image)[1],by=grid[1])

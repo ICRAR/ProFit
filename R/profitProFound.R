@@ -98,7 +98,9 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       compmat=cbind(segstats[,converge])
       segim_array=array(0, dim=c(dim(segim),iters+1))
       segim_array[,,1]=segim
+      
       if(verbose){message('Doing dilations:')}
+      
       for(i in 1:iters){
         if(verbose){message(paste('Iteration',i,'of',iters,'-',round(proc.time()[3]-timestart,3),'sec'))}
         segim=profitMakeSegimDilate(image=image, segim=segim_array[,,i], mask=mask, size=size, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=TRUE, rotstats=FALSE)
