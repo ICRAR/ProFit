@@ -9,8 +9,8 @@ Calculate Sky Maps
 The high level function computes the absolute sky and sky RMS level over an image at a scale defined locally by the \option{box} parameter. This coarse map can then be used to compute sky/skyRMS values for the local sky anywhere on an image. This function uses \code{\link{profitSkyEstLoc}} to calculate the sky statistics for the subset boxcar regions.
 }
 \usage{
-profitMakeSkyMap(image, objects, mask, box = c(100, 100))
-profitMakeSkyGrid(image, objects, mask, box = c(100, 100), type='bilinear')
+profitMakeSkyMap(image, objects, mask, box = grid, grid = c(100, 100))
+profitMakeSkyGrid(image, objects, mask, box = grid, grid = c(100, 100), type = 'bilinear')
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -24,7 +24,10 @@ Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provide
 Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{box}{
-Integer vector; the dimensions of the box car filter to estimate the sky with.
+Integer vector; the dimensions of the box car filter to estimate the sky with. By default this is set to be the same as the \option{grid}.
+}
+  \item{grid}{
+Integer vector; the resolution of the background grid to estimate the sky with.
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.
