@@ -5,10 +5,12 @@
 Creates a Convolver object.
 }
 \description{
-Creates a Convolver object that can be used to perform convolution when creating
-Model images with \code{\link{profitMakeModel}}. This function allows users to
-create specific convolvers instead of letting \code{\link{profitMakeModel}}
-create a default one.
+Creates a Convolver object that can be used to perform convolution of images.
+Convolution can be carried out direcly via \code{\link{profitConvolve}}
+or when creating Model images with \code{\link{profitMakeModel}}.
+
+This function allows users to create specific convolvers
+instead of letting \code{\link{profitMakeModel}} create a default one.
 }
 \usage{
 profitMakeConvolver(image_dimensions, psf, use_fft = FALSE,
@@ -57,7 +59,10 @@ OpenMP support, and the underlying FFTW library has OpenMP support.
 }
 
 \details{
-...
+A convolver object can be used to perform one or more image convolutions.
+Depending on the convolver's requested configuration,
+it could be expensive to create them.
+Users should thus try to keep a hold on these objects.
 }
 
 \value{
@@ -69,7 +74,10 @@ Rodrigo Tobar
 }
 
 \seealso{
-\code{\link{profitBruteConv}}, \code{\link{profitMakePointSource}}, \code{\link{profitBenchmarkConv}},
+\code{\link{profitConvolve}},
+\code{\link{profitBruteConv}},
+\code{\link{profitMakePointSource}},
+\code{\link{profitBenchmarkConv}},
 \code{\link{profitHasFFTW}}
 }
 \examples{
