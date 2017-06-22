@@ -77,7 +77,7 @@ skybic = profitMakeSkyGrid(image, objects=segim_ex$objects, box=c(89,89), type='
 magimage(skybic$sky, magmap=FALSE)
 magimage(skybic$skyRMS, magmap=FALSE)
 
-The differences tend to be at the edges:
+# The differences tend to be at the edges:
 
 magimage(skybil$sky-skybic$sky, magmap=FALSE)
 magimage(skybil$skyRMS-skybic$skyRMS, magmap=FALSE)

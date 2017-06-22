@@ -146,17 +146,23 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   tempmat_skyRMS[is.na(tempmat_skyRMS)]=mean(tempmat_skyRMS, na.rm = TRUE)
   
   if(dim(tempmat_sky)[1]>1){
-    bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
+    #bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
+    bigridx=rep(1:dim(image)[1]-0.5,times=dim(image)[2])
+    bigridy=rep(1:dim(image)[2]-0.5,each=dim(image)[1])
     
     if(type=='bilinear'){
-      temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))
-      temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))
+      temp_bi_sky=.interp.2d(bigridx, bigridy, list(x=xseq, y=yseq, z=tempmat_sky))
+      temp_bi_skyRMS=.interp.2d(bigridx, bigridy, list(x=xseq, y=yseq, z=tempmat_skyRMS))
+      #temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))
+      #temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))
       #Note the following does not work well - akima clips out the outer regions (darn- would be faster!)
       #temp_bi_sky=akima::bilinear(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
       #temp_bi_skyRMS=akima::bilinear(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
     }else if(type=='bicubic'){
-      temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
-      temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
+      temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigridx, bigridy)$z
+      temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigridx, bigridy)$z
+      #temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
+      #temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
     }
   
     temp_bi_sky=matrix(temp_bi_sky, dim(image)[1])
