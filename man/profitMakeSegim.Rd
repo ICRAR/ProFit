@@ -104,9 +104,10 @@ A list containing:
 
   \item{segim}{Integer matrix; the segmentation map matched pixel by pixel to \option{image}.}
   \item{objects}{Logical matrix; the object map matched pixel by pixel to \option{image}. 1 means there is an object at this pixel, 0 means it is a sky pixel. Can be used as a mask in various other functions that require objects to be masked out.}
-  \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
+  \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
+  \item{header}{The header provded, if missing this is NULL.}
   \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL).}
   \item{call}{The original function call.}
   

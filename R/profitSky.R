@@ -114,7 +114,7 @@ profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100),
   return=list(val=c(tempmed, tempsd), clip=clip)
 }
 
-profitMakeSkyMap=function(image, objects, mask, box=grid, grid=c(100,100)){
+profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box){
   xseq=seq(grid[1]/2,dim(image)[1],by=grid[1])
   yseq=seq(grid[2]/2,dim(image)[2],by=grid[2])
   tempgrid=expand.grid(xseq, yseq)
@@ -129,7 +129,7 @@ profitMakeSkyMap=function(image, objects, mask, box=grid, grid=c(100,100)){
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
 }
 
-profitMakeSkyGrid=function(image, objects, mask, box=grid, grid=c(100,100), type='bilinear'){
+profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear'){
   if(!requireNamespace("akima", quietly = TRUE)){
     stop('The akima package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }

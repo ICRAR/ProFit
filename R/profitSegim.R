@@ -175,9 +175,11 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
     SBlim=NULL
   }
   
+  if(missing(header)){header=NULL}
+  
   if(verbose){message(paste(" - profitMakeSegim is finished! -", round(proc.time()[3]-timestart,3), "sec"))}
   
-  return=list(segim=segim, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
+  return=list(segim=segim, objects=objects, sky=sky, skyRMS=skyRMS, segstats=segstats, header=header, SBlim=SBlim, call=call)
 }
 
 profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain=NULL, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
@@ -294,8 +296,12 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   }else{
     SBlim=NULL
   }
+  
+  if(missing(header)){header=NULL}
+  
   if(verbose){message(paste(" - profitMakeSegimExpand is finished! -", round(proc.time()[3]-timestart,3), "sec"))}
-  return=list(segim=segim_new, objects=objects, segstats=segstats, sky=sky, skyRMS=skyRMS, SBlim=SBlim, call=call)
+  
+  return=list(segim=segim_new, objects=objects, sky=sky, skyRMS=skyRMS, segstats=segstats, header=header, SBlim=SBlim, call=call)
 }
 
 profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain=NULL, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
@@ -346,8 +352,12 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   if(plot){
     profitSegimPlot(image=image, segim=segim_new, mask=mask, sky=sky, ...)
   }
+  
+  if(missing(header)){header=NULL}
+  
   if(verbose){message(paste(" - profitMakeSegimDilate is finished! -", round(proc.time()[3]-timestart,3), "sec"))}
-  return=list(segim=segim_new, objects=objects, segstats=segstats, call=call)
+  
+  return=list(segim=segim_new, objects=objects, segstats=segstats, header=header, call=call)
 }
 
 profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain=NULL, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE){

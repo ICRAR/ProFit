@@ -15,7 +15,7 @@ This is the highest level source detection function provided in \code{ProFit}, c
 profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1,
 smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
 threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
-redosky = TRUE, redoskysize = 21, box = grid, grid = c(100,100), type = "bilinear",
+redosky = TRUE, redoskysize = 21, box = c(100,100), grid = box, type = "bilinear",
 header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
 sortcol = "segID", decreasing = FALSE, ...)
 }
@@ -91,10 +91,10 @@ Logical; should the sky and sky RMS grids be re-computed using the final segment
 Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels to apply to the \option{object} mask before performing the inital and final aggressively masked sky estimates (the latter is only relevant if \option{redosky}=TRUE). Should be an odd number else will be rounded up to the nearest odd number. See \code{makeBrush}. Dilation is done by \code{\link{profitMakeSegimDilate}}. If \option{redosky}=TRUE, the final dilated \option{objects} mask is returned as \option{objects_redo}. As a rule of thumb you probably want ~50\% of your image pixels to be masked as objects, much more than this and you might not be able to sample enough sky pixels, much more less and the sky estimates might be biased by object flux in the wings.
 }
   \item{box}{
-Integer vector; the dimensions of the box car filter to estimate the sky with. By default this is set to be the same as the \option{grid}.
+Integer vector; the dimensions of the box car filter to estimate the sky with.
 }
   \item{grid}{
-Integer vector; the resolution of the background grid to estimate the sky with.
+Integer vector; the resolution of the background grid to estimate the sky with. By default this is set to be the same as the \option{box}.
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.  
@@ -140,8 +140,10 @@ A list containing:
   \item{segim}{Integer matrix; the dilated and converged segmentation map matched pixel by pixel to \option{image}.}
   \item{segim_orig}{Integer matrix; the pre-dilated segmentation map matched pixel by pixel to \option{image}.}
   \item{objects}{Logical matrix; the object map matched pixel by pixel to \option{image}. 1 means there is an object at this pixel, 0 means it is a sky pixel. Can be used as a mask in various other functions that require objects to be masked out.}
+  \item{sky}{The estimated sky level of the \option{image}.}
+  \item{skyRMS}{The estimated sky RMS of the \option{image}.}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
-  \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
+  \item{header}{The header provded, if missing this is NULL.}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
   \item{magzero}{The assumed magnitude zero point. This is relevant to various outputs returned by the segmentation statistics.}
   \item{gain}{The assumed image gain (if NULL it was not used). This is relevant to various outputs returned by the segmentation statistics.}
