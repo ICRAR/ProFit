@@ -107,5 +107,5 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     if(ist) Monitor=c(Monitor,dof=dof)
     out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
   }
-  return(out)
+  return=out
 }

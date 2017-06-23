@@ -142,7 +142,7 @@ magimageWCS(out_profound$skyRMS, image$hdr)
 The background mask we used here (the default 100x100 option) looks to be pretty good, with not much correlation between the image and the sky map. However, even with a slightly too small sky grid the photometric outputs should be mostly pretty robust- differing by at worst a couple of counts per pixel. This is much less than the typical sky RMS (roughly 9 throughout).
 
 ```{r, fig.width=5, fig.height=4}
-maghist(out_profound$segstats[,'N']/out_profound$segstats[,'flux'], xlab=' Worst case fraction error')
+maghist(out_profound$segstats[,'N100']/out_profound$segstats[,'flux'], xlab=' Worst case fraction error')
 ```
 
 In summary, you probably want to use **profitProFound**, unless you really know what you are doing and are feeling a bit adventurous!

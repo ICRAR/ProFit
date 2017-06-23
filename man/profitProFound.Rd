@@ -15,8 +15,8 @@ This is the highest level source detection function provided in \code{ProFit}, c
 profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1,
 smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
 threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
-redosky = TRUE, redoskysize = 21, box = c(100, 100), type = "bilinear", header,
-verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
+redosky = TRUE, redoskysize = 21, box = c(100,100), grid = box, type = "bilinear",
+header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
 sortcol = "segID", decreasing = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -61,7 +61,7 @@ Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels.
 Character scalar; the shape of the diltion kernel. See \code{makeBrush}. Parsed to \code{\link{profitMakeSegimDilate}}.
 }
   \item{iters}{
-Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{profitProFound}.
+Integer scalar; the maximum number of curve of growth dilations should be made. This needs to be large enough to capture all the flux for sources of interest, but increasing this will increase the computation time for \code{profitProFound}. If this is set to zero then the initial \option{segim} image wither provided or computed internally via \code{\link{profitMakeSegim}} will be used instead.
 }
   \item{threshold}{
 Numeric scalar; After the curve of growth dilations, \option{theshold} is the relative change of the converging property (see \option{converge}) that flags convergence. If consecutive iterations have a relative difference within this ratio then the dilation is stopped, and this iteration is used to define the segmentation of the object. The effect of this is that different objects will be dilated for a different number of iterations. Usually fainter sources require more.
@@ -91,7 +91,10 @@ Logical; should the sky and sky RMS grids be re-computed using the final segment
 Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels to apply to the \option{object} mask before performing the inital and final aggressively masked sky estimates (the latter is only relevant if \option{redosky}=TRUE). Should be an odd number else will be rounded up to the nearest odd number. See \code{makeBrush}. Dilation is done by \code{\link{profitMakeSegimDilate}}. If \option{redosky}=TRUE, the final dilated \option{objects} mask is returned as \option{objects_redo}. As a rule of thumb you probably want ~50\% of your image pixels to be masked as objects, much more than this and you might not be able to sample enough sky pixels, much more less and the sky estimates might be biased by object flux in the wings.
 }
   \item{box}{
-Integer vector; the dimensions of the box car filter to estimate the sky with. Only relevant if \option{redosky}=TRUE.
+Integer vector; the dimensions of the box car filter to estimate the sky with.
+}
+  \item{grid}{
+Integer vector; the resolution of the background grid to estimate the sky with. By default this is set to be the same as the \option{box}.
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.  
@@ -112,7 +115,7 @@ Logical; should statistics on the segmented objects be returned? If \option{magz
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
   \item{boundstats}{
-Logical; if TRUE then the fraction of outer segment pixels that are touching sky is computer. If this fraction is 1 then all outer pixels are touching sky pixels, and the segstats will be quite unambiguous, the larger the lower the fraction the greater the complexity of the segmentation region. If FALSE then returns NA instead (saving computation time).
+Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac} and \option{edge_excess}). If FALSE these return NA instead (saving computation time).
 }
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
@@ -134,51 +137,71 @@ This high level function is both a source detection and a segmented aperture gro
 \value{
 A list containing:
 
-  \item{segim}{Integer matrix; the segmentation map matched pixel by pixel to \option{image}.}
+  \item{segim}{Integer matrix; the dilated and converged segmentation map matched pixel by pixel to \option{image}.}
+  \item{segim_orig}{Integer matrix; the pre-dilated segmentation map matched pixel by pixel to \option{image}.}
   \item{objects}{Logical matrix; the object map matched pixel by pixel to \option{image}. 1 means there is an object at this pixel, 0 means it is a sky pixel. Can be used as a mask in various other functions that require objects to be masked out.}
+  \item{sky}{The estimated sky level of the \option{image}.}
+  \item{skyRMS}{The estimated sky RMS of the \option{image}.}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
-  \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
+  \item{header}{The header provded, if missing this is NULL.}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
+  \item{magzero}{The assumed magnitude zero point. This is relevant to various outputs returned by the segmentation statistics.}
+  \item{gain}{The assumed image gain (if NULL it was not used). This is relevant to various outputs returned by the segmentation statistics.}
+  \item{pixscale}{The assumed pixel scale. This is relevant to various outputs returned by the segmentation statistics.}
   \item{call}{The original function call.}
   
-If \option{stats}=TRUE then the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
+If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is called and the \option{segstats} part of the returned list will contain a data.frame with columns (else NULL):
 
-  \item{segID}{The segmentation ID, which can be matched against values in \option{segim}}
-  \item{xcen}{The flux weighted x centre for this segment.}
-  \item{ycen}{The flux weighted y centre for this segment.}
-  \item{RAcen}{The flux weighted degrees Right Ascension centre for this segment (only present if a \option{header} is provided).}
-  \item{Deccen}{The flux weighted degrees Declination centre for this segment (only present if a \option{header} is provided).}
-  \item{flux}{The total flux in the segment (calculated using \option{image}-\option{sky}) in ADUs.}
-  \item{mag}{The \option{flux} converted to mag using \option{magzero}.}
-  \item{N}{The total number of pixels in this segment, i.e. contains 100\% of the flux.}
-  \item{N50}{The number of brightest pixels containing 50\% of the flux.}
-  \item{N90}{The number of brightest pixels containing 90\% of the flux.}
-  \item{R}{The approximate elliptical major axis containing 100\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec).}
-  \item{R50}{The approximate elliptical major axis containing 50\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec).}
-  \item{R90}{The approximate elliptical major axis containing 90\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec).}
-  \item{SB_N}{The mean surface brightness, calculated as \option{flux}/\option{N} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2).}
-  \item{SB_N50}{The mean surface brightness, calculated as \option{flux}*0.5/\option{N50} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2).}
-  \item{SB_N90}{The mean surface brightness, calculated as \option{flux}*0.9/\option{N90} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2).}
-  \item{xsd}{The weighted standard deviation in x  (always in units of pix).}
-  \item{ysd}{The weighted standard deviation in y  (always in units of pix).}
-  \item{covxy}{The weighted covariance in xy  (always in units of pix).}
-  \item{corxy}{The weighted correlation in xy  (always in units of pix).}
-  \item{con}{Concentration, \option{R50}/\option{R90}.}
-  \item{asymm}{The 180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry).}
-  \item{flux_reflect}{The flux corrected for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees).}
-  \item{mag_reflect}{The \option{flux_reflect} converted to mag using \option{magzero}.}
-  \item{maj}{The weighted standard deviation along the major axis, i.e. the first moment, so ~2 times this would be a typical major axis Kron radius (always in units of pix).}
-  \item{min}{The weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix).}
-  \item{axrat}{The axial ratio as given by min/maj.}
-  \item{ang}{The orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical).}
-  \item{flux_err}{The estimated total error in the flux for the segment.}
-  \item{mag_err}{The estimated total error in the magnitude for the segment.}
-  \item{flux_err_sky}{The sky subtraction component of the flux error.}
-  \item{flux_err_skyRMS}{The sky RMS component of the flux error.}
-  \item{flux_err_shot}{The object shot-noise component of the flux error (only if \option{gain} is provided).}
-  \item{boundary}{The fraction of outer segment pixels that are touching the sky, higher generally meaning more robust segmentation statistics.}
-  \item{iter}{The iteration number when the source was flagged as having convergent flux.}
-  \item{origfrac}{The ratio between the final converged flux and the initial \code{\link{profitMakeSegim}} iso-contour estimate.}
+  \item{segID}{Segmentation ID, which can be matched against values in \option{segim}}
+  \item{uniqueID}{Unique ID, which is fairly static and based on the xcen and ycen position}
+  \item{xcen}{Flux weighted x centre}
+  \item{ycen}{Flux weighted y centre}
+  \item{xmax}{x position of maximum flux}
+  \item{ymax}{y position of maximum flux}
+  \item{RAcen}{Flux weighted degrees Right Ascension centre (only present if a \option{header} is provided)}
+  \item{Deccen}{Flux weighted degrees Declination centre (only present if a \option{header} is provided)}
+  \item{RAmax}{Right Ascension of maximum flux (only present if a \option{header} is provided)}
+  \item{Decmax}{Declination of maximum flux (only present if a \option{header} is provided)}
+  \item{offset}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{flux}{Total flux (calculated using \option{image}-\option{sky}) in ADUs}
+  \item{mag}{Total flux converted to mag using \option{magzero}}
+  \item{N50}{Number of brightest pixels containing 50\% of the flux}
+  \item{N90}{Number of brightest pixels containing 90\% of the flux}
+  \item{N100}{Total number of pixels in this segment, i.e. contains 100\% of the flux}
+  \item{R50}{Approximate elliptical major axis containing 50\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{R90}{Approximate elliptical major axis containing 90\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{R100}{Approximate elliptical major axis containing 100\% of the flux (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{SB_N50}{Mean surface brightness containing brightest 50\% of the flux, calculated as \option{flux}*0.5/\option{N50} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2)}
+  \item{SB_N90}{Mean surface brightness containing brightest 90\% of the flux, calculated as \option{flux}*0.9/\option{N90} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2)}
+  \item{SB_N100}{Mean surface brightness containing all of the flux, calculated as \option{flux}/\option{N100} (if \option{pixscale} has been set correctly then this column will represent mag/asec^2. Otherwise it will be mag/pix^2)}
+  \item{xsd}{Weighted standard deviation in x (always in units of pix)}
+  \item{ysd}{Weighted standard deviation in y (always in units of pix)}
+  \item{covxy}{Weighted covariance in xy (always in units of pix)}
+  \item{corxy}{Weighted correlation in xy (always in units of pix)}
+  \item{con}{Concentration, \option{R50}/\option{R90}}
+  \item{asymm}{180 degree flux asymmetry (0-1, where 0 is perfect symmetry and 1 complete asymmetry)}
+  \item{flux_reflect}{Flux corrected for asymmetry by doubling the contribution of flux for asymmetric pixels (defined as no matching segment pixel found when the segment is rotated through 180 degrees)}
+  \item{mag_reflect}{\option{flux_reflect} converted to mag using \option{magzero}}
+  \item{maj}{Weighted standard deviation along the major axis, i.e. the first moment, so ~2 times this would be a typical major axis Kron radius (always in units of pix)}
+  \item{min}{Weighted standard deviation along the minor axis, i.e. the first moment, so ~2 times this would be a typical minor axis Kron radius  (always in units of pix)}
+  \item{axrat}{Axial ratio as given by min/maj}
+  \item{ang}{Orientation of the major axis in degrees. This has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical)}
+  \item{flux_err}{Estimated total error in the flux for the segment}
+  \item{mag_err}{Estimated total error in the magnitude for the segment}
+  \item{flux_err_sky}{Sky subtraction component of the flux error}
+  \item{flux_err_skyRMS}{Sky RMS component of the flux error}
+  \item{flux_err_shot}{Object shot-noise component of the flux error (only if \option{gain} is provided)}
+  \item{sky_mean}{Mean flux of the sky over all segment pixels}
+  \item{sky_sum}{Total flux of the sky over all segment pixels}
+  \item{skyRMS_mean}{Mean value of the sky RMS over all segment pixels}
+  \item{Nedge}{Number of edge segment pixels that make up the outer edge of the segment}
+  \item{Nsky}{Number of edge segment pixels that are touching sky}
+  \item{Nobject}{Number of edge segment pixels that are touching another object segment}
+  \item{Nborder}{Number of edge segment pixels that are touching the \option{image} border}
+  \item{edge_frac}{Fraction of edge segment pixels that are touching the sky i.e. \option{Nsky}\option{Nedge}, higher generally meaning more robust segmentation statistics}
+  \item{edge_excess}{Ratio of the number of edge pixels to the expected number given the elliptical geometry measurements of the segment. If this is larger than 1 then it is a sign that the segment geometry is irregular, and is likely a flag for compromised photometry}
+  \item{iter}{The iteration number when the source was flagged as having convergent flux}
+  \item{origfrac}{The ratio between the final converged flux and the initial \code{\link{profitMakeSegim}} iso-contour estimate}
 }
 \author{
 Aaron Robotham
@@ -191,25 +214,25 @@ Aaron Robotham
 image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
 package="ProFit"))
 
-segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, header=image$hdr, verbose=TRUE,
-plot=TRUE)
-segim2=profitProFound(image$imDat, skycut=1.5, magzero=30, header=image$hdr, verbose=TRUE,
-plot=TRUE)
+segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, header=image$hdr,
+verbose=TRUE, plot=TRUE)
+profound=profitProFound(image$imDat, skycut=1.5, magzero=30, header=image$hdr,
+verbose=TRUE, plot=TRUE)
 
 #You can check to see if the final mask is aggressive enough. Notice the halos
 #surrounding bright sources when just using the objects mask.
 
 temp=image$imDat
-temp[segim2$objects>0]=0
+temp[profound$objects>0]=0
 magimage(temp)
 temp=image$imDat
-temp[segim2$objects_redo>0]=0
+temp[profound$objects_redo>0]=0
 magimage(temp)
 
 magplot(segim$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
-magplot(segim2$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
+magplot(profound$segstats[,c("R50","SB_N90")], log='x', grid=TRUE)
 
-magplot(segim2$segstats$flux, segim2$segstats$origfrac, grid=TRUE)
+magplot(profound$segstats[,c("flux","origfrac")], log='x', grid=TRUE)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

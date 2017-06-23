@@ -115,7 +115,7 @@ profitGetEllipsesPlot=function(image, ellipses, segellipseID='all', pixscale=1, 
 
 profitDrawEllipse=function(xcen=0, ycen=0, rad=1, axrat=1, ang=0, box=0, ...){
   tempellipse=data.frame(xcen=xcen, ycen=ycen, rad=rad, axrat=axrat, ang=ang, box=box)
-  tempcirc=seq(0, 2*pi, length=1000)
+  tempcirc=seq(0, 2*pi, length=100)
   xtemp=cos(tempcirc)
   ytemp=sin(tempcirc)
   for(i in 1:length(xcen)){
@@ -123,8 +123,8 @@ profitDrawEllipse=function(xcen=0, ycen=0, rad=1, axrat=1, ang=0, box=0, ...){
     angtemp = (pi/180)*(tempellipse$ang[i]+90)
     radlo = tempellipse$rad[i]*tempellipse$axrat[i]
     radhi = tempellipse$rad[i]
-    x = xcen + boxscale*(radhi * cos(tempcirc) * cos(angtemp) - radlo * sin(tempcirc) * sin(angtemp))
-    y = ycen + boxscale*(radhi * cos(tempcirc) * sin(angtemp) + radlo * sin(tempcirc) * cos(angtemp))
+    x = tempellipse$xcen[i] + boxscale*(radhi * cos(tempcirc) * cos(angtemp) - radlo * sin(tempcirc) * sin(angtemp))
+    y = tempellipse$ycen[i] + boxscale*(radhi * cos(tempcirc) * sin(angtemp) + radlo * sin(tempcirc) * cos(angtemp))
     lines(x=x, y=y, ...)
   }
 }

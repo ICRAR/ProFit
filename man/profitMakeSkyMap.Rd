@@ -9,8 +9,8 @@ Calculate Sky Maps
 The high level function computes the absolute sky and sky RMS level over an image at a scale defined locally by the \option{box} parameter. This coarse map can then be used to compute sky/skyRMS values for the local sky anywhere on an image. This function uses \code{\link{profitSkyEstLoc}} to calculate the sky statistics for the subset boxcar regions.
 }
 \usage{
-profitMakeSkyMap(image, objects, mask, box = c(100, 100))
-profitMakeSkyGrid(image, objects, mask, box = c(100, 100), type='bilinear')
+profitMakeSkyMap(image, objects, mask, box = c(100,100), grid = box)
+profitMakeSkyGrid(image, objects, mask, box = c(100,100), grid = box, type = 'bilinear')
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,6 +25,9 @@ Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 mea
 }
   \item{box}{
 Integer vector; the dimensions of the box car filter to estimate the sky with.
+}
+  \item{grid}{
+Integer vector; the resolution of the background grid to estimate the sky with. By default this is set to be the same as the \option{box}.
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.
@@ -74,7 +77,7 @@ skybic = profitMakeSkyGrid(image, objects=segim_ex$objects, box=c(89,89), type='
 magimage(skybic$sky, magmap=FALSE)
 magimage(skybic$skyRMS, magmap=FALSE)
 
-The differences tend to be at the edges:
+# The differences tend to be at the edges:
 
 magimage(skybil$sky-skybic$sky, magmap=FALSE)
 magimage(skybil$skyRMS-skybic$skyRMS, magmap=FALSE)
