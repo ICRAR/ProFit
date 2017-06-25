@@ -1,13 +1,16 @@
 .meanwt=function(x, wt){
+  if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   sum(x*wt, na.rm = T)/sum(wt, na.rm = T)
 }
 
 .varwt=function(x, wt, xcen){
+  if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
   return=(sum((x-xcen)^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
 }
 
 .covarwt=function(x, y, wt, xcen, ycen){
+  if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
   if(missing(ycen)){ycen=.meanwt(y, wt)}
   return=(sum((x-xcen)*(y-ycen)*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
@@ -338,6 +341,11 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
     segim_new[segim!=0]=segim[segim!=0]
   }
   
+  if(!missing(mask)){
+    image[mask!=0]=0
+    segim_new[mask!=0]=0
+  }
+  
   if(stats & !missing(image)){
     if(verbose){message(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))}
     segstats=profitSegimStats(image=image, segim=segim_new, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
@@ -373,6 +381,7 @@ profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain=NULL, p
   locs=expand.grid(1:xlen,1:ylen)-0.5
   tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky), skyRMS=as.numeric(skyRMS))
   tempDT=tempDT[segID>0,]
+  tempDT[is.na(tempDT)]=0
   segID=tempDT[,.BY,by=segID]$segID
   
   x=NULL; y=NULL; flux=NULL; sky=NULL; skyRMS=NULL
@@ -380,9 +389,14 @@ profitSegimStats=function(image, segim, sky=0, skyRMS=0, magzero=0, gain=NULL, p
   flux=tempDT[,sum(flux, na.rm=TRUE),by=segID]$V1
   mag=profitFlux2Mag(flux=flux, magzero=magzero)
   
-  N50seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux)>=0.5)),by=segID]$V1
-  N90seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux)>=0.1)),by=segID]$V1
+  N50seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux, na.rm=TRUE)>=0.5)),by=segID]$V1
+  N90seg=tempDT[,length(which(cumsum(sort(flux))/sum(flux, na.rm=TRUE)>=0.1)),by=segID]$V1
   N100seg=tempDT[,.N,by=segID]$N
+  
+  if(any(flux==0)){
+    N50seg[flux==0]=N100seg[flux==0]
+    N90seg[flux==0]=N100seg[flux==0]
+  }
   
   flux_err_sky=tempDT[,sd(sky, na.rm=TRUE), by=segID]$V1*N100seg
   flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)), by=segID]$V1
