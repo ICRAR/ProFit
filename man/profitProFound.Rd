@@ -28,7 +28,7 @@ Numeric matrix; required, the image we want to analyse.
 Numeric matrix; a sepcified segmentation map of the image. This matrix *must* be the same dimensions as image if supplied. If this is option is used then \code{profitProFound} will not compute its initial segmentation map using \code{\link{profitMakeSegim}}, which is then dilated. Instead it will use the one parsed through \option{segim}.
 }
   \item{mask}{
-Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.

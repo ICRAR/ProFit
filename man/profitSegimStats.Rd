@@ -1,4 +1,4 @@
-\name{profitSegim}
+\name{profitSegimInfo}
 \alias{profitSegimStats}
 \alias{profitSegimPlot}
 %- Also NEED an '\alias' for EACH other topic documented here.
@@ -9,7 +9,7 @@ Image Segmentation Statistics
 Basic summary statistics for image segments, e.g. aperture parameters, fluxes and surface brightness estimates. These might provide useful first guesses to ProFit fitting parameters (particularly \option{flux}, \option{axrat} and \option{ang}).
 }
 \usage{
-profitSegimStats(image, segim, sky = 0, skyRMS = 0, magzero = 0, gain, pixscale = 1,
+profitSegimStats(image, segim, mask, sky = 0, skyRMS = 0, magzero = 0, gain, pixscale = 1,
 header, sortcol = "segID", decreasing = FALSE, rotstats = FALSE, boundstats = FALSE)
 profitSegimPlot(image, segim, mask, sky = 0, ...)
 }
@@ -21,14 +21,14 @@ Numeric matrix; required, the image we want to analyse.
   \item{segim}{
 Numeric matrix; required, the segmentation map of the \option{image}. This matrix *must* be the same dimensions as \option{image}.
 }
+  \item{mask}{
+Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+}
   \item{sky}{
 User provided estimate of the absolute sky level. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
 User provided estimate of the RMS of the sky. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
-}
-  \item{mask}{
-Boolean matrix; optional, non galaxy parts of the \option{image} to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}. 
 }
   \item{magzero}{
   Numeric scalar; the magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega). If provided along with \option{pixscale} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
