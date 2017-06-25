@@ -22,7 +22,7 @@ sortcol = "segID", decreasing = FALSE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required, the image we want to analyse.
+Numeric matrix; required, the image we want to analyse. If \option{image} is a list as created by \code{readFITS}, \code{read.fits} of \code{\link{magcutoutWCS}} then the image part of these lists is parsed to \option{image} and the correct header part is parsed to \option{header}. Note, image NAs are treated as masked pixels.
 }
   \item{segim}{
 Numeric matrix; a sepcified segmentation map of the image. This matrix *must* be the same dimensions as image if supplied. If this is option is used then \code{profitProFound} will not compute its initial segmentation map using \code{\link{profitMakeSegim}}, which is then dilated. Instead it will use the one parsed through \option{segim}.
@@ -198,6 +198,7 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{Nsky}{Number of edge segment pixels that are touching sky}
   \item{Nobject}{Number of edge segment pixels that are touching another object segment}
   \item{Nborder}{Number of edge segment pixels that are touching the \option{image} border}
+  \item{Nmask}{Number of edge segment pixels that are touching a masked pixel (note NAs in \option{image} are also treated as masked pixels)}
   \item{edge_frac}{Fraction of edge segment pixels that are touching the sky i.e. \option{Nsky}\option{Nedge}, higher generally meaning more robust segmentation statistics}
   \item{edge_excess}{Ratio of the number of edge pixels to the expected number given the elliptical geometry measurements of the segment. If this is larger than 1 then it is a sign that the segment geometry is irregular, and is likely a flag for compromised photometry}
   \item{iter}{The iteration number when the source was flagged as having convergent flux}

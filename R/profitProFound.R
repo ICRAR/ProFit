@@ -21,6 +21,8 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   if(verbose){message('Running profitProFound:')}
   timestart=proc.time()[3]
   
+  #Split out image and header parts of input:
+  
   if(!missing(image)){
     if(any(names(image)=='imDat') & missing(header)){
       if(verbose){message('Supplied image contains image and header components: extracting automatically.')}
@@ -40,10 +42,25 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     }
   }
   
+  #Treat image NAs as masked regions:
+  
+  if(!missing(mask)){
+    mask[is.na(image)]=1
+  }else{
+    if(any(is.na(image))){
+      mask=matrix(0,dim(image)[1],dim(image)[2])
+      mask[is.na(image)]=1
+    }
+  }
+  
+  #Get the pixel scale, if possible and not provided:
+  
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
     if(verbose){message(paste('Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
   }
+  
+  #Check for user provided sky, and compute if missing:
   
   hassky=!missing(sky)
   hasskyRMS=!missing(skyRMS)
@@ -60,6 +77,8 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   }else{
     if(verbose){message("Skipping making initial sky map - User provided sky and sky RMS")}
   }
+  
+  #Make the initial segmentation map, if not provided.
   
   if(missing(segim)){
     if(verbose){message(paste('Making initial segmentation image -',round(proc.time()[3]-timestart,3),'sec'))}
@@ -185,8 +204,9 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     if(verbose){message(paste('profitProFound is finished! -',round(proc.time()[3]-timestart,3),'sec'))}
     return=list(segim=segim_new, segim_orig=segim_orig, objects=objects, objects_redo=objects_redo, sky=sky, skyRMS=skyRMS, segstats=segstats, header=header, SBlim=SBlim, magzero=magzero, gain=gain, pixscale=pixscale, call=call)
   }else{
+    if(missing(header)){header=NULL}
     if(verbose){message('No objects in segmentation map - skipping dilations and CoG')}
     if(verbose){message(paste('profitProFound is finished! -',round(proc.time()[3]-timestart,3),'sec'))}
-    return=list(segim=segim$segim, segim_orig=segim_orig, objects=segim$segim, objects_redo=segim$segim, sky=sky, skyRMS=skyRMS, segstats=NULL, header=header, SBlim=NA,  magzero=magzero, gain=gain, pixscale=pixscale, call=call)
+    return=list(segim=segim, segim_orig=segim_orig, objects=objects, objects_redo=segim, sky=sky, skyRMS=skyRMS, segstats=NULL, header=header, SBlim=NA,  magzero=magzero, gain=gain, pixscale=pixscale, call=call)
   }
 }

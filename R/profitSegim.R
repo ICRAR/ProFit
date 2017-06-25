@@ -81,6 +81,17 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
   }
   
+  #Treat image NAs as masked regions:
+  
+  if(!missing(mask)){
+    mask[is.na(image)]=1
+  }else{
+    if(any(is.na(image))){
+      mask=matrix(0,dim(image)[1],dim(image)[2])
+      mask[is.na(image)]=1
+    }
+  }
+  
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
     if(verbose){message(paste(' - Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
@@ -191,6 +202,17 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   timestart = proc.time()[3]
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
+  }
+  
+  #Treat image NAs as masked regions:
+  
+  if(!missing(mask)){
+    mask[is.na(image)]=1
+  }else{
+    if(any(is.na(image))){
+      mask=matrix(0,dim(image)[1],dim(image)[2])
+      mask[is.na(image)]=1
+    }
   }
   
   if(missing(pixscale) & !missing(header)){
@@ -316,6 +338,17 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
   }
   
+  #Treat image NAs as masked regions:
+  
+  if(!missing(mask)){
+    mask[is.na(image)]=1
+  }else{
+    if(any(is.na(image))){
+      mask=matrix(0,dim(image)[1],dim(image)[2])
+      mask[is.na(image)]=1
+    }
+  }
+  
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
     if(verbose){message(paste(' - Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
@@ -373,10 +406,25 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     pixscale=profitGetPixScale(header)
   }
   image=image-sky
+  
+  #Treat image NAs as masked regions:
+  
+  if(!missing(mask)){
+    mask[is.na(image)]=1
+  }else{
+    if(any(is.na(image))){
+      mask=matrix(0,dim(image)[1],dim(image)[2])
+      mask[is.na(image)]=1
+    }
+  }
+  
+  #Set masked things to 0, to be safe:
+  
   if(!missing(mask)){
     image[mask!=0]=0
     segim[mask!=0]=0
   }
+  
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   segvec=which(tabulate(segim)>0)
@@ -502,12 +550,24 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     tab_border_2=cbind(1:length(segim), rep(0,length(segim)))
     tab_border_2[1:length(tab_border),2]=tab_border
     
-    tab_morph=cbind(segID, tab_edge_2[match(segID,tab_edge_2[,1]),2], tab_sky_2[match(segID,tab_sky_2[,1]),2], tab_border_2[match(segID,tab_border_2[,1]),2])
+    if(!missing(mask)){
+      outer_mask=segim_inner>0 & (mask[2:(xlen-1)+1,2:(ylen-1)]==1 | mask[2:(xlen-1)-1,2:(ylen-1)]==1 | mask[2:(xlen-1),2:(ylen-1)+1]==1 | mask[2:(xlen-1),2:(ylen-1)-1]==1)
+      segim_mask=segim_inner
+      segim_mask[outer_mask==0]=0
+      tab_mask=tabulate(segim_mask)
+      tab_mask_2=cbind(1:length(segim), rep(0,length(segim)))
+      tab_mask_2[1:length(tab_mask),2]=tab_mask
+    }else{
+      tab_mask_2=cbind(1:length(segim), rep(0,length(segim)))
+    }
+    
+    tab_morph=cbind(segID, tab_edge_2[match(segID,tab_edge_2[,1]),2], tab_sky_2[match(segID,tab_sky_2[,1]),2], tab_border_2[match(segID,tab_border_2[,1]),2], tab_mask_2[match(segID,tab_mask_2[,1]),2])
     Nedge=tab_morph[,2]
-    Nsky=tab_morph[,3]
+    Nsky=tab_morph[,3]-tab_morph[,5] #Raw Nsky-Nmask
     Nobject=tab_morph[,2]-tab_morph[,3]
     Nborder=tab_morph[,4]
-    edge_frac=tab_morph[,3]/tab_morph[,2]
+    Nmask=tab_morph[,5]
+    edge_frac=Nsky/Nedge
 
     #Using Ramanujan approximation from Wikipedia:
     
@@ -522,11 +582,12 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     Nsky=NA
     Nobject=NA
     Nborder=NA
+    Nmask=NA
     edge_frac=NA
     edge_excess=NA
   }
     
-  segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, xmax=xmax, ymax=ymax, RAcen=RAcen, Deccen=Deccen, RAmax=RAmax, Decmax=Decmax, offset=offset, flux=flux, mag=mag, N50=N50seg, N90=N90seg, N100=N100seg, R50=R50seg, R90=R90seg, R100=R100seg, SB_N50=SB_N50, SB_N90=SB_N90, SB_N100=SB_N100, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS, flux_err_shot=flux_err_shot, sky_mean=sky_mean, sky_sum=sky_mean*N100seg, skyRMS_mean=skyRMS_mean, Nedge=Nedge, Nsky=Nsky, Nobject=Nobject, Nborder=Nborder, edge_frac=edge_frac, edge_excess=edge_excess)
+  segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, xmax=xmax, ymax=ymax, RAcen=RAcen, Deccen=Deccen, RAmax=RAmax, Decmax=Decmax, offset=offset, flux=flux, mag=mag, N50=N50seg, N90=N90seg, N100=N100seg, R50=R50seg, R90=R90seg, R100=R100seg, SB_N50=SB_N50, SB_N90=SB_N90, SB_N100=SB_N100, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS, flux_err_shot=flux_err_shot, sky_mean=sky_mean, sky_sum=sky_mean*N100seg, skyRMS_mean=skyRMS_mean, Nedge=Nedge, Nsky=Nsky, Nobject=Nobject, Nborder=Nborder, Nmask=Nmask, edge_frac=edge_frac, edge_excess=edge_excess)
   return=as.data.frame(segstats[order(segstats[[sortcol]], decreasing=decreasing),])
 }
 

@@ -35,15 +35,15 @@ profitGetPixScale=function(header, CD1_1=1, CD1_2=0, CD2_1=0, CD2_2=1){
     if(is.data.frame(header) | is.matrix(header)){
       locs=match(c('CD1_1','CD1_2','CD2_1','CD2_2'),header[,1])
       headerWCS=data.frame(header[locs,1],as.numeric(header[locs,2]))
-      if('CD1_1' %in% headerWCS[,1]){CD1_1=headerWCS[headerWCS[,1]=='CD1_1',2]}else{print('Missing CD1_1')}
-      if('CD1_2' %in% headerWCS[,1]){CD1_2=headerWCS[headerWCS[,1]=='CD1_2',2]}else{print('Missing CD1_2')}
-      if('CD2_1' %in% headerWCS[,1]){CD2_1=headerWCS[headerWCS[,1]=='CD2_1',2]}else{print('Missing CD2_1')}
-      if('CD2_2' %in% headerWCS[,1]){CD2_2=headerWCS[headerWCS[,1]=='CD2_2',2]}else{print('Missing CD2_2')}
+      if('CD1_1' %in% headerWCS[,1]){CD1_1=headerWCS[headerWCS[,1]=='CD1_1',2]}else{message('Missing CD1_1')}
+      if('CD1_2' %in% headerWCS[,1]){CD1_2=headerWCS[headerWCS[,1]=='CD1_2',2]}else{message('Missing CD1_2')}
+      if('CD2_1' %in% headerWCS[,1]){CD2_1=headerWCS[headerWCS[,1]=='CD2_1',2]}else{message('Missing CD2_1')}
+      if('CD2_2' %in% headerWCS[,1]){CD2_2=headerWCS[headerWCS[,1]=='CD2_2',2]}else{message('Missing CD2_2')}
     }else{
-      if('CD1_1' %in% header){CD1_1=as.numeric(header[which(header=='CD1_1')+1])}else{print('Missing CD1_1')}
-      if('CD1_2' %in% header){CD1_2=as.numeric(header[which(header=='CD1_2')+1])}else{print('Missing CD1_2')}
-      if('CD2_1' %in% header){CD2_1=as.numeric(header[which(header=='CD2_1')+1])}else{print('Missing CD2_1')}
-      if('CD2_2' %in% header){CD2_2=as.numeric(header[which(header=='CD2_2')+1])}else{print('Missing CD2_2')}
+      if('CD1_1' %in% header){CD1_1=as.numeric(header[which(header=='CD1_1')+1])}else{message('Missing CD1_1')}
+      if('CD1_2' %in% header){CD1_2=as.numeric(header[which(header=='CD1_2')+1])}else{message('Missing CD1_2')}
+      if('CD2_1' %in% header){CD2_1=as.numeric(header[which(header=='CD2_1')+1])}else{message('Missing CD2_1')}
+      if('CD2_2' %in% header){CD2_2=as.numeric(header[which(header=='CD2_2')+1])}else{message('Missing CD2_2')}
     }
   }
   return(3600*(sqrt(CD1_1^2+CD1_2^2)+sqrt(CD2_1^2+CD2_2^2))/2)
