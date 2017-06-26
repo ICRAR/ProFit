@@ -65,7 +65,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   hassky=!missing(sky)
   hasskyRMS=!missing(skyRMS)
   
-  if(hassky==FALSE | hasskyRMS==FALSE){
+  if((hassky==FALSE | hasskyRMS==FALSE) & iters>0){
     if(verbose){message(paste('Making initial sky map -',round(proc.time()[3]-timestart,3),'sec'))}
     roughsky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box, grid=grid, type=type)
     if(hassky==FALSE){
@@ -75,7 +75,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       skyRMS=roughsky$skyRMS
     }
   }else{
-    if(verbose){message("Skipping making initial sky map - User provided sky and sky RMS")}
+    if(verbose){message("Skipping making initial sky map - User provided sky and sky RMS or iters=0")}
   }
   
   #Make the initial segmentation map, if not provided.
@@ -96,7 +96,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   segim_orig=segim
   
   if(any(segim>0)){
-    if(hassky==FALSE | hasskyRMS==FALSE){
+    if((hassky==FALSE | hasskyRMS==FALSE) & iters>0){
       if(verbose){message(paste('Doing initial aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'))}
       objects_redo=profitMakeSegimDilate(image=image, segim=objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){message(paste('Making better sky map -',round(proc.time()[3]-timestart,3),'sec'))}
@@ -108,7 +108,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
         skyRMS=bettersky$skyRMS
       }
     }else{
-      if(verbose){message("Skipping making better sky map - User provided sky and sky RMS")}
+      if(verbose){message("Skipping making better sky map - User provided sky and sky RMS or iters=0")}
     }
     
     if(iters>0){

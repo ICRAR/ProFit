@@ -405,7 +405,9 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
   }
-  image=image-sky
+  
+  hassky=!missing(sky)
+  hasskyRMS=!missing(skyRMS)
   
   #Treat image NAs as masked regions:
   
@@ -430,7 +432,23 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
   locs=expand.grid(1:xlen,1:ylen)-0.5
-  tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky), skyRMS=as.numeric(skyRMS))
+
+  if(hassky & hasskyRMS){
+    tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky), skyRMS=as.numeric(skyRMS))
+    rm(sky)
+    rm(skyRMS)
+  }
+  if(hassky & hasskyRMS==FALSE){
+    tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky))
+    rm(sky)
+  }
+  if(hassky==FALSE & hasskyRMS){
+    tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), skyRMS=as.numeric(skyRMS))
+    rm(skyRMS)
+  }
+  rm(locs)
+  rm(image)
+  
   tempDT=tempDT[segID>0,]
   tempDT[is.na(tempDT)]=0
   segID=tempDT[,.BY,by=segID]$segID
@@ -449,18 +467,38 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     N90seg[flux==0]=N100seg[flux==0]
   }
   
-  flux_err_sky=tempDT[,sd(sky, na.rm=TRUE), by=segID]$V1*N100seg
-  flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)), by=segID]$V1
+  if(hassky){
+    flux_err_sky=tempDT[,sd(sky, na.rm=TRUE), by=segID]$V1*N100seg
+  }else{
+    flux_err_sky=0
+  }
+  
+  if(hasskyRMS){
+    flux_err_skyRMS=tempDT[,sqrt(sum(skyRMS^2, na.rm=TRUE)), by=segID]$V1
+  }else{
+    flux_err_skyRMS=0
+  }
+  
   if(!is.null(gain)){
     flux_err_shot=sqrt(flux)/gain
   }else{
     flux_err_shot=0
   }
+  
   flux_err=sqrt(flux_err_sky^2+flux_err_skyRMS^2+flux_err_shot^2)
   mag_err=(2.5/log(10))*abs(flux_err/flux)
   
-  sky_mean=tempDT[,mean(sky, na.rm=TRUE), by=segID]$V1
-  skyRMS_mean=tempDT[,mean(skyRMS, na.rm=TRUE), by=segID]$V1
+  if(hassky){
+    sky_mean=tempDT[,mean(sky, na.rm=TRUE), by=segID]$V1
+  }else{
+    sky_mean=0
+  }
+  
+  if(hasskyRMS){
+    skyRMS_mean=tempDT[,mean(skyRMS, na.rm=TRUE), by=segID]$V1
+  }else{
+    skyRMS_mean=0
+  }
   
   xcen=tempDT[,.meanwt(x, flux),by=segID]$V1
   ycen=tempDT[,.meanwt(y, flux),by=segID]$V1
@@ -519,11 +557,10 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   }
   
   if(boundstats){
-    
     segim_inner=segim[2:(xlen-1),2:(ylen-1)]
     segim_outer=segim
-    
     rimID=max(segim)+1
+    rm(segim)
     segim_outer[1,]=rimID
     segim_outer[,1]=rimID
     segim_outer[xlen,]=rimID
@@ -533,40 +570,50 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     segim_edge=segim_inner
     segim_edge[inner_segim==1]=0
     tab_edge=tabulate(segim_edge)
-    tab_edge_2=cbind(1:length(segim), rep(0,length(segim)))
+    tab_edge_2=cbind(1:length(segim_outer), rep(0,length(segim_outer)))
     tab_edge_2[1:length(tab_edge),2]=tab_edge
+    rm(tab_edge)
+    Nedge=tab_edge_2[match(segID,tab_edge_2[,1]),2]
+    rm(tab_edge_2)
     
     outer_sky=segim_inner>0 & (segim_outer[2:(xlen-1)+1,2:(ylen-1)]==0 | segim_outer[2:(xlen-1)-1,2:(ylen-1)]==0 | segim_outer[2:(xlen-1),2:(ylen-1)+1]==0 | segim_outer[2:(xlen-1),2:(ylen-1)-1]==0)
     segim_sky=segim_inner
     segim_sky[outer_sky==0]=0
     tab_sky=tabulate(segim_sky)
-    tab_sky_2=cbind(1:length(segim), rep(0,length(segim)))
+    tab_sky_2=cbind(1:length(segim_outer), rep(0,length(segim_outer)))
     tab_sky_2[1:length(tab_sky),2]=tab_sky
+    rm(tab_sky)
+    Nsky=tab_sky_2[match(segID,tab_sky_2[,1]),2]
+    rm(tab_sky_2)
     
     outer_border=segim_inner>0 & (segim_outer[2:(xlen-1)+1,2:(ylen-1)]==rimID | segim_outer[2:(xlen-1)-1,2:(ylen-1)]==rimID | segim_outer[2:(xlen-1),2:(ylen-1)+1]==rimID | segim_outer[2:(xlen-1),2:(ylen-1)-1]==rimID)
     segim_border=segim_inner
     segim_border[outer_border==0]=0
     tab_border=tabulate(segim_border)
-    tab_border_2=cbind(1:length(segim), rep(0,length(segim)))
+    tab_border_2=cbind(1:length(segim_outer), rep(0,length(segim_outer)))
     tab_border_2[1:length(tab_border),2]=tab_border
+    rm(tab_border)
+    Nborder=tab_border_2[match(segID,tab_border_2[,1]),2]
+    Nborder[Nborder>2]=Nborder[Nborder>2]-2
+    rm(tab_border_2)
     
     if(!missing(mask)){
       outer_mask=segim_inner>0 & (mask[2:(xlen-1)+1,2:(ylen-1)]==1 | mask[2:(xlen-1)-1,2:(ylen-1)]==1 | mask[2:(xlen-1),2:(ylen-1)+1]==1 | mask[2:(xlen-1),2:(ylen-1)-1]==1)
       segim_mask=segim_inner
       segim_mask[outer_mask==0]=0
       tab_mask=tabulate(segim_mask)
-      tab_mask_2=cbind(1:length(segim), rep(0,length(segim)))
+      rm(tab_mask)
+      tab_mask_2=cbind(1:length(segim_outer), rep(0,length(segim_outer)))
       tab_mask_2[1:length(tab_mask),2]=tab_mask
+      rm(tab_mask)
+      Nmask=tab_mask_2[match(segID,tab_mask_2[,1]),2]
+      rm(tab_mask_2)
     }else{
-      tab_mask_2=cbind(1:length(segim), rep(0,length(segim)))
+      Nmask=0
     }
     
-    tab_morph=cbind(segID, tab_edge_2[match(segID,tab_edge_2[,1]),2], tab_sky_2[match(segID,tab_sky_2[,1]),2], tab_border_2[match(segID,tab_border_2[,1]),2], tab_mask_2[match(segID,tab_mask_2[,1]),2])
-    Nedge=tab_morph[,2]
-    Nsky=tab_morph[,3]-tab_morph[,5] #Raw Nsky-Nmask
-    Nobject=tab_morph[,2]-tab_morph[,3]
-    Nborder=tab_morph[,4]
-    Nmask=tab_morph[,5]
+    Nsky=Nsky-Nmask #Raw Nsky-Nmask-Nborder, to correct for masked pixels
+    Nobject=Nedge-Nsky-Nmask-Nborder # Nedge-Nsky
     edge_frac=Nsky/Nedge
 
     #Using Ramanujan approximation from Wikipedia:
