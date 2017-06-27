@@ -431,25 +431,30 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   ylen=dim(image)[2]
   segvec=which(tabulate(segim)>0)
   segvec=segvec[segvec>0]
-  locs=expand.grid(1:xlen,1:ylen)-0.5
-
+  #locs=expand.grid(1:xlen,1:ylen)-0.5
+  
+  segsel=which(segim>0)
+  
+  xloc = rep(1:xlen - 0.5, times = ylen)[segsel]
+  yloc = rep(1:ylen - 0.5, each = xlen)[segsel]
+  
   if(hassky & hasskyRMS){
-    tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky), skyRMS=as.numeric(skyRMS))
+    tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), sky=as.numeric(sky[segsel]), skyRMS=as.numeric(skyRMS[segsel]))
     rm(sky)
     rm(skyRMS)
   }
   if(hassky & hasskyRMS==FALSE){
-    tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), sky=as.numeric(sky))
+    tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), sky=as.numeric(sky[segsel]))
     rm(sky)
   }
   if(hassky==FALSE & hasskyRMS){
-    tempDT=data.table(segID=as.integer(segim), x=locs[,1], y=locs[,2], flux=as.numeric(image), skyRMS=as.numeric(skyRMS))
+    tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), skyRMS=as.numeric(skyRMS[segsel]))
     rm(skyRMS)
   }
-  rm(locs)
+  rm(xloc)
+  rm(yloc)
   rm(image)
   
-  tempDT=tempDT[segID>0,]
   tempDT[is.na(tempDT)]=0
   segID=tempDT[,.BY,by=segID]$segID
   
