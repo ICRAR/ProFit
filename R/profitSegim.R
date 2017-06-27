@@ -407,7 +407,17 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   }
   
   hassky=!missing(sky)
+  if(hassky){
+    if(length(hassky)==1 & hassky[1]==0){
+      hassky=FALSE
+    }else{
+      image=image-sky
+    }
+  }
   hasskyRMS=!missing(skyRMS)
+  if(hasskyRMS){
+    if(length(hasskyRMS)==1 & hasskyRMS[1]==0){hasskyRMS=FALSE}
+  }
   
   #Treat image NAs as masked regions:
   
@@ -435,8 +445,8 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   
   segsel=which(segim>0)
   
-  xloc = rep(1:xlen - 0.5, times = ylen)[segsel]
-  yloc = rep(1:ylen - 0.5, each = xlen)[segsel]
+  xloc = rep(1:xlen, times = ylen)[segsel]
+  yloc = rep(1:ylen, each = xlen)[segsel]
   
   if(hassky & hasskyRMS){
     tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), sky=as.numeric(sky[segsel]), skyRMS=as.numeric(skyRMS[segsel]))
@@ -505,14 +515,14 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     skyRMS_mean=0
   }
   
-  xcen=tempDT[,.meanwt(x, flux),by=segID]$V1
-  ycen=tempDT[,.meanwt(y, flux),by=segID]$V1
-  xsd=tempDT[,sqrt(.varwt(x,flux)),by=segID]$V1
-  ysd=tempDT[,sqrt(.varwt(y,flux)),by=segID]$V1
-  covxy=tempDT[,.covarwt(x,y,flux),by=segID]$V1
+  xcen=tempDT[,.meanwt(x-0.5, flux),by=segID]$V1
+  ycen=tempDT[,.meanwt(y-0.5, flux),by=segID]$V1
+  xsd=tempDT[,sqrt(.varwt(x-0.5,flux)),by=segID]$V1
+  ysd=tempDT[,sqrt(.varwt(y-0.5,flux)),by=segID]$V1
+  covxy=tempDT[,.covarwt(x-0.5,y-0.5,flux),by=segID]$V1
   
-  xmax=tempDT[,x[which.max(flux)],by=segID]$V1
-  ymax=tempDT[,y[which.max(flux)],by=segID]$V1
+  xmax=tempDT[,x[which.max(flux)]-0.5,by=segID]$V1
+  ymax=tempDT[,y[which.max(flux)]-0.5,by=segID]$V1
   
   offset=sqrt((xcen-xmax)^2+(ycen-ymax)^2)*pixscale
   
@@ -520,8 +530,8 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   uniqueID=ceiling(xcen)*pad+ceiling(ycen)
   
   if(rotstats){
-    asymm=tempDT[,.asymm(x,y,flux),by=segID]$V1
-    flux_reflect=tempDT[,.reflect(x,y,flux),by=segID]$V1
+    asymm=tempDT[,.asymm(x-0.5,y-0.5,flux),by=segID]$V1
+    flux_reflect=tempDT[,.reflect(x-0.5,y-0.5,flux),by=segID]$V1
     mag_reflect=profitFlux2Mag(flux=flux_reflect, magzero=magzero)
   }else{
     asymm=NA
