@@ -60,6 +60,13 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     if(verbose){message(paste('Extracted pixel scale from header provided:',round(pixscale,3),'asec/pixel.'))}
   }
   
+  if(missing(objects)){
+    if(!missing(segim)){
+      objects=segim
+      objects[objects != 0] = 1
+    }
+  }
+  
   #Check for user provided sky, and compute if missing:
   
   hassky=!missing(sky)
@@ -67,7 +74,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   
   if((hassky==FALSE | hasskyRMS==FALSE) & iters>0){
     if(verbose){message(paste('Making initial sky map -',round(proc.time()[3]-timestart,3),'sec'))}
-    roughsky=profitMakeSkyGrid(image=image, objects=segim, mask=mask, box=box, grid=grid, type=type)
+    roughsky=profitMakeSkyGrid(image=image, objects=objects, mask=mask, box=box, grid=grid, type=type)
     if(hassky==FALSE){
       sky=roughsky$sky
     }
@@ -87,10 +94,6 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     segim=segim$segim
   }else{
     if(verbose){message("Skipping making an initial segmentation image - User provided segim")}
-    if(missing(objects)){
-      objects=segim
-      objects[objects != 0] = 1
-    }
   }
   
   segim_orig=segim
@@ -146,14 +149,14 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       
       origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)]
       
+      objects=segim
+      objects[objects!=0]=1
+      
     }else{
       if(verbose){message('Iters set to 0 - keeping segim un-dilated')}
       selseg=0
       origfrac=1
     }
-    
-    objects=segim
-    objects[objects!=0]=1
     
     if(redosky){
       if(redoskysize %% 2 == 0){redoskysize=redoskysize+1}

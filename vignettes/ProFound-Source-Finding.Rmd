@@ -146,3 +146,54 @@ maghist(out_profound$segstats[,'N100']/out_profound$segstats[,'flux'], xlab=' Wo
 ```
 
 In summary, you probably want to use **profitProFound**, unless you really know what you are doing and are feeling a bit adventurous!
+
+## Advanced Usage
+
+The way **ProFound** handles the various inputs allows for great flexibility and power. AS an example, it is fairly trivial to run it in a mode where you can extract multiband photometry in pixel matched data. AS a pseudo code example imagine you have 3 pixel matched 2k*2K J/H/K band images. You can use the objects detected in, say, the K band to extract photometry in the others:
+
+```R
+pro_det_K=profitProFound(image=Kim)
+```
+
+We can then extract matching photometry. Note that in practice pro_K_tot_fix = pro_det_K (since the K band was our detection band already), but we psuedo re-run it for clarity.
+
+```R
+pro_J_tot_fix=profitProFound(image=Jim, segim=pro_det_K$segim, iters=0)
+pro_H_tot_fix=profitProFound(image=Him, segim=pro_det_K$segim, iters=0)
+pro_K_tot_fix=profitProFound(image=Kim, segim=pro_det_K$segim, iters=0)
+```
+
+In the above this would extract close to total photometry given the K-band object extraction. You often find better colours running with the high surface brightness non-dilated segmentation map, which is also returned by **ProFound**. In this case you would need to re-run the K too. Notice we also pass the **objects** matrix to ProFound. This ensures a better sky estimation, since we are now using the brighter inner part of detected objects to extract colour photometry, but we want to know the location of the full object to obtain a good sky estimate.
+
+```R
+pro_J_col_fix=profitProFound(image=Jim, segim=pro_det_K$segim_orig, objects=pro_det_K$objects, iters=0)
+pro_H_col_fix=profitProFound(image=Him, segim=pro_det_K$segim_orig, objects=pro_det_K$objects, iters=0)
+pro_K_col_fix=profitProFound(image=Kim, segim=pro_det_K$segim_orig, objects=pro_det_K$objects, iters=0)
+```
+
+A third option is to allow each target band to dynamically dilate based on the original segmentation map. The might help in situations where the target image PSFs are quite mismatched. The dynamic dilation will ensure close to total magnitudes regardless of the differing PSFs. Note that in practice pro_K_tot_dil = pro_det_K (since the K band was our detection band already), but we psuedo re-run it for clarity.
+
+```R
+pro_J_tot_dil=profitProFound(image=Jim, segim=pro_det_K$segim_orig, objects=pro_det_K$objects)
+pro_H_tot_dil=profitProFound(image=Him, segim=pro_det_K$segim_orig, objects=pro_det_K$objects)
+pro_K_tot_dil=profitProFound(image=Kim, segim=pro_det_K$segim_orig, objects=pro_det_K$objects)
+```
+
+Given these outputs a photometrically driven user can create a S/N stacked image using the **skyRMS**:
+
+```R
+stack=matrix(0,2000,2000) #Since our images are assumed to be 2k*2k
+stack=stack+Jim/(pro_J_tot_dil$skyRMS^2)
+stack=stack+Him/(pro_H_tot_dil$skyRMS^2)
+stack=stack+Kim/(pro_K_tot_dil$skyRMS^2)
+sky_stack=pro_J_tot_dil$skyRMS^2 + pro_H_tot_dil$skyRMS^2 + pro_K_tot_dil$skyRMS^2
+stack=stack*sky_stack
+```
+
+We can now make a new detection based on the S/N stacked images!
+
+```R
+pro_det_stack=profitProFound(stack)
+```
+
+We can now effectively re-run all the above, but using pro_det_stack where before we had pro_det_K.
