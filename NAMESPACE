@@ -7,14 +7,10 @@ import("LaplacesDemon")
 import("magicaxis")
 import("data.table")
 import("celestial")
+import("stats")
+import("graphics")
+import("grDevices")
 
-importFrom("grDevices", "colorRampPalette", "heat.colors", "hsv", "rainbow")
-importFrom("graphics", "abline", "axis", "box", "contour", "hist",
-             "layout", "legend", "lines", "par", "plot", "polygon")
-importFrom("stats", "approx", "dchisq", "dnorm", "dpois", "dt", "fft",
-             "median", "predict", "qgamma", "residuals", "rnorm",
-             "smooth.spline", "var", "integrate", "density", "pnorm", "quantile", "sd",
-           "optimise", "optim", "qnorm", "rpois")
 importFrom("utils", "relist")
 importFrom("RColorBrewer", "brewer.pal")
 importFrom("R2Cuba", "cuhre")

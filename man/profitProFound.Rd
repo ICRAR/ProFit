@@ -17,18 +17,18 @@ smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 
 threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
 redosky = TRUE, redoskysize = 21, box = c(100,100), grid = box, type = "bilinear",
 header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
-sortcol = "segID", decreasing = FALSE, ...)
+sortcol = "segID", decreasing = FALSE, lowmemory=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required, the image we want to analyse.
+Numeric matrix; required, the image we want to analyse. If \option{image} is a list as created by \code{readFITS}, \code{read.fits} of \code{\link{magcutoutWCS}} then the image part of these lists is parsed to \option{image} and the correct header part is parsed to \option{header}. Note, image NAs are treated as masked pixels.
 }
   \item{segim}{
 Numeric matrix; a sepcified segmentation map of the image. This matrix *must* be the same dimensions as image if supplied. If this is option is used then \code{profitProFound} will not compute its initial segmentation map using \code{\link{profitMakeSegim}}, which is then dilated. Instead it will use the one parsed through \option{segim}.
 }
   \item{mask}{
-Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
@@ -115,13 +115,16 @@ Logical; should statistics on the segmented objects be returned? If \option{magz
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
   \item{boundstats}{
-Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac} and \option{edge_excess}). If FALSE these return NA instead (saving computation time).
+Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac}, \option{edge_excess} and \option{FlagBorder}). If FALSE these return NA instead (saving computation time).
 }
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
 }
   \item{decreasing}{
 Logical; if FALSE (default) the segmentation statistics data.frame will be sorted in increasing order, if TRUE the data.frame will be sorted in decreasing order.
+}
+\item{lowmemory}{
+Logical; if TRUE then a low memory mode of ProFound will be used. This limits the large \option{image} pixel matched outputs to just \option{segim}, with \option{segim_orig}, \option{objects} and \option{objects_redo} set to NULL, and \option{sky} and \option{skyRMS} set to 0. Internally the sky and skyRMS are used as normal for flux estimates, but they are removed as soon as possible within the function in order to free up memory. 
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.
@@ -198,8 +201,10 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{Nsky}{Number of edge segment pixels that are touching sky}
   \item{Nobject}{Number of edge segment pixels that are touching another object segment}
   \item{Nborder}{Number of edge segment pixels that are touching the \option{image} border}
+  \item{Nmask}{Number of edge segment pixels that are touching a masked pixel (note NAs in \option{image} are also treated as masked pixels)}
   \item{edge_frac}{Fraction of edge segment pixels that are touching the sky i.e. \option{Nsky}\option{Nedge}, higher generally meaning more robust segmentation statistics}
   \item{edge_excess}{Ratio of the number of edge pixels to the expected number given the elliptical geometry measurements of the segment. If this is larger than 1 then it is a sign that the segment geometry is irregular, and is likely a flag for compromised photometry}
+  \item{Flagborder}{A binary flag telling the user which \option{image} borders the segment touches. The bottom of the \option{image} is flagged 1, left=2, top=4 and right=8. A summed combination of these flags indicate the segment is in a corner touching two borders: bottom-left=3, top-left=6, top-right=12, bottom-right=9.}
   \item{iter}{The iteration number when the source was flagged as having convergent flux}
   \item{origfrac}{The ratio between the final converged flux and the initial \code{\link{profitMakeSegim}} iso-contour estimate}
 }

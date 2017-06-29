@@ -21,13 +21,13 @@ decreasing = FALSE, ...)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Numeric matrix; required, the image we want to analyse.
+Numeric matrix; required, the image we want to analyse. Note, image NAs are treated as masked pixels.
 }
   \item{segim}{
 Numeric matrix; required, the segmentation map of the image. This matrix *must* be the same dimensions as \option{image}.
 }
   \item{mask}{
-Boolean matrix; optional, non galaxy parts of the image to mask out, where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
+Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
@@ -87,7 +87,7 @@ Logical; should statistics on the segmented objects be returned?
 Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_reflect} are computed, else they are set to NA. This is because they are very expensive to compute compared to other photometric properties.
 }
   \item{boundstats}{
-Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac} and \option{edge_excess}). If FALSE these return NA instead (saving computation time).
+Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac}, \option{edge_excess} and \option{FlagBorder}). If FALSE these return NA instead (saving computation time).
 }
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
@@ -168,8 +168,10 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{Nsky}{Number of edge segment pixels that are touching sky}
   \item{Nobject}{Number of edge segment pixels that are touching another object segment}
   \item{Nborder}{Number of edge segment pixels that are touching the \option{image} border}
+  \item{Nmask}{Number of edge segment pixels that are touching a masked pixel (note NAs in \option{image} are also treated as masked pixels)}
   \item{edge_frac}{Fraction of edge segment pixels that are touching the sky i.e. \option{Nsky}\option{Nedge}, higher generally meaning more robust segmentation statistics}
   \item{edge_excess}{Ratio of the number of edge pixels to the expected number given the elliptical geometry measurements of the segment. If this is larger than 1 then it is a sign that the segment geometry is irregular, and is likely a flag for compromised photometry}
+  \item{Flagborder}{A binary flag telling the user which \option{image} borders the segment touches. The bottom of the \option{image} is flagged 1, left=2, top=4 and right=8. A summed combination of these flags indicate the segment is in a corner touching two borders: bottom-left=3, top-left=6, top-right=12, bottom-right=9.}
 }
 
 \author{
