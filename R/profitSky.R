@@ -149,7 +149,10 @@ profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box){
 }
 
 profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear'){
-  invisible(gc())
+  if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
+  if(rembig){
+    invisible(gc())
+  }
   if(!requireNamespace("akima", quietly = TRUE)){
     if(type=='bicubic'){
       stop('The akima package is needed for bicubic interpolation to work. Please install it from CRAN.', call. = FALSE)
@@ -167,7 +170,9 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   tempmat_sky[is.na(tempmat_sky)]=mean(tempmat_sky, na.rm = TRUE)
   tempmat_skyRMS[is.na(tempmat_skyRMS)]=mean(tempmat_skyRMS, na.rm = TRUE)
   
-  invisible(gc())
+  if(rembig){
+    invisible(gc())
+  }
   
   if(dim(tempmat_sky)[1]>1){
     #bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
@@ -189,9 +194,11 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
       #temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
     }
     
-    rm(bigridx)
-    rm(bigridy)
-    invisible(gc())
+    if(rembig){
+      rm(bigridx)
+      rm(bigridy)
+      invisible(gc())
+    }
   
     temp_bi_sky=matrix(temp_bi_sky, dim(image)[1])
     temp_bi_skyRMS=matrix(temp_bi_skyRMS, dim(image)[1])
