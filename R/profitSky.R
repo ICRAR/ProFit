@@ -1,6 +1,6 @@
 .interp.2d=function (x, y, obj) 
 {
-    if(length(x)>1e3){rembig=TRUE}else{rembig=FALSE}
+    if(length(x)>1e6){rembig=TRUE}else{rembig=FALSE}
     xobj = obj$x
     yobj = obj$y
     zobj = obj$z
