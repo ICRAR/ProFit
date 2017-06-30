@@ -1,24 +1,43 @@
 .interp.2d=function (x, y, obj) 
 {
+    if(length(x)>1e3){rembig=TRUE}else{rembig=FALSE}
     xobj = obj$x
     yobj = obj$y
     zobj = obj$z
     nx = length(xobj)
     ny = length(yobj)
     lx = approx(xobj, 1:nx, x, rule = 2)$y
+    if(rembig){
+      rm(x)
+      invisible(gc())
+    }
     ly = approx(yobj, 1:ny, y, rule = 2)$y
+    if(rembig){
+      rm(y)
+      invisible(gc())
+    }
     lx1 = floor(lx)
     ly1 = floor(ly)
     ex = lx - lx1
+    if(rembig){
+      rm(lx)
+      invisible(gc())
+    }
     ey = ly - ly1
+    if(rembig){
+      rm(ly)
+      invisible(gc())
+    }
     ex[lx1 == nx] = 1
     ey[ly1 == ny] = 1
     lx1[lx1 == nx] = nx - 1
     ly1[ly1 == ny] = ny - 1
-    return = zobj[cbind(lx1, ly1)] * (1 - ex) * (1 - ey) +
-             zobj[cbind(lx1 + 1, ly1)] * ex * (1 - ey) +
-             zobj[cbind(lx1, ly1 + 1)] * (1 - ex) * ey + 
-             zobj[cbind(lx1 + 1, ly1 + 1)] * ex * ey
+    temp=rep(0,length(lx1))
+    temp=zobj[cbind(lx1, ly1)] * (1 - ex) * (1 - ey)
+    temp=temp+zobj[cbind(lx1 + 1, ly1)] * ex * (1 - ey)
+    temp=temp+zobj[cbind(lx1, ly1 + 1)] * (1 - ex) * ey
+    temp=temp+zobj[cbind(lx1 + 1, ly1 + 1)] * ex * ey
+    return = temp
 }
 
 profitSkyEst=function(image, objects, mask, cutlo=cuthi/2, cuthi=sqrt(sum((dim(image)/2)^2)), skycut='auto', clipiters=5, radweight=0, plot=FALSE, ...){
@@ -130,6 +149,7 @@ profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box){
 }
 
 profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear'){
+  invisible(gc())
   if(!requireNamespace("akima", quietly = TRUE)){
     if(type=='bicubic'){
       stop('The akima package is needed for bicubic interpolation to work. Please install it from CRAN.', call. = FALSE)
@@ -146,6 +166,8 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
   tempmat_sky[is.na(tempmat_sky)]=mean(tempmat_sky, na.rm = TRUE)
   tempmat_skyRMS[is.na(tempmat_skyRMS)]=mean(tempmat_skyRMS, na.rm = TRUE)
+  
+  invisible(gc())
   
   if(dim(tempmat_sky)[1]>1){
     #bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
@@ -166,6 +188,10 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
       #temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
       #temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
     }
+    
+    rm(bigridx)
+    rm(bigridy)
+    invisible(gc())
   
     temp_bi_sky=matrix(temp_bi_sky, dim(image)[1])
     temp_bi_skyRMS=matrix(temp_bi_skyRMS, dim(image)[1])

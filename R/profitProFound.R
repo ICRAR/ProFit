@@ -17,9 +17,10 @@
 }
 
 profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
-  call=match.call()
   if(verbose){message('Running profitProFound:')}
   timestart=proc.time()[3]
+  call=match.call()
+  if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
   
   #Split out image and header parts of input:
   
@@ -144,8 +145,11 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
         segim[select]=segim_array[,,i][select]
       }
       
-      rm(select)
-      rm(segim_array)
+      if(rembig){
+        rm(select)
+        rm(segim_array)
+        invisible(gc())
+      }
       
       origfrac=compmat[,1]/compmat[cbind(1:length(selseg),selseg)]
       
@@ -178,6 +182,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       segim_orig=NULL
       objects=NULL
       objects_redo=NULL
+      invisible(gc())
     }
     
     if(stats & !missing(image)){
