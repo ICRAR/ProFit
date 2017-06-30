@@ -16,7 +16,7 @@ profitMakeGaussianPSF(fwhm = 3, dim = c(25,25), trim = 1 - pi/4, plot = FALSE, .
 Numeric scalar; the full width half max (FWHM) of the desired PSF. This is internally converted to a Gaussian standard deviation (sigma) using sigma=FWHM/(2*sqrt(2*log(2)))~FWHM/2.355.
 }
   \item{dim}{
-Integer vector; the dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimenions.
+Integer vector; the dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimensions.
 }
   \item{trim}{
 Numeric scalar; fraction of pixels to keep. This is done by using quantile to find the pixel value and setting pixels below this to zero. This is done to obtain a more circular kernel (often handy), where the defaults will approximately fill a square image with a circle of diameter \option{dim}.
@@ -32,7 +32,7 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 This is a simple function to create a Gaussian PSF for prototyping image convolution/fits in cases where PSF has not been estimated. In general this should *not* be used for final fitting, since it is rare to have an exact, circular Gaussian profile PSFs in real astronomical images. Better options would be a double winged Gaussian, a Moffat (which is similar to a 2D Student-T distribution with no correlation), or an empirical PSF.
 }
 \value{
-Numeric matrix; the 2D image of the specified PSF with dimenions c(npix,npix).
+Numeric matrix; the 2D image of the specified PSF with dimsenions c(npix,npix).
 }
 \author{
 Aaron Robotham & Dan Taranu

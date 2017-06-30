@@ -5,7 +5,7 @@
 Create diagnostic plot of estimated iso-photal ellipses
 }
 \description{
-Generates a useful plot merging a rapidly changing colour mapping with the estimated elipses.
+Generates a useful plot merging a rapidly changing colour mapping with the estimated ellipses.
 }
 \usage{
 profitGetEllipsesPlot(image, ellipses, segellipseID = "all", pixscale = 1,
@@ -27,7 +27,7 @@ Integer vector; the segellipseID to be plotted. The default of 'all' will displa
 Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). This should only be used if the radii columns in \option{ellipses} have already been scaled by the pixel scale.
 }
   \item{col}{
-The colour palette to be used for the background \option{image}. The default is chosen to be high contrast, to make it easier to comapre the computed ellipses with the underlying iso-photes.
+The colour palette to be used for the background \option{image}. The default is chosen to be high contrast, to make it easier to comapare the computed ellipses with the underlying iso-photes.
 }
   \item{border}{
 The colour of the ellipse border drawn by \code{draw.ellipse}. If 'auto' then a sensible default is chosen.

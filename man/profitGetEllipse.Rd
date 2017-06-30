@@ -29,7 +29,7 @@ Numeric scalar; the desired x centre of the ellipse. If this is not provided it 
 Numeric scalar; the desired y centre of the ellipse. If this is not provided it is calculated internally.
 }
   \item{scale}{
-How should the standard ellispe covariance be scaled to create a geometric ellipse. The default of sqrt(2) is appropriate to create an ellispe that represents the location of an iso-photal contour of a galaxy.
+How should the standard ellipse covariance be scaled to create a geometric ellipse. The default of sqrt(2) is appropriate to create an ellipse that represents the location of an iso-photal contour of a galaxy.
 }
   \item{pixscale}{
 Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output \option{radhi}, \option{radlo} and \option{radav} is in terms of pixels, otherwise they are in arcseconds.  

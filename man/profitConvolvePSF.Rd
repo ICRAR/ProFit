@@ -29,7 +29,7 @@ Logical matrix; logical image matrix the same size as the input \option{image} m
 Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
 }
   \item{sky}{
-Numeric scalar;  the sky level of the image. Thsi is important to ensure the convolution works well at the edges, since the padded regions outside the image bounds will be effectively set to the \option{sky} value. If this is much higher of lower than the true sky then you may see artefacts.
+Numeric scalar;  the sky level of the image. This is important to ensure the convolution works well at the edges, since the padded regions outside the image bounds will be effectively set to the \option{sky} value. If this is much higher of lower than the true sky then you may see artefacts.
 }
   \item{plot}{
 Logical; should a \code{\link{magimage}} plot of the output be generated?

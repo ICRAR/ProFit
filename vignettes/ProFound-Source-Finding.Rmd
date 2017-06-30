@@ -156,7 +156,7 @@ In summary, you probably want to use **profitProFound**, unless you really know 
 out_profound=profitProFound(image, magzero=30, verbose=TRUE, boundstats=TRUE)
 ```
 
-The output we get is in segstats is useful, telling us whetehr or not an object is isolated:
+The output we get is in segstats is useful, telling us whether or not an object is isolated:
 
 ```{r}
 out_profound$segstats[1:10,c("Nedge", "Nsky", "Nobject", "Nborder", "edge_frac", "edge_excess", "Flagborder")]

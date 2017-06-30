@@ -30,7 +30,7 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \value{
-Numeric matrix; a new image the same size as \option{image}, with the relevant tranform applied.
+Numeric matrix; a new image the same size as \option{image}, with the relevant transform applied.
 
 For \code{profitImBlur} the output is a smoothed version of the \option{image}.
 

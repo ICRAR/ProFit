@@ -28,7 +28,7 @@ Numeric scalar/vector; magnitude given the \option{magzero}.
 Numeric scalar/vector; magnitude zero point. What this implies depends on the magnitude system being used (e.g. AB or Vega).
 }
   \item{SB}{
-Numeric scalar/vector; surface brightnes in mag/asec^2.
+Numeric scalar/vector; surface brightness in mag/asec^2.
 }
   \item{pixscale}{
 Numeric scalar/vector; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1, then the output is in terms of pixels, otherwise it is in arcseconds.

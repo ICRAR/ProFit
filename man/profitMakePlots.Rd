@@ -34,10 +34,10 @@ plotchisq = FALSE, dofs)
   The maximum range of sigma deviations displayed.
 }
   \item{cmap}{
-  Optional vector; color map to use for plots of the \option{image}, \option{model}, and \option{error}.
+  Optional vector; colour map to use for plots of the \option{image}, \option{model}, and \option{error}.
 }
   \item{errcmap}{
-  Optional vector; color map to use for plots of the chi-squared residuals (see \option{errischisq}).
+  Optional vector; colour map to use for plots of the chi-squared residuals (see \option{errischisq}).
 }
   \item{plotchisq}{
   Logical flag; to determine if the function should plot a map and a histogram of chi squared = (((\option{image}-option{model})/option{error})[/option{region}])^2.
