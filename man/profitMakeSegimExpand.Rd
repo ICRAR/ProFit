@@ -33,7 +33,7 @@ Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{skycut}{
-Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS. Since we are restricted to expanding out pre-existing segmentation regions we can usually afford to make this value lower than the equivilant in \code{\link{profitMakeSegim}}.
+Numeric scalar; the lowest threshold to make on the \option{image} in units of the skyRMS. Since we are restricted to expanding out pre-existing segmentation regions we can usually afford to make this value lower than the equivalent in \code{\link{profitMakeSegim}}.
 }
   \item{SBlim}{
 Numeric scalar; the magnitude/arcsec^2 surface brightness threshold to apply. This is always used in conjunction with \option{skycut}, so set \option{skycut} to be very large (e.g. Inf) if you want a pure surface brightness threshold for the segmentation. \option{magzero} and \option{pixscale} must also be present for this to be used.
@@ -54,7 +54,7 @@ Numeric scalar; standard deviation of the blur used when \option{smooth}=TRUE.
 Logical; should smoothing be done on the target \option{image}?
 }
   \item{expandsigma}{
-Numeric scalar; standard deviation of the blur used when expanding out the \option{segim}. Roughly spoeaking if \option{skycut} is set to a low number (say -5) then the expansion will not be prevented by the local sky level and it will grod by the number of pixels specified by \option{expandsigma}.
+Numeric scalar; standard deviation of the blur used when expanding out the \option{segim}. Roughly speaking if \option{skycut} is set to a low number (say -5) then the expansion will not be prevented by the local sky level and it will grow by the number of pixels specified by \option{expandsigma}.
 }
   \item{expand}{
 Vector; specifies which segmentation regions should be expanded. If left with the default \option{expand}='all' then all segments will be expanded.
@@ -63,13 +63,13 @@ Vector; specifies which segmentation regions should be expanded. If left with th
 Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels. Should be an odd number else will be rounded up to the nearest odd number. See \code{makeBrush}.
 }
   \item{shape}{
-Character scalar; the shape of the diltion kernel. See \code{makeBrush}.
+Character scalar; the shape of the dilation kernel. See \code{makeBrush}.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the absolute sky level. If this is not provided then it will be computed internally using \code{\link{profitSkyEst}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed internally using \code{\link{profitSkyEst}}. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
@@ -100,7 +100,7 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \details{
-The basic behaviour of \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is to intellegently expand out image segments already identified by, e.g., \code{\link{profitMakeSegim}}.
+The basic behaviour of \code{profitMakeSegimExpand} and  \code{profitMakeSegimDilate} is to intelligently expand out image segments already identified by, e.g., \code{\link{profitMakeSegim}}.
 
 The \code{profitMakeSegimExpand} defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{dim}, \option{expandsigma}, \option{sigma}.
 
@@ -116,7 +116,7 @@ A list containing:
   \item{sky}{The estimated sky level of the \option{image}. \code{profitMakeSegimExpand} only).}
   \item{skyRMS}{The estimated sky RMS of the \option{image}. \code{profitMakeSegimExpand} only).}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
-  \item{header}{The header provded, if missing this is NULL.}
+  \item{header}{The header provided, if missing this is NULL.}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
   \item{call}{The original function call.}
   

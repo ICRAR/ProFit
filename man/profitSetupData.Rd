@@ -41,7 +41,7 @@ Logical list, optional, using exactly the same list structure as \option{modelli
 Logical list; optional, using exactly the same list structure as \option{modellist}. This flags which parameters of the model list should be fitted in log space (i.e. only relevant to set this if the parameter is being fitted). Parameters like size (re) and axial ratio (axrat) are more naturally explored in log-space, so these should typically be set to true. See Details.
 }
   \item{priors}{
-Function; optional, that takes the new trial \option{modellist} (strictly the first argument) and then the initial \option{modellist} (strictly second argument) and returns the log-likehood of the priors. As long as the returned output if a single summed log-likehood, there is no restriction on what happens internally to the function. You can also parse additional values to be used internally (say Normal sd, as in the galaxy fitting vignette). This very simple or very complex conditional priors can be specified using R functions. See vignettes for an example. If left empty priors will not be used when computing likelihoods.
+Function; optional, that takes the new trial \option{modellist} (strictly the first argument) and then the initial \option{modellist} (strictly second argument) and returns the log-likelihood of the priors. As long as the returned output if a single summed log-likelihood, there is no restriction on what happens internally to the function. You can also parse additional values to be used internally (say Normal sd, as in the galaxy fitting vignette). This very simple or very complex conditional priors can be specified using R functions. See vignettes for an example. If left empty priors will not be used when computing likelihoods.
 }
   \item{intervals}{
 List; optional, interval limits for each parameter, using a similar list structure to \option{modellist}. The limits should be specified as length 2 vectors: c(low, high) in linear parameter space (no matter if tolog is TRUE for this parameter). See Vignettes and Details.
@@ -52,22 +52,22 @@ Function; optional, takes the new trial \option{modellist} and returns a list wi
   \item{psf}{
 Matrix; optional. An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{modellist}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
 }
-\item{psfdim}{Numeric; optional. Dimensions of the PSF image to generate when fitting an analytic PSF and convolving extended sources. Defaults to the diimensions of \option{psf}. Ignored if there are no extended sources or analytic PSF.
+\item{psfdim}{Numeric; optional. Dimensions of the PSF image to generate when fitting an analytic PSF and convolving extended sources. Defaults to the dimensions of \option{psf}. Ignored if there are no extended sources or analytic PSF.
 }
   \item{finesample}{
-An integer factor to determine how much finer of a grid the model image and PSF should be evaluated on. Because the PSF is discretized, convolution introduces additional discretization of the model, diminishing the accuracy of the convolved model. If this parameter is set to an integer greater than one, the model and PSF (but see \option{psffinesampled}) will be upsampled prior to convolution, and then downsampled after convolution. The fine sampling factor must be an integer to avoid non-integral re-binning artifacts when downsampling. Large finesample factors will significantly increase convolution time and accuracy, while moderately increasing model generation time and accuracy, so it is recommended to set \option{nbenchmark} to at least a few when using this option.
+An integer factor to determine how much finer of a grid the model image and PSF should be evaluated on. Because the PSF is discretized, convolution introduces additional discretization of the model, diminishing the accuracy of the convolved model. If this parameter is set to an integer greater than one, the model and PSF (but see \option{psffinesampled}) will be upsampled prior to convolution, and then downsampled after convolution. The fine sampling factor must be an integer to avoid non-integral re-binning artefacts when downsampling. Large finesample factors will significantly increase convolution time and accuracy, while moderately increasing model generation time and accuracy, so it is recommended to set \option{nbenchmark} to at least a few when using this option.
 }
   \item{psffinesampled}{
   Logical, is the provided PSF already fine-sampled? If this flag is set and an empirical PSF is provided, it will not be interpolated even if \option{finesample} is greater than unity.
 }
   \item{magzero}{
-The magntiude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
+The magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
 }
   \item{algo.func}{
-Character string; the fitting functions being used. Allowed options are "optim", "CMA", "LA" and "LD". \code{profitLikeModel} uses the value of algo.func in the profit.data object to determine the type of output generated  for fitting purposes (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a single value. If set to "LA" or "LD" then a more complex structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algortithms available within R. In practice the user must ensure that this option is set correctly for the higher level function used to fit the image data.
+Character string; the fitting functions being used. Allowed options are "optim", "CMA", "LA" and "LD". \code{profitLikeModel} uses the value of algo.func in the profit.data object to determine the type of output generated  for fitting purposes (see \code{\link{profitSetupData}} for details). If this flag is set to either "optim" or "CMA" then it will output the log-likelihood as a single value. If set to "LA" or "LD" then a more complex structure as expected by \code{\link{LaplaceApproximation}} and \code{\link{LaplacesDemon}} (see details for these functions). In practice the simple log-likelihood scalar output as given by setting to "optim" or "CMA" is useful for a large number of maximisation algorithms available within R. In practice the user must ensure that this option is set correctly for the higher level function used to fit the image data.
 }
   \item{like.func}{
-Character string specifying the likelihood distribution function to use. Chi-Squared "chisq", Normal "norm" (default), Poisson "pois" and Student-T "t" are the currently supported options. Poisson uses the Cash (or C) statistic, and can be accessed identically using "cash" (or "c"). The choice of the Student-T is probably sensible in the regime where the model is not a perfect reflection of the data- i.e. there are asymmetric or spiral features that the models in ProFit will never be able to reproduce. These can cause high tension when using Normal statistics, but the use of the Student-T (with more mass in the distant wings) reduces the dominance of poorly fitting and un-fittable regions. The degrees of freedom (DoF) for the Student-T are evaluated from the data and model directly so as to maximise the likelihood. If the model is an excellent fit than Normal likelihoods are preferred, and this is the default.
+Character string specifying the likelihood distribution function to use. Chi-Squared "chisq", Normal "norm" (default), Poisson "pois" and Student-T "t" are the currently supported options. Poisson uses the Cash (or C) statistic, and can be accessed identically using "cash" (or "c"). The choice of the Student-T is probably sensible in the regime where the model is not a perfect reflection of the data- i.e. there are asymmetric or spiral features that the models in ProFit will never be able to reproduce. These can cause high tension when using Normal statistics, but the use of the Student-T (with more mass in the distant wings) reduces the dominance of poorly fitting and un-fitable regions. The degrees of freedom (DoF) for the Student-T are evaluated from the data and model directly so as to maximise the likelihood. If the model is an excellent fit than Normal likelihoods are preferred, and this is the default.
 }
   \item{magmu}{
 Logical vector. If TRUE then the mag parameter in the input \option{modellist} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
@@ -98,7 +98,7 @@ The parameters that must be specified for \option{sersic} are:
   \item{ycen}{Vector; y centres of the 2D Sersic profiles (can be fractional pixel positions).}
   \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
   \item{re}{Vector; effective radii of the 2D Sersic profiles}
-  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{nser}{Vector; the Sersic indices of the 2D Sersic profiles}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
   \item{axrat}{Vector; axial ratios of Sersic profiles defined as minor-axis/major-axis, i.e. 1 is a circle and 0 is a line.}
   \item{box}{Vector; the boxiness of the Sersic profiles that trace contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When \option{box}=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).}
@@ -112,7 +112,7 @@ The parameters that must be specified for \option{coresersic} are:
   \item{mag}{Vector; total magnitudes of the 2D Sersic profiles. Converted to flux using 10^(-0.4*(\option{mag}-\option{magzero})).}
   \item{re}{Vector; effective radii of the 2D Sersic profiles}
   \item{rb}{Vector; transition radius of the Sersic profile (from inner power-law to outer Sersic).}
-  \item{nser}{Vector; the Sersic indicies of the 2D Sersic profiles}
+  \item{nser}{Vector; the Sersic indices of the 2D Sersic profiles}
   \item{a}{Vector; strength of transition from inner core to outer Sersic. Larger +ve means sharper.}
   \item{b}{Vector; the inner power-law of the Core-Sersic. Less than 1 is an increasingly flat core.}
   \item{ang}{Vector; the orientation of the major axis of the profile in degrees. When plotted as an R image the angle (theta) has the convention that 0= | (vertical), 45= \, 90= - (horizontal), 135= /, 180= | (vertical). Values outside the range 0 <= ang <= 180 are allowed, but these get recomputed as ang = ang \%\% 180.}
@@ -198,19 +198,14 @@ modellist = list(\cr
 	sky = list(\cr
 		bg = 3e-12\cr
 	),\cr
-  pointsource = list(\cr
-    hwhm = 2,
-    ang = 80,
-    axrat = 0.9
-  ),
 )\cr
 
 The parameters to be fitted are defined in a list with the same format as above:
 
 tofit=list(\cr
   sersic=list(\cr
-    xcen= c(T,NA), #We fit for xcen and tie the two togther\cr
-    ycen= c(T,NA), #We fit for ycen and tie the two togther\cr
+    xcen= c(T,NA), #We fit for xcen and tie the two together\cr
+    ycen= c(T,NA), #We fit for ycen and tie the two together\cr
     mag= c(T,T),\cr #Fit for both
     re= c(T,T),\cr #Fit for both
     nser= c(T,F), #Fit for bulge\cr
@@ -226,11 +221,6 @@ tofit=list(\cr
   sky=list(\cr
     bg = F\cr
   )\cr
-  pointsource = list(\cr
-    hwhm = F,
-    ang = F,
-    axrat = F
-  ),
 )\cr
 
 Parameters that are better explored in log space are defined in a list with the same format as above:
@@ -254,11 +244,6 @@ tolog=list(\cr
   sky=list(\cr
     bg = F\cr
   )\cr
-  pointsource = list(\cr
-    hwhm = F,
-    ang = F,
-    axrat = F
-  ),
 )\cr
 
 ProFit will only only use the priors function if specified:
@@ -301,7 +286,7 @@ constraints=function(modellist){\cr
 
 By ProFit convention the bottom-left part of the bottom-left pixel when plotting the image matrix is c(0,0) and the top-right part of the bottom-left pixel is c(1,1), i.e. the mid-point of pixels are half integer values in x and y.
 
-To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument referes to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
+To confuse things a bit, when R plots an image of a matrix it is transposed and re-ordered vertically to how it appears if you print the matrix directly to screen, i.e. compare print(matrix(1:4,2,2)) and image(matrix(1:4,2,2)). The lowest value (1) is top-left when printed but bottom-left when displayed using image (the red pixel). Both are "correct": the issue is whether you consider the first element of a matrix to be the Cartesian x position (movement in x) or a row element (movement in y). Matrices in maths are always written top-left first where the first argument refers to row number, but images by convention are accessed in a Cartesian sense. Hence [3,4] in a maths matrix means 3 down and 4 right from the top-left, but 3 right and 4 up from the bottom-left in an image.
 }
 \value{
 List; complex structure of class profit.data containing:
@@ -342,7 +327,7 @@ Aaron Robotham & Dan Taranu
 }
 
 \section{Notes}{
-One of the list outputs of \code{profitSetupData} is the calcregion logical matrix. This tells the model generation and convolution codes whether a particular pixel needs to be considered for fitting purposes. It is computed by convolving the logical region matrix (which itself is the elements of \option{segim} containing the galaxy to be fitted) with the \option{psf}. Values of the convolved matrix output from \code{\link{profitConvolvePSF}} above 0 are necessary for accurate likelihood evaluation later, and have their pixel value set to TRUE (or 1). This generally has the visual effect of expanding out the region matrix with a square tophat kernel the same size as the \option{psf} matrix.
+One of the list outputs of \code{profitSetupData} is the calcregion logical matrix. This tells the model generation and convolution codes whether a particular pixel needs to be considered for fitting purposes. It is computed by convolving the logical region matrix (which itself is the elements of \option{segim} containing the galaxy to be fitted) with the \option{psf}. Values of the convolved matrix output from \code{\link{profitConvolvePSF}} above 0 are necessary for accurate likelihood evaluation later, and have their pixel value set to TRUE (or 1). This generally has the visual effect of expanding out the region matrix with a square top-hat kernel the same size as the \option{psf} matrix.
 }
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
@@ -415,8 +400,8 @@ magimage(profitMakeModel(modellist,dim=dim(image),psf=psf))
 
 tofit=list(
   sersic=list(
-    xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
-    ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
+    xcen= c(TRUE,NA), #We fit for xcen and tie the two together
+    ycen= c(TRUE,NA), #We fit for ycen and tie the two together
     mag= c(TRUE,TRUE), #Fit for both
     re= c(TRUE,TRUE), #Fit for both
     nser= c(TRUE,FALSE), #Fit for bulge

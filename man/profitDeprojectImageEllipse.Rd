@@ -16,10 +16,10 @@ profitDeprojectImageEllipse(image, xcen, ycen, axrat, ang, upsample=5L)
 List or numeric; required. An image matrix or a list of image matrices, each of which will be deprojected. Every image must have the same dimensions as the first image, or have both dimensions be \option{upsample} times larger (e.g. for a finely sampled model).
 }
   \item{xcen}{
-Numeric; required. The x-coordinate in pixels of the ellipse center in the images.
+Numeric; required. The x-coordinate in pixels of the ellipse centre in the images.
 }
   \item{ycen}{
-Numeric; required. The y-coordinate in pixels of the ellipse center in the images.
+Numeric; required. The y-coordinate in pixels of the ellipse centre in the images.
 }
   \item{axrat}{
 Numeric; required. The axis ratio of the ellipse.
@@ -32,7 +32,7 @@ Integer; optional. The factor by which to upsample each image. Must be positive.
 }
 }
 \details{
-This function deprojects images, assuming that the object forms an ellipse in the image plane because it is a projection of a thin disk. Each provided image is oversampled and then resampled by stretching by 1/axrat along the ellipse minor axis. The value in each oversampled subpixel is assigned to whichever new pixel the center of the subpixel happens to fall in, so discreteness artifacts will appear (especially for small values of \option{upsample}). It can be used on images, masks and/or binary segmentation maps, and is useful for visual inspection of disk galaxy features like spiral arms.
+This function deprojects images, assuming that the object forms an ellipse in the image plane because it is a projection of a thin disk. Each provided image is oversampled and then resampled by stretching by 1/axrat along the ellipse minor axis. The value in each oversampled subpixel is assigned to whichever new pixel the centre of the subpixel happens to fall in, so discreteness artefacts will appear (especially for small values of \option{upsample}). It can be used on images, masks and/or binary segmentation maps, and is useful for visual inspection of disk galaxy features like spiral arms.
 }
 \value{
 List; deprojected versions of all of the images provided in the original list (\option{image}).

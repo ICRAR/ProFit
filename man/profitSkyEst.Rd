@@ -5,7 +5,7 @@
 Local Sky Estimator
 }
 \description{
-A high level utility to estimate the sky properties of a supplied \option{image}. This is closely related to the equivilant routines available in the LAMBDAR R package.
+A high level utility to estimate the sky properties of a supplied \option{image}. This is closely related to the equivalent routines available in the LAMBDAR R package.
 }
 \usage{
 profitSkyEst(image, objects, mask, cutlo = cuthi/2,
@@ -46,11 +46,11 @@ Further arguments to be passed to \code{\link{magplot}}. Only relevant is \optio
 }
 }
 \details{
-This function is closely modelled on the sky.estimate function in the LAMBDAR package (the basic elements of which were written by ASGR). The defaults work well for data where the main objects (usually a galaxy) is centrally located in the \option{image} since the \option{cutlo} default will usually ignore contaminated central pixels. On top of this it does pretty agressive object pixel rejection using the \option{skycut} and \option{clipiters} options.
+This function is closely modelled on the sky.estimate function in the LAMBDAR package (the basic elements of which were written by ASGR). The defaults work well for data where the main objects (usually a galaxy) is centrally located in the \option{image} since the \option{cutlo} default will usually ignore contaminated central pixels. On top of this it does pretty aggressive object pixel rejection using the \option{skycut} and \option{clipiters} options.
 
 The defaults should work reasonably well on modern survey data (see Examples), but should the solution not be ideal try modifying these parameters (in order of impact priority): \option{skycut}, \option{cutlo}, \option{radweight}, \option{clipiters}.
 
-It is intersting to note that a better estimate of the sky RMS can be made by using the output of \code{\link{profitImDiff}} (see Examples).
+It is interesting to note that a better estimate of the sky RMS can be made by using the output of \code{\link{profitImDiff}} (see Examples).
 }
 \value{
 Returns a list with 5 elements:

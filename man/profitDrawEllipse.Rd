@@ -35,7 +35,7 @@ Further arguments to be passed to \code{\link{lines}} to draw the ellipse/s.
 }
 }
 \details{
-This function uses all the standard \code{ProFit} conventions to define the input paramters
+This function uses all the standard \code{ProFit} conventions to define the input parameters
 }
 \value{
 No value is returned, this function is run purely for the side effect of drawing an ellipse.

@@ -5,7 +5,7 @@
 Watershed Image Segmentation
 }
 \description{
-A high level utility to achieve decent quality image segmentation. It uses a mixture of image smoothing and watershed segmentation propogation to identify distinct objects for use in, e.g., \code{\link{profitSetupData}} (where the \option{segim} list item output of \code{profitMakeSegim} would be parsed to the \option{segim} input of \code{\link{profitSetupData}}).
+A high level utility to achieve decent quality image segmentation. It uses a mixture of image smoothing and watershed segmentation propagation to identify distinct objects for use in, e.g., \code{\link{profitSetupData}} (where the \option{segim} list item output of \code{profitMakeSegim} would be parsed to the \option{segim} input of \code{\link{profitSetupData}}).
 }
 \usage{
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
@@ -25,10 +25,10 @@ Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{tolerance}{
-Numeric scalar; the minimum height of the object in the units of skyRMS between its highest point (seed) and the point where it contacts another object (checked for every contact pixel). If the height is smaller than the tolerance, the object will be combined with one of its neighbors, which is the highest. The range 1-5 offers decent results usually.
+Numeric scalar; the minimum height of the object in the units of skyRMS between its highest point (seed) and the point where it contacts another object (checked for every contact pixel). If the height is smaller than the tolerance, the object will be combined with one of its neighbours, which is the highest. The range 1-5 offers decent results usually.
 }
   \item{ext}{
-Numeric scalar; radius of the neighborhood in pixels for the detection of neighboring objects. Higher value smoothes out small objects.
+Numeric scalar; radius of the neighbourhood in pixels for the detection of neighbouring objects. Higher value smooths out small objects.
 }
   \item{sigma}{
 Numeric scalar; standard deviation of the blur used when \option{smooth}=TRUE.
@@ -40,7 +40,7 @@ Logical; should smoothing be done on the target \option{image}?
 Integer scalar; the number of pixels required to identify an object.
 }
   \item{skycut}{
-Numeric scalar; the lowest theshold to make on the \option{image} in units of the skyRMS.
+Numeric scalar; the lowest threshold to make on the \option{image} in units of the skyRMS.
 }
   \item{SBlim}{
 Numeric scalar; the mag/asec^2 surface brightness threshold to apply. This is always used in conjunction with \option{skycut}, so set \option{skycut} to be very large (e.g. Inf) if you want a pure surface brightness threshold for the segmentation. \option{magzero} and \option{pixscale} must also be present for this to be used.
@@ -55,10 +55,10 @@ Numeric scalar; the gain (in photo-electrons per ADU). This is only used to comp
   Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). If set to 1 (default), then the output is in terms of pixels, otherwise it is in arcseconds. If provided along with \option{magzero} then the flux and surface brightness outputs will represent magnitudes and mag/asec^2.
 }
   \item{sky}{
-User provided estimate of the absolute sky level. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the absolute sky level. If this is not provided then it will be computed internally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-User provided estimate of the RMS of the sky. If this is not provided then it will be computed interally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+User provided estimate of the RMS of the sky. If this is not provided then it will be computed internally using \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
@@ -107,7 +107,7 @@ A list containing:
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
-  \item{header}{The header provded, if missing this is NULL.}
+  \item{header}{The header provided, if missing this is NULL.}
   \item{SBlim}{The surface brightness limit of detected objects (requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL).}
   \item{call}{The original function call.}
   

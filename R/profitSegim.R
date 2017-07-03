@@ -71,6 +71,10 @@
 }
 
 profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, gain=NULL, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+  if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
+  if(rembig){
+    invisible(gc())
+  }
   call=match.call()
   if(verbose){message(' - Running profitMakeSegim:')}
   timestart = proc.time()[3]
@@ -197,9 +201,17 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
 }
 
 profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain=NULL, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
-  call=match.call()
+  
   if(verbose){message(' - Running profitMakeSegimExpand:')}
   timestart = proc.time()[3]
+  
+  if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
+  if(rembig){
+    invisible(gc())
+  }
+  
+  call=match.call()
+  
   if(!requireNamespace("imager", quietly = TRUE)){
     stop('The imager package is needed for this function to work. Please install it from CRAN.', call. = FALSE)
   }
@@ -330,9 +342,16 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
 }
 
 profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain=NULL, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
-  call=match.call()
+
   if(verbose){message(' - Running profitMakeSegimDilate:')}
   timestart = proc.time()[3]
+  
+  if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
+  if(rembig){
+    invisible(gc())
+  }
+  
+  call=match.call()
   
   if(!requireNamespace("EBImage", quietly = TRUE)){
     stop('The EBImage package is needed for this function to work. Please install it from Bioconductor.', call. = FALSE)
@@ -374,6 +393,11 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
     segim_new[segim!=0]=segim[segim!=0]
   }
   
+  if(rembig){
+    rm(segim)
+    invisible(gc())
+  }
+  
   if(!missing(mask)){
     image[mask!=0]=0
     segim_new[mask!=0]=0
@@ -402,6 +426,12 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
 }
 
 profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=NULL, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE){
+  
+  if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
+  if(rembig){
+    invisible(gc())
+  }
+  
   if(missing(pixscale) & !missing(header)){
     pixscale=profitGetPixScale(header)
   }
@@ -450,20 +480,36 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   
   if(hassky & hasskyRMS){
     tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), sky=as.numeric(sky[segsel]), skyRMS=as.numeric(skyRMS[segsel]))
-    rm(sky)
-    rm(skyRMS)
+    if(rembig){
+      rm(sky)
+      rm(skyRMS)
+      invisible(gc())
+    }
   }
   if(hassky & hasskyRMS==FALSE){
     tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), sky=as.numeric(sky[segsel]))
-    rm(sky)
+    if(rembig){
+      rm(sky)
+      invisible(gc())
+    }
   }
   if(hassky==FALSE & hasskyRMS){
     tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]), skyRMS=as.numeric(skyRMS[segsel]))
-    rm(skyRMS)
+    if(rembig){
+      rm(skyRMS)
+      invisible(gc())
+    }
   }
-  rm(xloc)
-  rm(yloc)
-  rm(image)
+  if(hassky==FALSE & hasskyRMS==FALSE){
+    tempDT=data.table(segID=as.integer(segim[segsel]), x=xloc, y=yloc, flux=as.numeric(image[segsel]))
+  }
+  
+  if(rembig){
+    rm(xloc)
+    rm(yloc)
+    rm(image)
+    invisible(gc())
+  }
   
   tempDT[is.na(tempDT)]=0
   segID=tempDT[,.BY,by=segID]$segID
@@ -588,7 +634,11 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     tab_edge=c(tab_edge,rep(0,max(segID)-length(tab_edge)))
     tab_edge=cbind(1:max(segID),tab_edge)
     Nedge=tab_edge[match(segID,tab_edge[,1]),2]
-    rm(tab_edge)
+    
+    if(rembig){
+      rm(tab_edge)
+      invisible(gc())
+    }
     
     outer_sky=segim_inner>0 & (segim[2:(xlen-1)+1,2:(ylen-1)]==0 | segim[2:(xlen-1)-1,2:(ylen-1)]==0 | segim[2:(xlen-1),2:(ylen-1)+1]==0 | segim[2:(xlen-1),2:(ylen-1)-1]==0)
     segim_sky=segim_inner
@@ -597,7 +647,11 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     tab_sky=c(tab_sky,rep(0,max(segID)-length(tab_sky)))
     tab_sky=cbind(1:max(segID),tab_sky)
     Nsky=tab_sky[match(segID,tab_sky[,1]),2]
-    rm(tab_sky)
+    
+    if(rembig){
+      rm(tab_sky)
+      invisible(gc())
+    }
     
     # outer_border=segim_inner>0 & (segim[2:(xlen-1)+1,2:(ylen-1)]==rimID | segim[2:(xlen-1)-1,2:(ylen-1)]==rimID | segim[2:(xlen-1),2:(ylen-1)+1]==rimID | segim[2:(xlen-1),2:(ylen-1)-1]==rimID)
     # segim_border=segim_inner
@@ -635,7 +689,11 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
       tab_mask=c(tab_mask,rep(0,max(segID)-length(tab_mask)))
       tab_mask=cbind(1:max(segID),tab_mask)
       Nmask=tab_mask[match(segID,tab_mask[,1]),2]
-      rm(tab_mask)
+      
+      if(rembig){
+        rm(tab_mask)
+        invisible(gc())
+      }
     }else{
       Nmask=0
     }

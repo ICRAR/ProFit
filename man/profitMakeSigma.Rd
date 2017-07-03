@@ -18,7 +18,7 @@ output_units='ADU', plot=FALSE, ...)
 Numeric matrix; required, the image we want to analyse.
 }
   \item{objects}{
-Boolean matrix; optional, object mask where 1 is object and 0 is sky. Pixels set to 0 are interpretted as sky, and set to zero for calculating object shot-noise. If provided, this matrix *must* be the same dimensions as \option{image}. 
+Boolean matrix; optional, object mask where 1 is object and 0 is sky. Pixels set to 0 are interpreted as sky, and set to zero for calculating object shot-noise. If provided, this matrix *must* be the same dimensions as \option{image}. 
 }
   \item{sky}{
 Numeric; the absolute sky level. Consider using the sky output from \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
@@ -27,7 +27,7 @@ Numeric; the absolute sky level. Consider using the sky output from \code{\link{
 Numeric; the RMS of the sky. Consider using the skyRMS output from \code{\link{profitSkyEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skycut}{
-How many multiples of \option{skyRMS} above the \option{sky} to start calculting shot-noise based on the \option{gain} scaling of the \option{image}. If you are missing an object mask You almsot certainly do not want this to be below 0 (else you will reduce the level of the sigma map just due to fluctuations in the sky), and in practice this should probably be set in the range 1-3.
+How many multiples of \option{skyRMS} above the \option{sky} to start calculating shot-noise based on the \option{gain} scaling of the \option{image}. If you are missing an object mask You almost certainly do not want this to be below 0 (else you will reduce the level of the sigma map just due to fluctuations in the sky), and in practice this should probably be set in the range 1-3.
 }
   \item{gain}{
 Numeric; the gain (in photo-electrons per ADU). For a very rough estimate consider using the gain output from \code{\link{profitGainEst}}. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
@@ -61,7 +61,7 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 }
 \details{
-This is a simple utility function, but useful for beginners if they are unsure of how the error terms should be propogated (in short: in quadrature).
+This is a simple utility function, but useful for beginners if they are unsure of how the error terms should be propagated (in short: in quadrature).
 }
 \value{
 Numeric matrix; a sigma map the same size as \option{image}. This should be appropriate for feeding into \code{\link{profitSetupData}}.
