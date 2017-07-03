@@ -15,3 +15,5 @@ ProFit.Rproj
 .cproject
 .project
 .settings
+
+src/libprofit/profit/config.h
