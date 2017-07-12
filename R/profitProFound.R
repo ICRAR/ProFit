@@ -214,7 +214,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     
     if(!missing(SBlim) & !missing(magzero)){
       SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale), na.rm=TRUE)
-    }else if(missing(SBlim) & !missing(magzero) & skycut>0){
+    }else if(missing(SBlim) & skycut>0){
       SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
     }else{
       SBlim=NULL

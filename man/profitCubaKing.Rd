@@ -50,7 +50,7 @@ Scalar; axial ratio of the Sersic profile defined as minor-axis/major-axis, i.e.
 Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
   \item{dim}{
-Vector; the dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimsenions.
+Vector; the dimensions of the image to be generated. Typically this should be c(Nx,Ny). If length 1 then the value will be replicated for both dimensions.
 }
   \item{rel.tol}{
 Scalar; the requested relative accuracy. Default, 0.001.
