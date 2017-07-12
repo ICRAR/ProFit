@@ -105,7 +105,7 @@ points(model_test$pointsource$xcen, model_test$pointsource$ycen, col='green')
 We can match back to our initial catalogue using coordmatch in **celestial**
 
 ```{r}
-testmatch_gal=coordmatch(cbind(model_test$sersic$xcen,model_test$sersic$ycen)/3600, pro_test$segstats[,c("xcen","ycen")]/3600,5)
+testmatch_gals=coordmatch(cbind(model_test$sersic$xcen,model_test$sersic$ycen)/3600, pro_test$segstats[,c("xcen","ycen")]/3600,5)
 
 testmatch_stars=coordmatch(cbind(model_test$pointsource$xcen,model_test$pointsource$ycen)/3600,pro_test$segstats[,c("xcen","ycen")]/3600,5)
 ```
@@ -113,7 +113,7 @@ testmatch_stars=coordmatch(cbind(model_test$pointsource$xcen,model_test$pointsou
 And plot the difference in estimated magnitude for the point sources (red) and extended sources (blue):
 
 ```{r}
-magplot(model_test$sersic$mag[testmatch_gal$bestmatch$refID], model_test$sersic$mag[testmatch_gal$bestmatch$refID]-pro_test$segstats[testmatch_gal$bestmatch$compareID,'mag'], grid=TRUE, ylim=c(-1,1), col='blue')
+magplot(model_test$sersic$mag[testmatch_gals$bestmatch$refID], model_test$sersic$mag[testmatch_gals$bestmatch$refID]-pro_test$segstats[testmatch_gals$bestmatch$compareID,'mag'], grid=TRUE, ylim=c(-1,1), col='blue')
 points(pro_test$segstats$mag, pro_test$segstats$mag_err, pch='.')
 points(pro_test$segstats$mag, -pro_test$segstats$mag_err, pch='.')
 
@@ -199,11 +199,11 @@ testmatch_stars_fin=coordmatch(cbind(model_test$pointsource$xcen,model_test$poin
 
 So some final stats. False-positive=FP (this is bad) and true-positive=TP (this is good).
 
-Galaxy TP = `r length(testmatch_gals_fin$bestmatch[,1])/200`,
-Stars TP = `r length(testmatch_stars_fin$bestmatch[,1])/200`,
-Total TP = `r (length(testmatch_gals_fin$bestmatch[,1])+length(testmatch_stars_fin$bestmatch[,1]))/400`.
+Galaxy TP = `r length(testmatch_gals_fin$bestmatch[,1])/Ngal`,
+Stars TP = `r length(testmatch_stars_fin$bestmatch[,1])/Nstar`,
+Total TP = `r (length(testmatch_gals_fin$bestmatch[,1])+length(testmatch_stars_fin$bestmatch[,1]))/(Ngal+Nstar)`.
 
-Total FP = `r (dim(finalcat)[1]-length(testmatch_gals_fin$bestmatch[,1])-length(testmatch_stars_fin$bestmatch[,1]))/400`.
+Total FP = `r (dim(finalcat)[1]-length(testmatch_gals_fin$bestmatch[,1])-length(testmatch_stars_fin$bestmatch[,1]))/(Ngal+Nstar)`.
 
 So we recover 72% of true galaxies, 97% of true stars (i.e. 84% of all true sources) and suffer 16% false positives. This suggests we cannot push much harder on the detection side since most of the new objects will be FALSE (since TP ~ 1-FP, and it will only get harder from here).
 
@@ -234,8 +234,30 @@ It should be clear that doing a few iterative steps of removing sources and anal
 In this case we were pushing the data to extremely low surface brightness. We can compare our segmented surface brightness levels to the actual image.
 
 ```{r}
-maghist(finalcat$SB_N100)
+magplot(density(finalcat$SB_N100, na.rm=TRUE), xlab='Surface Brightness / mag/asec^-2', ylab='PDF')
 abline(v=mean(pro_test$SBlim), col='red')
 ```
 
 The performance of **ProFound** is obviously substantially better when you are nearer to the nominal surface limit of the image.
+
+Despite running this demo in two phases above, it is in fact hard to do better than a deeper single pass (skycut=1 to skycut=0.9 is the only change here):
+
+```{r, fig.width=6, fig.height=6}
+pro_test_2=profitProFound(im_test, magzero=30, skycut=0.9, pixcut=3, verbose=TRUE, plot=TRUE, boundstats=TRUE, pixscale=0.34, tolerance=2)
+```
+
+Match back to the intrinsic catalogue as before:
+
+```{r}
+testmatch_gals_2=coordmatch(cbind(model_test$sersic$xcen,model_test$sersic$ycen)/3600, pro_test_2$segstats[,c("xcen","ycen")]/3600,5)
+
+testmatch_stars_2=coordmatch(cbind(model_test$pointsource$xcen,model_test$pointsource$ycen)/3600,pro_test_2$segstats[,c("xcen","ycen")]/3600,5)
+```
+
+Galaxy TP = `r length(testmatch_gals_2$bestmatch[,1])/Ngal`,
+Stars TP = `r length(testmatch_stars_2$bestmatch[,1])/Nstar`,
+Total TP = `r (length(testmatch_gals_2$bestmatch[,1])+length(testmatch_stars_2$bestmatch[,1]))/(Ngal+Nstar)`.
+
+Total FP = `r (dim(pro_test_2$segstats)[1]-length(testmatch_gals_2$bestmatch[,1])-length(testmatch_stars_2$bestmatch[,1]))/(Ngal+Nstar)`.
+
+The moral? If you know what you doing you might want to jump straight to a deeper extraction, but if you are uncertain then you can proceed in a few iterations, i.e. extract the bright sources you are confident about and then go back later to dig around in the noise to get some more.
