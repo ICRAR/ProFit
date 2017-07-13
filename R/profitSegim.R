@@ -6,14 +6,14 @@
 .varwt=function(x, wt, xcen){
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
-  return=(sum((x-xcen)^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
+  return=(sum((x-xcen)^2*wt, na.rm = T)/sum(wt, na.rm = T))
 }
 
 .covarwt=function(x, y, wt, xcen, ycen){
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
   if(missing(ycen)){ycen=.meanwt(y, wt)}
-  return=(sum((x-xcen)*(y-ycen)*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
+  return=(sum((x-xcen)*(y-ycen)*wt, na.rm = T)/sum(wt, na.rm = T))
 }
 
 .cov2eigval=function(sx,sy,sxy){
