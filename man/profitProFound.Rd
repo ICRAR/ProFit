@@ -17,7 +17,8 @@ smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 
 threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
 redosky = TRUE, redoskysize = 21, box = c(100,100), grid = box, type = "bilinear",
 header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
-nearstats=boundstats, sortcol = "segID", decreasing = FALSE, lowmemory=FALSE, ...)
+nearstats=boundstats, offset = 1, sortcol = "segID", decreasing = FALSE,
+lowmemory=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -120,6 +121,9 @@ Logical; if TRUE then various pixel boundary statistics are computed (\option{Ne
   \item{nearstats}{
 Logical; if TRUE then the IDs of nearby segments is calculated via \code{\link{profitSegimNear}} and output to the returned object \option{near}. By default this option is linked to \option{boundstats}, i.e. it is assumed if you want boundary statistics then you probably also want nearby object IDs returned.
 }
+  \item{offset}{
+Integer scalar; the distance to offset when searching for nearby segments (used in both \code{\link{profitSegimStats}} and \code{\link{profitSegimNear}}).  
+}
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
 }
@@ -169,7 +173,7 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{Deccen}{Flux weighted degrees Declination centre (only present if a \option{header} is provided)}
   \item{RAmax}{Right Ascension of maximum flux (only present if a \option{header} is provided)}
   \item{Decmax}{Declination of maximum flux (only present if a \option{header} is provided)}
-  \item{offset}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{sep}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
   \item{flux}{Total flux (calculated using \option{image}-\option{sky}) in ADUs}
   \item{mag}{Total flux converted to mag using \option{magzero}}
   \item{N50}{Number of brightest pixels containing 50\% of the flux}

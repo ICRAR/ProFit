@@ -16,7 +16,7 @@
   return=tempout
 }
 
-profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, nearstats=boundstats, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
+profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, nearstats=boundstats, offset=1, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
   if(verbose){message('Running profitProFound:')}
   timestart=proc.time()[3]
   call=match.call()
@@ -207,7 +207,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       if(verbose){message(paste(' - pixscale =', round(pixscale,3)))}
       if(verbose){message(paste(' - rotstats =', rotstats))}
       if(verbose){message(paste(' - boundstats =', boundstats))}
-      segstats=profitSegimStats(image=image, segim=segim, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
+      segstats=profitSegimStats(image=image, segim=segim, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats, offset=offset)
       segstats=cbind(segstats, iter=selseg, origfrac=origfrac)
     }else{
       if(verbose){message("Skipping sementation statistics - segstats set to FALSE")}
@@ -215,7 +215,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     }
     
     if(nearstats){
-      near=profitSegimNear(segim)
+      near=profitSegimNear(segim=segim, offset=offset)
     }else{
       near=NULL
     }

@@ -16,7 +16,7 @@ profitSegimNear(segim, offset = 1)
 Numeric matrix; a specified segmentation map of the image (required).
 }
   \item{offset}{
-The distance to offset when searching for nearby segments.
+Integer scalar; the distance to offset when searching for nearby segments.
 }
 }
 \details{
