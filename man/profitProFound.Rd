@@ -17,7 +17,7 @@ smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 
 threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
 redosky = TRUE, redoskysize = 21, box = c(100,100), grid = box, type = "bilinear",
 header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
-sortcol = "segID", decreasing = FALSE, lowmemory=FALSE, ...)
+nearstats=boundstats, sortcol = "segID", decreasing = FALSE, lowmemory=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -117,6 +117,9 @@ Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_
   \item{boundstats}{
 Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac}, \option{edge_excess} and \option{FlagBorder}). If FALSE these return NA instead (saving computation time).
 }
+  \item{nearstats}{
+Logical; if TRUE then the IDs of nearby segments is calculated via \code{\link{profitSegimNear}} and output to the returned object \option{near}. By default this option is linked to \option{boundstats}, i.e. it is assumed if you want boundary statistics then you probably also want nearby object IDs returned.
+}
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
 }
@@ -146,6 +149,7 @@ A list containing:
   \item{sky}{The estimated sky level of the \option{image}.}
   \item{skyRMS}{The estimated sky RMS of the \option{image}.}
   \item{segstats}{If \option{stats}=TRUE this is a data.frame (see below), otherwise NULL.}
+  \item{near}{If \option{nearstats}=TRUE then contains the output of \code{\link{profitSegimNear}}.}
   \item{header}{The header provided, if missing this is NULL.}
   \item{SBlim}{The surface brightness limit of detected objects. Requires at least \option{magzero} to be provided and \option{skycut}>0, else NULL. \code{profitMakeSegimExpand} only.}
   \item{magzero}{The assumed magnitude zero point. This is relevant to various outputs returned by the segmentation statistics.}
@@ -221,8 +225,7 @@ package="ProFit"))
 
 segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, header=image$hdr,
 verbose=TRUE, plot=TRUE)
-profound=profitProFound(image$imDat, skycut=1.5, magzero=30, header=image$hdr,
-verbose=TRUE, plot=TRUE)
+profound=profitProFound(image, skycut=1.5, magzero=30, verbose=TRUE, plot=TRUE)
 
 #You can check to see if the final mask is aggressive enough. Notice the halos
 #surrounding bright sources when just using the objects mask.

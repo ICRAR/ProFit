@@ -1,15 +1,18 @@
 .meanwt=function(x, wt){
+  wt[wt<0]=0
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   sum(x*wt, na.rm = T)/sum(wt, na.rm = T)
 }
 
 .varwt=function(x, wt, xcen){
+  wt[wt<0]=0
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
   return=(sum((x-xcen)^2*wt, na.rm = T)/sum(wt, na.rm = T))
 }
 
 .covarwt=function(x, y, wt, xcen, ycen){
+  wt[wt<0]=0
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
   if(missing(ycen)){ycen=.meanwt(y, wt)}
