@@ -1,19 +1,22 @@
 .meanwt=function(x, wt){
+  wt[wt<0]=0
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   sum(x*wt, na.rm = T)/sum(wt, na.rm = T)
 }
 
 .varwt=function(x, wt, xcen){
+  wt[wt<0]=0
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
-  return=(sum((x-xcen)^2*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
+  return=(sum((x-xcen)^2*wt, na.rm = T)/sum(wt, na.rm = T))
 }
 
 .covarwt=function(x, y, wt, xcen, ycen){
+  wt[wt<0]=0
   if(all(wt==wt[1], na.rm=TRUE)){wt[]=1}
   if(missing(xcen)){xcen=.meanwt(x, wt)}
   if(missing(ycen)){ycen=.meanwt(y, wt)}
-  return=(sum((x-xcen)*(y-ycen)*wt^2, na.rm = T)/sum(wt^2, na.rm = T))
+  return=(sum((x-xcen)*(y-ycen)*wt, na.rm = T)/sum(wt, na.rm = T))
 }
 
 .cov2eigval=function(sx,sy,sxy){
@@ -70,7 +73,7 @@
   return(which( outer(tab1[,1], tab2[,1], "==") & outer(tab1[,2], tab2[,2], "=="), arr.ind=TRUE))
 }
 
-profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, gain=NULL, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, magzero=0, gain=NULL, pixscale=1, sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, offset=1, sortcol = "segID", decreasing = FALSE, ...){
   if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
   if(rembig){
     invisible(gc())
@@ -179,7 +182,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   
   if(stats & any(image>0)){
     if(verbose){message(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))}
-    segstats=profitSegimStats(image=image_orig, segim=segim, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
+    segstats=profitSegimStats(image=image_orig, segim=segim, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats, offset=offset)
   }else{
     if(verbose){message(" - Skipping segmentation statistics - segstats set to FALSE or no segments")}
     segstats=NULL
@@ -200,7 +203,7 @@ profitMakeSegim=function(image, mask, objects, tolerance=4, ext=2, sigma=1, smoo
   return=list(segim=segim, objects=objects, sky=sky, skyRMS=skyRMS, segstats=segstats, header=header, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain=NULL, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, magzero=0, gain=NULL, pixscale=1, sigma=1, smooth=TRUE, expandsigma=5, expand='all', sky, skyRMS, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, offset=1, sortcol = "segID", decreasing = FALSE, ...){
   
   if(verbose){message(' - Running profitMakeSegimExpand:')}
   timestart = proc.time()[3]
@@ -320,7 +323,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   
   if(stats){
     if(verbose){message(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))}
-    segstats=profitSegimStats(image=image_orig, segim=segim_new, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
+    segstats=profitSegimStats(image=image_orig, segim=segim_new, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats, offset=offset)
   }else{
     if(verbose){message(" - Skipping segmentation statistics - segstats set to FALSE")}
     segstats=NULL
@@ -341,7 +344,7 @@ profitMakeSegimExpand=function(image, segim, mask, objects, skycut=1, SBlim, mag
   return=list(segim=segim_new, objects=objects, sky=sky, skyRMS=skyRMS, segstats=segstats, header=header, SBlim=SBlim, call=call)
 }
 
-profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain=NULL, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol = "segID", decreasing = FALSE, ...){
+profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand='all', magzero=0, gain=NULL, pixscale=1, sky=0, skyRMS=0, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, offset=1, sortcol = "segID", decreasing = FALSE, ...){
 
   if(verbose){message(' - Running profitMakeSegimDilate:')}
   timestart = proc.time()[3]
@@ -405,7 +408,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   
   if(stats & !missing(image)){
     if(verbose){message(paste(" - Calculating segstats -", round(proc.time()[3]-timestart,3), "sec"))}
-    segstats=profitSegimStats(image=image, segim=segim_new, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
+    segstats=profitSegimStats(image=image, segim=segim_new, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats, offset=offset)
   }else{
     if(verbose){message(" - Skipping segmentation statistics - segstats set to FALSE")}
     segstats=NULL
@@ -425,7 +428,7 @@ profitMakeSegimDilate=function(image, segim, mask, size=9, shape='disc', expand=
   return=list(segim=segim_new, objects=objects, segstats=segstats, header=header, call=call)
 }
 
-profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=NULL, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE){
+profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=NULL, pixscale=1, header, sortcol='segID', decreasing=FALSE, rotstats=FALSE, boundstats=FALSE, offset=1){
   
   if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
   if(rembig){
@@ -570,7 +573,7 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   xmax=tempDT[,x[which.max(flux)]-0.5,by=segID]$V1
   ymax=tempDT[,y[which.max(flux)]-0.5,by=segID]$V1
   
-  offset=sqrt((xcen-xmax)^2+(ycen-ymax)^2)*pixscale
+  sep=sqrt((xcen-xmax)^2+(ycen-ymax)^2)*pixscale
   
   pad=10^ceiling(log10(ylen))
   uniqueID=ceiling(xcen)*pad+ceiling(ycen)
@@ -618,16 +621,15 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
   }
   
   if(boundstats){
-    segim_inner=segim[2:(xlen-1),2:(ylen-1)]
-    #segim_outer=segim
-    #rimID=max(segim)+1
-    #rm(segim)
-    #segim[1,]=rimID
-    #segim[,1]=rimID
-    #segim[xlen,]=rimID
-    #segim[,ylen]=rimID
     
-    inner_segim=segim_inner>0 & segim[2:(xlen-1)+1,2:(ylen-1)]==segim_inner & segim[2:(xlen-1)-1,2:(ylen-1)]==segim_inner & segim[2:(xlen-1),2:(ylen-1)+1]==segim_inner & segim[2:(xlen-1),2:(ylen-1)-1]==segim_inner
+    segim_inner=segim[(offset+1):(xlen-offset),(offset+1):(ylen-offset)]
+    off_down=segim[(offset+1):(xlen-offset),(offset+1):(ylen-offset)-offset]
+    off_left=segim[(offset+1):(xlen-offset)-offset,(offset+1):(ylen-offset)]
+    off_up=segim[(offset+1):(xlen-offset),(offset+1):(ylen-offset)+offset]
+    off_right=segim[(offset+1):(xlen-offset)+offset,(offset+1):(ylen-offset)]
+    
+    inner_segim=segim_inner>0 & off_down==segim_inner & off_left==segim_inner & off_up==segim_inner & off_right==segim_inner
+    
     segim_edge=segim_inner
     segim_edge[inner_segim==1]=0
     tab_edge=tabulate(segim_edge)
@@ -636,11 +638,17 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     Nedge=tab_edge[match(segID,tab_edge[,1]),2]
     
     if(rembig){
+      rm(segim_inner)
+      rm(off_down)
+      rm(off_left)
+      rm(off_up)
+      rm(off_right)
       rm(tab_edge)
       invisible(gc())
     }
     
-    outer_sky=segim_inner>0 & (segim[2:(xlen-1)+1,2:(ylen-1)]==0 | segim[2:(xlen-1)-1,2:(ylen-1)]==0 | segim[2:(xlen-1),2:(ylen-1)+1]==0 | segim[2:(xlen-1),2:(ylen-1)-1]==0)
+    outer_sky=segim_inner>0 & (off_down==0 | off_left==0 | off_up==0 | off_right==0)
+    
     segim_sky=segim_inner
     segim_sky[outer_sky==0]=0
     tab_sky=tabulate(segim_sky)
@@ -653,16 +661,6 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
       invisible(gc())
     }
     
-    # outer_border=segim_inner>0 & (segim[2:(xlen-1)+1,2:(ylen-1)]==rimID | segim[2:(xlen-1)-1,2:(ylen-1)]==rimID | segim[2:(xlen-1),2:(ylen-1)+1]==rimID | segim[2:(xlen-1),2:(ylen-1)-1]==rimID)
-    # segim_border=segim_inner
-    # segim_border[outer_border==0]=0
-    # tab_border=tabulate(segim_border)
-    # tab_border=c(tab_border,rep(0,max(segID)-length(tab_border)))
-    # tab_border=cbind(1:max(segID),tab_border)
-    # Nborder=tab_border[match(segID,tab_border[,1]),2]
-    # Nborder[Nborder>2]=Nborder[Nborder>2]-2 # Specific catch for Nborder.
-    # rm(tab_border)
-    # browser()
     BorderBottom=segim[segim[,1]>0,1]
     BorderLeft=segim[1,segim[1,]>0]
     BorderTop=segim[segim[,ylen]>0,ylen]
@@ -722,7 +720,7 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     edge_excess=NA
   }
     
-  segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, xmax=xmax, ymax=ymax, RAcen=RAcen, Deccen=Deccen, RAmax=RAmax, Decmax=Decmax, offset=offset, flux=flux, mag=mag, N50=N50seg, N90=N90seg, N100=N100seg, R50=R50seg, R90=R90seg, R100=R100seg, SB_N50=SB_N50, SB_N90=SB_N90, SB_N100=SB_N100, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS, flux_err_shot=flux_err_shot, sky_mean=sky_mean, sky_sum=sky_mean*N100seg, skyRMS_mean=skyRMS_mean, Nedge=Nedge, Nsky=Nsky, Nobject=Nobject, Nborder=Nborder, Nmask=Nmask, edge_frac=edge_frac, edge_excess=edge_excess, Flagborder=Flagborder)
+  segstats=data.table(segID=segID, uniqueID=uniqueID, xcen=xcen, ycen=ycen, xmax=xmax, ymax=ymax, RAcen=RAcen, Deccen=Deccen, RAmax=RAmax, Decmax=Decmax, sep=sep, flux=flux, mag=mag, N50=N50seg, N90=N90seg, N100=N100seg, R50=R50seg, R90=R90seg, R100=R100seg, SB_N50=SB_N50, SB_N90=SB_N90, SB_N100=SB_N100, xsd=xsd, ysd=ysd, covxy=covxy, corxy=corxy, con=con, asymm=asymm, flux_reflect=flux_reflect, mag_reflect=mag_reflect, maj=rad$hi, min=rad$lo, axrat=axrat, ang=ang, flux_err=flux_err, mag_err=mag_err, flux_err_sky=flux_err_sky, flux_err_skyRMS=flux_err_skyRMS, flux_err_shot=flux_err_shot, sky_mean=sky_mean, sky_sum=sky_mean*N100seg, skyRMS_mean=skyRMS_mean, Nedge=Nedge, Nsky=Nsky, Nobject=Nobject, Nborder=Nborder, Nmask=Nmask, edge_frac=edge_frac, edge_excess=edge_excess, Flagborder=Flagborder)
   return=as.data.frame(segstats[order(segstats[[sortcol]], decreasing=decreasing),])
 }
 

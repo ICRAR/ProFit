@@ -10,7 +10,8 @@ Basic summary statistics for image segments, e.g. aperture parameters, fluxes an
 }
 \usage{
 profitSegimStats(image, segim, mask, sky = 0, skyRMS = 0, magzero = 0, gain, pixscale = 1,
-header, sortcol = "segID", decreasing = FALSE, rotstats = FALSE, boundstats = FALSE)
+header, sortcol = "segID", decreasing = FALSE, rotstats = FALSE, boundstats = FALSE,
+offset = 1)
 profitSegimPlot(image, segim, mask, sky = 0, ...)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -45,6 +46,9 @@ Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_
   \item{boundstats}{
 Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac}, \option{edge_excess} and \option{FlagBorder}). If FALSE these return NA instead (saving computation time).
 }
+  \item{offset}{
+Integer scalar; the distance to offset when searching for nearby segments.  
+}
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.
 }
@@ -78,7 +82,7 @@ A data.frame with columns:
   \item{Deccen}{Flux weighted degrees Declination centre (only present if a \option{header} is provided)}
   \item{RAmax}{Right Ascension of maximum flux (only present if a \option{header} is provided)}
   \item{Decmax}{Declination of maximum flux (only present if a \option{header} is provided)}
-  \item{offset}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{sep}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
   \item{flux}{Total flux (calculated using \option{image}-\option{sky}) in ADUs}
   \item{mag}{Total flux converted to mag using \option{magzero}}
   \item{N50}{Number of brightest pixels containing 50\% of the flux}
@@ -119,7 +123,7 @@ A data.frame with columns:
   \item{edge_excess}{Ratio of the number of edge pixels to the expected number given the elliptical geometry measurements of the segment. If this is larger than 1 then it is a sign that the segment geometry is irregular, and is likely a flag for compromised photometry}
   \item{Flagborder}{A binary flag telling the user which \option{image} borders the segment touches. The bottom of the \option{image} is flagged 1, left=2, top=4 and right=8. A summed combination of these flags indicate the segment is in a corner touching two borders: bottom-left=3, top-left=6, top-right=12, bottom-right=9.}
   
-\code{profitSegimplot} is a simple function that overlays the image segments on the original \option{image}.
+\code{profitSegimplot} is a simple function that overlays the image segments on the original \option{image}. This can be very slow for large numbers (1,000s) of segments because it uses the base \code{\link{contour}} function to draw the segments individually.
 }
 \author{
 Aaron Robotham

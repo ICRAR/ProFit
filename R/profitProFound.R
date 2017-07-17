@@ -16,7 +16,7 @@
   return=tempout
 }
 
-profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
+profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, nearstats=boundstats, offset=1, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
   if(verbose){message('Running profitProFound:')}
   timestart=proc.time()[3]
   call=match.call()
@@ -26,19 +26,28 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   
   if(!missing(image)){
     if(any(names(image)=='imDat') & missing(header)){
-      if(verbose){message('Supplied image contains image and header components: extracting automatically.')}
+      if(verbose){message('Supplied image contains image and header components.')}
       header=image$hdr
+      image=image$imDat
+    }else if(any(names(image)=='imDat') & !missing(header)){
+      if(verbose){message('Supplied image contains image and header but using specified header.')}
       image=image$imDat
     }
     if(any(names(image)=='dat') & missing(header)){
-      if(verbose){message('Supplied image contains image and header components: extracting automatically.')}
+      if(verbose){message('Supplied image contains image and header components.')}
       header=image$hdr[[1]]
       header=data.frame(key=header[,1],value=header[,2], stringsAsFactors = FALSE)
       image=image$dat[[1]]
+    }else if(any(names(image)=='dat') & !missing(header)){
+      if(verbose){message('Supplied image contains image and header but using specified header.')}
+      image=image$dat[[1]]
     }
     if(any(names(image)=='image') & missing(header)){
-      if(verbose){message('Supplied image contains image and header components: extracting automatically.')}
+      if(verbose){message('Supplied image contains image and header components.')}
       header=image$header
+      image=image$image
+    }else if(any(names(image)=='image') & !missing(header)){
+      if(verbose){message('Supplied image contains image and header but using specified header.')}
       image=image$image
     }
   }
@@ -198,11 +207,17 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       if(verbose){message(paste(' - pixscale =', round(pixscale,3)))}
       if(verbose){message(paste(' - rotstats =', rotstats))}
       if(verbose){message(paste(' - boundstats =', boundstats))}
-      segstats=profitSegimStats(image=image, segim=segim, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats)
+      segstats=profitSegimStats(image=image, segim=segim, mask=mask, sky=sky, skyRMS=skyRMS, magzero=magzero, gain=gain, pixscale=pixscale, header=header, sortcol=sortcol, decreasing=decreasing, rotstats=rotstats, boundstats=boundstats, offset=offset)
       segstats=cbind(segstats, iter=selseg, origfrac=origfrac)
     }else{
       if(verbose){message("Skipping sementation statistics - segstats set to FALSE")}
       segstats=NULL
+    }
+    
+    if(nearstats){
+      near=profitSegimNear(segim=segim, offset=offset)
+    }else{
+      near=NULL
     }
     
     if(plot){
@@ -214,18 +229,18 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
     
     if(!missing(SBlim) & !missing(magzero)){
       SBlim=min(SBlim, profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale), na.rm=TRUE)
-    }else if(missing(SBlim) & !missing(magzero) & skycut>0){
+    }else if(missing(SBlim) & skycut>0){
       SBlim=profitFlux2SB(flux=skyRMS*skycut, magzero=magzero, pixscale=pixscale)
     }else{
       SBlim=NULL
     }
     if(missing(header)){header=NULL}
     if(verbose){message(paste('profitProFound is finished! -',round(proc.time()[3]-timestart,3),'sec'))}
-    return=list(segim=segim, segim_orig=segim_orig, objects=objects, objects_redo=objects_redo, sky=sky, skyRMS=skyRMS, segstats=segstats, header=header, SBlim=SBlim, magzero=magzero, gain=gain, pixscale=pixscale, call=call)
+    return=list(segim=segim, segim_orig=segim_orig, objects=objects, objects_redo=objects_redo, sky=sky, skyRMS=skyRMS, segstats=segstats, near=near, header=header, SBlim=SBlim, magzero=magzero, gain=gain, pixscale=pixscale, call=call)
   }else{
     if(missing(header)){header=NULL}
     if(verbose){message('No objects in segmentation map - skipping dilations and CoG')}
     if(verbose){message(paste('profitProFound is finished! -',round(proc.time()[3]-timestart,3),'sec'))}
-    return=list(segim=segim, segim_orig=segim_orig, objects=objects, objects_redo=segim, sky=sky, skyRMS=skyRMS, segstats=NULL, header=header, SBlim=NULL,  magzero=magzero, gain=gain, pixscale=pixscale, call=call)
+    return=list(segim=segim, segim_orig=segim_orig, objects=objects, objects_redo=segim, sky=sky, skyRMS=skyRMS, segstats=NULL, near=NULL, header=header, SBlim=NULL,  magzero=magzero, gain=gain, pixscale=pixscale, call=call)
   }
 }

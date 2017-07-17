@@ -32,7 +32,7 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 This is a simple function to create a Gaussian PSF for prototyping image convolution/fits in cases where PSF has not been estimated. In general this should *not* be used for final fitting, since it is rare to have an exact, circular Gaussian profile PSFs in real astronomical images. Better options would be a double winged Gaussian, a Moffat (which is similar to a 2D Student-T distribution with no correlation), or an empirical PSF.
 }
 \value{
-Numeric matrix; the 2D image of the specified PSF with dimsenions c(npix,npix).
+Numeric matrix; the 2D image of the specified PSF with dimensions c(npix,npix).
 }
 \author{
 Aaron Robotham & Dan Taranu

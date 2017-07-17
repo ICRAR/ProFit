@@ -11,7 +11,7 @@ A high level utility to achieve decent quality image segmentation. It uses a mix
 profitMakeSegim(image, mask, objects, tolerance = 4, ext = 2, sigma = 1, smooth = TRUE,
 pixcut = 5, skycut = 2, SBlim, magzero = 0, gain, pixscale = 1, sky, skyRMS, header,
 verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE,  boundstats = FALSE,
-sortcol = "segID", decreasing = FALSE, ...)
+offset = 1, sortcol = "segID", decreasing = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -78,6 +78,9 @@ Logical; if TRUE then the \option{asymm}, \option{flux_reflect} and \option{mag_
   \item{boundstats}{
 Logical; if TRUE then various pixel boundary statistics are computed (\option{Nedge}, \option{Nsky}, \option{Nobject}, \option{Nborder}, \option{edge_frac}, \option{edge_excess} and \option{FlagBorder}). If FALSE these return NA instead (saving computation time).
 }
+  \item{offset}{
+Integer scalar; the distance to offset when searching for nearby segments (used in \code{\link{profitSegimStats}}).
+}
   \item{sortcol}{
 Character; name of the output column that the returned segmentation statistics data.frame should be sorted by. See below for column names and contents.
 }
@@ -123,7 +126,7 @@ If \option{stats}=TRUE then the function \code{\link{profitSegimStats}} is calle
   \item{Deccen}{Flux weighted degrees Declination centre (only present if a \option{header} is provided)}
   \item{RAmax}{Right Ascension of maximum flux (only present if a \option{header} is provided)}
   \item{Decmax}{Declination of maximum flux (only present if a \option{header} is provided)}
-  \item{offset}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
+  \item{sep}{Radial offset between the cen and max definition of the centre (units of \option{pixscale}, so if \option{pixscale} represents the standard asec/pix this will be asec)}
   \item{flux}{Total flux (calculated using \option{image}-\option{sky}) in ADUs}
   \item{mag}{Total flux converted to mag using \option{magzero}}
   \item{N50}{Number of brightest pixels containing 50\% of the flux}

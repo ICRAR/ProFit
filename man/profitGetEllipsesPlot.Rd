@@ -27,7 +27,7 @@ Integer vector; the segellipseID to be plotted. The default of 'all' will displa
 Numeric scalar; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SDSS). This should only be used if the radii columns in \option{ellipses} have already been scaled by the pixel scale.
 }
   \item{col}{
-The colour palette to be used for the background \option{image}. The default is chosen to be high contrast, to make it easier to comapare the computed ellipses with the underlying iso-photes.
+The colour palette to be used for the background \option{image}. The default is chosen to be high contrast, to make it easier to compare the computed ellipses with the underlying isophotes.
 }
   \item{border}{
 The colour of the ellipse border drawn by \code{draw.ellipse}. If 'auto' then a sensible default is chosen.
