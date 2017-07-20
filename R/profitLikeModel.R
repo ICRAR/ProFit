@@ -65,11 +65,13 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   if(isnorm || ischisq || ist) {
     cutsig=(cutim-cutmod)/cutsig
   }
+  if("chisq" %in% Data$mon.names) chisq = sum(cutsig^2)
   if(isnorm){
     LL=sum(dnorm(cutsig, log=TRUE))
   } else if(ischisq) {
     ndata = length(cutim)
-    LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
+    if(!exists("chisq")) chisq = sum(cutsig^2)
+    LL=dchisq(chisq, ndata, log=TRUE)
   } else if(ist) {
     vardata = var(cutsig,na.rm = TRUE)
     dof=2*vardata/(vardata-1)
@@ -101,6 +103,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   {
     Monitor=c(LL=LL,LP=LP)
     if("time" %in% Data$mon.names) Monitor = c(Monitor,tend = proc.time()["elapsed"])
+    if("chisq" %in% Data$mon.names) Monitor = c(Monitor,chisq = chisq)
     if(ist) Monitor=c(Monitor,dof=dof)
     out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
   }

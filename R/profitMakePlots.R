@@ -85,25 +85,25 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     if(missing(dofs)){ndofs=0}else{ndofs = length(dofs)}
     if(ndofs>0) stopifnot(length(dofs) <= 2)
 
-    parmar2=c(1.5,2,0.5,0)
+    parmar2=c(3.5,3.5,0.5,0)
     par(mar=parmar2)
 
     layout(rbind(c(1,2,3,5),c(7,8,4,6)),widths=c(0.31,0.31,0.31,0.07),heights=c(0.5,0.5))
     
-    magimage(image,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix',ylab='y/pix')
+    magimage(image,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=cmap,xlab="x/pix",ylab="y/pix")
     if(missing(region)==FALSE & all(region)==FALSE){
       tempcon=magimage(1-region,add=T,magmap=F,zlim=c(0,1),col=NA)#hsv(s=0,alpha=0.5)
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Data')
     
-    magimage(modelimage,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
+    magimage(modelimage,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),xlab="x/pix",col=cmap)
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Model')
     
-    magimage(residual,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=errcmap,xlab='x/pix')
+    magimage(residual,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),xlab="x/pix",col=errcmap)
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
@@ -125,13 +125,13 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     errmap[!region & (errmap<minerr)] = minerr
     errmap[errmap > maxsigma] = maxsigma
     errmap[errmap < -maxsigma] = -maxsigma
-    magimage(errmap,magmap=FALSE,zlim=c(-maxsigma,maxsigma),col=errcmap)
+    magimage(errmap,magmap=FALSE,zlim=c(-maxsigma,maxsigma),col=errcmap,xlab="x/pix")
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
       legend('topleft',legend=bquote(chi*"=(Data-Model)"/sigma))
     }
     
-    par(mar=parmar2 + c(0,0,0,1))
+    par(mar=parmar2 + c(0,-1.5,0,1))
     pady=1
     breaks = seq(-maximg,maximg, length.out=length(cmap)+1)
     .profitImageScale(zlim=range(residuals), col=cmap, breaks = breaks, axis.pos=2, axis.padj=pady)
@@ -141,35 +141,39 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     par(mar=parmar2)
     ndat = sum(region)
     dx = 0.1
-    xlims = c(-4,4)
+    xlims = c(-5,5)
     x = seq(xlims[1],xlims[2],dx)
     y = hist(error,breaks=c(-(maxerr+dx),x,maxerr+dx),plot=FALSE)$count[2:length(x)]/ndat/dx
     ylim = c(min(y[y>0]),0.5)
-    y[y<=0] = ylim[1]-1
+    y[y<=0] = ylim[1]
     
     vardata = var(error)
     tdof=2*vardata/(vardata-1)
     tdof=interval(tdof,0,Inf)
   
-    magplot(x[1:(length(x)-1)]+dx,y, xlim=xlims, ylim=ylim, xlab="",ylab="", xaxs="i", type="s",log="y")
+    magplot(x, c(y,ylim[1]), xlim=xlims, ylim=ylim, xlab=expression(chi),
+      ylab="PDF", xaxs="i", yaxs="i", type="s",log="y")
     lines(x, dnorm(x), col="blue", xaxs="i")
     lines(x, dt(x,tdof), col="red", xaxs="i")
     
     labs = c(expression(chi),bquote(norm(1)),bquote(Student-T(.(signif(tdof,5)))))
     cols = c("black","blue","red")
     ltys = c(1,1,1)
-    legend("bottom",legend=labs,col=cols,lty=ltys)    
+    legend("bottom",legend=labs,col=cols,lty=ltys)
   
+    chisq = sum(error^2)/sum(region)
     error = log10(error^2)
     xr = range(error)
     xlims = c(-3,min(2,max(xr)))
     x = seq(xlims[1],xlims[2],dx)
     dxbin = 10^x[2:length(x)]-10^x[1:(length(x)-1)]
-    y = hist(error,breaks=c(xr[1]-dx,x,xr[2]+dx), plot=FALSE)$count[2:length(x)]
+    breaks=c(xr[1]-dx,x,xr[2]+dx)
+    y = hist(error,breaks=breaks, plot=FALSE)$count[2:length(x)]
     y = y/sum(y)/dxbin
     ylim = c(min(y[y>0]),10)
-    y[y<=0] = ylim[1]-1
-  magplot(x[1:(length(x)-1)]+dx, y, xlim=xlims,ylim=ylim, xlab="",ylab="", xaxs="i", type="s",log="y")
+    y[y<=0] = ylim[1]
+    magplot(x, c(y,ylim[1]), xlim=xlims,ylim=ylim, xlab=expression(chi^2),
+      ylab="", xaxs="i", type="s",log="y")
     xp=10^x
     lines(x, dchisq(xp,1), col="blue", xaxs="i")
     #lines(x, dt(xp,1), col="red", xaxs="i")
@@ -178,15 +182,16 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     if(ndofs > 0){
       dofcols = c("red","darkgreen")
       for(i in 1:length(dofs)){
-        dofstr = sprintf("%.3e",dofs[i])
+        dofstr = signif(dofs[i],5)
         lines(x, dchisq(xp,dofs[i]), col=dofcols[i], xaxs="i")
-        labs = c(labs,bquote(chi^2 (.(dofstr))))
+        labs = c(labs,bquote(chi^2*(.(dofstr))))
         ltys = c(ltys,1)
         cols = c(cols, dofcols[i])
       }
     }
     abline(v=0,lty=2,col='red')
     legend("bottomleft",legend=labs,col=cols,lty=ltys)
+    legend("topright",legend=bquote(chi[nu]^2*.(sprintf("=%.2f",chisq))),lty=NULL)
   }
   par(mar=parmar)
 }

@@ -40,27 +40,23 @@ plotchisq = FALSE, dofs)
   Optional vector; colour map to use for plots of the chi-squared residuals (see \option{errischisq}).
 }
   \item{plotchisq}{
-  Logical flag; to determine if the function should plot a map and a histogram of chi squared = (((\option{image}-option{model})/option{error})[/option{region}])^2.
+  Logical flag; to determine if the function should plot a map and a histogram of chi^2, where chi = ((\option{image}-\option{model})/\option{error})[\option{region}]. If specified, it will also plot a color bar and a histogram of chi.
 }
   \item{dofs}{
   Numeric vector; of degrees-of-freedom (up to length 2), used only if \option{plotchisq} is set.
 }
 }
 \details{
-TBD.
+This function makes useful diagnostic plots to judge how well a model fits the data. The \option{plotchisq} option is particlarly useful for judging how well the residuals (and their squares) are described by a normal (or chi-square) distribution, and whether there is any spatial structure in the residuals.
 }
 \value{
 No return value; the function only generates plots.
 }
-\references{
-TBD.
-}
+%\references{}
 \author{
 Aaron Robotham & Dan Taranu
 }
-\note{
-TBD.
-}
+%\note{}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
