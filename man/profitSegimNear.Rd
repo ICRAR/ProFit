@@ -27,6 +27,7 @@ A data.frame of lists. This is a slightly unusal structure to see in R, but it a
 
   \item{segID}{Segmentation ID, which can be matched against values in \option{segim}}
   \item{nearID}{An embedded list of segmentation IDs for nearby segments. I.e. each list element of \option{nearID} is a vector (see Examples clarity).}
+  \item{Nnear}{The total number of segments that are considered to be nearby.}
 
 }
 \author{
