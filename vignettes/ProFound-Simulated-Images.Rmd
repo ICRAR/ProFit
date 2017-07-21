@@ -205,7 +205,7 @@ Total TP = `r (length(testmatch_gals_fin$bestmatch[,1])+length(testmatch_stars_f
 
 Total FP = `r (dim(finalcat)[1]-length(testmatch_gals_fin$bestmatch[,1])-length(testmatch_stars_fin$bestmatch[,1]))/(Ngal+Nstar)`.
 
-So we recover 72% of true galaxies, 97% of true stars (i.e. 84% of all true sources) and suffer 16% false positives. This suggests we cannot push much harder on the detection side since most of the new objects will be FALSE (since TP ~ 1-FP, and it will only get harder from here).
+So we recover 73% of true galaxies, 97% of true stars (i.e. 84% of all true sources) and suffer 16% false positives. This suggests we cannot push much harder on the detection side since most of the new objects will be FALSE (since TP ~ 1-FP, and it will only get harder from here).
 
 We can make a final image with all structure removed, sky subtracted and divided through by the RMS.
 
@@ -258,4 +258,4 @@ Total TP = `r (length(testmatch_gals_2$bestmatch[,1])+length(testmatch_stars_2$b
 
 Total FP = `r (dim(pro_test_2$segstats)[1]-length(testmatch_gals_2$bestmatch[,1])-length(testmatch_stars_2$bestmatch[,1]))/(Ngal+Nstar)`.
 
-The moral? If you know what you doing you might want to jump straight to a deeper extraction, but if you are uncertain then you can proceed in a few iterations, i.e. extract the bright sources you are confident about and then go back later to dig around in the noise to get some more.
+Running it like this produces simialr True-Positive rates, but a lower global False-Positive rate. The moral? If you know what you doing you might want to jump straight to a deeper extraction, but if you are uncertain then you can proceed in a few iterations, i.e. extract the bright sources you are confident about and then go back later to dig around in the noise to get some more.
