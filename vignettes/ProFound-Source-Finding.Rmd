@@ -33,6 +33,8 @@ The **ProFit** R package comes with the **ProFound** source finding and image ut
 - profitMakeSkyMap: Calculate coarse sky maps
 - profitSkyEstLoc: Local sky estimator using source clipping
 - profitGainEst: Estimate image gain
+- profitSegimNear: Find the IDs of all segments near to other segments
+- profitPixelCorrelation: Calculate pixel-to-pixel correlation and 2D image FFT
 
 ### Low Level
 

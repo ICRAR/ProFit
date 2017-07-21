@@ -28,11 +28,11 @@ Numeric matrix; required, the image we want to analyse. If \option{image} is a l
   \item{segim}{
 Numeric matrix; a specified segmentation map of the image. This matrix *must* be the same dimensions as image if supplied. If this is option is used then \code{profitProFound} will not compute its initial segmentation map using \code{\link{profitMakeSegim}}, which is then dilated. Instead it will use the one parsed through \option{segim}.
 }
-  \item{mask}{
-Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
-}
   \item{objects}{
 Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provided, this matrix *must* be the same dimensions as \option{image}.
+}
+  \item{mask}{
+Boolean matrix; optional, parts of the image to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.
 }
   \item{tolerance}{
 Numeric scalar; the minimum height of the object in the units of skyRMS between its highest point (seed) and the point where it contacts another object (checked for every contact pixel). If the height is smaller than the tolerance, the object will be combined with one of its neighbours, which is the highest. The range 1-5 offers decent results usually. Parsed to \code{\link{profitMakeSegim}}.

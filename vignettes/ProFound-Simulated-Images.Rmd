@@ -51,7 +51,7 @@ im_test<-profitMakeModel(modellist=model_test, psf=ExamplePSF, dim=c(1000,1000),
 
 We can take a peak at the raw model before adding on noise and sky etc:
 
-```{r, fig.width=6, fig.height=6}
+```{r, fig.width=6, fig.height=6, dpi=40}
 magimage(im_test)
 ```
 
@@ -84,7 +84,7 @@ im_test=im_test+grid_sky
 
 Let's have a look:
 
-```{r, fig.width=6, fig.height=6}
+```{r, fig.width=6, fig.height=6, dpi=40}
 magimage(im_test)
 
 magimage(im_test)
@@ -94,7 +94,7 @@ points(model_test$pointsource$xcen, model_test$pointsource$ycen, col='green')
 
 Now we run ProFound with fairly standard settings (note we set the VIRCAM pixel scale):
 
-```{r, fig.width=6, fig.height=6}
+```{r, fig.width=6, fig.height=6, dpi=40}
 magimage(im_test)
 
 pro_test=profitProFound(im_test, magzero=30, skycut=1, pixcut=3, verbose=TRUE, plot=TRUE, boundstats=TRUE, pixscale=0.34, tolerance=2)
@@ -142,7 +142,7 @@ im_test_sub[pro_test$objects_redo==1]=rnorm(length(which(pro_test$objects_redo==
 
 And we can plot this:
 
-```{r, fig.width=6, fig.height=6}
+```{r, fig.width=6, fig.height=6, dpi=40}
 magimage(pro_test$objects_redo)
 points(model_test$sersic$xcen, model_test$sersic$ycen, col='yellow')
 points(model_test$pointsource$xcen, model_test$pointsource$ycen, col='green')
@@ -164,7 +164,7 @@ The next step is to run **ProFound** again but pushing down to detect fainter ob
 
 The important parameter now is the skycut. somewhere between 0.1 and 0.2 recovers the very faint objecst we have left- too low and we see a lot of false-positive contamination, too high and our true-positive rate drops. Setting it to 0.15 appears to be about the sweet spot (this would need testing on different depth data with realistic source distributions etc).
 
-```{r, fig.width=6, fig.height=6}
+```{r, fig.width=6, fig.height=6, dpi=40}
 magimage(im_test)
 
 pro_test_sub=profitProFound(image=im_test_sub, mask=pro_test$objects, sky=pro_test$sky, skyRMS=pro_test$skyRMS, magzero=30, skycut=0.15, pixcut=3, verbose=TRUE, plot=TRUE, boundstats=TRUE, pixscale=0.34, tolerance=2, sigma=5)
@@ -215,18 +215,16 @@ im_test_fin[pro_test_sub$objects_redo==1]=rnorm(length(which(pro_test_sub$object
 im_test_fin=im_test_fin/pro_test_sub$skyRMS
 ```
 
-To see whether we have removed (or subtracted out in the case of the sky) all structure we can use an FFT:
+To see whether we have removed (or subtracted out in the case of the sky) all structure we can look at pixel-to-pixel correlation and the 2D FFT (both returned as part of the **profitPixelCorrelation** function):
 
-```{r, fig.width=6, fig.height=6}
-centre=matrix(c(rep(c(-1,1),500), rep(c(1,-1),500)),1000,1000)
+```{r, fig.width=6, fig.height=6, dpi=40}
+magimage(profitPixelCorrelation(im_test, plot=TRUE)$fft); points(500,500,cex=5,col='red')
 
-magimage(Mod(fft(z=im_test*centre))); points(500,500,cex=5,col='red')
+magimage(profitPixelCorrelation(im_test_sub, plot=TRUE)$fft); points(500,500,cex=5,col='red')
 
-magimage(Mod(fft(z=im_test_sub*centre))); points(500,500,cex=5,col='red')
+magimage(profitPixelCorrelation(im_test_fin, plot=TRUE)$fft); points(500,500,cex=5,col='red')
 
-magimage(Mod(fft(z=im_test_fin*centre))); points(500,500,cex=5,col='red')
-
-magimage(Mod(fft(z=matrix(rnorm(1e6, mean=0, sd=10), 1000)))); points(500,500,cex=5,col='red')
+magimage(profitPixelCorrelation(matrix(rnorm(1e6, mean=0, sd=10), 1000), plot=TRUE)$fft); points(500,500,cex=5,col='red')
 ```
 
 It should be clear that doing a few iterative steps of removing sources and analysing the FFT until there is little high to moderate frequency signal left is a reasonable route to blindly extracting sources. Note if you have correlated pixels you will always have a bright central portion which corresponds to the pixel correlation scale (usuaully a couple of pixels).
@@ -242,7 +240,7 @@ The performance of **ProFound** is obviously substantially better when you are n
 
 Despite running this demo in two phases above, it is in fact hard to do better than a deeper single pass (skycut=1 to skycut=0.9 is the only change here):
 
-```{r, fig.width=6, fig.height=6}
+```{r, fig.width=6, fig.height=6, dpi=40}
 pro_test_2=profitProFound(im_test, magzero=30, skycut=0.9, pixcut=3, verbose=TRUE, plot=TRUE, boundstats=TRUE, pixscale=0.34, tolerance=2)
 ```
 

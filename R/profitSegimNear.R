@@ -28,7 +28,7 @@ profitSegimNear=function(segim, offset=1){
   tabcomb=tabcomb[segID>0,]
   setorder(tabcomb,segID)
   
-  segID=NULL; down=NULL; left=NULL; up=NULL; right=NULL
+  segID=NULL; down=NULL; left=NULL; up=NULL; right=NULL; nearID=NULL; Nnear=NULL
   
   #The line means for each set of segID pixels, identify unique adjacent pixels that do not have the ID of the segID of interest or 0 (sky) and sort the touching ID list and return to a listed data.frame. Ouch!
   

@@ -57,7 +57,7 @@ Logical; should smoothing be done on the target \option{image}?
 Numeric scalar; standard deviation of the blur used when expanding out the \option{segim}. Roughly speaking if \option{skycut} is set to a low number (say -5) then the expansion will not be prevented by the local sky level and it will grow by the number of pixels specified by \option{expandsigma}.
 }
   \item{expand}{
-Vector; specifies which segmentation regions should be expanded. If left with the default \option{expand}='all' then all segments will be expanded.
+Integer vector; specifies which segmentation regions should be expanded by the segID integer reference. If left with the default \option{expand}='all' then all segments will be expanded.
 }
   \item{size}{
 Integer scalar; the size (e.g. width/diameter) of the dilation kernel in pixels. Should be an odd number else will be rounded up to the nearest odd number. See \code{makeBrush}.
