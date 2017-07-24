@@ -1,9 +1,9 @@
-profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, offset=c(1:9,1:9*10,1:9*100,1:9*1e3,1:9*1e4), fft=TRUE, plot=FALSE){
+profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9,1:9*10,1:9*100,1:9*1e3,1:9*1e4), fft=TRUE, plot=FALSE){
   
   xlen=dim(image)[1]
   ylen=dim(image)[2]
   
-  offset=offset[offset<xlen & offset<ylen]
+  lag=lag[lag<xlen & lag<ylen]
   
   image=(image-sky)/skyRMS
   
@@ -17,12 +17,12 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, offset=c(
   
   corx={}; cory={}
   
-  for(i in offset){
+  for(i in lag){
     corx=c(corx,cor(as.numeric(image[1:(xlen-i),]), as.numeric(image[1:(xlen-i)+i,]), use="complete.obs"))
     cory=c(cory,cor(as.numeric(image[,1:(ylen-i)]), as.numeric(image[,1:(ylen-i)+i]), use="complete.obs"))
   }
   
-  output_cortab=cbind(offset=offset,corx=corx,cory=cory)
+  output_cortab=cbind(lag=lag,corx=corx,cory=cory)
   
   if(fft){
     xlenpad=xlen+xlen%%2
@@ -43,8 +43,9 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, offset=c(
   }
   
   if(plot){
-    magplot(output_cortab[,c(1,2)], xlim=c(1,max(offset)), ylim=c(-1,1), type='l', col='blue', log='x', grid=TRUE)
-    lines(output_cortab[,c(1,3)], col='red')
+    magplot(output_cortab[,c('lag','corx')], xlim=c(1,max(lag)), ylim=c(-1,1), xlab='Pixel Lag', ylab='Correlation', type='l', col='blue', log='x', grid=TRUE)
+    lines(output_cortab[,c('lag','cory')], col='red')
+    legend('bottomright', legend=c('x-direction','y-direction'), col=c('blue','red'), lty=1)
   }
   
   return=list(cortab=output_cortab, fft=output_FFT)

@@ -14,11 +14,11 @@
 Package: \tab ProFit\cr
 Type: \tab Package\cr
 Version: \tab 1.0.4\cr
-Date: \tab 2017-06-15\cr
+Date: \tab 2017-07-24\cr
 License: \tab GPL-3+\cr
 Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon, abind\cr
 LinkingTo: \tab Rcpp\cr
-Depends: \tab R (>= 3.0), Rcpp (>= 0.11.6), magicaxis, FITSio, data.table\cr
+Depends: \tab R (>= 3.0), Rcpp (>= 0.11.6), magicaxis (>= 2.0.3), celestial (>= 1.4.1), FITSio, data.table\cr
 Suggests: \tab knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager\cr
 }
 }

@@ -9,8 +9,10 @@ Calculate Sky Maps
 The high level function computes the absolute sky and sky RMS level over an image at a scale defined locally by the \option{box} parameter. This coarse map can then be used to compute sky/skyRMS values for the local sky anywhere on an image. This function uses \code{\link{profitSkyEstLoc}} to calculate the sky statistics for the subset boxcar regions.
 }
 \usage{
-profitMakeSkyMap(image, objects, mask, box = c(100,100), grid = box)
-profitMakeSkyGrid(image, objects, mask, box = c(100,100), grid = box, type = 'bilinear')
+profitMakeSkyMap(image, objects, mask, box = c(100,100), grid = box, shiftloc=TRUE,
+paddim = TRUE)
+profitMakeSkyGrid(image, objects, mask, box = c(100,100), grid = box, type = 'bilinear',
+shiftloc=TRUE, paddim = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -31,6 +33,12 @@ Integer vector; the resolution of the background grid to estimate the sky with. 
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.
+}
+	\item{shiftloc}{
+Logical; should the cutout centre for the sky shift from \option{loc} of the desired \option{box} size extends beyond the edge of the image? (See \code{\link{magcutout}} for details).
+}
+	\item{paddim}{
+Logical; should the cutout be padded with image data until it meets the desired \option{box} size (if \option{shiftloc} is true) or padded with NAs for data outside the image boundary otherwise? (See \code{\link{magcutout}} for details).
 }
 }
 \details{

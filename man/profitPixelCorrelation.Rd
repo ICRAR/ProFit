@@ -9,7 +9,7 @@ Returns the x and y dimension pixel-to-pixel correlation (often called covarianc
 }
 \usage{
 profitPixelCorrelation(image, objects, mask, sky = 0, skyRMS = 1,
-offset = c(1:9, 1:9 * 10, 1:9 * 100, 1:9 * 1000, 1:9 * 10000), fft = TRUE, plot = FALSE)
+lag = c(1:9, 1:9 * 10, 1:9 * 100, 1:9 * 1000, 1:9 * 10000), fft = TRUE, plot = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,8 +28,8 @@ Numeric; the absolute sky level. Can be a scalar (value uniformly applied to ful
   \item{skyRMS}{
 Numeric; the RMS of the sky. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
-  \item{offset}{
-Interger verctor; the pixel offsets to measure pixel-to-pixel correlation over the x and y dimensions.
+  \item{lag}{
+Interger verctor; the pixel lags to measure pixel-to-pixel correlation over the x and y dimensions.
 }
   \item{fft}{
 Logical; if TRUE the 2D FFT is computed and the modulus image matrix is returned, if FALSE the \option{fft} object returned is NULL. \option{object} and \option{mask} pixels are replaced as described below.
@@ -46,7 +46,7 @@ For calculating the raw pixel-to-pixel correlation (as returned by \option{corta
 \value{
 A list containing two objects:
 
-\item{cortab}{A three column matrix, containing the pixel offset (offset), the correlation in the x-dimension (corx), and the correlation in the y-dimension (cory).}
+\item{cortab}{A three column matrix, containing the pixel lag (lag), the correlation in the x-dimension (corx), and the correlation in the y-dimension (cory).}
 \item{fft}{Numeric matrix; if \option{fft}=TRUE this object contains the modulus of the 2D FFT of the \option{image} with the same dimensions, if \option{fft}=FALSE it is NULL. The output is centred such that small scale structures are in the centre of the image matrix.}
 }
 \author{

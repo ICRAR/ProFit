@@ -16,7 +16,7 @@
   return=tempout
 }
 
-profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, nearstats=boundstats, offset=1, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
+profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1, smooth=TRUE, pixcut=5, skycut=2, SBlim, size=5, shape='disc', iters=6, threshold=1.05, converge='flux', magzero=0, gain=NULL, pixscale=1, sky, skyRMS, redosky=TRUE, redoskysize=21, box=c(100,100), grid=box, type='bilinear', shiftloc = TRUE, paddim = TRUE, header, verbose=FALSE, plot=FALSE, stats=TRUE, rotstats=FALSE, boundstats=FALSE, nearstats=boundstats, offset=1, sortcol="segID", decreasing=FALSE, lowmemory=FALSE, ...){
   if(verbose){message('Running profitProFound:')}
   timestart=proc.time()[3]
   call=match.call()
@@ -84,7 +84,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
   
   if((hassky==FALSE | hasskyRMS==FALSE) & iters>0){
     if(verbose){message(paste('Making initial sky map -',round(proc.time()[3]-timestart,3),'sec'))}
-    roughsky=profitMakeSkyGrid(image=image, objects=objects, mask=mask, box=box, grid=grid, type=type)
+    roughsky=profitMakeSkyGrid(image=image, objects=objects, mask=mask, box=box, grid=grid, type=type, shiftloc = shiftloc, paddim = paddim)
     if(hassky==FALSE){
       sky=roughsky$sky
     }
@@ -113,7 +113,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       if(verbose){message(paste('Doing initial aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'))}
       objects_redo=profitMakeSegimDilate(image=image, segim=objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){message(paste('Making better sky map -',round(proc.time()[3]-timestart,3),'sec'))}
-      bettersky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type)
+      bettersky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type, shiftloc = shiftloc, paddim = paddim)
       if(hassky==FALSE){
         sky=bettersky$sky
       }
@@ -176,7 +176,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       if(verbose){message(paste('Doing final aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'))}
       objects_redo=profitMakeSegimDilate(image=image, segim=objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){message(paste('Making final sky map -',round(proc.time()[3]-timestart,3),'sec'))}
-      sky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type)
+      sky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type, shiftloc = shiftloc, paddim = paddim)
       skyRMS=sky$skyRMS
       sky=sky$sky
     }else{

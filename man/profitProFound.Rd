@@ -16,9 +16,9 @@ profitProFound(image, segim, objects, mask, tolerance = 4, ext = 2, sigma = 1,
 smooth = TRUE, pixcut = 5, skycut = 2, SBlim, size = 5, shape = "disc", iters = 6,
 threshold = 1.05, converge = 'flux', magzero = 0, gain, pixscale = 1, sky, skyRMS,
 redosky = TRUE, redoskysize = 21, box = c(100,100), grid = box, type = "bilinear",
-header, verbose = FALSE, plot = FALSE, stats = TRUE, rotstats = FALSE, boundstats = FALSE,
-nearstats=boundstats, offset = 1, sortcol = "segID", decreasing = FALSE,
-lowmemory=FALSE, ...)
+shiftloc = TRUE, paddim = TRUE, header, verbose = FALSE, plot = FALSE, stats = TRUE,
+rotstats = FALSE, boundstats = FALSE, nearstats=boundstats, offset = 1, sortcol = "segID",
+decreasing = FALSE, lowmemory=FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -99,6 +99,12 @@ Integer vector; the resolution of the background grid to estimate the sky with. 
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.  
+}
+	\item{shiftloc}{
+Logical; should the cutout centre for the sky shift from \option{loc} of the desired \option{box} size extends beyond the edge of the image? (See \code{\link{magcutout}} for details).
+}
+	\item{paddim}{
+Logical; should the cutout be padded with image data until it meets the desired \option{box} size (if \option{shiftloc} is true) or padded with NAs for data outside the image boundary otherwise? (See \code{\link{magcutout}} for details).
 }
   \item{header}{
 Full FITS header in table or vector format. If this is provided then the segmentations statistics table will gain \option{RAcen} and \option{Decen} coordinate outputs. Legal table format headers are provided by the \code{read.fitshdr} function or the \option{hdr} list output of \code{read.fits} in the astro package; the \option{hdr} output of \code{readFITS} in the \code{FITSio} package or the \option{header} output of \code{magcutoutWCS}. Missing header keywords are printed out and other header option arguments are used in these cases. See \code{\link{magWCSxy2radec}}.

@@ -101,30 +101,32 @@ profitSkyEst=function(image, objects, mask, cutlo=cuthi/2, cuthi=sqrt(sum((dim(i
   return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian)
 }
 
-profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100), plot=FALSE, ...){
+profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100), shiftloc = TRUE, paddim = TRUE, plot=FALSE, ...){
   if(!missing(objects) | !missing(mask)){
     if(!missing(objects)){
-      tempobj=magcutout(image=objects, loc=loc, box=box)$image==0
+      tempobj=magcutout(image=objects, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image==0
+      tempobj[is.na(tempobj)]=0
     }else{
       tempobj=TRUE
     }
     if(!missing(mask)){
-      tempmask=magcutout(image=mask, loc=loc, box=box)$image==0
+      tempmask=magcutout(image=mask, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image==0
+      tempmask[is.na(tempmask)]=1
     }else{
       tempmask=TRUE
     }
-    select=magcutout(image, loc=loc, box=box)$image[tempobj & tempmask]
+    select=magcutout(image, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image[tempobj & tempmask]
   }else{
-    select=magcutout(image, loc=loc, box=box)$image
+    select=magcutout(image, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image
   }
   if(plot){
-    image=magcutout(image, loc=loc, box=box)$image
+    image=magcutout(image, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image
     imout=magimage(image, ...)
     if(!missing(mask)){
-      contour(x=imout$x, y=imout$y, magcutout(mask, loc=loc, box=box)$image, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
+      contour(x=imout$x, y=imout$y, magcutout(mask, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image, add=T, col='red', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
     if(!missing(objects)){
-      contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box)$image, add=T, col='blue', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
+      contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image, add=T, col='blue', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
   }
   suppressWarnings({clip=magclip(select, estimate = 'lo')})
@@ -133,13 +135,13 @@ profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100),
   return=list(val=c(tempmed, tempsd), clip=clip)
 }
 
-profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box){
+profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box, shiftloc = TRUE, paddim = TRUE){
   xseq=seq(grid[1]/2,dim(image)[1],by=grid[1])
   yseq=seq(grid[2]/2,dim(image)[2],by=grid[2])
   tempgrid=expand.grid(xseq, yseq)
   tempsky=matrix(0,dim(tempgrid)[1],2)
   for(i in 1:dim(tempgrid)[1]){
-    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box)$val
+    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, shiftloc=shiftloc, paddim=paddim)$val
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
@@ -148,7 +150,7 @@ profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box){
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
 }
 
-profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear'){
+profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear', shiftloc = TRUE, paddim = TRUE){
   if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
   if(rembig){
     invisible(gc())
@@ -163,7 +165,7 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   tempgrid=expand.grid(xseq, yseq)
   tempsky=matrix(0,dim(tempgrid)[1],2)
   for(i in 1:dim(tempgrid)[1]){
-    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box)$val
+    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, shiftloc=shiftloc, paddim=paddim)$val
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))

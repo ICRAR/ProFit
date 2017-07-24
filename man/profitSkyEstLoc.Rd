@@ -8,8 +8,8 @@ Calculate Sky in Subest
 Calculate the sky and sky RMS for a subset region of a larger image, as used in \code{\link{profitMakeSkyMap}}.
 }
 \usage{
-profitSkyEstLoc(image, objects, mask, loc = dim(image)/2, box = c(100, 100), plot = FALSE,
-...)
+profitSkyEstLoc(image, objects, mask, loc = dim(image)/2, box = c(100, 100),
+shiftloc=TRUE, paddim = TRUE, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -27,6 +27,12 @@ Integer vector; the [x,y] location where we want to estimate the sky and sky RMS
 }
   \item{box}{
 Integer vector; the dimensions of the box car filter to estimate the sky with.
+}
+	\item{shiftloc}{
+Logical; should the cutout center shift from \option{loc} if the desired \option{box} size extends beyond the edge of the image? (See \code{\link{magcutout}} for details).
+}
+	\item{paddim}{
+Logical; should the cutout be padded with image data until it meets the desired \option{box} size (if \option{shiftloc} is true) or padded with NAs for data outside the image boundary otherwise? (See \code{\link{magcutout}} for details).
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?
