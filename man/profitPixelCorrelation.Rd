@@ -43,7 +43,7 @@ All statistics are computed on (\option{image}-\option{sky})/\option{skyRMS}.
 
 The function is useful to assessing a number of image attributes. For one things it tells you whether all spatial variance has been detected and removed at small scales as objects (e.g. using \code{\link{profitProFound}}), or at larger scales as sky fluctuations. Assuming the object detection and sky removal has worked well, the remaining pixel-to-pixel correlation likely represents instrument level covariance. In practice nearly all processes produce positive pixel correlation, but it is not impossible that negative correlation can be introduced during the reduction process, particularly when over-subtracting the sky around bright stars.
 
-For calculating the raw pixel-to-pixel correlation (as returned by \option{cortab}) \option{mask} and \option{object} pixels are ignored, so correlation is only considered where both pixels are flagged as un-masked sky pixels. The 2D image FFT output (option{fft}) replaces masked or object pixels with Normally distributed noise after the input \option{image} has had the \option{sky} subtracted and divided by the \option{skyRMS}.
+For calculating the raw pixel-to-pixel correlation (as returned by \option{cortab}) \option{mask} and \option{object} pixels are ignored, so correlation is only considered where both pixels are flagged as un-masked sky pixels. The 2D image FFT output (option{fft}) replaces masked or object pixels with Normally distributed noise after the input \option{image} has had the \option{sky} subtracted and divided by the \option{skyRMS}. Note that this means the FFT generated is partly stochastic (it will differ a bit each time it is run), but in practice it will be quite persistant for small scales (the centre) and stochastic at larger scales (around the edge of the FFT image).
 
 The relative standard-deviations returned in \option{cortab} are calculated by taking the standard-deviation of the lagged pixel differences of (\option{image}-\option{sky})/\option{skyRMS} and dividing through by sqrt(2). This means for well behaved data they should be 1, and the dashed lines on the diagnostic plot should fall on 1.
 }
@@ -61,6 +61,7 @@ Aaron Robotham
 \code{\link{profitProFound}}
 }
 \examples{
+\dontrun{
 image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
 package="ProFit"))
 
@@ -83,6 +84,40 @@ corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
 skyRMS=profound$skyRMS, objects=profound$objects_redo, plot=TRUE)
 magimage(corout_objects_redo$fft)
 points(178, 178, cex=10, col='red')
+
+#We can use the pixel correlation function, in particular the FFT output, to assess how
+#much further we can afford to push the source extraction in our image.
+
+profound=profitProFound(image, skycut=2.0, magzero=30, verbose=TRUE, plot=TRUE)
+corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
+skyRMS=profound$skyRMS, objects=profound$objects_redo)
+profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
+
+profound=profitProFound(image, skycut=1.5, magzero=30, verbose=TRUE, plot=TRUE)
+corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
+skyRMS=profound$skyRMS, objects=profound$objects_redo)
+profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
+
+profound=profitProFound(image, skycut=1.0, magzero=30, verbose=TRUE, plot=TRUE)
+corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
+skyRMS=profound$skyRMS, objects=profound$objects_redo)
+profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
+
+profound=profitProFound(image, skycut=0.8, magzero=30, verbose=TRUE, plot=TRUE)
+corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
+skyRMS=profound$skyRMS, objects=profound$objects_redo)
+profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
+
+profound=profitProFound(image, skycut=0.6, magzero=30, verbose=TRUE, plot=TRUE)
+corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
+skyRMS=profound$skyRMS, objects=profound$objects_redo)
+profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
+
+#By doing ProFoundsource detection on the FFT itself it tells us if there are significant
+#sources of a certain common scale (usually small) still in the image to extract.
+#The levels above suggest we cannot push much further than a skycut=1.0. Clearly using
+#skycut=0.6 introduces a lot of fake sources.
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
