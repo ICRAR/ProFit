@@ -23,10 +23,10 @@ Boolean matrix; optional, object mask where 1 is object and 0 is sky. If provide
 Boolean matrix; optional, parts of the \option{image} to mask out (i.e. ignore), where 1 means mask out and 0 means use for analysis. If provided, this matrix *must* be the same dimensions as \option{image}.  
 }
   \item{sky}{
-Numeric; the absolute sky level. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+Numeric; the absolute sky level. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{skyRMS}{
-Numeric; the RMS of the sky. Can be a scalar (value uniformly applied to full \option{sigma} map) or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
+Numeric; the RMS of the sky. Can be a scalar or a matrix matching the dimensions of \option{image} (allows values to vary per pixel).
 }
   \item{lag}{
 Interger verctor; the pixel lags to measure pixel-to-pixel correlation over the x and y dimensions.
@@ -39,14 +39,18 @@ Logical; should a diagnostic plot be generated?
 }
 }
 \details{
-The function is useful to assessing a number of image attributes. For one things it tells you whether all spatial variance has been detected and removed at small scales as objects (e.g. using \code{\link{profitProFound}}), or at larger scales as sky fluctuations. Assuming the objects detection and sky removal has worked well, the remaining pixel-to-pixel correlation likely represents instrument level covariance.
+All statistics are computed on (\option{image}-\option{sky})/\option{skyRMS}.
+
+The function is useful to assessing a number of image attributes. For one things it tells you whether all spatial variance has been detected and removed at small scales as objects (e.g. using \code{\link{profitProFound}}), or at larger scales as sky fluctuations. Assuming the object detection and sky removal has worked well, the remaining pixel-to-pixel correlation likely represents instrument level covariance. In practice nearly all processes produce positive pixel correlation, but it is not impossible that negative correlation can be introduced during the reduction process, particularly when over-subtracting the sky around bright stars.
 
 For calculating the raw pixel-to-pixel correlation (as returned by \option{cortab}) \option{mask} and \option{object} pixels are ignored, so correlation is only considered where both pixels are flagged as un-masked sky pixels. The 2D image FFT output (option{fft}) replaces masked or object pixels with Normally distributed noise after the input \option{image} has had the \option{sky} subtracted and divided by the \option{skyRMS}.
+
+The relative standard-deviations returned in \option{cortab} are calculated by taking the standard-deviation of the lagged pixel differences of (\option{image}-\option{sky})/\option{skyRMS} and dividing through by sqrt(2). This means for well behaved data they should be 1, and the dashed lines on the diagnostic plot should fall on 1.
 }
 \value{
 A list containing two objects:
 
-\item{cortab}{A three column matrix, containing the pixel lag (lag), the correlation in the x-dimension (corx), and the correlation in the y-dimension (cory).}
+\item{cortab}{A five column matrix, containing the pixel lag (lag), the correlation in the x-dimension (corx), the correlation in the y-dimension (cory), the pixel lag implied relative standard-deviation in the x-dimension (relsdx) and the pixel lag implied relative standard-deviation in the y-dimension (relsdy).}
 \item{fft}{Numeric matrix; if \option{fft}=TRUE this object contains the modulus of the 2D FFT of the \option{image} with the same dimensions, if \option{fft}=FALSE it is NULL. The output is centred such that small scale structures are in the centre of the image matrix.}
 }
 \author{

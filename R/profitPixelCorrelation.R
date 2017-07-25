@@ -15,14 +15,16 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9
     image[mask==1]=NA
   }
   
-  corx={}; cory={}
+  corx={}; cory={}; relsdx={}; relsdy={}
   
   for(i in lag){
     corx=c(corx,cor(as.numeric(image[1:(xlen-i),]), as.numeric(image[1:(xlen-i)+i,]), use="complete.obs"))
     cory=c(cory,cor(as.numeric(image[,1:(ylen-i)]), as.numeric(image[,1:(ylen-i)+i]), use="complete.obs"))
+    relsdx=c(relsdx,sd(as.numeric(image[1:(xlen-i),])-as.numeric(image[1:(xlen-i)+i,]), na.rm=TRUE)/sqrt(2))
+    relsdy=c(relsdy,sd(as.numeric(image[,1:(ylen-i)])-as.numeric(image[,1:(ylen-i)+i]), na.rm=TRUE)/sqrt(2))
   }
   
-  output_cortab=cbind(lag=lag,corx=corx,cory=cory)
+  output_cortab=cbind(lag=lag,corx=corx,cory=cory,relsdx=relsdx,relsdy=relsdy)
   
   if(fft){
     xlenpad=xlen+xlen%%2
@@ -45,7 +47,9 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9
   if(plot){
     magplot(output_cortab[,c('lag','corx')], xlim=c(1,max(lag)), ylim=c(-1,1), xlab='Pixel Lag', ylab='Correlation', type='l', col='blue', log='x', grid=TRUE)
     lines(output_cortab[,c('lag','cory')], col='red')
-    legend('bottomright', legend=c('x-direction','y-direction'), col=c('blue','red'), lty=1)
+    lines(output_cortab[,c('lag','relsdx')], col='blue', lty=2)
+    lines(output_cortab[,c('lag','relsdy')], col='red', lty=2)
+    legend('bottomright', legend=c('x-cor','y-cor','x-rel-sd','y-rel-sd'), col=c('blue','red'), lty=c(1,1,2,2))
   }
   
   return=list(cortab=output_cortab, fft=output_FFT)
