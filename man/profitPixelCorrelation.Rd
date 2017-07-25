@@ -32,14 +32,14 @@ Numeric; the RMS of the sky. Can be a scalar or a matrix matching the dimensions
 Interger verctor; the pixel lags to measure pixel-to-pixel correlation over the x and y dimensions.
 }
   \item{fft}{
-Logical; if TRUE the 2D FFT is computed and the modulus image matrix is returned, if FALSE the \option{fft} object returned is NULL. \option{object} and \option{mask} pixels are replaced as described below.
+Logical; if TRUE the 2D FFT is computed and the modulus image matrix is returned to \option{fft} and the (\option{image}-\option{sky})/\option{skyRMS} is return to \option{image_sky}, if FALSE the \option{fft} and \option{image_sky} objects are returned as NULL. \option{object} and \option{mask} pixels are used to identify pixels to replace as described below.
 }
   \item{plot}{
 Logical; should a diagnostic plot be generated?
 }
 }
 \details{
-All statistics are computed on (\option{image}-\option{sky})/\option{skyRMS}.
+All statistics are computed on (\option{image}-\option{sky})/\option{skyRMS}. If \option{fft}=TRUE this matrix is return to \option{image_sky}.
 
 The function is useful to assessing a number of image attributes. For one things it tells you whether all spatial variance has been detected and removed at small scales as objects (e.g. using \code{\link{profitProFound}}), or at larger scales as sky fluctuations. Assuming the object detection and sky removal has worked well, the remaining pixel-to-pixel correlation likely represents instrument level covariance. In practice nearly all processes produce positive pixel correlation, but it is not impossible that negative correlation can be introduced during the reduction process, particularly when over-subtracting the sky around bright stars.
 
@@ -48,10 +48,11 @@ For calculating the raw pixel-to-pixel correlation (as returned by \option{corta
 The relative standard-deviations returned in \option{cortab} are calculated by taking the standard-deviation of the lagged pixel differences of (\option{image}-\option{sky})/\option{skyRMS} and dividing through by sqrt(2). This means for well behaved data they should be 1, and the dashed lines on the diagnostic plot should fall on 1.
 }
 \value{
-A list containing two objects:
+A list containing three objects:
 
 \item{cortab}{A five column matrix, containing the pixel lag (lag), the correlation in the x-dimension (corx), the correlation in the y-dimension (cory), the pixel lag implied relative standard-deviation in the x-dimension (relsdx) and the pixel lag implied relative standard-deviation in the y-dimension (relsdy).}
 \item{fft}{Numeric matrix; if \option{fft}=TRUE this object contains the modulus of the 2D FFT of the \option{image} with the same dimensions, if \option{fft}=FALSE it is NULL. The output is centred such that small scale structures are in the centre of the image matrix.}
+\item{image_sky}{Numeric matrix; if \option{fft}=TRUE this object contains the (\option{image}-\option{sky})/\option{skyRMS}, if \option{fft}=FALSE it is NULL.}
 }
 \author{
 Aaron Robotham
@@ -91,26 +92,31 @@ points(178, 178, cex=10, col='red')
 profound=profitProFound(image, skycut=2.0, magzero=30, verbose=TRUE, plot=TRUE)
 corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
 skyRMS=profound$skyRMS, objects=profound$objects_redo)
+magimage(corout_objects_redo$image_sky)
 profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
 
 profound=profitProFound(image, skycut=1.5, magzero=30, verbose=TRUE, plot=TRUE)
 corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
 skyRMS=profound$skyRMS, objects=profound$objects_redo)
+magimage(corout_objects_redo$image_sky)
 profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
 
 profound=profitProFound(image, skycut=1.0, magzero=30, verbose=TRUE, plot=TRUE)
 corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
 skyRMS=profound$skyRMS, objects=profound$objects_redo)
+magimage(corout_objects_redo$image_sky)
 profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
 
 profound=profitProFound(image, skycut=0.8, magzero=30, verbose=TRUE, plot=TRUE)
 corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
 skyRMS=profound$skyRMS, objects=profound$objects_redo)
+magimage(corout_objects_redo$image_sky)
 profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
 
 profound=profitProFound(image, skycut=0.6, magzero=30, verbose=TRUE, plot=TRUE)
 corout_objects_redo=profitPixelCorrelation(image$imDat, sky=profound$sky,
 skyRMS=profound$skyRMS, objects=profound$objects_redo)
+magimage(corout_objects_redo$image_sky)
 profitProFound(corout_objects_redo$fft, verbose=TRUE, plot=TRUE)
 
 #By doing ProFoundsource detection on the FFT itself it tells us if there are significant

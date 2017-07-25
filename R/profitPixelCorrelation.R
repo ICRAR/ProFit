@@ -41,7 +41,8 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9
     centre=matrix(c(rep(c(-1,1),xlenpad/2), rep(c(1,-1),ylenpad/2)),xlenpad,ylenpad)[1:xlen,1:ylen]
     output_FFT=Mod(fft(z=image*centre))
   }else{
-    output_cortab=NULL
+    output_FFT=NULL
+    image=NULL
   }
   
   if(plot){
@@ -52,5 +53,5 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9
     legend('bottomright', legend=c('x-cor','y-cor','x-rel-sd','y-rel-sd'), col=c('blue','red'), lty=c(1,1,2,2))
   }
   
-  return=list(cortab=output_cortab, fft=output_FFT)
+  return=list(cortab=output_cortab, fft=output_FFT, image_sky=image)
 }
