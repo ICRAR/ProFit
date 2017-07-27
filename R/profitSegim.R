@@ -638,7 +638,6 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     Nedge=tab_edge[match(segID,tab_edge[,1]),2]
     
     if(rembig){
-      rm(segim_inner)
       rm(off_down)
       rm(off_left)
       rm(off_up)
@@ -689,6 +688,7 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
       Nmask=tab_mask[match(segID,tab_mask[,1]),2]
       
       if(rembig){
+        rm(segim_inner)
         rm(tab_mask)
         invisible(gc())
       }
