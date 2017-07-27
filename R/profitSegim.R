@@ -637,15 +637,6 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     tab_edge=cbind(1:max(segID),tab_edge)
     Nedge=tab_edge[match(segID,tab_edge[,1]),2]
     
-    if(rembig){
-      rm(off_down)
-      rm(off_left)
-      rm(off_up)
-      rm(off_right)
-      rm(tab_edge)
-      invisible(gc())
-    }
-    
     outer_sky=segim_inner>0 & (off_down==0 | off_left==0 | off_up==0 | off_right==0)
     
     segim_sky=segim_inner
@@ -656,6 +647,11 @@ profitSegimStats=function(image, segim, mask, sky=0, skyRMS=0, magzero=0, gain=N
     Nsky=tab_sky[match(segID,tab_sky[,1]),2]
     
     if(rembig){
+      rm(off_down)
+      rm(off_left)
+      rm(off_up)
+      rm(off_right)
+      rm(tab_edge)
       rm(tab_sky)
       invisible(gc())
     }
