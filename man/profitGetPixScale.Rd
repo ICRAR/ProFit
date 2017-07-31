@@ -5,7 +5,7 @@
 Get Pixel Scale
 }
 \description{
-Given a \code{FITSio} of \code{astro} header, calculate the image pixel scale/
+Given a \code{FITSio} of \code{astro} header, calculate the image pixel scale.
 }
 \usage{
 profitGetPixScale(header, CD1_1 = 1, CD1_2 = 0, CD2_1 = 0, CD2_2 = 1)
