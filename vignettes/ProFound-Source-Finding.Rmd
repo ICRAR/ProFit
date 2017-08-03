@@ -52,18 +52,22 @@ The **ProFit** R package comes with the **ProFound** source finding and image ut
 
 ## Basic ProFound Usage
 
-The **profitProFound** function might be the only function many people need to use in order to extract photometry from a target image. In brief, in fully automatic mode using default option, it does the following things:
+The **profitProFound** function might be the only function many people need to use in order to extract photometry from a target image. In brief, in fully automatic mode using default option, the basic code flow of the source extraction is as follows:
 
-- Makes a rough sky map
-- Using this rough sky map, makes an initial segmentation image
-- Using this segmentation image, makes a better sky map
-- Using this better sky map, extracts basic photometric properties
-- Using the current segmentation image it starts to dilate a re-measure photometric properties for the image segments (this stage iterates for 6 times by default)
-- Using the iterative dilation statistics, every object is checked for flux convergence
-- A final segmentation image is made, combining the segments when each source has converged in flux
-- Using this final segmentation image, make a final sky map
-- Using the final segmentation image and final sky map, computes final photometric properties
-- Returns a list containing input image pixel matched **segim**, **objects**, **sky** and **skyRMS**, as well as the **segstats** data-frame of photometric properties for every detected source
+1. Make a rough sky map
+2. Using this rough sky map, make an initial segmentation map
+3. Using this segmentation map, make a better sky map
+4. Using this better sky map, extract basic photometric properties
+5. Using the current segmentation map, dilate segments and re-measure photometric properties for the new image segments (by default it iterates six times)
+6. Using the iterative dilation statistics, every object is checked for convergence (by default convergence of flux is used)
+7. Make final segmentation map by combining the segments when each source has converged in flux
+8. Make a conservative object mask by aggressively dilating the final segmentation map
+9. Using this conservative objects mask make a final sky map
+10. Using the final segmentation map and the final sky map compute the final comprehensive photometric properties
+11. Return a list containing the input image pixel-matched final segmentation map (called **segim**), the pre-dilation segmentation map (**segim_orig**) , the binary object/sky mask (**objects**), the conservatively dilated binary object/sky mask (**objects_redo**), the sky image (**sky**), the sky-RMS image (**skyRMS**) and the effective surface brightness limit image (**SBlim**)
+12. Return the data-frame of photometric properties for every detected source (**segstats**)
+
+Some other simple properties are passed through and included in the output of ProFound: the header (**header**) if it is attached to the input image, the magnitude zero point specified (**magzero**), the gain in electrons per astronomical data unit (**gain**), the pixel scale in arc-seconds per pixel (**pixscale**) and finally the full function call (**call**).
 
 Load some libraries:
 
