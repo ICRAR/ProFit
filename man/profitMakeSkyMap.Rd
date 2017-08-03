@@ -9,10 +9,12 @@ Calculate Sky Maps
 The high level function computes the absolute sky and sky RMS level over an image at a scale defined locally by the \option{box} parameter. This coarse map can then be used to compute sky/skyRMS values for the local sky anywhere on an image. This function uses \code{\link{profitSkyEstLoc}} to calculate the sky statistics for the subset boxcar regions.
 }
 \usage{
-profitMakeSkyMap(image, objects, mask, box = c(100,100), grid = box, shiftloc=TRUE,
+profitMakeSkyMap(image, objects, mask, box = c(100,100), grid = box, skytype = "median",
+skyRMStype = "quanlo", sigmasel = 1, doclip = TRUE, shiftloc=TRUE,
 paddim = TRUE)
 profitMakeSkyGrid(image, objects, mask, box = c(100,100), grid = box, type = 'bilinear',
-shiftloc=TRUE, paddim = TRUE)
+skytype = "median", skyRMStype = "quanlo", sigmasel = 1, doclip = TRUE, shiftloc=TRUE,
+paddim = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -33,6 +35,18 @@ Integer vector; the resolution of the background grid to estimate the sky with. 
 }
   \item{type}{
 Character scalar; either "bilinear" for bilinear interpolation (default) or "bicubic" for bicubic interpolation. The former is safer, especially near edges where bicubic interpolation can go a bit crazy.
+}
+  \item{skytype}{
+Character scalar; the type of sky level estimator used. Allowed options are 'median' (the default), 'mean' and 'mode' (see \code{\link{profitSkyEstLoc}} for an explanation of what these estimators do). In all cases this is the estimator applied to unmasked and non-object pixels. If \option{doclip}=TRUE then the pixels will be dynamically sigma clipped before the estimator is run. 
+}
+  \item{skyRMStype}{
+Character scalar; the type of sky level estimator used. Allowed options are 'quanlo' (the default), 'quanhi', 'quanboth', and 'sd' (see \code{\link{profitSkyEstLoc}} for an explanation of what these estimators do). In all cases this is the estimator applied to unmasked and non-object pixels. If \option{doclip}=TRUE then the pixels will be dynamically sigma clipped before the estimator is run.
+}
+  \item{sigmasel}{
+Numeric scalar; the quantile to use when trying to estimate the true standard-deviation of the sky distribution. If contamination is low then the default of 1 is about optimal in terms of S/N, but you might need to make the value lower when contamination is very high.
+}
+  \item{doclip}{
+Logical; should the unmasked non-object pixels used to estimate to local sky value be further sigma-clipped using \code{\link{magclip}}? Whether this is used or not is a product of the quality of the objects extraction. If all detectable objects really have been found and the dilated objects mask leaves only apparent sky pixels then an advanced user might be confident enough to set this to FALSE. If an doubt, leave as TRUE.
 }
 	\item{shiftloc}{
 Logical; should the cutout centre for the sky shift from \option{loc} of the desired \option{box} size extends beyond the edge of the image? (See \code{\link{magcutout}} for details).

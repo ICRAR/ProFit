@@ -9,7 +9,8 @@ Calculate the sky and sky RMS for a subset region of a larger image, as used in 
 }
 \usage{
 profitSkyEstLoc(image, objects, mask, loc = dim(image)/2, box = c(100, 100),
-shiftloc=TRUE, paddim = TRUE, plot = FALSE, ...)
+skytype = "median", skyRMStype = "quanlo", sigmasel = 1, doclip = TRUE, shiftloc=TRUE,
+paddim = TRUE, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,6 +29,18 @@ Integer vector; the [x,y] location where we want to estimate the sky and sky RMS
   \item{box}{
 Integer vector; the dimensions of the box car filter to estimate the sky with.
 }
+  \item{skytype}{
+Character scalar; the type of sky level estimator used. Allowed options are 'median' (the default), 'mean' and 'mode' (see Details for an explanation of what these estimators do). In all cases this is the estimator applied to unmasked and non-object pixels. If \option{doclip}=TRUE then the pixels will be dynamically sigma clipped before the estimator is run. 
+}
+  \item{skyRMStype}{
+Character scalar; the type of sky level estimator used. Allowed options are 'quanlo' (the default), 'quanhi', 'quanboth', and 'sd' (see Details for an explanation of what these estimators do). In all cases this is the estimator applied to unmasked and non-object pixels. If \option{doclip}=TRUE then the pixels will be dynamically sigma clipped before the estimator is run.
+}
+  \item{sigmasel}{
+Numeric scalar; the quantile to use when trying to estimate the true standard-deviation of the sky distribution. If contamination is low then the default of 1 is about optimal in terms of S/N, but you might need to make the value lower when contamination is very high.
+}
+  \item{doclip}{
+Logical; should the unmasked non-object pixels used to estimate to local sky value be further sigma-clipped using \code{\link{magclip}}? Whether this is used or not is a product of the quality of the objects extraction. If all detectable objects really have been found and the dilated objects mask leaves only apparent sky pixels then an advanced user might be confident enough to set this to FALSE. If an doubt, leave as TRUE.
+}
 	\item{shiftloc}{
 Logical; should the cutout center shift from \option{loc} if the desired \option{box} size extends beyond the edge of the image? (See \code{\link{magcutout}} for details).
 }
@@ -43,6 +56,12 @@ Further arguments to be passed to \code{\link{magimage}}. Only relevant is \opti
 }
 \details{
 This is a somewhat handy standalone utility function if you have a large image and want to check the quality and stability of the local sky and sky RMS.
+
+Regarding \option{skytype}, the meaning of the median and mean options re obvious enough. The mode is computed by running the data through \code{\link{density}} with the default options including automatuc selection of the appropriate smoothing band-width. The peak value of the smoothed density is then extracted, and the pixel value at this point is returned as the 'mode' sky estimator.
+
+Regarding \option{skyRMStype}, if you know that your contamination only comes from positive flux sources (e.g., astronomical data when trying to select sky pixels) then you should probably use the lower side to determine Normal statistics (quanlo). Similarly if the contamination is on the low side then you should use the higher side to determine Normal statistics (quanhi). If you believe the selected sky pixels to be unbiased then 'quanboth' uses both sides and will give you a more accurate estimator of the sky RMS. The final option is to use the standard-deviation, with the caveat that this is calculated around the esstimated sky level (of type specified by \option{skytype}) and not necessarily simply the mean (as it would be typically). The most common choices for \option{skyRMStype} will likely be 'quanlo' or 'sd'.
+
+There are many questions to think about when choosing the best combination of sky estimators. Have all detectable sources been robustly extracted and masked? Is the remaining contamintion due to background undetected sources or wing flux from foreground stars? The most significant choice to be made is whether to choose the more robust 'median' or the potentially biased 'mean'. The former makes sense if you think there might be detectable sources still contributing to your nominal sky pixels, the latter makes sense if the positive  flux of undetected sources is spread round the sky in an random but uniform manner. If you are very confident that your object mask represents all plausible sources then you might even want to set \option{doclip}=FALSE. The defaults behave in quite a safe manner and have resistance to unmasked objects being included in the sky pixels. Using different options (particularly \option{doclip}=FALSE and \option{skytype}) requires more advanced knowledge about the specific data being anlysed.
 }
 \value{
 A 2 component list containing:
