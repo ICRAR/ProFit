@@ -179,7 +179,7 @@ profitProFound=function(image, segim, objects, mask, tolerance=4, ext=2, sigma=1
       if(verbose){message(paste('Doing final aggressive dilation -',round(proc.time()[3]-timestart,3),'sec'))}
       objects_redo=profitMakeSegimDilate(image=image, segim=objects, mask=mask, size=redoskysize, shape=shape, sky=sky, verbose=verbose, plot=FALSE, stats=FALSE, rotstats=FALSE)$objects
       if(verbose){message(paste('Making final sky map -',round(proc.time()[3]-timestart,3),'sec'))}
-      sky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, shiftloc = shiftloc, paddim = paddim)
+      sky=profitMakeSkyGrid(image=image, objects=objects_redo, mask=mask, box=box, grid=grid, type=type, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, doclip=doclip, shiftloc = shiftloc, paddim = paddim)
       skyRMS=sky$skyRMS
       sky=sky$sky
     }else{

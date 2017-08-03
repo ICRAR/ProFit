@@ -172,7 +172,7 @@ profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box, skytyp
   tempgrid=expand.grid(xseq, yseq)
   tempsky=matrix(0,dim(tempgrid)[1],2)
   for(i in 1:dim(tempgrid)[1]){
-    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, doclip=TRUE, shiftloc=shiftloc, paddim=paddim)$val
+    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, doclip=doclip, shiftloc=shiftloc, paddim=paddim)$val
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
@@ -196,7 +196,7 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   tempgrid=expand.grid(xseq, yseq)
   tempsky=matrix(0,dim(tempgrid)[1],2)
   for(i in 1:dim(tempgrid)[1]){
-    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, shiftloc=shiftloc, paddim=paddim)$val
+    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, doclip=doclip, shiftloc=shiftloc, paddim=paddim)$val
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
