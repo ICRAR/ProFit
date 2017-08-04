@@ -243,11 +243,8 @@ Aaron Robotham
 }
 \examples{
 \dontrun{
-image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits',
-package="ProFit"))
+image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFit"))
 
-segim=profitMakeSegim(image$imDat, skycut=1.5, magzero=30, header=image$hdr,
-verbose=TRUE, plot=TRUE)
 profound=profitProFound(image, skycut=1.5, magzero=30, verbose=TRUE, plot=TRUE)
 
 #You can check to see if the final mask is aggressive enough. Notice the halos
