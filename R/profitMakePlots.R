@@ -119,7 +119,6 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     errmap = error
     error = error[region]
     maxerr = max(abs(error))
-    stretcherr = 1/median(abs(error))
     errmap[!region & (errmap>maxerr)] = maxerr
     minerr = -maxerr
     errmap[!region & (errmap<minerr)] = minerr
@@ -172,7 +171,7 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     y = y/sum(y)/dxbin
     ylim = c(min(y[y>0]),10)
     y[y<=0] = ylim[1]
-    magplot(x, c(y,ylim[1]), xlim=xlims,ylim=ylim, xlab=expression(chi^2),
+    magplot(x, c(y,ylim[1]), xlim=xlims,ylim=ylim, xlab=expression(log10(chi^2)),
       ylab="", xaxs="i", type="s",log="y")
     xp=10^x
     lines(x, dchisq(xp,1), col="blue", xaxs="i")
