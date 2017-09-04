@@ -8,11 +8,11 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9
   image=(image-sky)/skyRMS
   
   if(!missing(objects)){
-    image[objects==1]=NA
+    image[objects>0]=NA
   }
   
   if(!missing(mask)){
-    image[mask==1]=NA
+    image[mask>0]=NA
   }
   
   corx={}; cory={}; relsdx={}; relsdy={}
@@ -24,18 +24,18 @@ profitPixelCorrelation=function(image, objects, mask, sky=0, skyRMS=1, lag=c(1:9
     relsdy=c(relsdy,sd(as.numeric(image[,1:(ylen-i)])-as.numeric(image[,1:(ylen-i)+i]), na.rm=TRUE)/sqrt(2))
   }
   
-  output_cortab=cbind(lag=lag,corx=corx,cory=cory,relsdx=relsdx,relsdy=relsdy)
+  output_cortab=data.frame(lag=lag,corx=corx,cory=cory,relsdx=relsdx,relsdy=relsdy)
   
   if(fft){
     xlenpad=xlen+xlen%%2
     ylenpad=ylen+ylen%%2
     
     if(!missing(objects)){
-      image[objects==1]=rnorm(length(which(objects==1)))
+      image[objects>0]=rnorm(length(which(objects>0)))
     }
     
     if(!missing(mask)){
-      image[mask==1]==rnorm(length(which(mask==1)))
+      image[mask>0]=rnorm(length(which(mask>0)))
     }
     
     centre=matrix(c(rep(c(-1,1),xlenpad/2), rep(c(1,-1),ylenpad/2)),xlenpad,ylenpad)[1:xlen,1:ylen]

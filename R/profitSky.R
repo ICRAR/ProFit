@@ -101,7 +101,7 @@ profitSkyEst=function(image, objects, mask, cutlo=cuthi/2, cuthi=sqrt(sum((dim(i
   return=list(sky=sky,skyerr=skyerr,skyRMS=skyRMS,Nnearsky=Nnearsky,radrun=tempmedian)
 }
 
-profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100), shiftloc = TRUE, paddim = TRUE, plot=FALSE, ...){
+profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100), skytype='median', skyRMStype='quanlo', sigmasel=1, doclip=TRUE, shiftloc = TRUE, paddim = TRUE, plot=FALSE, ...){
   if(!missing(objects) | !missing(mask)){
     if(!missing(objects)){
       tempobj=magcutout(image=objects, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image==0
@@ -129,19 +129,50 @@ profitSkyEstLoc=function(image, objects, mask, loc=dim(image)/2, box=c(100,100),
       contour(x=imout$x, y=imout$y, magcutout(objects, loc=loc, box=box, shiftloc=shiftloc, paddim=paddim)$image, add=T, col='blue', drawlabels = FALSE, zlim=c(0,1), nlevels = 1)
     }
   }
-  suppressWarnings({clip=magclip(select, estimate = 'lo')})
-  tempmed=median(clip$x, na.rm=TRUE)
-  tempsd=as.numeric(diff(quantile(clip$x, pnorm(c(-1,0)), na.rm=TRUE)))
-  return=list(val=c(tempmed, tempsd), clip=clip)
+  if(doclip){
+    suppressWarnings({clip=magclip(select, sigmasel=sigmasel, estimate = 'lo')$x})
+  }else{
+    clip=select
+  }
+  
+  if(skytype=='median'){
+    skyloc=median(clip, na.rm=TRUE)
+  }else if(skytype=='mean'){
+    skyloc=mean(clip, na.rm=TRUE)
+  }else if(skytype=='mode'){
+    temp=density(clip, na.rm=TRUE)
+    skyloc=temp$x[which.max(temp$y)]
+  }
+  
+  if(skyRMStype=='quanlo'){
+    temp=clip-skyloc
+    temp=temp[temp<0]
+    skyRMSloc=abs(as.numeric(quantile(temp, pnorm(-sigmasel)*2, na.rm=TRUE)))/sigmasel
+  }else if(skyRMStype=='quanhi'){
+    temp=clip-skyloc
+    temp=temp[temp>0]
+    skyRMSloc=abs(as.numeric(quantile(temp, (pnorm(sigmasel)-0.5)*2, na.rm=TRUE)))/sigmasel
+  }else if(skyRMStype=='quanboth'){
+    temp=clip-skyloc
+    templo=temp[temp<0]
+    temphi=temp[temp>0]
+    skyRMSloclo=abs(as.numeric(quantile(templo, pnorm(-sigmasel)*2, na.rm=TRUE)))/sigmasel
+    skyRMSlochi=abs(as.numeric(quantile(temphi, (pnorm(sigmasel)-0.5)*2, na.rm=TRUE)))/sigmasel
+    skyRMSloc=(skyRMSloclo+skyRMSlochi)/2
+  }else if(skyRMStype=='sd'){
+    skyRMSloc=sqrt(.varwt(clip, wt=1, xcen=skyloc))
+  }
+  
+  return=list(val=c(skyloc, skyRMSloc), clip=clip)
 }
 
-profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box, shiftloc = TRUE, paddim = TRUE){
+profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box, skytype='median', skyRMStype='quanlo', sigmasel=1, doclip=TRUE, shiftloc = TRUE, paddim = TRUE){
   xseq=seq(grid[1]/2,dim(image)[1],by=grid[1])
   yseq=seq(grid[2]/2,dim(image)[2],by=grid[2])
   tempgrid=expand.grid(xseq, yseq)
   tempsky=matrix(0,dim(tempgrid)[1],2)
   for(i in 1:dim(tempgrid)[1]){
-    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, shiftloc=shiftloc, paddim=paddim)$val
+    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, doclip=doclip, shiftloc=shiftloc, paddim=paddim)$val
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
@@ -150,7 +181,7 @@ profitMakeSkyMap=function(image, objects, mask, box=c(100,100), grid=box, shiftl
   return=list(sky=list(x=xseq, y=yseq, z=tempmat_sky), skyRMS=list(x=xseq, y=yseq, z=tempmat_skyRMS))
 }
 
-profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear', shiftloc = TRUE, paddim = TRUE){
+profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type='bilinear', skytype='median', skyRMStype='quanlo', sigmasel=1, doclip=TRUE, shiftloc = TRUE, paddim = TRUE){
   if(length(image)>1e6){rembig=TRUE}else{rembig=FALSE}
   if(rembig){
     invisible(gc())
@@ -165,7 +196,7 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   tempgrid=expand.grid(xseq, yseq)
   tempsky=matrix(0,dim(tempgrid)[1],2)
   for(i in 1:dim(tempgrid)[1]){
-    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, shiftloc=shiftloc, paddim=paddim)$val
+    tempsky[i,]=profitSkyEstLoc(image=image, objects=objects, mask=mask, loc=as.numeric(tempgrid[i,]), box=box, skytype=skytype, skyRMStype=skyRMStype, sigmasel=sigmasel, doclip=doclip, shiftloc=shiftloc, paddim=paddim)$val
   }
   tempmat_sky=matrix(tempsky[,1],length(xseq))
   tempmat_skyRMS=matrix(tempsky[,2],length(xseq))
@@ -177,23 +208,15 @@ profitMakeSkyGrid=function(image, objects, mask, box=c(100,100), grid=box, type=
   }
   
   if(dim(tempmat_sky)[1]>1){
-    #bigrid=expand.grid(1:dim(image)[1]-0.5, 1:dim(image)[2]-0.5)
     bigridx=rep(1:dim(image)[1]-0.5,times=dim(image)[2])
     bigridy=rep(1:dim(image)[2]-0.5,each=dim(image)[1])
     
     if(type=='bilinear'){
       temp_bi_sky=.interp.2d(bigridx, bigridy, list(x=xseq, y=yseq, z=tempmat_sky))
       temp_bi_skyRMS=.interp.2d(bigridx, bigridy, list(x=xseq, y=yseq, z=tempmat_skyRMS))
-      #temp_bi_sky=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_sky))
-      #temp_bi_skyRMS=.interp.2d(bigrid[,1], bigrid[,2], list(x=xseq, y=yseq, z=tempmat_skyRMS))
-      #Note the following does not work well - akima clips out the outer regions (darn- would be faster!)
-      #temp_bi_sky=akima::bilinear(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
-      #temp_bi_skyRMS=akima::bilinear(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
     }else if(type=='bicubic'){
       temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigridx, bigridy)$z
       temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigridx, bigridy)$z
-      #temp_bi_sky=akima::bicubic(xseq, yseq, tempmat_sky, bigrid[,1], bigrid[,2])$z
-      #temp_bi_skyRMS=akima::bicubic(xseq, yseq, tempmat_skyRMS, bigrid[,1], bigrid[,2])$z
     }
     
     if(rembig){

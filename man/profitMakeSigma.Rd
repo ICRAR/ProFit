@@ -76,7 +76,7 @@ Aaron Robotham
 \dontrun{
 image = readFITS(system.file("extdata", 'KiDS/G266035fitim.fits', package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", 'KiDS/G266035sigma.fits', package="ProFit"))$imDat
-segim = profitSegImWatershed(image)
+segim = profitMakeSegim(image)
 sigma_est=profitMakeSigma(image, sky=segim$sky, skyRMS=segim$skyRMS, gain=1.8e13)
 
 #This gets us close to the demo sigma image:

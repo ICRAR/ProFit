@@ -50,7 +50,7 @@ The relative standard-deviations returned in \option{cortab} are calculated by t
 \value{
 A list containing three objects:
 
-\item{cortab}{A five column matrix, containing the pixel lag (lag), the correlation in the x-dimension (corx), the correlation in the y-dimension (cory), the pixel lag implied relative standard-deviation in the x-dimension (relsdx) and the pixel lag implied relative standard-deviation in the y-dimension (relsdy).}
+\item{cortab}{A five column data.frame, containing the pixel lag (lag), the correlation in the x-dimension (corx), the correlation in the y-dimension (cory), the pixel lag implied relative standard-deviation in the x-dimension (relsdx) and the pixel lag implied relative standard-deviation in the y-dimension (relsdy).}
 \item{fft}{Numeric matrix; if \option{fft}=TRUE this object contains the modulus of the 2D FFT of the \option{image} with the same dimensions, if \option{fft}=FALSE it is NULL. The output is centred such that small scale structures are in the centre of the image matrix.}
 \item{image_sky}{Numeric matrix; if \option{fft}=TRUE this object contains the (\option{image}-\option{sky})/\option{skyRMS}, if \option{fft}=FALSE it is NULL.}
 }
