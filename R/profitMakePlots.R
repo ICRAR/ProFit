@@ -39,7 +39,7 @@
 profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE, maxsigma=5,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), 
   errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
-  plotchisq=FALSE, dofs) {
+  plotchisq=FALSE, dofs, skewtparm = NULL) {
   residual = image - modelimage
   error=sigma
   
@@ -154,6 +154,9 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
       ylab="PDF", xaxs="i", yaxs="i", type="s",log="y")
     lines(x, dnorm(x), col="blue", xaxs="i")
     lines(x, dt(x,tdof), col="red", xaxs="i")
+    if(!is.null(skewtparm) && length(skewtparm) == 4) {
+      lines(x, sn::dst(x, dp = skewtparm), col="purple", xaxs="i")
+    }
     
     labs = c(expression(chi),bquote(norm(1)),bquote(Student-T(.(signif(tdof,5)))))
     cols = c("black","blue","red")
