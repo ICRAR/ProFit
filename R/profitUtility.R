@@ -114,6 +114,9 @@ profitParseLikefunc <- function(funcname)
   else if(funcname=="t" | funcname=='student' | funcname=='student-t') {
     return("t")
   }
+  else if(funcname=="st" | funcname=='skewt' | funcname=='skew-t') {
+    return("st")
+  }
   else if(funcname=="pois" | funcname=="poisson" | funcname=="cash" | funcname=="c") {
     return("pois")
   }
