@@ -208,7 +208,7 @@ profitMakeModel = function(modellist,
 						# If we have to apply the scale again then we simply have to
 						# modify the magnitude we set on these profiles
 						#new_profiles$mag = rep(modellist$pointsource$mag[[i]] - psprofile$mag, length(new_profiles[['mag']]))
-						new_profiles$mag = rep(modellist$pointsource$mag[[i]], n_profiles)
+						new_profiles$mag = new_profiles$mag + modellist$pointsource$mag[[i]]
 
 						# Add default values for missing properties on the submodel profiles
 						add_defaults = function(new_profiles, propname, val) {
