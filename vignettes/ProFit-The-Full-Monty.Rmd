@@ -14,9 +14,8 @@ First load the libraries we need:
 ```{r}
 library(knitr)
 library(ProFit)
+library(ProFound)
 library(FITSio)
-library(EBImage)
-library(imager)
 library(RColorBrewer)
 ```
 
@@ -33,7 +32,7 @@ image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="P
 And take a look at what we have got:
 
 ```{r, fig.width=5, fig.height=5}
-magimage(image,hi=1)
+magimage(image, hicut=1)
 ```
 
 It is Z-band data from the VIKING survey, and in the second image it is possible to see that the bright source close to our spiral galaxy of interest in the centre is in fact two very bright stars.
@@ -43,7 +42,7 @@ It is Z-band data from the VIKING survey, and in the second image it is possible
 The first thing to do is to create an object segmentation of the full image. Here we input the known magnitude zero-point for this frame (30), and the pixel scale for VISTA VIRCAM (0.34 asec/pix). If these are not provided then outputs would be in terms on ADUs and pixels rather than AB mag and asec.
 
 ```{r, fig.width=5, fig.height=5}
-segim=profitMakeSegim(image, magzero=30, pixscale=0.34, plot=TRUE)
+segim=profoundMakeSegim(image, magzero=30, pixscale=0.34, plot=TRUE)
 ```
 
 This is a pretty decent start, and it has identified all the main sources of interest. We can look at the object information in the attached table:
@@ -57,7 +56,7 @@ The output is approximately in descending flux order. This data happened to have
 The next step is to expand out the segmantation for our target galaxy. this is a good idea because we want our model fit to descend into sky dominated pixels and not to be tightly defined by bright central pixels:
 
 ```{r, fig.width=5, fig.height=5}
-segim_expand=profitMakeSegimExpand(image, segim$segim, expand=6, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, rotstats=TRUE, plot=TRUE)
+segim_expand=profoundMakeSegimExpand(image, segim$segim, expand=6, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, rotstats=TRUE, plot=TRUE)
 ```
 
 Notice because we set expand=6 only our object of interest (with segID=6) has been expanded. The other sources are left as they were.
@@ -76,7 +75,7 @@ object_frac=length(which(segim_expand$objects==1))/length(image)
 qnorm(1-object_frac)
 ```
 
-The above tells us that at a skycut level of ~1.6 is the point where we would expect 50% of pixels to be False-Positive (i.e. positive sky fluctuations) rather than True-Positives (associated with real sources). If we cut higher than this (which we do by default) then most of our sources at the surface brightness threshold will be real.
+The above tells us that at a skycut level of ~1.4 is the point where we would expect 50% of pixels to be False-Positive (i.e. positive sky fluctuations) rather than True-Positives (associated with real sources). If we cut higher than this then most of our pixels at the surface brightness threshold will be real.
 
 It is also instructive to make the **qqplot** of sky pixels:
 
@@ -92,7 +91,7 @@ As we should hope, the **qqplot** crosses at very close to [0,0], but we can see
 Now we have a decent segmentation we can estimate the image gain and the sigma map:
 
 ```{r}
-gain=profitGainEst(image,objects=segim_expand$objects, sky=segim_expand$sky, skyRMS=segim_expand$skyRMS)
+gain=profoundGainEst(image,objects=segim_expand$objects, sky=segim_expand$sky, skyRMS=segim_expand$skyRMS)
 gain
 ```
 
@@ -101,7 +100,7 @@ The number found is ~0.5. Since the gain estimation routine is typically accurat
 Now we have the segmentation, sky estimates and the gain, we can make a sgima map:
 
 ```{r, fig.width=5, fig.height=5}
-sigma=profitMakeSigma(image, objects=segim_expand$objects, gain=gain, sky=segim_expand$sky, skyRMS =segim_expand$skyRMS, plot=TRUE)
+sigma=profoundMakeSigma(image, objects=segim_expand$objects, gain=gain, sky=segim_expand$sky, skyRMS =segim_expand$skyRMS, plot=TRUE)
 ```
 
 The sigma map will look much liek our original image, but with sky pixels set to a fixed value of uncertainty, and object pixels having an additional component of shot-noise.
@@ -132,7 +131,7 @@ starlist=segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$se
 print(starlist)
 ```
 
-There are 4 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate. When doing this in anger you might want to consider fitting all 3 stars (or however many make it through the selection cuts above). This gives you a way to marginalise over the uncertainty in the PSF (I discuss PSF uncertainty in some more detail at the end of this vignette).
+There are 5 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate. When doing this in anger you might want to consider fitting all 5 stars (or however many make it through the selection cuts above). This gives you a way to marginalise over the uncertainty in the PSF (I discuss PSF uncertainty in some more detail at the end of this vignette).
 
 ```{r}
 psf_image=magcutout(image, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
@@ -253,7 +252,7 @@ Now we have all the key bits we need in order to fit our target galaxy!
 
 ### An Advanced PSF Fit
 
-A more complicated alternative is to fit all the good stars (4 in this case) with the same profile simultaneously. Basically we have 4 PSFs distributed around our image, but we want to fit them all with the same PSF, modulo different xcen, ycen and mag:
+A more complicated alternative is to fit all the good stars (5 in this case) with the same profile simultaneously. Basically we have 5 PSFs distributed around our image, but we want to fit them all with the same PSF, modulo different xcen, ycen and mag:
 
 ```{r}
 psf_x=starlist$xcen
@@ -283,7 +282,7 @@ psf_modellist2=list(
 We need to make our own region map since our object to fit will not be centrally located. First we should expand our segments of interest (not always vital- it depends whether you think there is much PSF flux hidden in broad wings or not):
 
 ```{r, fig.width=5, fig.height=5}
-segim_expand_psf=profitMakeSegimExpand(image, segim$segim, expand=starlist$segID, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, plot=TRUE)
+segim_expand_psf=profoundMakeSegimExpand(image, segim$segim, expand=starlist$segID, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, plot=TRUE)
 ```
 
 ```{r}
@@ -291,14 +290,14 @@ psf_region=matrix(0, dim(image)[1], dim(image)[2])
 psf_region[segim_expand$segim %in% starlist$segID]=1
 ```
 
-We now need to prepare a more complicated fitting structure. We want to fit the 3 stars with the same PSF, modulo different xcen, ycen and mag:
+We now need to prepare a more complicated fitting structure. We want to fit the 5 stars with the same PSF, modulo different xcen, ycen and mag:
 
 ```{r}
 psf_tofit2=list(
   pointsource = list(
-    xcen = rep(TRUE,4),
-    ycen = rep(TRUE,4),
-    mag = rep(TRUE,4)
+    xcen = rep(TRUE,5),
+    ycen = rep(TRUE,5),
+    mag = rep(TRUE,5)
   ),
   psf=list(
     moffat=list(
@@ -313,9 +312,9 @@ psf_tofit2=list(
 
 psf_tolog2=list(
   pointsource = list(
-    xcen = rep(FALSE,4),
-    ycen = rep(FALSE,4),
-    mag = rep(FALSE,4)
+    xcen = rep(FALSE,5),
+    ycen = rep(FALSE,5),
+    mag = rep(FALSE,5)
   ),
   psf=list(
     moffat=list(
@@ -330,9 +329,9 @@ psf_tolog2=list(
 
 psf_intervals2=list(
   pointsource = list(
-    xcen=list(starlist$xcen[1]+c(-5,5), starlist$xcen[2]+c(-5,5), starlist$xcen[3]+c(-5,5), starlist$xcen[4]+c(-5,5)),
-    ycen=list(starlist$ycen[1]+c(-5,5), starlist$ycen[2]+c(-5,5), starlist$ycen[3]+c(-5,5), starlist$ycen[4]+c(-5,5)),
-    mag=list(starlist$mag[1]+c(-2,2), starlist$mag[2]+c(-2,2), starlist$mag[3]+c(-2,2), starlist$mag[4]+c(-2,2))
+    xcen=list(starlist$xcen[1]+c(-5,5), starlist$xcen[2]+c(-5,5), starlist$xcen[3]+c(-5,5), starlist$xcen[4]+c(-5,5), starlist$xcen[5]+c(-5,5)),
+    ycen=list(starlist$ycen[1]+c(-5,5), starlist$ycen[2]+c(-5,5), starlist$ycen[3]+c(-5,5), starlist$ycen[4]+c(-5,5), starlist$ycen[5]+c(-5,5)),
+    mag=list(starlist$mag[1]+c(-2,2), starlist$mag[2]+c(-2,2), starlist$mag[3]+c(-2,2), starlist$mag[4]+c(-2,2), starlist$mag[5]+c(-2,2))
   ),
   psf=list(
     moffat=list(
@@ -375,7 +374,7 @@ Maybe useful to zoom in a bit:
 ```{r, fig.width=5, fig.height=5}
 psf_modellist_fit2=profitRemakeModellist(parm=psf_fit2$par, Data=psf_Data2)$modellist
 psf_model_full2=profitMakeModel(psf_modellist_fit2,dim=dim(image),magzero=30)$z
-for(i in 1:4){
+for(i in 1:5){
   magimage(magcutout(image, loc=starlist[i,c('xcen','ycen')], box=c(51,51))$image, col=rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)), magmap=FALSE, zlim=c(-2e2,2e2))
   magimage(magcutout(image-psf_model_full2, loc=starlist[i,c('xcen','ycen')], box=c(51,51))$image, col=rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)), magmap=FALSE, zlim=c(-2e2,2e2))
 }

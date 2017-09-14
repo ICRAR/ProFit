@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Load libraries
+First load the libraries we need:
 
 ```{r}
 library(ProFit)

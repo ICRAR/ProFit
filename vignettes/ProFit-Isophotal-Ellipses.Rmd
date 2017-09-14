@@ -1,5 +1,5 @@
 ---
-title: "ProFit: Using Isophotal Ellipses"
+title: "ProFit/ProFound: Using Isophotal Ellipses"
 author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -9,10 +9,11 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-Load **ProFit**:
+First load the libraries we need:
 
 ```{r}
 library(ProFit)
+library(ProFound)
 ```
 
 Load data:
@@ -29,7 +30,7 @@ psf = readFITS(system.file("extdata", 'KiDS/G278109psfim.fits', package="ProFit"
 Extract isophotal ellispes, notice we allow for boxy isophotes:
 
 ```{r, fig.height=8, fig.width=5}
-ellipses_box = profitGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE, pixscale=1)
+ellipses_box = profoundGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE, pixscale=1)
 ```
 
 Show the extracted isophotal surface brightness profile:

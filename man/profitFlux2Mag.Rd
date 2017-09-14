@@ -45,9 +45,6 @@ These functions are here to prevent silly mistakes, but the conversion is almost
 \author{
 Aaron Robotham
 }
-\seealso{
-\code{\link{profitGainConvert}}
-}
 \examples{
 profitFlux2Mag(1e5, 30)
 profitMag2Flux(17.5, 30)
