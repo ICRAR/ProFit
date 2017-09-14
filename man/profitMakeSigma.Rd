@@ -5,7 +5,7 @@
 Make a Sigma Map
 }
 \description{
-A utility function to construct a \code{ProFit} legal sigma map that can be input to \code{\link{profitSetupData}}
+A utility function to construct a \code{ProFit} legal sigma map that can be input to \code{\link{profitSetupData}}.
 }
 \usage{
 profitMakeSigma(image, objects=0, sky=0, skyRMS=1, skycut=0, gain=1, readRMS=0, darkRMS=0,
