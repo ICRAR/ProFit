@@ -1,5 +1,5 @@
 ---
-title: "ProFit-The-Full-Monty"
+title: "ProFit/ProFound: The Full Monty"
 author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
