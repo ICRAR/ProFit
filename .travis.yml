@@ -37,6 +37,7 @@ bioc_packages: EBImage
 r_github_packages:
  - asgr/celestial
  - asgr/magicaxis
+ - asgr/ProFound
 
 # ProFit needs fftw3
 addons:
