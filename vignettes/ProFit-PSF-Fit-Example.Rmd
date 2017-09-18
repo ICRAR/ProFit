@@ -1,5 +1,3 @@
-
-
 ---
 title: "ProFit: PSF Fitting Example"
 author: "Aaron Robotham"

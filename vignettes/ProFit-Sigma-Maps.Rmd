@@ -9,8 +9,11 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+First load the libraries we need:
+
 ```{r}
 library(ProFit)
+library(ProFound)
 ```
 
 The authors of **ProFit** have answered many (many) questions regarding what `sigma` maps mean / represent, and how to compute them in practice for input to **profitSetupData**. This short vignette will clarify both of these questions.
@@ -194,12 +197,12 @@ maghist(sigma_est_2/sigma_elec*gain_elec_ADU)
 As a convenience there also exists a helper function profitMakeSigma that does the scaling and error addition for you (if you are feeling lazy, or want to sanity check your own thought process). Below we compare both of the above methods to estimate the sigma maps:
 
 ```{r, fig.width=5, fig.height=5}
-sigma_est_3=profitMakeSigma(image=image_ADU_sub_noise, sky=0, skyRMS=sky_elec_noise, gain=gain_elec_ADU, readRMS=read_elec_noise, darkRMS=dark_elec_noise, sky_units='elec', read_units='elec', dark_units='elec')
+sigma_est_3=profoundMakeSigma(image=image_ADU_sub_noise, sky=0, skyRMS=sky_elec_noise, gain=gain_elec_ADU, readRMS=read_elec_noise, darkRMS=dark_elec_noise, sky_units='elec', read_units='elec', dark_units='elec')
 magimage(sigma_est_3)
 ```
 
 ```{r, fig.width=5, fig.height=5}
-sigma_est_4=profitMakeSigma(image=image_ADU_sub_noise, sky=0, skyRMS=sky_pix_ADU_noise, gain=gain_elec_ADU)
+sigma_est_4=profoundMakeSigma(image=image_ADU_sub_noise, sky=0, skyRMS=sky_pix_ADU_noise, gain=gain_elec_ADU)
 magimage(sigma_est_4)
 ```
 
@@ -218,7 +221,7 @@ magplot(sigma_est_3, sigma_est_4, pch='.', log='xy', grid=TRUE)
 We can also use the segmentation map we made before to identify pure sky areas where the error should simply be the skyRMS:
 
 ```{r, fig.width=5, fig.height=5}
-sigma_est_5=profitMakeSigma(image=image_ADU_sub_noise, objects=segim>0, sky=0, skyRMS=sky_pix_ADU_noise, gain=gain_elec_ADU)
+sigma_est_5=profoundMakeSigma(image=image_ADU_sub_noise, objects=segim>0, sky=0, skyRMS=sky_pix_ADU_noise, gain=gain_elec_ADU)
 magimage(sigma_est_5)
 ```
 

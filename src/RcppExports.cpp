@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // profitDownsample
 NumericMatrix profitDownsample(const NumericMatrix& IMG, const int DOWNSAMPLEFAC);
-RcppExport SEXP ProFit_profitDownsample(SEXP IMGSEXP, SEXP DOWNSAMPLEFACSEXP) {
+RcppExport SEXP _ProFit_profitDownsample(SEXP IMGSEXP, SEXP DOWNSAMPLEFACSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // profitUpsample
 NumericMatrix profitUpsample(const NumericMatrix& IMG, const int UPSAMPLEFAC);
-RcppExport SEXP ProFit_profitUpsample(SEXP IMGSEXP, SEXP UPSAMPLEFACSEXP) {
+RcppExport SEXP _ProFit_profitUpsample(SEXP IMGSEXP, SEXP UPSAMPLEFACSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -28,4 +28,26 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(profitUpsample(IMG, UPSAMPLEFAC));
     return rcpp_result_gen;
 END_RCPP
+}
+
+RcppExport SEXP R_profit_convolve(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP R_profit_has_openmp();
+RcppExport SEXP R_profit_make_model(SEXP);
+RcppExport SEXP R_profit_openclenv(SEXP, SEXP, SEXP);
+RcppExport SEXP R_profit_openclenv_info();
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_ProFit_profitDownsample", (DL_FUNC) &_ProFit_profitDownsample, 2},
+    {"_ProFit_profitUpsample", (DL_FUNC) &_ProFit_profitUpsample, 2},
+    {"R_profit_convolve",        (DL_FUNC) &R_profit_convolve,        4},
+    {"R_profit_has_openmp",      (DL_FUNC) &R_profit_has_openmp,      0},
+    {"R_profit_make_model",      (DL_FUNC) &R_profit_make_model,      1},
+    {"R_profit_openclenv",       (DL_FUNC) &R_profit_openclenv,       3},
+    {"R_profit_openclenv_info",  (DL_FUNC) &R_profit_openclenv_info,  0},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_ProFit(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

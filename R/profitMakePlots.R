@@ -55,20 +55,20 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     par(mar=c(0,0,0,0),oma=c(4.1,4.1,1.1,1.1))
     layout(cbind(1,2,3,4))
     
-    magimage(image,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix',ylab='y/pix')
+    magimage(image,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix',ylab='y/pix')
     if(missing(region)==FALSE & all(region)==FALSE){
       tempcon=magimage(1-region,add=T,magmap=F,zlim=c(0,1),col=NA)#hsv(s=0,alpha=0.5)
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Data')
     
-    magimage(modelimage,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
+    magimage(modelimage,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Model')
     
-    magimage(residual,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=errcmap,xlab='x/pix')
+    magimage(residual,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=errcmap,xlab='x/pix')
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
       legend('topleft',legend='Data-Model')
@@ -90,20 +90,20 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
 
     layout(rbind(c(1,2,3,5),c(7,8,4,6)),widths=c(0.31,0.31,0.31,0.07),heights=c(0.5,0.5))
     
-    magimage(image,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),col=cmap,xlab="x/pix",ylab="y/pix")
+    magimage(image,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=cmap,xlab="x/pix",ylab="y/pix")
     if(missing(region)==FALSE & all(region)==FALSE){
       tempcon=magimage(1-region,add=T,magmap=F,zlim=c(0,1),col=NA)#hsv(s=0,alpha=0.5)
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Data')
     
-    magimage(modelimage,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),xlab="x/pix",col=cmap)
+    magimage(modelimage,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),xlab="x/pix",col=cmap)
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Model')
     
-    magimage(residual,stretchscale=stretchscale,lo=-maximg,hi=maximg,type='num',zlim=c(0,1),xlab="x/pix",col=errcmap)
+    magimage(residual,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),xlab="x/pix",col=errcmap)
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=T,drawlabels = F,levels=1,col='darkgreen')
     }

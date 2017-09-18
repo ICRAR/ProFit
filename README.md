@@ -113,7 +113,7 @@ Be warned, it will probably ask you to update a whole bunch of stuff. Just say *
 
 Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **Cairo**, **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants). For **Cairo** you might need to install the development version, so check this if you are having issues.
 
-Assuming this has all installed successfully, you should now be able to load ProFit within R with the usual:
+Assuming this has all installed successfully, you should now be able to load **ProFit** within R with the usual:
 
 ```R
 library(ProFit)
