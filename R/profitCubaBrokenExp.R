@@ -16,7 +16,7 @@
 }
 
 .profitBrokenExpR=function(r=1, h1=1, h2=1, rb=1, a=1){
-  inten = r*profitBrokenExpR(r=r,h1=h1,h2=h2,rb=rb,a=a)
+  inten = r*.profitBrokenExp(r=r,h1=h1,h2=h2,rb=rb,a=a)
   return(inten)
 }
 
