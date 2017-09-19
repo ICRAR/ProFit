@@ -11,7 +11,7 @@ Plots appropriately scaled data and model images, along with a residual (data-mo
 profitMakePlots(image, modelimage, region, sigma, errischisq = FALSE, maxsigma = 5,
 cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)), 
 errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
-plotchisq = FALSE, dofs)
+plotchisq = FALSE, dofs, skewtparm=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -44,6 +44,9 @@ plotchisq = FALSE, dofs)
 }
   \item{dofs}{
   Numeric vector; of degrees-of-freedom (up to length 2), used only if \option{plotchisq} is set.
+}
+  \item{skewtparm}{
+  Numeric vector (length 4); parameters of a skewed t-distribution to plot on the residual histogram. Used only if \option{plotchisq} is set and calls the sn package's sn::dst function.
 }
 }
 \details{
