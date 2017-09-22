@@ -18,7 +18,7 @@ profitMakeModel = function(modellist,
   profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
   componentnames = c(profilenames,"pointsource")
   for(wcname in componentnames) {
-    if(is.null(whichcomponents[[wcname]]) || (whichcomponents[[wcname]] == "all")) {
+    if(is.null(whichcomponents[[wcname]]) || identical(whichcomponents[[wcname]],"all")) {
       if(length(modellist[[wcname]]) > 0){
         whichcomponents[[wcname]] = 1:length(modellist[[wcname]][[1]])
       }else{
