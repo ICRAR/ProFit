@@ -150,6 +150,7 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
   	return=LL
   }
   for(formal in names(pformals)) formals(priors)[[formal]] = pformals[[formal]]
+  environment(priors) = globalenv()
   formals(priors)$allowflat = allowflat
   stopifnot(is.numeric(priors(modellist,modellist)))
   return=priors
