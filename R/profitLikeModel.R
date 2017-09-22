@@ -97,7 +97,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       skewtparm = c(mean=median(cutsig), dof=dof, alpha=0.1, omega=1)
       STData = list(mon.names=character(0),parm.names=names(skewtparm), N=length(cutsig),chi=cutsig)
       stfit = LaplaceApproximation(Model=dstlike, parm=skewtparm, Data=STData, Iterations=1e3,
-        Method="HAR",sir=FALSE, CheckDataMatrixRanks = FALSE)
+        Method="HAR",sir=FALSE)
       skewtparm = stfit$Summary1[,"Mode"]
       stfit = LaplacesDemon(Model=dstlike, Initial.Values=skewtparm, Data=STData, Iterations=1e3,
         Status = 100, Algorithm = "CHARM", Specs = list(alpha.star=0.44), Thinning = 1,
