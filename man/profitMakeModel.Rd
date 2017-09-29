@@ -25,7 +25,7 @@ The model list that describes the analytic model to be created. See Details.
 The magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
 }
   \item{psf}{
-The PSF matrix to use for the model. This will both be used to convolve the Sersic / Ferrer models and to model point sources (i.e.) stars. If this is left as NULL and a psf model is included in the \option{modellist}, then this analytic PSF will be used instead.
+The PSF matrix to use for the model. This will both be used to convolve the radial profile models and to model point sources (i.e. stars). If this is left as NULL and a psf model is included in the \option{modellist}, then this analytic PSF will be used instead.
 }
   \item{dim}{
 The desired dimensions of the 2D image matrix. This should be a two element vector which specifies c(width,height) in the plotted image. This becomes c(rows,columns) in the matrix itself (see Details below).

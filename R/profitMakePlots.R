@@ -148,7 +148,7 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     
     vardata = var(error)
     tdof=2*vardata/(vardata-1)
-    tdof=interval(tdof,0,Inf)
+    tdof=max(0, min(Inf, tdof, na.rm = TRUE), na.rm = TRUE)
   
     magplot(x, c(y,ylim[1]), xlim=xlims, ylim=ylim, xlab=expression(chi),
       ylab="PDF", xaxs="i", yaxs="i", type="s",log="y")

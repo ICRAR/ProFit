@@ -239,7 +239,7 @@ This looks like a very good fit. We will now contruct our model PSF:
 psf_modellist_fit=profitRemakeModellist(parm=psf_fit$par, Data=psf_Data)$modellist
 psf_modellist_fit$moffat$xcen=25/2
 psf_modellist_fit$moffat$ycen=25/2
-psf_model=profitMakeModel(modellist=psf_modellist_fit, magzero=30, dim=c(25,25))$z
+psf_model=profitMakeModel(modellist=psf_modellist_fit, dim=c(25,25))$z
 ```
 
 And now we can look at our final PSF model:
