@@ -155,7 +155,7 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     lines(x, dnorm(x), col="blue", xaxs="i")
     lines(x, dt(x,tdof), col="red", xaxs="i")
     if(!is.null(skewtparm) && length(skewtparm) == 4) {
-      lines(x, sn::dst(x, dp = skewtparm), col="purple", xaxs="i")
+      try(lines(x, sn::dst(x, dp = skewtparm), col="purple", xaxs="i"))
     }
     
     labs = c(expression(chi),bquote(norm(1)),bquote(Student-T(.(signif(tdof,5)))))
