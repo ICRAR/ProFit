@@ -36,3 +36,26 @@ profitMakeConvolver = function(image_dimensions, psf, use_fft = FALSE,
 	.Call('R_profit_make_convolver', i(image_dimensions), psf, l(use_fft),
 	      l(reuse_psf_fft), i(fft_effort), i(omp_threads))
 }
+
+profitConvolve = function(convolver, image, kernel, mask = NULL) {
+	result = .Call('R_profit_convolve', convolver, image, kernel, mask)
+	matrix(result, ncol=dim(image)[2], byrow=F)
+}
+
+profitBruteConv <- function(image, psf, calcregion=matrix(1,1,1), docalcregion = FALSE, plot=FALSE, ...) {
+
+	if (docalcregion) {
+		if (dim(calcregion) != dim(image)) {
+			stop("Calc region has different dimensions than the image")
+		}
+	}
+
+	convolver = profitMakeConvolver(dim(image), psf, use_fft = FALSE)
+	output = profitConvolve(convolver, image, psf, mask = if (docalcregion) calcregion else NULL)
+
+	if (plot) {
+		magimage(output, ...)
+	}
+
+	return = output
+}

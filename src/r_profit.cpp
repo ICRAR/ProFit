@@ -495,6 +495,23 @@ SEXP _R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP use_fft,
 	return r_convolver;
 }
 
+static
+std::shared_ptr<Convolver> unwrap_convolver(SEXP convolver)
+{
+	if( TYPEOF(convolver) != EXTPTRSXP ) {
+		Rf_error("Given convolver not of proper type\n");
+		return nullptr;
+	}
+
+	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(convolver));
+	if (!wrapper) {
+		Rf_error("No Convolver found in convolver list item");
+		return nullptr;
+	}
+
+	return wrapper->convolver;
+}
+
 /*
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
@@ -555,18 +572,10 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	/* A convolver, if any */
 	SEXP convolver = _get_list_element(model_list, "convolver");
 	if (convolver != R_NilValue) {
-		if( TYPEOF(convolver) != EXTPTRSXP ) {
-			Rf_error("Given convolver not of proper type\n");
+		m.convolver = unwrap_convolver(convolver);
+		if (!m.convolver) {
 			return R_NilValue;
 		}
-
-		convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(convolver));
-		if (!wrapper) {
-			Rf_error("No Convolver found in convolver list item");
-			return R_NilValue;
-		}
-
-		m.convolver = wrapper->convolver;
 	}
 
 #ifdef PROFIT_OPENCL
@@ -637,24 +646,26 @@ SEXP _R_profit_make_model(SEXP model_list) {
 }
 
 static
-SEXP _R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
+SEXP _R_profit_convolve(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask) {
 
 	unsigned int img_w, img_h, psf_w, psf_h;
 
-	vector<double> image = _read_image(r_image, &img_w, &img_h);
-	vector<double> psf = _read_image(r_psf, &psf_w, &psf_h);
-
-	vector<bool> calc_region;
-	if( Rf_asLogical(r_do_calc_region) ) {
-		unsigned int calc_w, calc_h;
-		calc_region = _read_mask(r_calc_region, &calc_w, &calc_h);
-		if( calc_w != img_w || calc_h != img_h ) {
-			Rf_error("Calc region has different dimensions than the image");
-			return R_NilValue;
-		}
+	std::shared_ptr<Convolver> convolver = unwrap_convolver(r_convolver);
+	if (!convolver) {
+		return R_NilValue;
 	}
 
-	image = convolve(image, img_w, img_h, psf, psf_w, psf_h, calc_region);
+	vector<double> image = _read_image(r_image, &img_w, &img_h);
+	vector<double> psf = _read_image(r_psf, &psf_w, &psf_h);
+	vector<bool> mask;
+
+	if (r_mask != R_NilValue) {
+		unsigned int calc_w, calc_h;
+		mask = _read_mask(r_mask, &calc_w, &calc_h);
+		// we already checked that dimensions are fine
+	}
+
+	image = convolver->convolve(image, img_w, img_h, psf, psf_w, psf_h, mask);
 	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, img_w * img_h));
 	memcpy(REAL(ret_image), image.data(), sizeof(double) * img_w * img_h);
 
@@ -673,8 +684,8 @@ extern "C" {
 		return _R_profit_make_convolver(image_dimensions, psf, use_fft, reuse_psf_fft, fft_effort, omp_threads);
 	}
 
-	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
-		return _R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region);
+	SEXP R_profit_convolve(SEXP convolver, SEXP r_image, SEXP r_psf, SEXP mask) {
+		return _R_profit_convolve(convolver, r_image, r_psf, mask);
 	}
 
 	SEXP R_profit_has_openmp() {
