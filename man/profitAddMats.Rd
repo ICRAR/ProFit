@@ -5,7 +5,7 @@
 Add together image matrices
 }
 \description{
-A simple function to add together to matrics. The base matrix must be equal in size or larger than the matrix being added, and some pixels of the added matrix must fall inside the base matrix.
+A simple function to add together two matrices. The base matrix must be equal in size or larger than the matrix being added, and some pixels of the added matrix must fall inside the base matrix.
 }
 \usage{
 profitAddMats(matbase, matadd, addloc = c(1, 1), plot = FALSE, ...)
@@ -16,7 +16,7 @@ profitAddMats(matbase, matadd, addloc = c(1, 1), plot = FALSE, ...)
 The base matrix to be added onto (the output will be the same size as the base matrix).
 }
   \item{matadd}{
-The matrix to be added (this cannot be larer than the base matrix).
+The matrix to be added (this cannot be larger than the base matrix).
 }
   \item{addloc}{
 The reference ID of the corner pixel to use when adding \option{matadd}. This will be the position at which matadd[1,1] is added, i.e. the default c(1,1) means the two matrices are lined up on the bottom-left pixel when plotted as an image. This can be negative or larger than dim(matbase), which means only a subset of the \option{matadd} matrix is added to \option{matbase}.

@@ -242,6 +242,12 @@ std::shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, u
 	const char *coresersic_double =
 #include "cl/coresersic-double.cl"
 	;
+	const char *convolve_float =
+#include "cl/convolve-float.cl"
+	;
+	const char *convolve_double =
+#include "cl/convolve-double.cl"
+	;
 
 	cl::Program::Sources sources;
 	sources.push_back(common_float);
@@ -251,6 +257,7 @@ std::shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, u
 	sources.push_back(king_float);
 	sources.push_back(brokenexp_float);
 	sources.push_back(coresersic_float);
+	sources.push_back(convolve_float);
 	if( use_double ) {
 		sources.push_back(common_double);
 		sources.push_back(sersic_double);
@@ -259,6 +266,7 @@ std::shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, u
 		sources.push_back(king_double);
 		sources.push_back(brokenexp_double);
 		sources.push_back(coresersic_double);
+		sources.push_back(convolve_double);
 	}
 
 	cl::Context context(device);
@@ -271,7 +279,7 @@ std::shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, u
 
 	cl::CommandQueue queue(context, device, enable_profiling ? CL_QUEUE_PROFILING_ENABLE : 0);
 
-	return std::make_shared<OpenCL_env>(OpenCL_env{device, get_opencl_version(platform), context, queue, program, use_double, enable_profiling});
+	return std::make_shared<OpenCL_env>(device, get_opencl_version(platform), context, queue, program, use_double, enable_profiling);
 }
 
 std::shared_ptr<OpenCL_env> get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
@@ -284,6 +292,36 @@ std::shared_ptr<OpenCL_env> get_opencl_environment(unsigned int platform_idx, un
 		os << "OpenCL error: " << e.what() << ". OpenCL error code: " << e.err();
 		throw opencl_error(os.str());
 	}
+}
+
+unsigned long OpenCL_env::max_local_memory() {
+	return device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+}
+
+unsigned int OpenCL_env::compute_units() {
+	return device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+}
+
+cl::Event OpenCL_env::queue_write(const cl::Buffer &buffer, const void *data, const std::vector<cl::Event>* wait_evts) {
+	cl::Event wevt;
+	queue.enqueueWriteBuffer(buffer, CL_FALSE, 0, buffer.getInfo<CL_MEM_SIZE>(), data, wait_evts, &wevt);
+	return wevt;
+}
+
+cl::Event OpenCL_env::queue_kernel(const cl::Kernel &kernel, const cl::NDRange global, const std::vector<cl::Event>* wait_evts, const cl::NDRange &local) {
+	cl::Event kevt;
+	queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local, wait_evts, &kevt);
+	return kevt;
+}
+
+cl::Event OpenCL_env::queue_read(const cl::Buffer &buffer, void *data, const std::vector<cl::Event>* wait_evts) {
+	cl::Event revt;
+	queue.enqueueReadBuffer(buffer, CL_FALSE, 0, buffer.getInfo<CL_MEM_SIZE>(), data, wait_evts, &revt);
+	return revt;
+}
+
+cl::Kernel OpenCL_env::get_kernel(const std::string &name) {
+	return cl::Kernel(program, name.c_str());
 }
 
 }

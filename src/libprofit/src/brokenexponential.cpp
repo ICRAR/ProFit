@@ -35,6 +35,47 @@
 namespace profit
 {
 
+inline static
+double _broken_exponential(double r, double h1, double h2, double rb, double a) {
+
+	/*
+	 * The broken exponential profile for radius r is:
+	 *
+	 *  exp(-r/h1)*(1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
+	 *
+	 * The problem with this direct approach is that exp(base) diverges whereas
+	 * exp(-r/h1) converges to zero. To avoid this we perform the following
+	 * replacements and rewrite the equation:
+	 *
+	 *   base = r - rb
+	 *   exponent = 1/h1 - 1/h2
+	 *
+	 *    exp(-r/h1) * (1 + exp(a * base)) ^ (exponent / a)
+	 *  = exp(-r/h1) * exp(log((1 + exp(a * base)) ^ (exponent / a)))
+	 *  = exp(-r/h1 + log((1 + exp(a * base)) ^ (exponent / a))
+	 *  = exp(-r/h1 + exponent / a * log(1 + exp(a * base)))
+	 *
+	 * In this last expression, when (a * base) is big, then doing
+	 * log(1 + exp(a * base)) yields the same result as log(exp(a * base))
+	 * (which equals a * base, of course). This happens already at a * base = 34,
+	 * although we check 40 just to be conservative.
+	 * Thus, the final result in this case becomes:
+	 *
+	 *  = exp(-r/h1 + exponent * base)
+	 */
+
+	using std::exp;
+	using std::log;
+
+	double base = r - rb;
+	double expo = 1 / h1 - 1 / h2;
+	if (a * base < 40) {
+		base = log(1 + exp(a * base)) / a;
+	}
+
+	return exp(-r / h1 + expo * base);
+}
+
 /**
  * The evaluation of the brokenexponential profile at brokenexponential coordinates (x,y).
  *
@@ -50,13 +91,11 @@ namespace profit
 double BrokenExponentialProfile::evaluate_at(double x, double y) const {
 
 	using std::abs;
-	using std::exp;
 	using std::pow;
 
 	double box = this->box + 2.;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
-	return exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
-
+	return _broken_exponential(r, h1, h2, rb, a);
 }
 
 void BrokenExponentialProfile::validate() {
@@ -72,18 +111,10 @@ void BrokenExponentialProfile::validate() {
 	if ( rb <= 0 ) {
 		throw invalid_parameter("rb <= 0, must have rb > 0");
 	}
-	if ( h2 > h1 ) {
-		throw invalid_parameter("h2 > h1, must have h2 <= h1");
-	}
-
 }
 
 double BrokenExponentialProfile::integrate_at(double r) const {
-
-	using std::exp;
-	using std::pow;
-
-	return r * exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
+	return r * _broken_exponential(r, h1, h2, rb, a);
 }
 
 double BrokenExponentialProfile::get_lumtot(double r_box) {
@@ -93,7 +124,7 @@ double BrokenExponentialProfile::get_lumtot(double r_box) {
 	 */
 	double magtot = integrate_qagi(
 		[](double r, void *ctx) -> double {
-			BrokenExponentialProfile *p = reinterpret_cast<BrokenExponentialProfile *>(ctx);
+			BrokenExponentialProfile *p = static_cast<BrokenExponentialProfile *>(ctx);
 			return p->integrate_at(r);
 		},
 		0, this);

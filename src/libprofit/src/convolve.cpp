@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include "profit/convolve.h"
@@ -37,39 +38,34 @@
 namespace profit
 {
 
-std::vector<double> convolve(
-         const std::vector<double> &src, unsigned int src_width, unsigned int src_height,
-         const std::vector<double> &krn, unsigned int krn_width, unsigned int krn_height,
-         const std::vector<bool> &mask)
-{
-	return BruteForceConvolver().convolve(src, src_width, src_height, krn, krn_width, krn_height, mask);
-}
-
 Convolver::~Convolver()
 {
 	// no-op
 }
 
 
-std::vector<double> BruteForceConvolver::convolve(
-         const std::vector<double> &src, unsigned int src_width, unsigned int src_height,
-         const std::vector<double> &krn, unsigned int krn_width, unsigned int krn_height,
-         const std::vector<bool> &mask)
+Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Mask &mask)
 {
+
+	auto src_width = src.getWidth();
+	auto src_height = src.getHeight();
+	auto krn_width = krn.getWidth();
+	auto krn_height = krn.getHeight();
 
 	double pixel;
 	unsigned int i, j, k, l;
-	unsigned int krn_half_width = (krn_width - 1) / 2;
-	unsigned int krn_half_height = (krn_height - 1) / 2;
+	unsigned int krn_half_width = krn_width / 2;
+	unsigned int krn_half_height = krn_height / 2;
 	unsigned int krn_size = krn_width * krn_height;
 	int src_i, src_j;
 
-	std::vector<double> convolution(src_width * src_height);
+	Image convolution(src_width, src_height);
 
-	double *out = convolution.data() - 1;
-	const double *srcPtr1 = src.data() - 1, *srcPtr2;
+	const double *krn_data = krn.getData().data();
+	double *out = convolution.getData().data() - 1;
+	const double *srcPtr1 = src.getData().data() - 1, *srcPtr2;
 	const double *krnPtr;
-	std::vector<bool>::const_iterator mask_it = mask.begin();
+	auto mask_it = mask.getData().begin();
 
 	/* Convolve! */
 	/* Loop around the output image first... */
@@ -88,7 +84,7 @@ std::vector<double> BruteForceConvolver::convolve(
 			}
 
 			pixel = 0;
-			krnPtr = krn.data() + krn_size - 1;
+			krnPtr = krn_data + krn_size - 1;
 			srcPtr2 = srcPtr1 - krn_half_width - krn_half_height*src_width;
 
 			/* ... now loop around the kernel */
@@ -137,25 +133,27 @@ FFTConvolver::FFTConvolver(unsigned int src_width, unsigned int src_height,
 	plan = std::unique_ptr<FFTPlan>(new FFTPlan(convolution_size, effort, plan_omp_threads));
 }
 
-std::vector<double> FFTConvolver::convolve(
-        const std::vector<double> &src, unsigned int src_width, unsigned int src_height,
-        const std::vector<double> &krn, unsigned int krn_width, unsigned int krn_height,
-        const std::vector<bool> &mask)
+Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mask)
 {
 
 	typedef std::complex<double> complex;
 
+	auto src_width = src.getWidth();
+	auto src_height = src.getHeight();
+	auto krn_width = krn.getWidth();
+	auto krn_height = krn.getHeight();
+
 	// Create extended images first
-	auto krn_start_x = (src_width - krn_width) / 2;
-	auto krn_start_y = (src_height - krn_height) / 2;
 	auto ext_width = 2 * src_width;
 	auto ext_height = 2 * src_height;
-	auto ext_img = extend(src, src_width, src_height, ext_width, ext_height, 0, 0);
-	auto ext_krn = extend(krn, krn_width, krn_height, ext_width, ext_height, krn_start_x, krn_start_y);
+	Image ext_img = src.extend(ext_width, ext_height, 0, 0);
 
 	// Forward FFTs
 	std::vector<complex> src_fft = plan->forward(ext_img);
 	if (krn_fft.empty()) {
+		auto krn_start_x = (src_width - krn_width) / 2;
+		auto krn_start_y = (src_height - krn_height) / 2;
+		Image ext_krn = krn.extend(ext_width, ext_height, krn_start_x, krn_start_y);
 		krn_fft = plan->forward(ext_krn);
 	}
 
@@ -167,34 +165,277 @@ std::vector<double> FFTConvolver::convolve(
 	}
 
 	// inverse FFT and scale down
-	using namespace std::placeholders;
-	std::vector<double> res = plan->backward_real(src_fft);
-	std::transform(res.begin(), res.end(), res.begin(),
-	               std::bind(std::divides<double>(), _1, res.size()));
+	Image res(plan->backward_real(src_fft), ext_width, ext_height);
+	res /= res.getSize();
 
-	// crop the image to original size
+	// crop the image to original size, apply the mask, and good bye
 	auto x_offset = src_width / 2;
 	auto y_offset = src_height / 2;
 
 	// even image and odd kernel requires slight adjustment
-	if (src_width % 2 == 0 and krn_width % 2 == 1) {
+	if (src_width % 2 == 0 or krn_width % 2 == 0) {
 		x_offset -= 1;
 	}
-	if (src_height % 2 == 0 and krn_height % 2 == 1) {
+	if (src_height % 2 == 0 or krn_height % 2 == 0) {
 		y_offset -= 1;
 	}
 
-	auto cropped = crop(res, ext_width, ext_height, src_width, src_height, x_offset, y_offset);
-
-	// apply mask and good bye
-	if (!mask.empty()) {
-		std::transform(cropped.begin(), cropped.end(), mask.begin(), cropped.begin(), [](const double i, const bool m) {
-			return m ? i : 0.;
-		});
-	}
+	auto cropped = res.crop(src_width, src_height, x_offset, y_offset);
+	cropped &= mask;
 	return cropped;
 }
 
 #endif /* PROFIT_FFTW */
+
+#ifdef PROFIT_OPENCL
+OpenCLConvolver::OpenCLConvolver(std::shared_ptr<OpenCL_env> opencl_env) :
+	env(opencl_env)
+{
+	if (!env) {
+		throw invalid_parameter("Empty OpenCL environment given to OpenCLConvolver");
+	}
+}
+
+Image OpenCLConvolver::convolve(const Image &src, const Image &krn, const Mask &mask)
+{
+	try {
+		return _convolve(src, krn, mask);
+	} catch (const cl::Error &e) {
+		std::ostringstream os;
+		os << "OpenCL error while convolving: " << e.what() << ". OpenCL error code: " << e.err();
+		throw opencl_error(os.str());
+	}
+}
+
+Image OpenCLConvolver::_convolve(const Image &src, const Image &krn, const Mask &mask) {
+
+	// We use a group size of 16x16, so let's extend the src image
+	// to the next multiple of 16
+	auto clpad_x = (16 - (src.getWidth() % 16)) % 16;
+	auto clpad_y = (16 - (src.getHeight() % 16)) % 16;
+	const Image clpad_src = src.extend(src.getWidth() + clpad_x,
+	                                   src.getHeight() + clpad_y, 0, 0);
+
+	// Convolve using the appropriate data type
+	Image result;
+	if (env->use_double) {
+		result = _clpadded_convolve<double>(clpad_src, krn, src);
+	}
+	else {
+		result = _clpadded_convolve<float>(clpad_src, krn, src);
+	}
+
+	// Crop the resulting image, mask
+	return result.crop(src.getWidth(), src.getHeight(), 0, 0) & mask;
+}
+
+template<typename T>
+Image OpenCLConvolver::_clpadded_convolve(const Image &src, const Image &krn, const Image &orig_src) {
+
+	using cl::Buffer;
+	using cl::Event;
+	using cl::Kernel;
+	using cl::NDRange;
+	using cl::NullRange;
+
+	Buffer src_buf = env->get_buffer<T>(CL_MEM_READ_ONLY, src.getSize());
+	Buffer krn_buf = env->get_buffer<T>(CL_MEM_READ_ONLY, krn.getSize());
+	Buffer conv_buf = env->get_buffer<T>(CL_MEM_WRITE_ONLY, src.getSize());
+
+	std::vector<T> src_data(src.getSize());
+	std::copy(src.getData().begin(), src.getData().end(), src_data.begin());
+	std::vector<T> krn_data(krn.getSize());
+	std::copy(krn.getData().begin(), krn.getData().end(), krn_data.begin());
+
+	// Write both images' data to the device
+	Event src_wevt = env->queue_write(src_buf, src_data.data());
+	Event krn_wevt = env->queue_write(krn_buf, krn_data.data());
+
+	// We need this much local memory on each local group
+	auto local_size = sizeof(T);
+	local_size *= (16 + 2 * (krn.getWidth() / 2));
+	local_size *= (16 + 2 * (krn.getHeight() / 2));
+
+	// Prepare the kernel
+	auto kname = std::string("convolve_") + float_traits<T>::name;
+	Kernel clKernel = env->get_kernel(kname);
+	clKernel.setArg(0, src_buf);
+	clKernel.setArg(1, orig_src.getWidth());
+	clKernel.setArg(2, orig_src.getHeight());
+	clKernel.setArg(3, krn_buf);
+	clKernel.setArg(4, krn.getWidth());
+	clKernel.setArg(5, krn.getHeight());
+	clKernel.setArg(6, conv_buf);
+
+	// Execute
+	std::vector<Event> exec_wait_evts {src_wevt, krn_wevt};
+	auto exec_evt = env->queue_kernel(clKernel, NDRange(src.getWidth(), src.getHeight()), &exec_wait_evts, NDRange(16, 16));
+
+	// Read and good bye
+	std::vector<Event> read_wait_evts {exec_evt};
+	std::vector<T> conv_data(src.getSize());
+	Event read_evt = env->queue_read(conv_buf, conv_data.data(), &read_wait_evts);
+	read_evt.wait();
+
+	Image conv(src.getWidth(), src.getHeight());
+	std::copy(conv_data.begin(), conv_data.end(), conv.getData().begin());
+	return conv;
+}
+
+
+OpenCLLocalConvolver::OpenCLLocalConvolver(std::shared_ptr<OpenCL_env> opencl_env) :
+	env(opencl_env)
+{
+	if (!env) {
+		throw invalid_parameter("Empty OpenCL environment given to OpenCLLocalConvolver");
+	}
+}
+
+Image OpenCLLocalConvolver::convolve(const Image &src, const Image &krn, const Mask &mask)
+{
+	try {
+		return _convolve(src, krn, mask);
+	} catch (const cl::Error &e) {
+		std::ostringstream os;
+		os << "OpenCL error while convolving: " << e.what() << ". OpenCL error code: " << e.err();
+		throw opencl_error(os.str());
+	}
+}
+
+Image OpenCLLocalConvolver::_convolve(const Image &src, const Image &krn, const Mask &mask) {
+
+	// We use a group size of 16x16, so let's extend the src image
+	// to the next multiple of 16
+	auto clpad_x = (16 - (src.getWidth() % 16)) % 16;
+	auto clpad_y = (16 - (src.getHeight() % 16)) % 16;
+	const Image clpad_src = src.extend(src.getWidth() + clpad_x,
+	                                   src.getHeight() + clpad_y, 0, 0);
+
+	// Convolve using the appropriate data type
+	Image result;
+	if (env->use_double) {
+		result = _clpadded_convolve<double>(clpad_src, krn, src);
+	}
+	else {
+		result = _clpadded_convolve<float>(clpad_src, krn, src);
+	}
+
+	// Crop the resulting image, mask
+	return result.crop(src.getWidth(), src.getHeight(), 0, 0) & mask;
+}
+
+template<typename T>
+Image OpenCLLocalConvolver::_clpadded_convolve(const Image &src, const Image &krn, const Image &orig_src) {
+
+	using cl::Buffer;
+	using cl::Event;
+	using cl::Kernel;
+	using cl::Local;
+	using cl::NDRange;
+	using cl::NullRange;
+
+	Buffer src_buf = env->get_buffer<T>(CL_MEM_READ_ONLY, src.getSize());
+	Buffer krn_buf = env->get_buffer<T>(CL_MEM_READ_ONLY, krn.getSize());
+	Buffer conv_buf = env->get_buffer<T>(CL_MEM_WRITE_ONLY, src.getSize());
+
+	std::vector<T> src_data(src.getSize());
+	std::copy(src.getData().begin(), src.getData().end(), src_data.begin());
+	std::vector<T> krn_data(krn.getSize());
+	std::copy(krn.getData().begin(), krn.getData().end(), krn_data.begin());
+
+	// Write both images' data to the device
+	Event src_wevt = env->queue_write(src_buf, src_data.data());
+	Event krn_wevt = env->queue_write(krn_buf, krn_data.data());
+
+	// We need this much local memory on each local group
+	auto local_size = sizeof(T);
+	local_size *= (16 + 2 * (krn.getWidth() / 2));
+	local_size *= (16 + 2 * (krn.getHeight() / 2));
+
+	if (env->max_local_memory() < local_size) {
+		std::ostringstream os;
+		os << "Not enough local memory available for OpenCL local 2D convolution. ";
+		os << "Required: " << local_size << ", available: " << env->max_local_memory();
+		throw opencl_error(os.str());
+	}
+
+	// Prepare the kernel
+	auto kname = std::string("convolve_local_") + float_traits<T>::name;
+	Kernel clKernel = env->get_kernel(kname);
+	clKernel.setArg(0, src_buf);
+	clKernel.setArg(1, orig_src.getWidth());
+	clKernel.setArg(2, orig_src.getHeight());
+	clKernel.setArg(3, krn_buf);
+	clKernel.setArg(4, krn.getWidth());
+	clKernel.setArg(5, krn.getHeight());
+	clKernel.setArg(6, conv_buf);
+	clKernel.setArg(7, Local(local_size));
+
+	// Execute
+	std::vector<Event> exec_wait_evts {src_wevt, krn_wevt};
+	auto exec_evt = env->queue_kernel(clKernel, NDRange(src.getWidth(), src.getHeight()), &exec_wait_evts, NDRange(16, 16));
+
+	// Read and good bye
+	std::vector<T> conv_data(src.getSize());
+	std::vector<Event> read_wait_evts {exec_evt};
+	Event read_evt = env->queue_read(conv_buf, conv_data.data(), &read_wait_evts);
+	read_evt.wait();
+
+	Image conv(src.getWidth(), src.getHeight());
+	std::copy(conv_data.begin(), conv_data.end(), conv.getData().begin());
+	return conv;
+}
+
+
+#endif // PROFIT_OPENCL
+
+std::shared_ptr<Convolver> create_convolver(const ConvolverType type, const ConvolverCreationPreferences &prefs)
+{
+	switch(type) {
+		case BRUTE:
+			return std::make_shared<BruteForceConvolver>();
+#ifdef PROFIT_OPENCL
+		case OPENCL:
+			return std::make_shared<OpenCLConvolver>(prefs.opencl_env);
+		case OPENCL_LOCAL:
+			return std::make_shared<OpenCLLocalConvolver>(prefs.opencl_env);
+#endif // PROFIT_OPENCL
+#ifdef PROFIT_FFTW
+		case FFT:
+			return std::make_shared<FFTConvolver>(prefs.src_width, prefs.src_height,
+			                                      prefs.krn_width, prefs.krn_height,
+			                                      prefs.effort, prefs.plan_omp_threads,
+			                                      prefs.reuse_krn_fft);
+#endif // PROFIT_FFTW
+		default:
+			// Shouldn't happen
+			throw invalid_parameter("Unsupported convolver type: " + std::to_string(type));
+	}
+}
+
+std::shared_ptr<Convolver> create_convolver(const std::string &type, const ConvolverCreationPreferences &prefs)
+{
+	if (type == "brute") {
+		return create_convolver(BRUTE, prefs);
+	}
+#ifdef PROFIT_OPENCL
+	else if (type == "opencl") {
+		return create_convolver(OPENCL, prefs);
+	}
+	else if (type == "opencl-local") {
+		return create_convolver(OPENCL_LOCAL, prefs);
+	}
+#endif // PROFIT_OPENCL
+#ifdef PROFIT_FFTW
+	else if (type == "fft") {
+		return create_convolver(FFT, prefs);
+	}
+#endif // PROFIT_FFTW
+
+	std::ostringstream os;
+	os << "Convolver of type " << type << " is not supported";
+	throw invalid_parameter(os.str());
+}
+
 
 } /* namespace profit */

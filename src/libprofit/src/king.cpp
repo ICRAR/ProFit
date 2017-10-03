@@ -95,7 +95,7 @@ double KingProfile::get_lumtot(double r_box) {
 	 * to get the total luminosity
 	 */
 	double magtot = integrate_qags([](double r, void *ctx) -> double {
-		auto kp = reinterpret_cast<KingProfile *>(ctx);
+		auto kp = static_cast<KingProfile *>(ctx);
 		return kp->integrate_at(r);
 	}, 0, this->rt, this);
 	return 2*M_PI * axrat * magtot/r_box;

@@ -59,8 +59,11 @@ image = matrix(1, 100, 100)
 psf = matrix(1:10000, 100, 100)
 
 # Check for FFTW support and create a convolver
-has_fft = profitHasFFTW()
-convolver = profitMakeConvolver(c(100, 100), psf, use_fft=has_fft, fft_effort=0,
+type = "brute"
+if (profitHasFFTW()) {
+	type = "fft"
+}
+convolver = profitMakeConvolver(type, c(100, 100), psf, fft_effort=0,
                                 omp_threads=2)
 
 # Perform convolution

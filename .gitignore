@@ -18,3 +18,5 @@ src/libprofit/profit/config.h
 .cproject
 .project
 .settings
+
+src/libprofit/profit/config.h

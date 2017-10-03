@@ -1,4 +1,4 @@
-profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="student-t", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE, openclenv=NULL, omp_threads = NULL){
+profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="norm", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE, openclenv=NULL, omp_threads = NULL){
   profitCheckFinesample(finesample)
   stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
   

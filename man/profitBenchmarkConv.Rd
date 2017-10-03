@@ -48,7 +48,7 @@ The maximum effort level to compute the FFTW plan. FFTW plans can take a very lo
 \details{
 This function does two important things. Firstly it determines which of three different convolution options will work fastest given the provided combination of \option{iamge} and \option{psf}. In situations where the \option{psf} has much smaller dimensions than \option{image} this will pretty much always be Brute force convolution, but when the \option{psf} becomes comparable in size to the \option{image} then one of the two FFT routines will often be faster. In the provided example all three are similar speed.
 
-The second important output of this function is preparing all the structures needed for FFT convolution if using \code{\link{profitConvolvePSF}} and selecting wither FFT or FFTW. The Examples show a clear example of hwo you use this output \option{fft} list in practice.
+The second important output of this function is preparing all the structures needed for FFT convolution if using \code{\link{profitConvolvePSF}} and selecting wither FFT or FFTW. The Examples show a clear example of how you use this output \option{fft} list in practice.
 }
 \value{
 List; complex structure containing:
@@ -64,16 +64,16 @@ List; complex structure containing:
 \item{method}{A character string containing the name of the best method (one of Bruteconv, FFTconv, FFTWconv), which defaults to best[['name']]. \option{method} can be directly parsed into \code{\link{profitConvolvePSF}} \option{options}.}
 \item{fft}{A list of useful items for FFT. \option{fft} can be directly parsed into \code{\link{profitConvolvePSF}} \option{options}., including: \describe{
   \item{fftwplan}{The FFTW plan.}
-  \item{paddim}{The dimensions of the zero-padded image, usually twice the input image dimensions and necessary to avoid periodicity artifacts.}
+  \item{paddim}{The dimensions of the zero-padded image, usually twice the input image dimensions and necessary to avoid periodicity artefacts.}
   \item{padimagex}{The x coordinates to place the original image in; by default the bottom-left corner of the padded image.}
   \item{padimagey}{The y coordinates to place the original image in; by default the bottom-left corner of the padded image.}
-  \item{cropx}{The x coordinates of the convolved image within the padded output image; usually in the center.}
-  \item{cropy}{The y coordinates of the convolved image within the padded output image; usually in the center.}
+  \item{cropx}{The x coordinates of the convolved image within the padded output image; usually in the centre.}
+  \item{cropy}{The y coordinates of the convolved image within the padded output image; usually in the centre.}
   \item{fft}{A list of useful items relating to the PSF, including: \describe{
     \item{r}{The R FFT of the PSF.}
     \item{w}{The FFTW of the PSF. Should be nearly identical to r.}
-    \item{x}{The x coordinates to place the PSF in; by default the center of the bottom-left quadrant of the padded image.}
-    \item{y}{The y coordinates to place the PSF in; by default the center of the bottom-left quadrant of the padded image.}
+    \item{x}{The x coordinates to place the PSF in; by default the centre of the bottom-left quadrant of the padded image.}
+    \item{y}{The y coordinates to place the PSF in; by default the centre of the bottom-left quadrant of the padded image.}
       }
     }
   }

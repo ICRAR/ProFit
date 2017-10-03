@@ -62,21 +62,69 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   isnorm = like.func == "norm"
   ischisq = like.func == "chisq"
   ist = like.func == "t"
-  if(isnorm || ischisq || ist) {
+  isst = like.func == "st"
+  fitst = isst && is.null(Data$skewtparm)
+  if(isnorm || ischisq || ist || isst) {
     cutsig=(cutim-cutmod)/cutsig
   }
+  if("chisq" %in% Data$mon.names) chisq = sum(cutsig^2)
+  if(ist || fitst)
+  {
+    vardata = var(cutsig,na.rm = TRUE)
+    dof=2*vardata/(vardata-1)
+    #dof=interval(dof,0,Inf)
+    dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
+  }
+  skewtparm = Data$skewtparm
   if(isnorm){
     LL=sum(dnorm(cutsig, log=TRUE))
   } else if(ischisq) {
     ndata = length(cutim)
-    LL=dchisq(sum(cutsig^2), ndata, log=TRUE)
+    if(!exists("chisq")) chisq = sum(cutsig^2)
+    LL=dchisq(chisq, ndata, log=TRUE)
   } else if(ist) {
     vardata = var(cutsig,na.rm = TRUE)
     dof=2*vardata/(vardata-1)
     #dof=interval(dof,0,Inf)
     dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
     LL=sum(dt(cutsig,dof,log=TRUE))
-  } else if(like.func=="pois") {
+  } else if(isst) {
+    dstlike <- function(parm,Data) { 
+      LP = sum(sn::dst(Data$chi, dp=parm, log=TRUE))
+      return(list(LP=LP,Dev=-2*LP,Monitor=numeric(0),yhat=1,parm=parm))
+    }
+    if(is.null(Data$skewtparm)) {
+      skewtparm = c(mean=median(cutsig), dof=dof, alpha=0.1, omega=1)
+      STData = list(mon.names=character(0),parm.names=names(skewtparm), N=length(cutsig),chi=cutsig)
+      stfit = LaplaceApproximation(Model=dstlike, parm=skewtparm, Data=STData, Iterations=1e3,
+        Method="HAR",sir=FALSE)
+      skewtparm = stfit$Summary1[,"Mode"]
+      stfit = LaplacesDemon(Model=dstlike, Initial.Values=skewtparm, Data=STData, Iterations=1e3,
+        Status = 100, Algorithm = "CHARM", Specs = list(alpha.star=0.44), Thinning = 1,
+        CheckDataMatrixRanks = FALSE)
+      skewtparm = stfit$Posterior1
+    } else {
+      skewtparm = Data$skewtparm
+    }
+    if(is.matrix(skewtparm)) {
+      best = FALSE
+      if(best) {
+        LL = -Inf
+        for(i in 1:dim(skewtparm)[1]) {
+          LLi = dstlike(skewtparm[i,], Data=list(chi=cutsig))$LP
+          if(LLi > LL) LL = LLi
+        }
+      } else {
+        LL = 0
+        for(i in 1:dim(skewtparm)[1]) LL = LL + dstlike(skewtparm[i,],
+          Data=list(chi=cutsig))$LP
+        LL = LL/dim(skewtparm)[1]
+      }
+    } else {
+      LL=dstlike(skewtparm, Data=list(chi=cutsig))$LP
+    }
+  }
+  else if(like.func=="pois") {
     scale=max(abs(image)/abs(sigma)^2)
     if(scale<0.1 | scale>10){
       cutmod=cutmod*scale
@@ -89,20 +137,35 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   if(makeplots){
     skylevel = 0
-    if(!is.null(modellistnew$sky) && !is.null(modellistnew$sky$bg) && is.numeric(modellistnew$sky$bg)) skylevel = modellistnew$sky$bg
-    profitMakePlots(image-skylevel,model$z-skylevel,region, sigma, cmap=cmap, errcmap=errcmap,plotchisq=plotchisq,maxsigma=maxsigma)
+    if(!is.null(modellistnew$sky) && !is.null(modellistnew$sky$bg) &&
+      is.numeric(modellistnew$sky$bg))skylevel = modellistnew$sky$bg
+    profitMakePlots(image-skylevel,model$z-skylevel,region, sigma, cmap=cmap,
+      errcmap=errcmap,plotchisq=plotchisq,maxsigma=maxsigma, skewtparm=skewtparm)
   }
   
   LP=as.numeric(LL+priorsum)
-  if(Data$verbose){print(c(parm,LP),digits = 5)}
-  if(algo.func=='') return(list(model=model,psf=psf))
+  if(Data$verbose) {
+    toprint = parm
+    if(isTRUE(Data$printparmdiff)) toprint = parm-Data$init
+    toprint = c(toprint,LP)
+    if(isTRUE(Data$printLPdiff) && !is.null(Data$initLP) && is.numeric(Data$initLP))
+    {
+      toprint[length(toprint)] = toprint[length(toprint)] - Data$initLP
+    }
+    print(toprint,digits = 5)
+  }
+  if(algo.func=='') {
+    out = list(model=model,psf=psf)
+    if(fitst) out$skewtparm = skewtparm
+  }
   if(algo.func=='optim' | algo.func=='CMA'){out=LP}
   if(algo.func=='LA' | algo.func=='LD')
   {
     Monitor=c(LL=LL,LP=LP)
     if("time" %in% Data$mon.names) Monitor = c(Monitor,tend = proc.time()["elapsed"])
+    if("chisq" %in% Data$mon.names) Monitor = c(Monitor,chisq = chisq)
     if(ist) Monitor=c(Monitor,dof=dof)
     out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
   }
-  return(out)
+  return=out
 }

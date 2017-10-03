@@ -98,7 +98,7 @@ double CoreSersicProfile::get_lumtot(double r_box) {
 	 * to get the total luminosity
 	 */
 	auto int_f = [](double r, void *ctx){
-		CoreSersicProfile *p = reinterpret_cast<CoreSersicProfile *>(ctx);
+		CoreSersicProfile *p = static_cast<CoreSersicProfile *>(ctx);
 		return p->integrate_at(r);
 	};
 	double magtot = integrate_qagi(int_f, 0, this);

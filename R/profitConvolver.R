@@ -28,13 +28,17 @@ profitHasFFTW = function() {
 	.Call('R_profit_has_fftw')
 }
 
-profitMakeConvolver = function(image_dimensions, psf, use_fft = FALSE,
-		reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1)
+profitAvailableConvolvers = function() {
+	.Call('R_profit_convolvers')
+}
+
+profitMakeConvolver = function(type, image_dimensions, psf,
+		reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1, openclenv = NULL)
 {
 	i = as.integer
 	l = as.logical
-	.Call('R_profit_make_convolver', i(image_dimensions), psf, l(use_fft),
-	      l(reuse_psf_fft), i(fft_effort), i(omp_threads))
+	.Call('R_profit_make_convolver', type, i(image_dimensions), psf,
+	      l(reuse_psf_fft), i(fft_effort), i(omp_threads), openclenv)
 }
 
 profitConvolve = function(convolver, image, kernel, mask = NULL) {
@@ -50,7 +54,7 @@ profitBruteConv <- function(image, psf, calcregion=matrix(1,1,1), docalcregion =
 		}
 	}
 
-	convolver = profitMakeConvolver(dim(image), psf, use_fft = FALSE)
+	convolver = profitMakeConvolver("brute", dim(image), psf)
 	output = profitConvolve(convolver, image, psf, mask = if (docalcregion) calcregion else NULL)
 
 	if (plot) {

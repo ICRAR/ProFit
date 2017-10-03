@@ -102,8 +102,8 @@ kernel void sersic_subsample_float(
 
 	// As we keep closing to the center we cannot distinguish that well anymore between
 	// the different profile values, so we need to adjust our accuracy to give up earlier
-	private float r = pow( pow(fabs(x_prof), 2+box) + pow(fabs(x_prof), 2+box), 2+box);
-	private float acc_scale = log10(fabs(log10(r)))/nser/2;
+	private float r = pow(pow(fabs(x_prof), 2 + box) + pow(fabs(y_prof), 2 + box), 2 + box);
+	private float acc_scale = fabs(log10(r)) / nser;
 	acc_scale = (acc_scale < 1 ? 1 : acc_scale);
 
 	// no need for subsampling

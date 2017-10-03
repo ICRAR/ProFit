@@ -11,7 +11,7 @@ Plots appropriately scaled data and model images, along with a residual (data-mo
 profitMakePlots(image, modelimage, region, sigma, errischisq = FALSE, maxsigma = 5,
 cmap = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(100)), 
 errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
-plotchisq = FALSE, dofs)
+plotchisq = FALSE, dofs, skewtparm=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -34,33 +34,32 @@ plotchisq = FALSE, dofs)
   The maximum range of sigma deviations displayed.
 }
   \item{cmap}{
-  Optional vector; color map to use for plots of the \option{image}, \option{model}, and \option{error}.
+  Optional vector; colour map to use for plots of the \option{image}, \option{model}, and \option{error}.
 }
   \item{errcmap}{
-  Optional vector; color map to use for plots of the chi-squared residuals (see \option{errischisq}).
+  Optional vector; colour map to use for plots of the chi-squared residuals (see \option{errischisq}).
 }
   \item{plotchisq}{
-  Logical flag; to determine if the function should plot a map and a histogram of chi squared = (((\option{image}-option{model})/option{error})[/option{region}])^2.
+  Logical flag; to determine if the function should plot a map and a histogram of chi^2, where chi = ((\option{image}-\option{model})/\option{error})[\option{region}]. If specified, it will also plot a color bar and a histogram of chi.
 }
   \item{dofs}{
   Numeric vector; of degrees-of-freedom (up to length 2), used only if \option{plotchisq} is set.
 }
+  \item{skewtparm}{
+  Numeric vector (length 4); parameters of a skewed t-distribution to plot on the residual histogram. Used only if \option{plotchisq} is set and calls the sn package's sn::dst function.
+}
 }
 \details{
-TBD.
+This function makes useful diagnostic plots to judge how well a model fits the data. The \option{plotchisq} option is particlarly useful for judging how well the residuals (and their squares) are described by a normal (or chi-square) distribution, and whether there is any spatial structure in the residuals.
 }
 \value{
 No return value; the function only generates plots.
 }
-\references{
-TBD.
-}
+%\references{}
 \author{
 Aaron Robotham & Dan Taranu
 }
-\note{
-TBD.
-}
+%\note{}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

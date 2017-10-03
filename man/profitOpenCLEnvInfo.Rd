@@ -12,7 +12,7 @@ profitOpenCLEnvInfo()
 }
 %- maybe also 'usage' for other objects documented here.
 \details{
-The output from this function has to be interpreted by the user to decide which device and platform should be used. There might be one available GPU thats is much faster than the others, so some experimentation may be necessary.
+The output from this function has to be interpreted by the user to decide which device and platform should be used. There might be one available GPU that is much faster than the others, so some experimentation may be necessary.
 }
 \value{
 List; complex structure containing one or more platforms at the highest level, and within each platform a list of one or more devices. Each platform has "name" and "opencl_version" elements, and each device has "name" and "supports_double" elements.

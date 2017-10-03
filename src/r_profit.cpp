@@ -355,6 +355,23 @@ void _R_profit_openclenv_finalizer(SEXP ptr) {
 }
 
 static
+std::shared_ptr<OpenCL_env> unwrap_openclenv(SEXP openclenv) {
+
+	if( TYPEOF(openclenv) != EXTPTRSXP ) {
+		Rf_error("Given openclenv not of proper type\n");
+		return nullptr;
+	}
+
+	openclenv_wrapper *wrapper = reinterpret_cast<openclenv_wrapper *>(R_ExternalPtrAddr(openclenv));
+	if( !wrapper ) {
+		Rf_error("No OpenCL environment found in openclenv\n");
+		return nullptr;
+	}
+
+	return wrapper->env;
+}
+
+static
 SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 
 	unsigned int platform_idx = INTEGER(plat_idx)[0];
@@ -453,36 +470,82 @@ void _R_profit_convolver_finalizer(SEXP ptr) {
 }
 
 static
-SEXP _R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP use_fft,
-                              SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads)
+std::shared_ptr<Convolver> unwrap_convolver(SEXP convolver)
+{
+	if( TYPEOF(convolver) != EXTPTRSXP ) {
+		Rf_error("Given convolver not of proper type\n");
+		return nullptr;
+	}
+
+	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(convolver));
+	if (!wrapper) {
+		Rf_error("No Convolver found in convolver object");
+		return nullptr;
+	}
+
+	return wrapper->convolver;
+}
+
+static
+SEXP _R_profit_convolvers()
+{
+	static const char * convolvers[] = {
+		"brute"
+#ifdef PROFIT_OPENCL
+		,"opencl"
+		,"opencl-local"
+#endif /* PROFIT_OPENCL */
+#ifdef PROFIT_FFTW
+		,"fft"
+#endif /* PROFIT_FFTW */
+	};
+
+	unsigned int n_convolvers = sizeof(convolvers) / sizeof(convolvers[0]);
+	SEXP convolvers_r = PROTECT(Rf_allocVector(STRSXP, sizeof(n_convolvers)));
+	for(unsigned int i = 0; i != sizeof(n_convolvers); i++) {
+		SET_STRING_ELT(convolvers_r, i, Rf_mkChar(convolvers[i]));
+	}
+
+	UNPROTECT(1);
+	return convolvers_r;
+}
+
+static
+SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
+                              SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads,
+                              SEXP openclenv)
 {
 
-	Model m;
-	m.width = (unsigned int)INTEGER(image_dimensions)[0];
-	m.height = (unsigned int)INTEGER(image_dimensions)[1];
-	m.psf = _read_image(psf, &m.psf_width, &m.psf_height);
+	ConvolverCreationPreferences conv_prefs;
+	conv_prefs.src_width = (unsigned int)INTEGER(image_dimensions)[0];
+	conv_prefs.src_height = (unsigned int)INTEGER(image_dimensions)[1];
+	_read_image(psf, &conv_prefs.krn_width, &conv_prefs.krn_height);
 
 #ifdef PROFIT_OPENMP
 	if( omp_threads != R_NilValue ) {
-		m.omp_threads = (unsigned int)Rf_asInteger(omp_threads);
+		conv_prefs.plan_omp_threads = (unsigned int)Rf_asInteger(omp_threads);
 	}
 #endif /* PROFIT_OPENMP */
 #ifdef PROFIT_FFTW
-	if (use_fft != R_NilValue ) {
-		m.use_fft = (bool)Rf_asLogical(use_fft);
-	}
 	if (reuse_psf_fft != R_NilValue ) {
-		m.reuse_psf_fft = (bool)Rf_asLogical(reuse_psf_fft);
+		conv_prefs.reuse_krn_fft = (bool)Rf_asLogical(reuse_psf_fft);
 	}
 	if (fft_effort != R_NilValue) {
-		m.fft_effort = FFTPlan::effort_t((unsigned int)Rf_asInteger(fft_effort));
+		conv_prefs.effort = FFTPlan::effort_t((unsigned int)Rf_asInteger(fft_effort));
 	}
 #endif /* PROFIT_FFTW */
+#ifdef PROFIT_OPENCL
+	if (openclenv != R_NilValue ) {
+		if((conv_prefs.opencl_env = unwrap_openclenv(openclenv)) != nullptr) {
+			return R_NilValue;
+		}
+	}
+#endif /* PROFIT_OPENCL */
 
 	convolver_wrapper *wrapper = new convolver_wrapper();
 	std::string error;
 	try {
-		wrapper->convolver = m.create_convolver();
+		wrapper->convolver = create_convolver(CHAR(STRING_ELT(type, 0)), conv_prefs);
 	} catch (std::exception &e) {
 		Rf_error(e.what());
 		return R_NilValue;
@@ -493,23 +556,6 @@ SEXP _R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP use_fft,
 	R_RegisterCFinalizerEx(r_convolver, _R_profit_convolver_finalizer, TRUE);
 	UNPROTECT(1);
 	return r_convolver;
-}
-
-static
-std::shared_ptr<Convolver> unwrap_convolver(SEXP convolver)
-{
-	if( TYPEOF(convolver) != EXTPTRSXP ) {
-		Rf_error("Given convolver not of proper type\n");
-		return nullptr;
-	}
-
-	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(convolver));
-	if (!wrapper) {
-		Rf_error("No Convolver found in convolver list item");
-		return nullptr;
-	}
-
-	return wrapper->convolver;
 }
 
 /*
@@ -665,7 +711,13 @@ SEXP _R_profit_convolve(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask)
 		// we already checked that dimensions are fine
 	}
 
-	image = convolver->convolve(image, img_w, img_h, psf, psf_w, psf_h, mask);
+	Image src_image(image, img_w, img_h);
+	Image psf_image(psf, psf_w, psf_h);
+	Mask mask_image;
+	if (r_mask != R_NilValue) {
+		mask_image = Mask(mask, img_w, img_h);
+	}
+	image = convolver->convolve(src_image, psf_image, mask_image).getData();
 	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, img_w * img_h));
 	memcpy(REAL(ret_image), image.data(), sizeof(double) * img_w * img_h);
 
@@ -679,9 +731,15 @@ extern "C" {
 		return _R_profit_make_model(model_list);
 	}
 
-	SEXP R_profit_make_convolver(SEXP image_dimensions, SEXP psf, SEXP use_fft,
-	                             SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads) {
-		return _R_profit_make_convolver(image_dimensions, psf, use_fft, reuse_psf_fft, fft_effort, omp_threads);
+	SEXP R_profit_convolvers() {
+		return _R_profit_convolvers();
+	}
+
+	SEXP R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
+	                             SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads,
+	                             SEXP openclenv) {
+		return _R_profit_make_convolver(type, image_dimensions, psf, reuse_psf_fft,
+		                                fft_effort, omp_threads, openclenv);
 	}
 
 	SEXP R_profit_convolve(SEXP convolver, SEXP r_image, SEXP r_psf, SEXP mask) {
@@ -708,8 +766,8 @@ extern "C" {
 	 * Defined in ProFit.cpp and generated in RcppExports.cpp
 	 * Needed here so we can register all exported symbols
 	 */
-	SEXP ProFit_profitDownsample(SEXP, SEXP);
-	SEXP ProFit_profitUpsample(SEXP, SEXP);
+	SEXP _ProFit_profitDownsample(SEXP, SEXP);
+	SEXP _ProFit_profitUpsample(SEXP, SEXP);
 
 	/*
 	 * Registering the methods above at module loading time
@@ -720,7 +778,8 @@ extern "C" {
 
 		/* Defined in this module */
 		{"R_profit_make_model",     (DL_FUNC) &R_profit_make_model,     1},
-		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 6},
+		{"R_profit_convolvers",     (DL_FUNC) &R_profit_convolvers,     0},
+		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 7},
 		{"R_profit_convolve",       (DL_FUNC) &R_profit_convolve,       4},
 		{"R_profit_has_openmp",     (DL_FUNC) &R_profit_has_openmp,     0},
 		{"R_profit_has_fftw",       (DL_FUNC) &R_profit_has_fftw,       0},
@@ -728,8 +787,8 @@ extern "C" {
 		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
 
 		/* Defined in ProFit.cpp and generated in RcppExports.cpp */
-		{"ProFit_profitDownsample", (DL_FUNC) &ProFit_profitDownsample, 2},
-		{"ProFit_profitUpsample",   (DL_FUNC) &ProFit_profitUpsample,   2},
+		{"_ProFit_profitDownsample", (DL_FUNC) &_ProFit_profitDownsample, 2},
+		{"_ProFit_profitUpsample",   (DL_FUNC) &_ProFit_profitUpsample,   2},
 
 		/* Sentinel */
 		{NULL, NULL, 0}

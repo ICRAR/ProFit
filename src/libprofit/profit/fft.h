@@ -35,6 +35,8 @@
 
 #include <fftw3.h>
 
+#include "profit/image.h"
+
 namespace profit {
 
 /**
@@ -85,12 +87,12 @@ public:
 	std::vector<std::complex<double>> forward(const std::vector<std::complex<double>> &data) const;
 
 	/**
-	 * Returns the FFT of ``data``
+	 * Returns the FFT of ``image``
 	 *
-	 * @param data The data to transform
-	 * @return The FFT of ``data``, an array of real data
+	 * @param data The image to transform
+	 * @return The FFT of ``image``
 	 */
-	std::vector<std::complex<double>> forward(const std::vector<double> &data) const;
+	std::vector<std::complex<double>> forward(const Image &image) const;
 
 	/**
 	 * Returns the inverse FFT of ``data``
@@ -101,12 +103,12 @@ public:
 	std::vector<std::complex<double>> backward(const std::vector<std::complex<double>> &data) const;
 
 	/**
-	 * Returns the inverse FFT of ``data``
+	 * Returns the inverse FFT of ``image``
 	 *
-	 * @param data The data to transform
-	 * @return The inverse FFT of ``data``, an array of real data
+	 * @param data The image to transform
+	 * @return The inverse FFT of ``image``
 	 */
-	std::vector<std::complex<double>> backward(const std::vector<double> &data) const;
+	std::vector<std::complex<double>> backward(const Image &image) const;
 
 	/**
 	 * Returns the inverse FFT of ``data``
@@ -115,14 +117,6 @@ public:
 	 * @return The inverse FFT of ``data``
 	 */
 	std::vector<double> backward_real(const std::vector<std::complex<double>> &data) const;
-
-	/**
-	 * Returns the inverse FFT of ``data``
-	 *
-	 * @param data The data to transform
-	 * @return The inverse FFT of ``data``, an array of real data
-	 */
-	std::vector<double> backward_real(const std::vector<double> &data) const;
 
 	/**
 	 * Method to be called to initialize the underlying library.
@@ -144,8 +138,8 @@ private:
 	fftw_plan backward_plan;
 
 	int get_fftw_effort() const;
-	std::vector<std::complex<double>> to_complex(const std::vector<double> data) const;
-	std::vector<double> to_double(const std::vector<std::complex<double>> data) const;
+	std::vector<std::complex<double>> to_complex(const Image &image) const;
+	std::vector<double> to_double(const std::vector<std::complex<double>> &data) const;
 	std::vector<std::complex<double>> execute(const std::vector<std::complex<double>> &data, fftw_plan plan) const;
 
 };

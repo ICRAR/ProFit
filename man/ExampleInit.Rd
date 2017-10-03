@@ -18,8 +18,8 @@ Rough initial 2 component 2D Sersic model parameters for the provided model imag
     \item{\code{sersic.mag2}}{Total magnitudes of the 2D Sersic disk profiles}
     \item{\code{sersic.re1}}{Effective radii of the 2D Sersic bulge profiles}
     \item{\code{sersic.re2}}{Effective radii of the 2D Sersic disk profiles}
-    \item{\code{sersic.nser1}}{Sersic indicies of the 2D Sersic bulge profiles}
-    \item{\code{sersic.ang2}}{Rrientation of the major axis of the disk profile in degrees}
+    \item{\code{sersic.nser1}}{Sersic indices of the 2D Sersic bulge profiles}
+    \item{\code{sersic.ang2}}{Orientation of the major axis of the disk profile in degrees}
     \item{\code{sersic.axrat2}}{Axial ratios of Sersic disk profiles defined as minor-axis/major-axis}
   }
 }
