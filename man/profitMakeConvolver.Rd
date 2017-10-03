@@ -13,11 +13,16 @@ This function allows users to create specific convolvers
 instead of letting \code{\link{profitMakeModel}} create a default one.
 }
 \usage{
-profitMakeConvolver(image_dimensions, psf, use_fft = FALSE,
- reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1)
+profitMakeConvolver(type, image_dimensions, psf,
+ reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1, openclenv = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+
+  \item{type}{
+The type of convolver to create. It should be one of the strings returned
+by \code{\link{profitAvailableConvolvers}}
+}
 
   \item{image_dimensions}{
 Dimensions of the images that will be convolved by this convolver.
@@ -27,33 +32,32 @@ Dimensions of the images that will be convolved by this convolver.
 The point spread function (PSF) image matrix that will be used by this Convolver.
 }
 
-  \item{use_fft}{
-Logical; if TRUE then it will create an FFT-based convolver
-instead of a brute-force convolver.
-This option is only interpreted if ProFit has been compiled with FFTW support.
-This support can be checked at runtime calling \code{\link{profitHasFFTW}}.
-}
-
   \item{reuse_psf_fft}{
 Logical; whether the FFT-ed version of the PSF used by the Convolver
 should be re-used across executions of the convolution.
 This is useful if the convolver will be re-used to convolve different images
 (of the same size) with the same PSF.
-Used only if \option{use_fft} is TRUE and ProFit has FFTW support.
+Used only if \option{type} is \code{"fft"} and ProFit has FFTW support.
 }
 
   \item{fft_effort}{
 Amount of effort to spend creating the FFTW plans used by this Convolver.
 Accepted values range from 0 to 3, and map to the
 ESTIMATE, MEASURE, PATIENT and EXHAUSTIVE FFTW efforts, respectively.
-Used only if \option{use_fft} is TRUE and ProFit has FFTW support.
+Used only if \option{type} is \code{"fft"} and ProFit has FFTW support.
 }
 
   \item{omp_threads}{
 Specifies the number of OpenMP threads to use to execute
 the underlying FFTW plans.
-Used only if \option{use_fft} is TRUE and ProFit has FFTW support,
+Used only if \option{type} is \code{"fft"} and ProFit has FFTW support,
 OpenMP support, and the underlying FFTW library has OpenMP support.
+}
+
+  \item{openclenv}{
+A valid pointer to an OpenCL environment (obtained from the \code{\link{profitOpenCLEnv}}).
+Used only if \option{type} is \code{"opencl"} or \code{"opencl-local"}
+and ProFit has OpenCL support.
 }
 
 }
@@ -67,25 +71,30 @@ Users should thus try to keep a hold on these objects.
 
 \value{
 The output is an external pointer of class 'externalptr'
-to be passed to \code{\link{profitMakeModel}} via its convopt list option.
+to be passed to \code{\link{profitMakeModel}} via its convopt list option,
+or to be used to convolve images directly via \code{\link{profitConvolve}}
 }
 \author{
 Rodrigo Tobar
 }
 
 \seealso{
+\code{\link{profitAvailableConvolvers}},
 \code{\link{profitConvolve}},
 \code{\link{profitBruteConv}},
 \code{\link{profitMakePointSource}},
 \code{\link{profitBenchmarkConv}},
 \code{\link{profitHasFFTW}}
+\code{\link{profitOpenCLEnv}}
 }
 \examples{
 psf = matrix(1:10000, 100, 100)
 has_fft = profitHasFFTW()
 convolver = NULL
 if (has_fft) {
-	convolver = profitMakeConvolver(c(300, 300), psf, use_fft=TRUE, fft_effort=0, omp_threads=2)
+	convolver = profitMakeConvolver("fft", c(300, 300), psf, fft_effort=0, omp_threads=2)
+} else {
+	convolver = profitMakeConvolver("brute", c(300, 300), psf)
 }
 model = list(
 	sersic = list(
