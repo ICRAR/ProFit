@@ -43,8 +43,8 @@
 
 namespace profit {
 
-Model::Model() :
-	width(0), height(0),
+Model::Model(unsigned int width, unsigned int height) :
+	width(width), height(height),
 	scale_x(1), scale_y(1),
 	magzero(0),
 	psf(), psf_width(0), psf_height(0),
@@ -58,11 +58,6 @@ Model::Model() :
 #ifdef PROFIT_OPENMP
 	omp_threads(0),
 #endif /* PROFIT_OPENMP */
-#ifdef PROFIT_FFTW
-	use_fft(false),
-	reuse_psf_fft(false),
-	fft_effort(FFTPlan::ESTIMATE),
-#endif /* PROFIT_FFTW */
 	profiles()
 {
 	// no-op
@@ -154,8 +149,6 @@ std::vector<double> Model::evaluate() {
 		}
 	}
 
-	std::vector<double> image(this->width * this->height, 0);
-
 	/*
 	 * Validate all profiles.
 	 * Each profile can fail during validation in which case we don't proceed any further
@@ -164,9 +157,12 @@ std::vector<double> Model::evaluate() {
 		profile->validate();
 	}
 
+	// The image we'll eventually return
+	Image image(width, height);
+
 	/* so long folks! */
 	if( dry_run ) {
-		return image;
+		return image.getData();
 	}
 
 	/*
@@ -177,11 +173,11 @@ std::vector<double> Model::evaluate() {
 	 * probably we should study what is the best way to go here (e.g.,
 	 * parallelize only if we have more than 2 or 3 profiles)
 	 */
-	std::vector<std::vector<double>> profile_images;
+	std::vector<Image> profile_images;
 	for(auto &profile: this->profiles) {
-		std::vector<double> profile_image(this->width * this->height, 0);
-		profile->evaluate(profile_image);
-		profile_images.push_back(move(profile_image));
+		Image profile_image(width, height);
+		profile->evaluate(profile_image.getData());
+		profile_images.push_back(std::move(profile_image));
 	}
 
 	/*
@@ -195,49 +191,33 @@ std::vector<double> Model::evaluate() {
 	for(auto &profile: this->profiles) {
 		if( profile->do_convolve() ) {
 			do_convolve = true;
-			add_images(image, *it);
+			image += *it;
 		}
 		it++;
 	}
 	if( do_convolve ) {
-		std::vector<double> psf(this->psf);
-		normalize(psf);
+		Image psf_img(psf, psf_width, psf_height);
+		psf_img.normalize();
 		if (!convolver) {
-			convolver = create_convolver();
+			convolver = create_convolver(BRUTE);
 		}
-		image = convolver->convolve(image, width, height, psf, psf_width, psf_height, calcmask);
+		Mask mask_img;
+		if (!calcmask.empty()) {
+			mask_img = Mask(calcmask, width, height);
+		}
+		image = convolver->convolve(image, psf_img, mask_img);
 	}
 	it = profile_images.begin();
 	for(auto &profile: this->profiles) {
 		if( !profile->do_convolve() ) {
-			add_images(image, *it);
+			image += *it;
 		}
 		it++;
 	}
 
 	/* Done! Good job :-) */
-	return image;
+	return image.getData();
 }
-
-
-std::shared_ptr<Convolver> Model::create_convolver() const
-{
-#ifndef PROFIT_FFTW
-	return std::make_shared<BruteForceConvolver>();
-#else
-	if (!use_fft) {
-		return std::make_shared<BruteForceConvolver>();
-	}
-
-	int threads = 1;
-#ifdef PROFIT_FFTW_OPENMP
-	threads = omp_threads;
-#endif /* PROFIT_FFTW_OPENMP */
-	return std::make_shared<FFTConvolver>(width, height, psf_width, psf_height,
-	                                      fft_effort, threads, reuse_psf_fft);
-#endif /* PROFIT_FFTW */
-}
-
 
 std::map<std::string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
 	std::map<std::string, std::shared_ptr<ProfileStats>> stats;

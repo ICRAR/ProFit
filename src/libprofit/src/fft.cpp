@@ -175,9 +175,9 @@ std::vector<std::complex<double>> FFTPlan::forward(const std::vector<std::comple
 	return execute(data, forward_plan);
 }
 
-std::vector<std::complex<double>> FFTPlan::forward(const std::vector<double> &data) const
+std::vector<std::complex<double>> FFTPlan::forward(const Image &image) const
 {
-	return execute(to_complex(data), forward_plan);
+	return execute(to_complex(image), forward_plan);
 }
 
 std::vector<std::complex<double>> FFTPlan::backward(const std::vector<std::complex<double>> &data) const
@@ -185,9 +185,9 @@ std::vector<std::complex<double>> FFTPlan::backward(const std::vector<std::compl
 	return execute(data, backward_plan);
 }
 
-std::vector<std::complex<double>> FFTPlan::backward(const std::vector<double> &data) const
+std::vector<std::complex<double>> FFTPlan::backward(const Image &image) const
 {
-	return execute(to_complex(data), backward_plan);
+	return execute(to_complex(image), backward_plan);
 }
 
 std::vector<double> FFTPlan::backward_real(const std::vector<std::complex<double>> &data) const
@@ -195,26 +195,22 @@ std::vector<double> FFTPlan::backward_real(const std::vector<std::complex<double
 	return to_double(execute(data, backward_plan));
 }
 
-std::vector<double> FFTPlan::backward_real(const std::vector<double> &data) const
+std::vector<std::complex<double>> FFTPlan::to_complex(const Image &image) const
 {
-	return to_double(execute(to_complex(data), backward_plan));
-}
-
-std::vector<std::complex<double>> FFTPlan::to_complex(const std::vector<double> data) const
-{
+	const auto &data = image.getData();
 	std::vector<std::complex<double>> c_data(data.size());
-	for(unsigned int i = 0; i < data.size(); i++) {
-		c_data[i] = std::complex<double>(data[i], 0);
-	}
+	std::transform(data.begin(), data.end(), c_data.begin(), [](const double d) {
+		return std::complex<double>(d, 0);
+	});
 	return c_data;
 }
 
-std::vector<double> FFTPlan::to_double(const std::vector<std::complex<double>> data) const
+std::vector<double> FFTPlan::to_double(const std::vector<std::complex<double>> &data) const
 {
 	std::vector<double> d_data(data.size());
-	for(unsigned int i = 0; i < data.size(); i++) {
-		d_data[i] = data[i].real();
-	}
+	std::transform(data.begin(), data.end(), d_data.begin(), [](const std::complex<double> &c) {
+		return c.real();
+	});
 	return d_data;
 }
 

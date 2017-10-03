@@ -27,8 +27,10 @@
 #ifndef PROFIT_COMMON_H
 #define PROFIT_COMMON_H
 
-/* M_PI is not part of C/C++, but usually there */
 #include <cmath>
+#include <chrono>
+
+/* M_PI is not part of C/C++, but usually there */
 #ifndef M_PI
 # define M_PI 3.14159265358979323846
 #endif
@@ -42,7 +44,32 @@
 #define UNUSED(x) do { (void)x; } while(0)
 
 namespace profit {
-	typedef unsigned int nsecs_t;
+
+	/// A type to hold nanosecond values
+	typedef std::chrono::nanoseconds::rep nsecs_t;
+
+	/// Trait describing specific float and double floating types
+	template <typename FT>
+	struct float_traits {
+		const static bool is_float = false;
+		const static bool is_double = false;
+		constexpr const static char * name = "unknown";
+	};
+
+	template <>
+	struct float_traits<float> {
+		const static bool is_float = true;
+		const static bool is_double = false;
+		constexpr const static char * name = "float";
+	};
+
+	template <>
+	struct float_traits<double> {
+		const static bool is_float = false;
+		const static bool is_double = true;
+		constexpr const static char * name = "double";
+	};
+
 }
 
 #endif /* PROFIT_COMMON_H */
