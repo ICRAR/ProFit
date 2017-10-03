@@ -1,0 +1,182 @@
+---
+title: "ProFit/ProFound: Using Isophotal Ellipses"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+First load the libraries we need:
+
+```{r}
+library(ProFit)
+library(ProFound)
+```
+
+Load data:
+
+```{r}
+image = readFITS(system.file("extdata", 'KiDS/G278109fitim.fits', package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", 'KiDS/G278109segim.fits', package="ProFit"))$imDat
+mask = readFITS(system.file("extdata", 'KiDS/G278109mskim.fits', package="ProFit"))$imDat
+sigma = readFITS(system.file("extdata", 'KiDS/G278109sigma.fits', package="ProFit"))$imDat
+segim = readFITS(system.file("extdata", 'KiDS/G278109segim.fits', package="ProFit"))$imDat
+psf = readFITS(system.file("extdata", 'KiDS/G278109psfim.fits', package="ProFit"))$imDat
+```
+
+Extract isophotal ellispes, notice we allow for boxy isophotes:
+
+```{r, fig.height=8, fig.width=5}
+ellipses_box = profoundGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE, pixscale=1)
+```
+
+Show the extracted isophotal surface brightness profile:
+
+```{r, fig.width=5, fig.height=5}
+magplot(ellipses_box$ellipses[,c("radhi","SB")], xlim=c(0,100), ylim=c(30,20), grid=TRUE, xlab=' Radius / pixels', ylab='mag / pix^2')
+```
+
+Setup the 1D function we want to minimise for our rough fit:
+
+```{r}
+sumsq1D=function(par=c(17.6, log10(1.7), log10(3), 17.4, log10(13), log10(0.7)), rad, SB, pixscale=1){
+  bulge=profitRadialSersic(rad, mag=par[1], re=10^par[2], nser=10^par[3])
+  disk=profitRadialSersic(rad, mag=par[4], re=10^par[5], nser=10^par[6])
+  total=profitFlux2SB(bulge+disk, pixscale=pixscale)
+  return=sum((total-SB)^2)
+}
+```
+
+Do the 1D optimisation:
+
+```{r}
+lower=c(10,0,0,10,0,-0.5)
+upper=c(30,2,1,30,2,0.5)
+
+fit1D=optim(sumsq1D, par=c(15, log10(5), log10(4), 15, log10(50), log10(1)),
+rad=ellipses_box$ellipses$radhi, SB=ellipses_box$ellipses$SB, pixscale=1,
+method='L-BFGS-B', lower=lower, upper=upper)$par
+```
+  
+Plot the data and the fitted bulge/disk/total model:
+
+```{r, fig.width=5, fig.height=5}
+magplot(ellipses_box$ellipses$radhi, ellipses_box$ellipses$SB, xlim=c(0,100), ylim=c(30,20), grid=TRUE, type='l', xlab=' Radius / pixels', ylab='mag / pix^2')
+#A simple bulge+disk surface brightness profile:
+rlocs=seq(0,100,by=0.1)
+bulge=profitRadialSersic(rlocs, mag=fit1D[1], re=10^fit1D[2], nser=10^fit1D[3])
+disk=profitRadialSersic(rlocs, mag=fit1D[4], re=10^fit1D[5], nser=10^fit1D[6])
+lines(rlocs, profitFlux2SB(bulge, pixscale=1), col='red')
+lines(rlocs, profitFlux2SB(disk, pixscale=1), col='blue')
+lines(rlocs, profitFlux2SB(bulge+disk, pixscale=1), col='green')
+```
+
+Setup the initla model list based on our approximate 1D fit solution:
+
+```{r}
+bulgedom_rad=max(rlocs[bulge>disk])
+bulge_ang=mean(ellipses_box$ellipses[ellipses_box$ellipses$radhi<bulgedom_rad,'ang'])
+bulge_axrat=mean(ellipses_box$ellipses[ellipses_box$ellipses$radhi<bulgedom_rad,'axrat'])
+bulge_box=mean(ellipses_box$ellipses[ellipses_box$ellipses$radhi<bulgedom_rad,'box'])
+
+disk_ang=mean(ellipses_box$ellipses[ellipses_box$ellipses$radhi>bulgedom_rad,'ang'])
+disk_axrat=mean(ellipses_box$ellipses[ellipses_box$ellipses$radhi>bulgedom_rad,'axrat'])
+disk_box=mean(ellipses_box$ellipses[ellipses_box$ellipses$radhi>bulgedom_rad,'box'])
+
+model_init=list(
+  sersic = list(
+    xcen   = c(ellipses_box$ellipses$xcen[1], ellipses_box$ellipses$xcen[1]),
+    ycen   = c(ellipses_box$ellipses$ycen[1], ellipses_box$ellipses$ycen[1]),
+    mag = c(fit1D[1]-2.5*log10(bulge_axrat), fit1D[4]-2.5*log10(disk_axrat)),
+    re  = c(10^fit1D[2], 10^fit1D[5]),
+    nser  = c(10^fit1D[3], 10^fit1D[6]),
+    ang  = c(bulge_ang, disk_ang),
+    axrat  = c(bulge_axrat, disk_axrat),
+    box = c(bulge_box, disk_box)
+  )
+)
+```
+
+Usual ProFit bulge/disk setup stuff:
+
+```{r}
+tofit=list(
+  sersic=list(
+    xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
+    ycen= c(TRUE,NA), #We fit for ycen and tie the two togther
+    mag= c(TRUE,TRUE), #Fit for both
+    re= c(TRUE,TRUE), #Fit for both
+    nser= c(TRUE,TRUE), #Fit for both
+    ang= c(FALSE,TRUE), #Fit for disk
+    axrat= c(FALSE,TRUE), #Fit for disk
+    box= c(FALSE,TRUE) #Fit for disk
+  )
+)
+
+# What parameters should be fitted in log space:
+
+tolog=list(
+  sersic=list(
+    xcen= c(FALSE,FALSE),
+    ycen= c(FALSE,FALSE),
+    mag= c(FALSE,FALSE),
+    re= c(TRUE,TRUE), #re is best fit in log space
+    nser= c(TRUE,TRUE), #nser is best fit in log space
+    ang= c(FALSE,FALSE),
+    axrat= c(TRUE,TRUE), #axrat is best fit in log space
+    box= c(FALSE,FALSE)
+  )
+)
+
+# The hard interval limits to use when fitting. This is not strictly required, but without
+# this we cannot ensure the sampler does not enter unallowed values like negative sizes,
+# Sersic indices and axial ratios etc:
+
+intervals=list(
+  sersic=list(
+    xcen=list(lim=c(0,300),lim=c(0,300)),
+    ycen=list(lim=c(0,300),lim=c(0,300)),
+    mag=list(lim=c(10,30),lim=c(10,30)),
+    re=list(lim=c(1,100),lim=c(1,100)),
+    nser=list(lim=c(0.5,20),lim=c(0.5,20)),
+    ang=list(lim=c(-180,360),lim=c(-180,360)),
+    axrat=list(lim=c(0.1,1),lim=c(0.1,1)),
+    box=list(lim=c(-1,1),lim=c(-1,1))
+  )
+)
+```
+
+Setup the basic Data:
+
+```{r}
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf, modellist=model_init, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0, algo.func='optim')
+```
+
+The inital guess bulge/disk/total plots:
+
+```{r, fig.width=8, fig.height=5}
+profitLikeModel(Data$init,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(Data$init,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(Data$init,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
+```
+
+```{r, eval=FALSE}
+optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data, control=list(fnscale=-1))
+```
+
+Compare the fit model to the one estimated from the 1D fit:
+
+```{r, eval=FALSE}
+profitRemakeModellist(optimfit$par, Data=Data)$modellist
+```
+
+And finally some bulge/disk/total plots:
+
+```{r, fig.width=8, fig.height=5, eval=FALSE}
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
+profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
+```

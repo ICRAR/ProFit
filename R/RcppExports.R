@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 profitDownsample <- function(IMG, DOWNSAMPLEFAC) {
-    .Call('ProFit_profitDownsample', PACKAGE = 'ProFit', IMG, DOWNSAMPLEFAC)
+    .Call('_ProFit_profitDownsample', PACKAGE = 'ProFit', IMG, DOWNSAMPLEFAC)
 }
 
 profitUpsample <- function(IMG, UPSAMPLEFAC) {
-    .Call('ProFit_profitUpsample', PACKAGE = 'ProFit', IMG, UPSAMPLEFAC)
+    .Call('_ProFit_profitUpsample', PACKAGE = 'ProFit', IMG, UPSAMPLEFAC)
 }
 

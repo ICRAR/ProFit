@@ -32,7 +32,7 @@ Logical; optional. Allows for flat priors by setting \option{sigmas} to Inf; in 
 }
 }
 \details{
-This function returns a valid \code{ProFit} prior function that can be input to \code{\link{profitSetupData}}. The function illustrates the use of R's formals function to set the default values of function arguments after a function is defined. This is necessary to store the values of prior distributions rather than a reference to the name of the variable storing those values in the current workspace, which is R's default behaviour. This behaviour is undesireable when saving a fit along with the corresponding \code{\link{profitSetupData}} object, as the parameters of the prior function can be changed or lost if the workspace is not saved.
+This function returns a valid \code{ProFit} prior function that can be input to \code{\link{profitSetupData}}. The function illustrates the use of R's formals function to set the default values of function arguments after a function is defined. This is necessary to store the values of prior distributions rather than a reference to the name of the variable storing those values in the current workspace, which is R's default behaviour. This behaviour is undesirable when saving a fit along with the corresponding \code{\link{profitSetupData}} object, as the parameters of the prior function can be changed or lost if the workspace is not saved.
 }
 \value{
 Function; a legal \code{ProFit} prior function that can be input to \code{\link{profitSetupData}}

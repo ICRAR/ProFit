@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Load libraries
+First load the libraries we need:
 
 ```{r}
 library(ProFit)
@@ -105,7 +105,15 @@ CXX11FLAGS = -O3 -Wall -mtune=native -march=native  -Ofast
 
 ## Mac OS X
 
-For Macs (El Capitan or older certainly) the version of Clang incuded is quite old and does not support OpenMP. To get round this you have to install a newer version of LLVM from e.g. homebrew (using something like `brew install llvm'). On my machine homebrew installs to /usr/local/Cellar/llvm/4.0.0/, but this will vary by setup. In my case my Makevars file therefore looks like this:
+For Macs (El Capitan or older certainly) the version of Clang incuded is quite old and does not support OpenMP. To get round this you have to install a newer version of LLVM from e.g. homebrew (using something like `brew install llvm'). On my machine homebrew installs to /usr/local/Cellar/llvm/4.0.0/, but this will vary by setup (newer versions than 4.0.0 should work fine).
+
+With this installed you might need to also get Xcode (from the App store) and then explicitly install command line tools for Xcode, which you can do by running this in the terminal:
+
+```
+xcode-select --install
+```
+
+With that all done you will need to edit your ~/.R/Makvars to point to the correct files with the correct flags. On my machine (new MacBook Pro running OS X 10.12 Siera) the Makevars file looks like this:
 
 ```
 CC = /usr/local/Cellar/llvm/4.0.0/bin/clang

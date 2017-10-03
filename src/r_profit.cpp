@@ -766,8 +766,8 @@ extern "C" {
 	 * Defined in ProFit.cpp and generated in RcppExports.cpp
 	 * Needed here so we can register all exported symbols
 	 */
-	SEXP ProFit_profitDownsample(SEXP, SEXP);
-	SEXP ProFit_profitUpsample(SEXP, SEXP);
+	SEXP _ProFit_profitDownsample(SEXP, SEXP);
+	SEXP _ProFit_profitUpsample(SEXP, SEXP);
 
 	/*
 	 * Registering the methods above at module loading time
@@ -787,8 +787,8 @@ extern "C" {
 		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
 
 		/* Defined in ProFit.cpp and generated in RcppExports.cpp */
-		{"ProFit_profitDownsample", (DL_FUNC) &ProFit_profitDownsample, 2},
-		{"ProFit_profitUpsample",   (DL_FUNC) &ProFit_profitUpsample,   2},
+		{"_ProFit_profitDownsample", (DL_FUNC) &_ProFit_profitDownsample, 2},
+		{"_ProFit_profitUpsample",   (DL_FUNC) &_ProFit_profitUpsample,   2},
 
 		/* Sentinel */
 		{NULL, NULL, 0}

@@ -6,13 +6,18 @@
 }
 
 .profitBrokenExp=function(r=1, h1=1, h2=1, rb=1, a=1){
-  inten = exp(-r/h1)*(1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
+  base = (r-rb)
+  expo = (1/h1-1/h2)
+  expterm = base
+  cond = base < 40/a
+  expterm[cond] = log(1+exp(a*base[cond]))/a
+  inten = exp(-r/h1 + expo*expterm)
   return(inten)
 }
 
 .profitBrokenExpR=function(r=1, h1=1, h2=1, rb=1, a=1){
-  inten = exp(-r/h1)*(1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
-  return(r*inten)
+  inten = r*.profitBrokenExp(r=r,h1=h1,h2=h2,rb=rb,a=a)
+  return(inten)
 }
 
 .profitBrokenExpXY=function(args=c(0,0), xcen=0, ycen=0, h1=1, h2=1, rb=1, a=1, ang=0, axrat=1, box=0){

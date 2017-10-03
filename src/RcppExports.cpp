@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // profitDownsample
 NumericMatrix profitDownsample(const NumericMatrix& IMG, const int DOWNSAMPLEFAC);
-RcppExport SEXP ProFit_profitDownsample(SEXP IMGSEXP, SEXP DOWNSAMPLEFACSEXP) {
+RcppExport SEXP _ProFit_profitDownsample(SEXP IMGSEXP, SEXP DOWNSAMPLEFACSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // profitUpsample
 NumericMatrix profitUpsample(const NumericMatrix& IMG, const int UPSAMPLEFAC);
-RcppExport SEXP ProFit_profitUpsample(SEXP IMGSEXP, SEXP UPSAMPLEFACSEXP) {
+RcppExport SEXP _ProFit_profitUpsample(SEXP IMGSEXP, SEXP UPSAMPLEFACSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
