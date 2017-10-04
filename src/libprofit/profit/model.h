@@ -169,7 +169,7 @@ public:
 	 * If a convolver is present before calling `evaluate` then it is used.
 	 * If missing, then a new one is created internally.
 	 */
-	std::shared_ptr<Convolver> convolver;
+	ConvolverPtr convolver;
 
 	/**
 	 * Whether the actual evaluation of profiles should be skipped or not.
@@ -178,7 +178,7 @@ public:
 	bool dry_run;
 
 #ifdef PROFIT_OPENCL
-	std::shared_ptr<OpenCL_env> opencl_env;
+	OpenCLEnvPtr opencl_env;
 #endif /* PROFIT_OPENCL */
 
 #ifdef PROFIT_OPENMP

@@ -337,7 +337,7 @@ SEXP _R_profit_openclenv_info() {
 }
 
 struct openclenv_wrapper {
-	shared_ptr<OpenCL_env> env;
+	OpenCLEnvPtr env;
 };
 
 static
@@ -355,7 +355,7 @@ void _R_profit_openclenv_finalizer(SEXP ptr) {
 }
 
 static
-std::shared_ptr<OpenCL_env> unwrap_openclenv(SEXP openclenv) {
+OpenCLEnvPtr unwrap_openclenv(SEXP openclenv) {
 
 	if( TYPEOF(openclenv) != EXTPTRSXP ) {
 		Rf_error("Given openclenv not of proper type\n");
@@ -378,7 +378,7 @@ SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 	unsigned int device_idx = INTEGER(dev_idx)[0];
 	bool use_double = static_cast<bool>(INTEGER(use_dbl)[0]);
 
-	std::shared_ptr<OpenCL_env> env;
+	OpenCLEnvPtr env;
 	try {
 		env = get_opencl_environment(platform_idx, device_idx, use_double, false);
 	} catch (const opencl_error &e) {
@@ -452,7 +452,7 @@ SEXP _R_profit_has_fftw() {
  * ----------------------------------------------------------------------------
  */
 struct convolver_wrapper {
-	shared_ptr<Convolver> convolver;
+	ConvolverPtr convolver;
 };
 
 static
@@ -470,7 +470,7 @@ void _R_profit_convolver_finalizer(SEXP ptr) {
 }
 
 static
-std::shared_ptr<Convolver> unwrap_convolver(SEXP convolver)
+ConvolverPtr unwrap_convolver(SEXP convolver)
 {
 	if( TYPEOF(convolver) != EXTPTRSXP ) {
 		Rf_error("Given convolver not of proper type\n");
@@ -696,7 +696,7 @@ SEXP _R_profit_convolve(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask)
 
 	unsigned int img_w, img_h, psf_w, psf_h;
 
-	std::shared_ptr<Convolver> convolver = unwrap_convolver(r_convolver);
+	ConvolverPtr convolver = unwrap_convolver(r_convolver);
 	if (!convolver) {
 		return R_NilValue;
 	}

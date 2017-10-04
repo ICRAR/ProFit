@@ -266,6 +266,9 @@ typedef struct _OpenCL_plat_info {
  */
 std::map<int, OpenCL_plat_info> get_opencl_info();
 
+/// Handy typedef for shared pointers to OpenCL_env objects
+typedef std::shared_ptr<OpenCL_env> OpenCLEnvPtr;
+
 /**
  * Prepares an OpenCL working space for using with libprofit.
  *
@@ -282,7 +285,7 @@ std::map<int, OpenCL_plat_info> get_opencl_info();
  * @return A pointer to a OpenCL_env structure, which contains the whole set of
  *         elements required to work with the requested device.
  */
-std::shared_ptr<OpenCL_env> get_opencl_environment(
+OpenCLEnvPtr get_opencl_environment(
 	unsigned int platform_idx,
 	unsigned int device_idx,
 	bool use_double,
