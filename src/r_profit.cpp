@@ -489,7 +489,7 @@ std::shared_ptr<Convolver> unwrap_convolver(SEXP convolver)
 static
 SEXP _R_profit_convolvers()
 {
-	static const char * convolvers[] = {
+	static const vector<string> convolvers = {
 		"brute"
 #ifdef PROFIT_OPENCL
 		,"opencl"
@@ -500,10 +500,10 @@ SEXP _R_profit_convolvers()
 #endif /* PROFIT_FFTW */
 	};
 
-	unsigned int n_convolvers = sizeof(convolvers) / sizeof(convolvers[0]);
-	SEXP convolvers_r = PROTECT(Rf_allocVector(STRSXP, sizeof(n_convolvers)));
-	for(unsigned int i = 0; i != sizeof(n_convolvers); i++) {
-		SET_STRING_ELT(convolvers_r, i, Rf_mkChar(convolvers[i]));
+	const size_t n_convolvers = convolvers.size();
+	SEXP convolvers_r = PROTECT(Rf_allocVector(STRSXP, n_convolvers));
+	for(size_t i = 0; i != n_convolvers; i++) {
+		SET_STRING_ELT(convolvers_r, i, Rf_mkChar(convolvers[i].c_str()));
 	}
 
 	UNPROTECT(1);
