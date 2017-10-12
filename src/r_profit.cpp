@@ -536,7 +536,7 @@ SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
 #endif /* PROFIT_FFTW */
 #ifdef PROFIT_OPENCL
 	if (openclenv != R_NilValue ) {
-		if((conv_prefs.opencl_env = unwrap_openclenv(openclenv)) != nullptr) {
+		if((conv_prefs.opencl_env = unwrap_openclenv(openclenv)) == nullptr) {
 			return R_NilValue;
 		}
 	}
