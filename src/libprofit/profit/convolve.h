@@ -141,12 +141,12 @@ private:
 class OpenCLConvolver : public Convolver {
 
 public:
-	OpenCLConvolver(std::shared_ptr<OpenCL_env> opencl_env);
+	OpenCLConvolver(OpenCLEnvPtr opencl_env);
 
 	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
 
 private:
-	std::shared_ptr<OpenCL_env> env;
+	OpenCLEnvPtr env;
 
 	Image _convolve(const Image &src, const Image &krn, const Mask &mask);
 
@@ -160,12 +160,12 @@ private:
 class OpenCLLocalConvolver : public Convolver {
 
 public:
-	OpenCLLocalConvolver(std::shared_ptr<OpenCL_env> opencl_env);
+	OpenCLLocalConvolver(OpenCLEnvPtr opencl_env);
 
 	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
 
 private:
-	std::shared_ptr<OpenCL_env> env;
+	OpenCLEnvPtr env;
 
 	Image _convolve(const Image &src, const Image &krn, const Mask &mask);
 
@@ -212,7 +212,7 @@ public:
 
 #ifdef PROFIT_OPENCL
 	/// A pointer to an OpenCL environment. Used by the OpenCL convolvers.
-	std::shared_ptr<OpenCL_env> opencl_env;
+	OpenCLEnvPtr opencl_env;
 #endif // PROFIT_OPENCL
 
 #ifdef PROFIT_FFTW
@@ -230,6 +230,9 @@ public:
 
 };
 
+/// Handy typedef for shared pointers to Convolver objects
+typedef std::shared_ptr<Convolver> ConvolverPtr;
+
 /**
  * Creates a new convolver of type `type` with preferences `prefs`
  *
@@ -237,7 +240,7 @@ public:
  * @param prefs The creation preferences used to create the new convolver
  * @return A shared pointer to a new convolver
  */
-std::shared_ptr<Convolver>
+ConvolverPtr
 create_convolver(const ConvolverType type,
                  const ConvolverCreationPreferences &prefs = ConvolverCreationPreferences());
 
@@ -247,7 +250,7 @@ create_convolver(const ConvolverType type,
  *
  * @overload
  */
-std::shared_ptr<Convolver>
+ConvolverPtr
 create_convolver(const std::string &type,
                  const ConvolverCreationPreferences &prefs = ConvolverCreationPreferences());
 

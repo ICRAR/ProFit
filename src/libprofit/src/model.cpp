@@ -167,11 +167,6 @@ std::vector<double> Model::evaluate() {
 
 	/*
 	 * Generate a separate image for each profile.
-	 *
-	 * We optionally use OpenMP to parallelize this per-profile image
-	 * generation. Depending on how many there are we might get a speed up, so
-	 * probably we should study what is the best way to go here (e.g.,
-	 * parallelize only if we have more than 2 or 3 profiles)
 	 */
 	std::vector<Image> profile_images;
 	for(auto &profile: this->profiles) {

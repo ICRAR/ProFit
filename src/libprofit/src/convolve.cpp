@@ -188,7 +188,7 @@ Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mas
 #endif /* PROFIT_FFTW */
 
 #ifdef PROFIT_OPENCL
-OpenCLConvolver::OpenCLConvolver(std::shared_ptr<OpenCL_env> opencl_env) :
+OpenCLConvolver::OpenCLConvolver(OpenCLEnvPtr opencl_env) :
 	env(opencl_env)
 {
 	if (!env) {
@@ -283,7 +283,7 @@ Image OpenCLConvolver::_clpadded_convolve(const Image &src, const Image &krn, co
 }
 
 
-OpenCLLocalConvolver::OpenCLLocalConvolver(std::shared_ptr<OpenCL_env> opencl_env) :
+OpenCLLocalConvolver::OpenCLLocalConvolver(OpenCLEnvPtr opencl_env) :
 	env(opencl_env)
 {
 	if (!env) {
@@ -389,7 +389,7 @@ Image OpenCLLocalConvolver::_clpadded_convolve(const Image &src, const Image &kr
 
 #endif // PROFIT_OPENCL
 
-std::shared_ptr<Convolver> create_convolver(const ConvolverType type, const ConvolverCreationPreferences &prefs)
+ConvolverPtr create_convolver(const ConvolverType type, const ConvolverCreationPreferences &prefs)
 {
 	switch(type) {
 		case BRUTE:
@@ -413,7 +413,7 @@ std::shared_ptr<Convolver> create_convolver(const ConvolverType type, const Conv
 	}
 }
 
-std::shared_ptr<Convolver> create_convolver(const std::string &type, const ConvolverCreationPreferences &prefs)
+ConvolverPtr create_convolver(const std::string &type, const ConvolverCreationPreferences &prefs)
 {
 	if (type == "brute") {
 		return create_convolver(BRUTE, prefs);

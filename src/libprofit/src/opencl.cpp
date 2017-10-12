@@ -156,7 +156,7 @@ std::map<int, OpenCL_plat_info> get_opencl_info() {
 }
 
 static
-std::shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
+OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
 
 	std::vector<cl::Platform> all_platforms;
 	if( cl::Platform::get(&all_platforms) != CL_SUCCESS ) {
@@ -282,7 +282,7 @@ std::shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, u
 	return std::make_shared<OpenCL_env>(device, get_opencl_version(platform), context, queue, program, use_double, enable_profiling);
 }
 
-std::shared_ptr<OpenCL_env> get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
+OpenCLEnvPtr get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
 
 	// Wrap cl::Error exceptions
 	try {
