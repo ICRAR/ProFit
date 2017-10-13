@@ -41,6 +41,7 @@ inline double brokenExponential(double r, double h1, double h2,
   double rb, double a) {
   double base = r - rb;
   double expo = 1./h1 - 1./h2;
+  // If this condition is false, the 1+ is irrelevant
   if(base < 40./a) base = log(1+exp(a*base))/a;
   return exp(-r/h1 + expo*base);
 }
@@ -60,7 +61,6 @@ inline double brokenExponential(double r, double h1, double h2,
 double BrokenExponentialProfile::evaluate_at(double x, double y) const {
 	double box = this->box + 2.;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
-	double v = exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
 	return brokenExponential(r, h1, h2, rb, a);
 }
 
