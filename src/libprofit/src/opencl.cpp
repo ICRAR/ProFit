@@ -130,7 +130,7 @@ std::map<int, OpenCL_plat_info> _get_opencl_info() {
 		std::map<int, OpenCL_dev_info> dinfo;
 		unsigned int didx = 0;
 		for(auto device: devices) {
-			dinfo[didx] = OpenCL_dev_info{
+			dinfo[didx++] = OpenCL_dev_info{
 				device.getInfo<CL_DEVICE_NAME>(),
 				device.getInfo<CL_DEVICE_DOUBLE_FP_CONFIG>() != 0
 			};
