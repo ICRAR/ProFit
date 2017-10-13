@@ -125,7 +125,15 @@ std::map<int, OpenCL_plat_info> _get_opencl_info() {
 	unsigned int pidx = 0;
 	for(auto platform: all_platforms) {
 		std::vector<cl::Device> devices;
-		platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+
+		try {
+			platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+		} catch (const cl::Error &e) {
+			// If no devices are found we simply return an empty devices list.
+			if (e.err() != CL_DEVICE_NOT_FOUND) {
+				throw;
+			}
+		}
 
 		std::map<int, OpenCL_dev_info> dinfo;
 		unsigned int didx = 0;
