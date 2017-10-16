@@ -89,21 +89,34 @@ model = list(
 psffwhm=3
 
 # Use OpenCL if available
-
+# Makes a list of available OpenCL environments optionally with
+# double precision if all devices support it
 openclenvs = list()
 if(profitHasOpenCL())
 {
   openclinfo = profitOpenCLEnvInfo()
+  openclnames = character()
   nenvs = length(openclinfo)
-  # TODO: Loop over devices and supports_double
+  # TODO: Loop over devices
   if(nenvs > 0)
   {
     for(envi in 1:length(openclinfo))
     {
-      openclenvs[[envi]] = profitOpenCLEnv(envi)
+      precisions = c(single=FALSE)
+      supports_double = all(unlist(lapply(openclinfo[[envi]]$devices,
+          function(x) { return(isTRUE(x$supports_double)) }
+          )))
+      if(supports_double) precisions = c(precisions,double=TRUE)
+      for(preci in 1:length(precisions))
+      {
+        openclenvs = c(openclenvs, profitOpenCLEnv(envi,
+          use_double=precisions[[preci]]))
+        openclnames = c(openclnames,paste0(openclinfo[[envi]]$name,
+          "-",names(precisions)[[preci]]))
+      }
     }
-    names(openclenvs) = lapply(openclinfo, function(x) { return(x$name)})
   }
+  names(openclenvs) = openclnames
 }
 
 for(finesample in c(1L,3L,5L))
