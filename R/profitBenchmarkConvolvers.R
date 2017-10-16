@@ -49,7 +49,7 @@ profitBenchmarkConvolvers <- function(image, psf, calcregion=NULL, nbench=1,
           {
             images[[name]] = profitConvolve(convolvers[[name]]$convolver, image, psf, calcregion)
           }
-          timeinms = 1000*(summary(proc.time())[["elapsed"]] - timeinms)
+          timeinms = 1000*(summary(proc.time())[["elapsed"]] - timeinms)/nbench
           if(timeinms < tbest)
           {
             tbest = timeinms
