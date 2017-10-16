@@ -106,7 +106,7 @@ if(profitHasOpenCL())
   }
 }
 
-for(finesample in 1L:3L)
+for(finesample in c(1L,3L,5L))
 {
   model.image=profitMakeModel(model=model, dim=rep(200,2), finesample=finesample, returnfine=TRUE)$z
   psf=profitMakeGaussianPSF(fwhm=3*finesample,dim=rep(25*finesample,2))

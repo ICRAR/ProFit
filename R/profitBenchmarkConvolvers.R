@@ -44,15 +44,15 @@ profitBenchmarkConvolvers <- function(image, psf, calcregion=NULL, nbench=1,
         {
           calcregioni = NULL
           if(usecalcregion) calcregioni = calcregion
-          tuser = summary(proc.time())[["user"]]
+          timeinms = summary(proc.time())[["elapsed"]]
           for(i in benchi)
           {
             images[[name]] = profitConvolve(convolvers[[name]]$convolver, image, psf, calcregion)
           }
-          tuser = 1000*(summary(proc.time())[["user"]] - tuser)
-          if(tuser < tbest)
+          timeinms = 1000*(summary(proc.time())[["elapsed"]] - timeinms)
+          if(timeinms < tbest)
           {
-            tbest = tuser
+            tbest = timeinms
             convolvers[[name]]$usecalcregion = usecalcregion
           }
         }
