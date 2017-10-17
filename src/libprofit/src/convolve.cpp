@@ -57,9 +57,15 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 	unsigned int krn_half_width = krn_width / 2;
 	unsigned int krn_half_height = krn_height / 2;
 	unsigned int krn_size = krn_width * krn_height;
-	int src_i, src_j;
-
+#define PROFITBRUTEOPTIM
+#ifndef PROFITBRUTEOPTIM
+	unsigned int src_i, src_j;
+#else
+	unsigned int l_min, l_max, l_incr;
+	unsigned int k_min, k_max, k_incr;
+#endif
 	Image convolution(src_width, src_height);
+	const unsigned int SRC_SKIP = src_width - krn_width;
 
 	const double *krn_data = krn.getData().data();
 	double *out = convolution.getData().data() - 1;
@@ -88,9 +94,11 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 			srcPtr2 = srcPtr1 - krn_half_width - krn_half_height*src_width;
 
 			/* ... now loop around the kernel */
+#ifndef PROFITBRUTEOPTIM
 			for (l = 0; l < krn_height; l++) {
 
 				src_j = (int)j + (int)l - (int)krn_half_height;
+
 				for (k = 0; k < krn_width; k++) {
 
 					src_i = (int)i + (int)k - (int)krn_half_width;
@@ -103,9 +111,60 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 					srcPtr2++;
 					krnPtr--;
 				}
-				srcPtr2 += src_width - krn_width;
-			}
 
+			  srcPtr2 += SRC_SKIP;
+			}
+#else
+			
+// Alternative version to above which is more complicated and difficult
+// to follow but should branch less often
+      l_min = 0;
+      l_max = krn_height;
+      l_incr = 0;
+      if(j < krn_half_height)
+      {
+        l_min = krn_half_height - j;
+        srcPtr2 += l_min*src_width;
+        krnPtr -= l_min*krn_width;
+      }
+      // Maybe shouldn't be an else if we support krn > img size?
+      else if((j + krn_half_height) > src_height)
+      {
+        l_max = src_height + krn_half_height - j;
+        l_incr = krn_height - l_max;
+      }
+			for (l = l_min; l < l_max; l++) {
+			  
+	      k_min = 0;
+	      k_max = krn_width;
+	      k_incr = 0;
+	      
+	      if(i < krn_half_width)
+	      {
+	        k_min = krn_half_width - i;
+	        srcPtr2 += k_min;
+					krnPtr -= k_min;
+	      }
+	      // Maybe shouldn't be an else if we support krn > img size?
+	      else if((i + krn_half_width) > src_width)
+	      {
+	        k_max = src_width + krn_half_width - i;
+	        k_incr = krn_width - k_max;
+	      }
+				for (k = k_min; k < k_max; k++) {
+					pixel +=  *srcPtr2 * *krnPtr;
+					srcPtr2++;
+					krnPtr--;
+				}
+				
+				srcPtr2+=k_incr;
+	      krnPtr-=k_incr;
+				srcPtr2 += SRC_SKIP;
+			}
+			
+			srcPtr2 += l_incr*krn_width;
+	    krnPtr -= l_incr*krn_width;
+#endif
 			*out = pixel;
 		}
 	}
