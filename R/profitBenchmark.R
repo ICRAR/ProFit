@@ -1,43 +1,112 @@
-profitBenchmarkConvolvers <- function(image, psf, calcregion=NULL, nbench=1,
-  methods = profitAvailableConvolvers(), reference = "brute",
-  refftpsf = FALSE, fft_effort=0, omp_threads=1, openclenvs = list(),
+.profitGetOpenCLEnvRow <- function(name="",env_i=NA,
+  env_name=NA, version=NA, dev_i=NA, dev_name=NA,
+  supports_single=FALSE, supports_double=TRUE,
+  env_single=new("externalptr"), env_double=new("externalptr"),
+  stringsAsFactors=FALSE)
+{
+  result = data.frame(name=name, env_i=env_i, env_name=env_name,
+    version=version, dev_i=dev_i, dev_name=dev_name,
+    supports_double=supports_double, supports_single=supports_single,
+    stringsAsFactors=stringsAsFactors)
+  result$env_single=list(env_single)
+  result$env_double=list(env_double)
+  return(result)
+}
+
+profitBenchmark <- function(image, methods=NULL, psf=NULL,
+  modellist=NULL, calcregion=NULL, nbench=1,
+  benchconvolution=is.matrix(psf),
+  precisions=c("double"), omp_threads=1,
+  openclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
+  reference = "brute", reusefftpsf = TRUE, fft_effort=0,
   returnimages = FALSE)
 {
-  allmethods = profitAvailableConvolvers()
-  stopifnot(length(methods) > 0 && all(methods %in% allmethods))
-  stopifnot(nbench > 0)
-  stopifnot(is.list(openclenvs))
-  nopenclenvs = length(openclenvs)
-  if(nopenclenvs > 1 && is.null(names(openclenvs))) names(openclenvs) = 1:nopenclenvs
-  dimimage = dim(image)
-  benchi = 1:ceiling(nbench)
-  doaccuracy = reference %in% methods
-  availusecalcregions = c(FALSE)
-  if(!is.null(calcregion)) availusecalcregions = c(availusecalcregions,TRUE)
-  
-  times = list()
-  convolvers = list()
-  images = list()
-
+  stopifnot(is.data.frame(openclenvs))
+  stopifnot(any(unlist(lapply(precisions,function(x) { 
+    return(identical(x,"single") || identical(x,"double")) }))))
+  returnimages = isTRUE(returnimages)
+  bench = data.frame()
+  if(benchconvolution)
+  {
+    avail = profitAvailableConvolvers()
+  } else {
+    avail = profitAvailableIntegrators()
+  }
   for(method in methods)
   {
-    methodoclenvs = list(NULL)
+    stopifnot(method %in% avail)
+    # Rename according to the subtype e.g. if opencl-local is supported
     if(startsWith(method,"opencl"))
     {
-      methodoclenvs = openclenvs
+      stopifnot(nrow(openclenvs) > 0)
+      openclenvs$name = method
+      bench = rbind(bench,openclenvs)
+    } else {
+      bench = rbind(bench,.profitGetOpenCLEnvRow(name=method))
     }
-    nopenclenvs = length(methodoclenvs)
-    if(nopenclenvs > 0)
+  }
+  rv = list(result=data.frame())
+  nmethods = nrow(bench)
+  if(nmethods > 0 && nbench > 0 && length(precisions) > 0)
+  {
+    dimimage = dim(image)
+    benchi = 1:ceiling(nbench)
+    doaccuracy = reference %in% bench$name
+    availusecalcregions = c(FALSE)
+    if(!is.null(calcregion)) availusecalcregions = c(availusecalcregions,TRUE)
+    
+    ptrvec = c()
+    for(i in 1:nmethods) ptrvec = c(ptrvec, new("externalptr"))
+    images = list()
+    tprefix = "tinms.mean_"
+    for(prec in c("single","double"))
     {
-      for(openclenvi in 1:nopenclenvs)
+      for(name in c(tprefix,paste0(paste0("diff.",
+        c("rel.min","rel.max","abs.min","abs.max"),"_"))
+      )) {
+        bench[[paste0(name,prec)]] = NA 
+      }
+      bench[[paste0("convolver_",prec)]] = ptrvec
+      bench[[paste0("convolver_usecalcregion_",prec)]] = FALSE
+    }
+    if(doaccuracy)
+    {
+      refmethod = which(bench$name == reference)
+      refprec = "double"
+      if(!isTRUE(bench$supports_double[[refmethod]]))
       {
-        name = method
-        postfix = names(methodoclenvs[openclenvi])
-        if(length(postfix) > 0) name = paste(method,postfix,sep="-")
-        convolvers[[name]]=list(convolver=profitMakeConvolver(
-          method, image_dimensions = dimimage, psf=psf, omp_threads=omp_threads,
-          openclenv=methodoclenvs[[openclenvi]]), usecalcregion=FALSE)
-        if(identical(method,"fft")) usecalcregions = FALSE
+        stopifnot(isTRUE(bench$supports_single[[refmethod]]))
+        refprec = "single"
+      }
+      if(refmethod != 1)
+      {
+        methodis = c(refmethod,1:(refmethod-1))
+        if(refmethod != nmethods) methodis = c(methodis, (refmethod+1):nmethods)
+      } else {
+        methodis = 1:nmethods
+      }
+    } else {
+      methodis = 1:nmethods
+    }
+    for(methodi in methodis)
+    {
+      method = bench$name[[methodi]]
+      precs = c()
+      for(prec in c("single","double"))
+      {
+        if(bench[[paste0("supports_",prec)]][[methodi]]) precs = c(precs,prec)
+      }
+      for(prec in precs)
+      {
+        if(benchconvolution)
+        {
+          openclenv = bench[[paste0("env_",prec)]][[methodi]]
+          if(identical(openclenv,new("externalptr"))) openclenv=NULL
+          convolver = profitMakeConvolver(method,
+            image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusefftpsf,
+            omp_threads=omp_threads, openclenv=openclenv)
+        }
+        if(identical(bench$name[[i]],"fft")) usecalcregions = FALSE
         else usecalcregions = availusecalcregions
         tbest = Inf
         for(usecalcregion in usecalcregions)
@@ -47,46 +116,53 @@ profitBenchmarkConvolvers <- function(image, psf, calcregion=NULL, nbench=1,
           timeinms = summary(proc.time())[["elapsed"]]
           for(i in benchi)
           {
-            images[[name]] = profitConvolve(convolvers[[name]]$convolver, image, psf, calcregion)
+            imagei = profitConvolve(convolver, image, psf, calcregion)
           }
           timeinms = 1000*(summary(proc.time())[["elapsed"]] - timeinms)/nbench
           if(timeinms < tbest)
           {
             tbest = timeinms
-            convolvers[[name]]$usecalcregion = usecalcregion
+            bench[[paste0("convolver_",prec)]][[methodi]] = convolver
+            bench[[paste0("convolver_usecalcregion_",prec)]][[methodi]] = usecalcregion
+          }
+          if(doaccuracy)
+          {
+            if(methodi == refmethod ) refimage = imagei
+          }
+          if(returnimages)
+          {
+            images[[methodi]]
           }
         }
-        times[[name]] = tbest
+        bench[[paste0(tprefix,prec)]][[methodi]] = tbest
+        if(doaccuracy)
+        {
+          if(methodi == refmethod && prec == refprec) refimage = imagei
+          diff = refimage - imagei
+          diffs = list(abs = range(diff),
+            rel = range((diff/refimage)[refimage>0]))
+          for(diffn in names(diffs))
+          {
+            bench[[paste0("diff.",diffn,".min_",prec)]][[methodi]] = diffs[[diffn]][1]
+            bench[[paste0("diff.",diffn,".max_",prec)]][[methodi]] = diffs[[diffn]][2]
+          }
+        }
       }
     }
+    rv$result = bench
+    if(returnimages) rv$images = images
   }
-  
-  methods = names(times)
-  
-  if(doaccuracy)
+  return(rv)
+}
+
+profitBenchmarkResultStripPointers <- function(benchmarks)
+{
+  for(prec in c("single","double"))
   {
-    rangestr = paste("Diff.",c("abs.","rel."),
-      paste0("range: [",paste0(rep("%.4e",2),collapse=","),"]"),
-      collapse="; ")
-    namepad = max(unlist(lapply(methods,nchar)))
-    refimage = images[[reference]]
-    for(method in methods)
+    for(name in c("env","convolver"))
     {
-      if(!identical(method,reference))
-      {
-        diff = refimage - images[[method]]
-        diffabs = range(diff)
-        diffrel = range(diff/refimage)
-        print(sprintf(paste0("Method: '%",namepad,"s' ",rangestr), method,
-            diffabs[1], diffabs[2],diffrel[1], diffrel[2]))
-      }
+      benchmarks[[paste0(name,"_",prec)]] = NULL
     }
   }
-  result = list(
-    best = names(times)[which.min(unlist(times))],
-    convolvers=convolvers,
-    times=times
-  )
-  if(identical(returnimages,TRUE)) result$images = images
-  return=result
+  return(benchmarks)
 }

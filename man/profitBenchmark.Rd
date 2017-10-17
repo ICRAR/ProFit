@@ -91,42 +91,24 @@ psffwhm=3
 # Use OpenCL if available
 # Makes a list of available OpenCL environments optionally with
 # double precision if all devices support it
-openclenvs = list()
-if(profitHasOpenCL())
-{
-  openclinfo = profitOpenCLEnvInfo()
-  openclnames = character()
-  nenvs = length(openclinfo)
-  # TODO: Loop over devices
-  if(nenvs > 0)
-  {
-    for(envi in 1:length(openclinfo))
-    {
-      precisions = c(single=FALSE)
-      supports_double = all(unlist(lapply(openclinfo[[envi]]$devices,
-          function(x) { return(isTRUE(x$supports_double)) }
-          )))
-      if(supports_double) precisions = c(precisions,double=TRUE)
-      for(preci in 1:length(precisions))
-      {
-        openclenvs = c(openclenvs, profitOpenCLEnv(envi,
-          use_double=precisions[[preci]]))
-        openclnames = c(openclnames,paste0(openclinfo[[envi]]$name,
-          "-",names(precisions)[[preci]]))
-      }
-    }
-  }
-  names(openclenvs) = openclnames
-}
+openclenvs = profitGetOpenCLEnvList()
 
-for(finesample in c(1L,3L,5L))
+# Try up to 5L if you're adventurous and don't mind waiting up to a minute for single-threaded brute
+for(finesample in c(1L:3L))
 {
   model.image=profitMakeModel(model=model, dim=rep(200,2), finesample=finesample, returnfine=TRUE)$z
   psf=profitMakeGaussianPSF(fwhm=3*finesample,dim=rep(25*finesample,2))
   
   #Do some benchmarking:
-  bench=profitBenchmarkConvolvers(model.image, psf=psf, nbench=1, openclenvs=openclenvs)
-  print(t(t(unlist(bench$times))))
+  bench=profitBenchmark(model.image, psf=psf, nbench=1, openclenvs=openclenvs,
+    methodnames=profitAvailableConvolvers())
+  
+  #Print relevant results
+  print(profitBenchmarkResultStripPointers(bench$result)[
+    c("name","env_name","version","dev_name",paste0("tinms.mean_",c("single","double")))])
+
+  # The old benchmarking method, for reference
+  profitBenchmarkConv(model.image, psf = psf, nbench=5
 }
 
 # TODO: update the rest of this
