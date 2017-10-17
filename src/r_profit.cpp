@@ -493,7 +493,8 @@ SEXP _R_profit_convolvers()
 		"brute"
 #ifdef PROFIT_OPENCL
 		,"opencl"
-		,"opencl-local"
+// Disabled for now as it's not ready
+//		,"opencl-local"
 #endif /* PROFIT_OPENCL */
 #ifdef PROFIT_FFTW
 		,"fft"
