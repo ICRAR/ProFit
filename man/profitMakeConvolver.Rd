@@ -89,12 +89,28 @@ Rodrigo Tobar
 }
 \examples{
 psf = profitMakeGaussianPSF(dim=c(100,100))
+
+has_openCL=profitHasOpenCL()
 has_fft = profitHasFFTW()
-convolver = NULL
-if (has_fft) {
-	convolver = profitMakeConvolver("fft", c(400, 400), psf, fft_effort=1,
-	omp_threads=2)
+has_openMP=profitHasOpenMP()
+
+convolver_brute = profitMakeConvolver("brute", c(400, 400), psf)
+
+if(has_openCL){
+  convolver_bruteCL = profitMakeConvolver("opencl", c(400, 400), psf,
+  openclenv=profitOpenCLEnv(1,3))
 }
+
+if(has_fft){
+	convolver_fft = profitMakeConvolver("fft", c(400, 400), psf, fft_effort=1,
+	omp_threads=1)
+}
+
+if(has_fft & has_openMP){
+	convolver_fftMP = profitMakeConvolver("fft", c(400, 400), psf, fft_effort=1,
+	omp_threads=4)
+}
+
 model = list(
   sersic = list(
     xcen   = c(80, 210),
@@ -108,13 +124,40 @@ model = list(
   )
 )
 
-system.time({image_noFFTW=profitMakeModel(model=model, dim=c(300,300), psf=psf)$z})
-system.time({image_FFTW=profitMakeModel(model=model, dim=c(300,300), psf=psf,
-convopt=list(convolver=convolver))$z})
+system.time(for(i in 1:10){image_brute=profitMakeModel(model=model, dim=c(300,300), psf=psf,
+  convopt=list(convolver=convolver_brute))$z})
 
-magimage(image_noFFTW)
-magimage(image_FFTW)
-magimage(image_noFFTW-image_FFTW)
+if(has_openCL){
+system.time(for(i in 1:10){image_bruteCL=profitMakeModel(model=model, dim=c(300,300), psf=psf,
+  convopt=list(convolver=convolver_bruteCL))$z})
+}
+
+if(has_fft){
+system.time(for(i in 1:10){image_fft=profitMakeModel(model=model, dim=c(300,300), psf=psf,
+  convopt=list(convolver=convolver_fft))$z})
+}
+
+if(has_fft & has_openMP){
+system.time(for(i in 1:10){image_fftMP=profitMakeModel(model=model, dim=c(300,300), psf=psf,
+  convopt=list(convolver=convolver_fftMP))$z})
+}
+
+magimage(image_brute)
+
+if(has_openCL){
+  magimage(image_bruteCL)
+  magimage(image_brute-image_bruteCL)
+}
+
+if(has_fft){
+  magimage(image_fft)
+  magimage(image_brute-image_fft)
+}
+
+if(has_fft & has_openMP){
+  magimage(image_fftMP)
+  magimage(image_brute-image_fftMP)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
