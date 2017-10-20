@@ -106,7 +106,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
             image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusefftpsf,
             omp_threads=omp_threads, openclenv=openclenv)
         }
-        if(identical(bench$name[[i]],"fft")) usecalcregions = FALSE
+        if(identical(bench$name[[methodi]],"fft")) usecalcregions = FALSE
         else usecalcregions = availusecalcregions
         tbest = Inf
         for(usecalcregion in usecalcregions)
