@@ -524,7 +524,7 @@ SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
 
 #ifdef PROFIT_OPENMP
 	if( omp_threads != R_NilValue ) {
-		conv_prefs.plan_omp_threads = (unsigned int)Rf_asInteger(omp_threads);
+		conv_prefs.omp_threads = (unsigned int)Rf_asInteger(omp_threads);
 	}
 #endif /* PROFIT_OPENMP */
 #ifdef PROFIT_FFTW

@@ -351,6 +351,9 @@ struct point_t {
  */
 template <typename FT>
 struct ss_info_t {
+	ss_info_t() {};
+	ss_info_t(point_t<FT> point, FT xbin, FT ybin, unsigned int resolution, unsigned int max_recursion) :
+		point(point), xbin(xbin), ybin(ybin), resolution(resolution), max_recursion(max_recursion) {};
 	point_t<FT> point;
 	FT xbin;
 	FT ybin;
@@ -364,6 +367,7 @@ struct ss_info_t {
  */
 template <typename FT>
 struct ss_kinfo_t {
+	ss_kinfo_t() {};
 	point_t<FT> point;
 	FT xbin;
 	FT ybin;
@@ -537,17 +541,20 @@ void RadialProfile::evaluate_opencl(std::vector<double> &image) {
 	auto ss_kname = name + "_subsample_" + float_traits<FT>::name;
 	cl::Kernel subsample_kernel = env->get_kernel(ss_kname);
 
-	typedef struct _im_result {
+	struct im_result_t {
+		im_result_t() {};
 		point_t point;
 		FT value;
-	} im_result_t;
+	};
 	std::vector<im_result_t> subimages_results;
 
 	// Preparing for the recursive subsampling
+	std::vector<ss_kinfo_t> ss_kinfo;
 	std::vector<ss_info_t> ss_info;
 	unsigned int recur_level = 0;
 
 	t_loopstart = system_clock::now();
+	unsigned int subimage_idx = 0;
 	while( recur_level <= top_recursions ) {
 
 		/* Points in time we want to measure */
@@ -574,7 +581,7 @@ void RadialProfile::evaluate_opencl(std::vector<double> &image) {
 
 		/* Keeping things in size */
 		auto prev_im_size = subimages_results.size();
-		subimages_results.reserve(prev_im_size + subsamples);
+		subimages_results.resize(prev_im_size + subsamples);
 		last_ss_info.resize(subsamples);
 
 		try {
@@ -589,9 +596,12 @@ void RadialProfile::evaluate_opencl(std::vector<double> &image) {
 			t_kprep = system_clock::now();
 
 			// The information we pass down to the kernels is a subset of the original
-			std::vector<ss_kinfo_t> ss_kinfo(subsamples);
-			std::transform(ss_info.begin(), ss_info.end(), ss_kinfo.begin(), [](const ss_info_t &info) {
-				return ss_kinfo_t{info.point, info.xbin, info.ybin};
+			ss_kinfo.resize(subsamples);
+			std::transform(ss_info.begin(), ss_info.end(), ss_kinfo.begin(), ss_kinfo.begin(), [](const ss_info_t &info, ss_kinfo_t &kinfo) -> ss_kinfo_t {
+				kinfo.point = info.point;
+				kinfo.xbin = info.xbin;
+				kinfo.ybin = info.ybin;
+				return kinfo;
 			});
 			t_trans_h2k = system_clock::now();
 
@@ -622,7 +632,9 @@ void RadialProfile::evaluate_opencl(std::vector<double> &image) {
 					val /= (ss_info_it->resolution * ss_info_it->resolution);
 				}
 
-				subimages_results.push_back(im_result_t{ss_info_it->point, val});
+				subimages_results[subimage_idx].point = std::move(ss_info_it->point);
+				subimages_results[subimage_idx].value = val;
+				subimage_idx++;
 
 				last_ss_info_it++;
 				ss_info_it++;

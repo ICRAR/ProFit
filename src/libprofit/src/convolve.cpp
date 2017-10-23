@@ -47,61 +47,49 @@ Convolver::~Convolver()
 Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Mask &mask)
 {
 
-	auto src_width = src.getWidth();
-	auto src_height = src.getHeight();
-	auto krn_width = krn.getWidth();
-	auto krn_height = krn.getHeight();
+	const auto src_width = src.getWidth();
+	const auto src_height = src.getHeight();
+	const auto krn_width = krn.getWidth();
+	const auto krn_height = krn.getHeight();
 
-	double pixel;
-	unsigned int i, j, k, l;
-	unsigned int krn_half_width = krn_width / 2;
-	unsigned int krn_half_height = krn_height / 2;
-	unsigned int krn_size = krn_width * krn_height;
-#define PROFITBRUTEOPTIM
-#ifndef PROFITBRUTEOPTIM
-	unsigned int src_i, src_j;
-#else
-	unsigned int l_min, l_max, l_incr;
-	unsigned int k_min, k_max, k_incr;
-#endif
+	const unsigned int krn_half_width = krn_width / 2;
+	const unsigned int krn_half_height = krn_height / 2;
+
 	Image convolution(src_width, src_height);
-	const unsigned int SRC_SKIP = src_width - krn_width;
 
-	const double *krn_data = krn.getData().data();
-	double *out = convolution.getData().data() - 1;
-	const double *srcPtr1 = src.getData().data() - 1, *srcPtr2;
-	const double *krnPtr;
-	auto mask_it = mask.getData().begin();
+	auto krn_end = krn.getData().cend();
+	const auto &src_data = src.getData();
+	auto &out = convolution.getData();
+	const auto &mask_data = mask.getData();
 
 	/* Convolve! */
 	/* Loop around the output image first... */
-	for (j = 0; j < src_height; j++) {
-		for (i = 0; i < src_width; i++) {
+#ifdef PROFIT_OPENMP
+	bool use_omp = omp_threads > 1;
+	#pragma omp parallel for collapse(2) schedule(dynamic, 10) if(use_omp) num_threads(omp_threads)
+#endif // PROFIT_OPENMP
+	for (unsigned int j = 0; j < src_height; j++) {
+		for (unsigned int i = 0; i < src_width; i++) {
 
-			out++;
-			srcPtr1++;
+			auto im_idx = i + j * src_width;
 
 			/* Don't convolve this pixel */
-			if( !mask.empty() ) {
-				if( !*mask_it++ ) {
-					*out = 0;
-					continue;
-				}
+			if( !mask.empty() and mask_data[im_idx]) {
+				out[im_idx] = 0;
+				continue;
 			}
 
-			pixel = 0;
-			krnPtr = krn_data + krn_size - 1;
-			srcPtr2 = srcPtr1 - krn_half_width - krn_half_height*src_width;
+			double pixel = 0;
+			auto krnPtr = krn_end - 1;
+			auto srcPtr2 = src_data.begin() + im_idx - krn_half_width - krn_half_height*src_width;
 
 			/* ... now loop around the kernel */
-#ifndef PROFITBRUTEOPTIM
-			for (l = 0; l < krn_height; l++) {
+			for (unsigned int l = 0; l < krn_height; l++) {
 
-				src_j = (int)j + (int)l - (int)krn_half_height;
+				int src_j = (int)j + (int)l - (int)krn_half_height;
+				for (unsigned int k = 0; k < krn_width; k++) {
 
-				for (k = 0; k < krn_width; k++) {
-
-					src_i = (int)i + (int)k - (int)krn_half_width;
+					int src_i = (int)i + (int)k - (int)krn_half_width;
 
 					if( src_i >= 0 && (unsigned int)src_i < src_width &&
 					    src_j >= 0 && (unsigned int)src_j < src_height ) {
@@ -111,61 +99,10 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 					srcPtr2++;
 					krnPtr--;
 				}
+				srcPtr2 += src_width - krn_width;
+			}
 
-			  srcPtr2 += SRC_SKIP;
-			}
-#else
-			
-// Alternative version to above which is more complicated and difficult
-// to follow but should branch less often
-      l_min = 0;
-      l_max = krn_height;
-      l_incr = 0;
-      if(j < krn_half_height)
-      {
-        l_min = krn_half_height - j;
-        srcPtr2 += l_min*src_width;
-        krnPtr -= l_min*krn_width;
-      }
-      // Maybe shouldn't be an else if we support krn > img size?
-      else if((j + krn_half_height) > src_height)
-      {
-        l_max = src_height + krn_half_height - j;
-        l_incr = krn_height - l_max;
-      }
-			for (l = l_min; l < l_max; l++) {
-			  
-	      k_min = 0;
-	      k_max = krn_width;
-	      k_incr = 0;
-	      
-	      if(i < krn_half_width)
-	      {
-	        k_min = krn_half_width - i;
-	        srcPtr2 += k_min;
-					krnPtr -= k_min;
-	      }
-	      // Maybe shouldn't be an else if we support krn > img size?
-	      else if((i + krn_half_width) > src_width)
-	      {
-	        k_max = src_width + krn_half_width - i;
-	        k_incr = krn_width - k_max;
-	      }
-				for (k = k_min; k < k_max; k++) {
-					pixel +=  *srcPtr2 * *krnPtr;
-					srcPtr2++;
-					krnPtr--;
-				}
-				
-				srcPtr2+=k_incr;
-	      krnPtr-=k_incr;
-				srcPtr2 += SRC_SKIP;
-			}
-			
-			srcPtr2 += l_incr*krn_width;
-	    krnPtr -= l_incr*krn_width;
-#endif
-			*out = pixel;
+			out[im_idx] = pixel;
 		}
 	}
 
@@ -328,7 +265,7 @@ Image OpenCLConvolver::_clpadded_convolve(const Image &src, const Image &krn, co
 
 	// Execute
 	std::vector<Event> exec_wait_evts {src_wevt, krn_wevt};
-	auto exec_evt = env->queue_kernel(clKernel, NDRange(src.getWidth(), src.getHeight()), &exec_wait_evts, NDRange(16, 16));
+	auto exec_evt = env->queue_kernel(clKernel, NDRange(src.getWidth(), src.getHeight()), &exec_wait_evts);
 
 	// Read and good bye
 	std::vector<Event> read_wait_evts {exec_evt};
@@ -452,7 +389,7 @@ ConvolverPtr create_convolver(const ConvolverType type, const ConvolverCreationP
 {
 	switch(type) {
 		case BRUTE:
-			return std::make_shared<BruteForceConvolver>();
+			return std::make_shared<BruteForceConvolver>(prefs.omp_threads);
 #ifdef PROFIT_OPENCL
 		case OPENCL:
 			return std::make_shared<OpenCLConvolver>(prefs.opencl_env);
@@ -463,7 +400,7 @@ ConvolverPtr create_convolver(const ConvolverType type, const ConvolverCreationP
 		case FFT:
 			return std::make_shared<FFTConvolver>(prefs.src_width, prefs.src_height,
 			                                      prefs.krn_width, prefs.krn_height,
-			                                      prefs.effort, prefs.plan_omp_threads,
+			                                      prefs.effort, prefs.omp_threads,
 			                                      prefs.reuse_krn_fft);
 #endif // PROFIT_FFTW
 		default:

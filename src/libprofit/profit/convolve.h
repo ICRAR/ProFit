@@ -81,17 +81,22 @@ public:
 };
 
 /**
- * A brute-force convolver.
+ * A brute-force convolver. It optionally uses OpenMP to accelerate the
+ * convolution.
  */
 class BruteForceConvolver : public Convolver {
 
 public:
+	BruteForceConvolver(unsigned int omp_threads) :
+		omp_threads(omp_threads) {}
+
 	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
 
+private:
+	unsigned int omp_threads;
 };
 
 #ifdef PROFIT_FFTW
-
 /**
  * A convolver that uses an FFTPlan to carry out FFT-based convolution.
  *
@@ -187,13 +192,13 @@ public:
 		src_width(0),
 		src_height(0),
 		krn_width(0),
-		krn_height(0)
+		krn_height(0),
+		omp_threads(1)
 #ifdef PROFIT_OPENCL
 		,opencl_env()
 #endif // PROFIT_OPENCL
 #ifdef PROFIT_FFTW
 		,effort(FFTPlan::ESTIMATE)
-		,plan_omp_threads()
 		,reuse_krn_fft(false)
 #endif // PROFIT_FFTW
 	{};
@@ -210,6 +215,11 @@ public:
 	/// The height of the convolution kernel.
 	unsigned int krn_height;
 
+	/// The amount of OpenMP threads (if OpenMP is available) to use by the
+	/// convolver. Used by the FFT convolver (to create and execute the plan
+	/// using OpenMP, when available) and the brute-force convolver.
+	unsigned int omp_threads;
+
 #ifdef PROFIT_OPENCL
 	/// A pointer to an OpenCL environment. Used by the OpenCL convolvers.
 	OpenCLEnvPtr opencl_env;
@@ -219,10 +229,6 @@ public:
 
 	/// The amount of effort to put into the plan creation. Used by the FFT convolver.
 	FFTPlan::effort_t effort;
-
-	/// The amount of OpenMP threads (if OpenMP is available) to use to create
-	/// and execute the plan. Used by the FFT convolver.
-	unsigned int plan_omp_threads;
 
 	/// Whether to reuse or not the FFT'd kernel or not. Used by the FFT convolver.
 	bool reuse_krn_fft;
