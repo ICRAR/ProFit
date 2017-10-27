@@ -1,0 +1,211 @@
+---
+title: "ProFit: PSF Convolution Can Be Convoluted"
+author: "Dan Taranu"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFit: PSF Convolution Can Be Convoluted}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+## Prepare the test data
+
+First load the libraries we need:
+
+```{r}
+library(knitr)
+library(ProFit)
+```
+
+Make a PSF and convolve it with itself:
+
+```{r}
+fwhm.psf = 3
+dim = rep(ceiling(fwhm.psf*10),2)
+dim = dim + (1-(dim %% 2))
+# More accurate than profitMakeGaussianPSF, just slower
+psf = profitCubaSersic(mag=0,re=fwhm.psf/2,nser=0.5,dim=dim)
+print(sum(psf))
+fwhm.srcs = c(1,3,9)
+refsrcidx = 2
+nsrcs = length(fwhm.srcs)
+src = list()
+conv = list()
+for(i in 1:nsrcs) 
+{
+  src[[i]] = profitCubaSersic(mag=0,re=fwhm.srcs[i]/2,nser=0.5,dim=dim)
+  conv[[i]] = profitConvolvePSF(src[[i]], psf)
+  print(sum(conv[[i]]))
+}
+```
+
+Check out the PSF:
+
+```{r, fig.width=5, fig.height=5, eval=F}
+magimage(psf)
+```
+
+... and its convolution:
+
+```{r, fig.width=5, fig.height=5, eval=F}
+magimage(conv[1])
+```
+
+Now compute the true profile, which is also a Gaussian:
+
+```{r}
+conv.exact = list()
+for(i in 1:nsrcs) 
+{
+  conv.exact[[i]] = profitCubaSersic(mag=0,re=sqrt(fwhm.psf^2+fwhm.srcs[i]^2)/2,nser=0.5,dim=dim)
+  print(sum(conv.exact[[i]]))
+}
+```
+
+Check if they differ:
+
+```{r, fig.width=5, fig.height=5, eval=F}
+magimage(conv[1]-conv.exact[1],magmap=F,zlim=c(-1,1)*2e-3)
+```
+
+Note how discretizing the PSF kernel pushes light out from the center of the profile to approximately 1-2 FWHM:
+
+```{r}
+diffrels = list()
+for(i in 1:nsrcs)
+{
+  diffrels[[i]] = (conv[[i]]-conv.exact[[i]])/conv.exact[[i]]
+  cens = ceiling(dim/2)
+  print(diffrels[[i]][cens[1]+0:5,cens[2]]) 
+}
+```
+
+The discretized convolution is "softer" than it should be:
+
+```{r, fig.width=5, fig.height=5, eval=F}
+magimage(diffrel,magmap=F,zlim=c(-1,1)*5e-2)
+```
+
+Note that our convolution kernel is the integrated flux of a Gaussian in each pixel. This is the correct kernel to use in the trivial case, as it perfectly reproduces the convolution of a point source in the center of the image. However, it cannot exactly convolve a point source located anywhere other than the exact center of the pixel, because that is where the convolution kernel is centered.
+
+Cappellari 2017 state that the use of an integrated convolution kernel (rather than the value of the function at the center of a pixel) is equivalent to an extra convolution by a boxcar filter. But each pixel in the image is convolved as if the flux were entirely contained at the center of the pixel, which is the opposite of convolution by a boxcar filter. The source of the error when discretizing convolution kernels as the integral of the distribution is the fact that barycenter of the flux is not at the center of the pixel. For a monotonically decreasing function (1D or 2D), the barycenter is always shifted from the pixel center slightly towards the peak of the distribution. This means that the convolution pushes the flux out slightly further from the center of the distribution than it should, and hence the resulting image is smoothed slightly more than it should be.
+
+Put another way, if you integrate until you reach half of the total flux within a given pixel, you will always stop before the middle of pixel. As a last interpretation, there are always subpixel flux gradients and therefore higher-order moments in the distribution, which are not accounted for in convolution.
+
+One solution suggested by Cappellari 2017 (and commonly used elsewhere, though not always intentionally) is to evaluate the kernel at the center of the pixel instead of integrating it:
+
+```{r}
+psfat = profitMakeModel(modellist = list(sersic = list(xcen = dim[1]/2, 
+        ycen = dim[2]/2, mag = 0, re = fwhm.psf/2, nser = 0.5, axrat = 1, 
+        ang = 0)), dim = dim, rough = TRUE)$z
+conv.at = list()
+diffrels.at = list()
+for(i in 1:nsrcs)
+{
+  conv.at[[i]] = profitConvolvePSF(src[[i]],psfat)
+  diffrels.at[[i]] = (conv.at[[i]]-conv.exact[[i]])/conv.exact[[i]]
+  print(diffrels.at[[i]][cens[1]+0:5,cens[2]])
+}
+```
+
+Curiously, this has the exact opposite effect: for a poorly resolved image the convolved image is too concentrated, and the residual alternates from positive to negative:
+
+```{r, fig.width=5, fig.height=5, eval=F}
+magimage(diffrels.at[[1]],magmap=F,zlim=c(-1,1)*5e-2)
+```
+
+However, it is true that for reasonably well-resolved galaxies (not smaller than the PSF), the residuals are considerably smaller than with the integrated PSF. How this generalizes to different profiles will be explored later. There are possible analytic solutions for Gaussian+exponential and exponential+exponential convolutions to be tested.
+
+A simple method to improve convolution accuracy is to finesample (oversample) the image and convolution kernel. Of course, this is only possible if the image and kernel are defined analytically, which would be the case if they are both ProFit models. Proceeding as per the example in profitBenchmark (this will take a few seconds):
+
+```{r}
+finesample=3L
+dimfine = finesample*dim
+psffine = profitCubaSersic(mag=0,re=finesample*fwhm.psf/2,nser=0.5,dim=dimfine)
+print(sum(psffine))
+srcfine = psffine
+convfine = profitConvolvePSF(srcfine, psffine)
+print(sum(convfine))
+```
+
+Compute the difference again:
+
+```{r}
+diffrelfine = (profitDownsample(convfine,finesample)-conv.exact[[refsrcidx]])/conv.exact[[refsrcidx]]
+print(diffrelfine[cens[1]+0:5,cens[2]])
+```
+
+The residuals are just like before, only they are smaller by approximately finesample^2:
+
+```{r, fig.width=5, fig.height=5, eval=F}
+magimage(diffrelfine,magmap=F,zlim=c(-1,1)*5e-2/finesample^2)
+print(diffrels[[refsrcidx]][cens[1]+0:5,cens[2]]/diffrelfine[cens[1]+0:5,cens[2]])
+```
+
+This is a convenient result, since we can predict the amount of finesampling required to achieve a given error. Unfortunately, in the case of brute force convolution, the computational cost scales with both the size of the image and the kernel, so the number of operations scales as finesample^4! That is not good. Can we improve on this?
+
+The answer is yes - by realizing that we don't actually need the finesampled, convolved image, we can reduce the scaling to only finesample^2 convolutions at the original image size with offset PSFs. Behold:
+
+```{r}
+subpsfs = list()
+subimgs = list()
+subrows = seq(1,to=dimfine[1],by=finesample)
+subcols = seq(1,to=dimfine[2],by=finesample)
+subcens = dimfine/2
+idx = 1
+conv.efficient = matrix(0,dim[1],dim[2])
+for(i in 1:finesample)
+{
+  xoffset = i - finesample/2 - 0.5
+  xrange = c(1,dimfine[1]) + xoffset
+  xrange[1] = max(1,xrange[1])
+  xrange[2] = min(dimfine[1],xrange[2])
+  xrange = xrange[1]:xrange[2]
+  for(j in 1:finesample)
+  {
+    yoffset = j - finesample/2 - 0.5
+    yrange = c(1,dimfine[2]) + yoffset
+    yrange[1] = max(1,yrange[1])
+    yrange[2] = min(dimfine[2],yrange[2])
+    yrange = yrange[1]:yrange[2]
+    # Integer offset of the previously finesampled PSF
+    # Which is a subpixel offset at the original image scale
+    subpsfs[[idx]] = matrix(0,dimfine[1],dimfine[2])
+    subpsfs[[idx]][xrange,yrange] = psffine[xrange-xoffset,yrange-yoffset]
+    subpsfs[[idx]] = profitDownsample(subpsfs[[idx]],finesample)
+    subimgs[[idx]] = psffine[subrows + i -1, subcols + j - 1]
+    conv.efficient = conv.efficient + profitConvolvePSF(subimgs[[idx]],subpsfs[[idx]])
+    idx = idx + 1
+  }
+}
+print(range(conv.efficient - profitDownsample(convfine,finesample)))
+```
+
+Now let's test non-circular Gaussians (not finished, stop here!):
+
+```{r}
+angs = c(psf=20,src=65)
+axrats = c(psf=0.8,src=0.4)
+fwhm.src=5
+fwhms = c(psf=fwhm.psf,src=fwhm.src)
+psf = profitCubaSersic(mag=0,re=fwhm.psf/2,nser=0.5,dim=dim,ang=angs["psf"], axrat=axrats["psf"])
+src = profitCubaSersic(mag=0,re=fwhm.src/2,nser=0.5,dim=dim,ang=angs["src"], axrat=axrats["src"])
+
+costh = cos((angs+90)*pi/180)
+sinth = sin((angs+90)*pi/180)
+
+fwhm.conv = c(x=sum(fwhms^2*costh*abs(costh)),
+              y=sum(fwhms^2*sinth*abs(sinth)))
+fwhm.conv = sign(fwhm.conv)*sqrt(abs(fwhm.conv))
+ang.conv = atan2(fwhm.conv["y"],fwhm.conv["x"])*180/pi-90
+
+conv = profitCubaSersic(mag=0,re=sqrt(fwhm.src/2,nser=0.5,dim=dim,ang=angs["src"], axrat=axrats["src"])
+
+```
+
+And exponential with Gaussian, or exponential with exponential (work in progress):
