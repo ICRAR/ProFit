@@ -140,7 +140,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
           }
           if(returnimages)
           {
-            images[[methodi]]
+            images[[methodi]] = imagei
           }
         }
         bench[[paste0(tprefix,prec)]][[methodi]] = tbest
