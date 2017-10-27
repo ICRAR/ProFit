@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -56,7 +57,13 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 
 	Image convolution(src_width, src_height);
 
+//#define PROFIT_BRUTE_OPTIMIZE
+#ifndef PROFIT_BRUTE_OPTIMIZE
 	auto krn_end = krn.getData().cend();
+#else
+	const auto &krn_data = krn.getData();
+	const size_t SRC_KRN_OFFSET = krn_half_width + krn_half_height*src_width;
+#endif
 	const auto &src_data = src.getData();
 	auto &out = convolution.getData();
 	const auto &mask_data = mask.getData();
@@ -81,33 +88,39 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 			}
 
 			double pixel = 0;
+
+#ifndef PROFIT_BRUTE_OPTIMIZE
 			auto krnPtr = krn_end - 1;
 			auto srcPtr2 = src_data.begin() + im_idx - krn_half_width - krn_half_height*src_width;
-
-//#define PROFIT_BRUTE_OPTIMIZE
-#ifndef PROFIT_BRUTE_OPTIMIZE
 			/* ... now loop around the kernel */
 			for (unsigned int l = 0; l < krn_height; l++) {
 
 				int src_j = (int)j + (int)l - (int)krn_half_height;
+			  // This looks pointless but seems to give ~5% speedups with GCC
+			  double buf = 0;
 				for (unsigned int k = 0; k < krn_width; k++) {
 
 					int src_i = (int)i + (int)k - (int)krn_half_width;
 
 					if( src_i >= 0 && (unsigned int)src_i < src_width &&
 					    src_j >= 0 && (unsigned int)src_j < src_height ) {
-						pixel +=  *srcPtr2 * *krnPtr;
+						buf +=  *srcPtr2 * *krnPtr;
 					}
 
 					srcPtr2++;
 					krnPtr--;
 				}
+				pixel += buf;
 				srcPtr2 += SRC_SKIP;
 			}
 #else
 			
 // Alternative version to above which is more complicated and difficult
 // to follow but should branch less often
+			size_t krnPtr = krn_data.size() - 1;
+			size_t srcPtr2 = im_idx;
+			bool suboffset = false;
+			
       unsigned int l_min = 0;
       unsigned int l_max = krn_height;
       unsigned int l_incr = 0;
@@ -116,14 +129,14 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
         l_min = krn_half_height - j;
         srcPtr2 += l_min*src_width;
         krnPtr -= l_min*krn_width;
-      }
-      // Maybe shouldn't be an else if we support krn > img size?
+      } // Maybe shouldn't be an else if we support krn > img size?
       else if((j + krn_half_height) > src_height)
       {
         l_max = src_height + krn_half_height - j;
         l_incr = krn_height - l_max;
       }
-			for (unsigned int l = l_min; l < l_max; l++) {
+
+			for (size_t l = l_min; l < l_max; l++) {
 			  
 	      unsigned int k_min = 0;
 	      unsigned int k_max = krn_width;
@@ -141,12 +154,21 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 	        k_max = src_width + krn_half_width - i;
 	        k_incr = krn_width - k_max;
 	      }
-				for (unsigned int k = k_min; k < k_max; k++) {
-					pixel +=  *srcPtr2 * *krnPtr;
-					srcPtr2++;
-					krnPtr--;
-				}
-				
+	      if(!suboffset && (srcPtr2 >= SRC_KRN_OFFSET))
+	      {
+          srcPtr2-=SRC_KRN_OFFSET;
+          suboffset = true;
+	      }
+	      const size_t k_n = k_max - k_min;
+	      // This looks pointless but seems to give ~25% speedups with GCC; vectorization?
+        double buf = 0;
+        for (size_t k = 0; k < k_n; k++) {
+		      buf += src_data[srcPtr2+k] * krn_data[krnPtr-k];
+		    }
+        pixel += buf;
+	      srcPtr2+=k_n;
+        krnPtr-=k_n;
+
 				srcPtr2+=k_incr;
 	      krnPtr-=k_incr;
 				srcPtr2 += SRC_SKIP;
