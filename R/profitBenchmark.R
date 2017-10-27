@@ -31,6 +31,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
     avail = profitAvailableConvolvers()
   } else {
     avail = profitAvailableIntegrators()
+    convolver = NULL
   }
   for(method in methods)
   {
@@ -98,10 +99,10 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
       }
       for(prec in precs)
       {
+        openclenv = bench[[paste0("env_",prec)]][[methodi]]
+        if(identical(openclenv,new("externalptr"))) openclenv=NULL
         if(benchconvolution)
         {
-          openclenv = bench[[paste0("env_",prec)]][[methodi]]
-          if(identical(openclenv,new("externalptr"))) openclenv=NULL
           convolver = profitMakeConvolver(method,
             image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusefftpsf,
             omp_threads=omp_threads, openclenv=openclenv)
@@ -114,15 +115,23 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
           calcregioni = NULL
           if(usecalcregion) calcregioni = calcregion
           timeinms = summary(proc.time())[["elapsed"]]
-          for(i in benchi)
+          if(benchconvolution)
           {
-            imagei = profitConvolve(convolver, image, psf, calcregion)
+            for(i in benchi)
+            {
+              imagei = profitConvolve(convolver, image, psf, calcregion)
+            }
+          } else {
+            for(i in benchi)
+            {
+              imagei = profitMakeModel(modellist,dim=dimimage,openclenv = openclenv, omp_threads = omp_threads)$z
+            }
           }
           timeinms = 1000*(summary(proc.time())[["elapsed"]] - timeinms)/nbench
           if(timeinms < tbest)
           {
             tbest = timeinms
-            bench[[paste0("convolver_",prec)]][[methodi]] = convolver
+            if(!is.null(convolver)) bench[[paste0("convolver_",prec)]][[methodi]] = convolver
             bench[[paste0("convolver_usecalcregion_",prec)]][[methodi]] = usecalcregion
           }
           if(doaccuracy)

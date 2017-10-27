@@ -100,7 +100,15 @@ for(finesample in c(1L:3L))
   model.image=profitMakeModel(model=model, dim=rep(200,2), finesample=finesample, returnfine=TRUE)$z
   psf=profitMakeGaussianPSF(fwhm=3*finesample,dim=rep(25*finesample + 1 - mod(finesample,2),2))
   
-  #Do some benchmarking:
+  # Benchmark model integration:
+  bench=profitBenchmark(model.image, modellist=model, nbench=nbench, openclenvs=openclenvs,
+    methods=profitAvailableIntegrators())
+
+  #Print relevant results
+  print(profitBenchmarkResultStripPointers(bench$result)[
+    c("name","env_name","version","dev_name",paste0("tinms.mean_",c("single","double")))])
+  
+  # Benchmark convolution:
   bench=profitBenchmark(model.image, psf=psf, nbench=nbench, openclenvs=openclenvs,
     methods=profitAvailableConvolvers())
   
