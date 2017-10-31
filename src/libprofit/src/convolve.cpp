@@ -130,7 +130,7 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
         srcPtr2 += l_min*src_width;
         krnPtr -= l_min*krn_width;
       } // Maybe shouldn't be an else if we support krn > img size?
-      else if((j + krn_half_height) > src_height)
+      else if((j + krn_half_height) >= src_height)
       {
         l_max = src_height + krn_half_height - j;
         l_incr = krn_height - l_max;
@@ -149,7 +149,7 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 					krnPtr -= k_min;
 	      }
 	      // Maybe shouldn't be an else if we support krn > img size?
-	      else if((i + krn_half_width) > src_width)
+	      else if((i + krn_half_width) >= src_width)
 	      {
 	        k_max = src_width + krn_half_width - i;
 	        k_incr = krn_width - k_max;
