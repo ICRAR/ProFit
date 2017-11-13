@@ -434,6 +434,12 @@ modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', ver
 # Finally, calcualte the likelihood and make a plot:
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
+
+# If you're brave and your software/drivers are configured correctly, try benchmarking with OpenCL and OpenMP:
+openclenvs = profitGetOpenCLEnvs(make.envs = TRUE)
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf, modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE, nbenchmark = 5L, benchconvmethods = profitAvailableConvolvers(), benchintmethods = profitAvailableIntegrators(), benchopenclenvs = openclenvs, printbenchmark = TRUE, omp_threads=4)
+
+profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=T)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
