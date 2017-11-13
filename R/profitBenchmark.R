@@ -13,8 +13,32 @@
   return(result)
 }
 
+profitBenchmarkResultBest <- function(result, precision="double")
+{
+  stopifnot(precision %in% c("single","double"))
+  time = result[,paste0("tinms.mean_",precision)]
+  best = which.min(time)
+  convolver = result[[best,paste0("convolver_",precision)]]
+  openclenv = NULL
+  usecalcregion = FALSE
+  if(identical(result$name[best],"opencl"))
+  {
+    openclenv = result[[best,paste0("env_",precision)]]
+  }
+  rval = list(
+    convolver=convolver,
+    dev_name=result$dev_name[best],
+    name=result$name[best],
+    openclenv=openclenv,
+    precision=precision,
+    time=time[[best]],
+    usecalcregion=usecalcregion
+  )
+  return(rval)
+}
+
 profitBenchmark <- function(image, methods=NULL, psf=NULL,
-  modellist=NULL, calcregion=NULL, nbench=1,
+  modellist=NULL, finesample=1L, calcregion=NULL, nbench=1,
   benchconvolution=is.matrix(psf),
   precisions=c("double"), omp_threads=1,
   openclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
@@ -100,7 +124,15 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
       for(prec in precs)
       {
         openclenv = bench[[paste0("env_",prec)]][[methodi]]
-        if(identical(openclenv,new("externalptr"))) openclenv=NULL
+        if(identical(openclenv,new("externalptr")))
+        {
+          if(startsWith(method,"opencl"))
+          {
+            stop(paste0("Error! OpenCL method='",method,"', env='",bench$env_name[[methodi]],
+              "', has null openclptr. Did you call profitGetOpenCLEnvs(make=TRUE)?"))
+          }
+          openclenv=NULL
+        }
         if(benchconvolution)
         {
           convolver = profitMakeConvolver(method,
@@ -119,12 +151,13 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
           {
             for(i in benchi)
             {
-              imagei = profitConvolve(convolver, image, psf, calcregion)
+              imagei = profitConvolve(convolver, image, psf, !calcregion)
             }
           } else {
             for(i in benchi)
             {
-              imagei = profitMakeModel(modellist,dim=dimimage,openclenv = openclenv, omp_threads = omp_threads)$z
+              imagei = profitMakeModel(modellist,dim=dimimage, finesample = finesample,
+                openclenv = openclenv, omp_threads = omp_threads)$z
             }
           }
           timeinms = 1000*(summary(proc.time())[["elapsed"]] - timeinms)/nbench
