@@ -152,60 +152,123 @@ This is a convenient result, since we can predict the amount of finesampling req
 The answer is yes - by realizing that we don't actually need the finesampled, convolved image, we can reduce the scaling to only finesample^2 convolutions at the original image size with offset PSFs. Behold:
 
 ```{r}
-subpsfs = list()
-subimgs = list()
-subrows = seq(1,to=dimfine[1],by=finesample)
-subcols = seq(1,to=dimfine[2],by=finesample)
-subcens = dimfine/2
-idx = 1
-conv.efficient = matrix(0,dim[1],dim[2])
-for(i in 1:finesample)
+
+convolve.fine <- function(imgfine, psffine, finesample)
 {
-  xoffset = i - finesample/2 - 0.5
-  xrange = c(1,dimfine[1]) + xoffset
-  xrange[1] = max(1,xrange[1])
-  xrange[2] = min(dimfine[1],xrange[2])
-  xrange = xrange[1]:xrange[2]
-  for(j in 1:finesample)
+  dim = dim(imgfine)
+  stopifnot(identical(dim(psffine),dim))
+  dim = dim/finesample
+  subpsfs = list()
+  subimgs = list()
+  subrows = seq(1,to=dimfine[1],by=finesample)
+  subcols = seq(1,to=dimfine[2],by=finesample)
+  idx = 1
+  conv.efficient = matrix(0,dim[1],dim[2])
+  for(i in 1:finesample)
   {
-    yoffset = j - finesample/2 - 0.5
-    yrange = c(1,dimfine[2]) + yoffset
-    yrange[1] = max(1,yrange[1])
-    yrange[2] = min(dimfine[2],yrange[2])
-    yrange = yrange[1]:yrange[2]
-    # Integer offset of the previously finesampled PSF
-    # Which is a subpixel offset at the original image scale
-    subpsfs[[idx]] = matrix(0,dimfine[1],dimfine[2])
-    subpsfs[[idx]][xrange,yrange] = psffine[xrange-xoffset,yrange-yoffset]
-    subpsfs[[idx]] = profitDownsample(subpsfs[[idx]],finesample)
-    subimgs[[idx]] = psffine[subrows + i -1, subcols + j - 1]
-    conv.efficient = conv.efficient + profitConvolvePSF(subimgs[[idx]],subpsfs[[idx]])
-    idx = idx + 1
+    xoffset = i - finesample/2 - 0.5
+    xrange = c(1,dimfine[1]) + xoffset
+    xrange[1] = max(1,xrange[1])
+    xrange[2] = min(dimfine[1],xrange[2])
+    xrange = xrange[1]:xrange[2]
+    for(j in 1:finesample)
+    {
+      yoffset = j - finesample/2 - 0.5
+      yrange = c(1,dimfine[2]) + yoffset
+      yrange[1] = max(1,yrange[1])
+      yrange[2] = min(dimfine[2],yrange[2])
+      yrange = yrange[1]:yrange[2]
+      # Integer offset of the previously finesampled PSF
+      # Which is a subpixel offset at the original image scale
+      subpsfs[[idx]] = matrix(0,dimfine[1],dimfine[2])
+      subpsfs[[idx]][xrange,yrange] = psffine[xrange-xoffset,yrange-yoffset]
+      subpsfs[[idx]] = profitDownsample(subpsfs[[idx]],finesample)
+      subimgs[[idx]] = imgfine[subrows + i -1, subcols + j - 1]
+      conv.efficient = conv.efficient + profitConvolvePSF(subimgs[[idx]],subpsfs[[idx]])
+      idx = idx + 1
+    }
   }
+  return(conv.efficient)
 }
+conv.efficient = convolve.fine(srcfine,psffine,finesample)
 print(range(conv.efficient - profitDownsample(convfine,finesample)))
 ```
 
-Now let's test non-circular Gaussians (not finished, stop here!):
+Now a lot of tests for non-circular Gaussians, which also have an analytic (but more complicated) solution:
 
 ```{r}
 angs = c(psf=20,src=65)
 axrats = c(psf=0.8,src=0.4)
-fwhm.src=5
-fwhms = c(psf=fwhm.psf,src=fwhm.src)
-psf = profitCubaSersic(mag=0,re=fwhm.psf/2,nser=0.5,dim=dim,ang=angs["psf"], axrat=axrats["psf"])
-src = profitCubaSersic(mag=0,re=fwhm.src/2,nser=0.5,dim=dim,ang=angs["src"], axrat=axrats["src"])
-
-costh = cos((angs+90)*pi/180)
-sinth = sin((angs+90)*pi/180)
-
-fwhm.conv = c(x=sum(fwhms^2*costh*abs(costh)),
-              y=sum(fwhms^2*sinth*abs(sinth)))
-fwhm.conv = sign(fwhm.conv)*sqrt(abs(fwhm.conv))
-ang.conv = atan2(fwhm.conv["y"],fwhm.conv["x"])*180/pi-90
-
-conv = profitCubaSersic(mag=0,re=sqrt(fwhm.src/2,nser=0.5,dim=dim,ang=angs["src"], axrat=axrats["src"])
-
+for(fwhm.src in c(1,5))
+{
+  fwhms = c(psf=fwhm.psf,src=fwhm.src)
+  psf = profitCubaSersic(mag=0,re=fwhm.psf/2,nser=0.5,dim=dim,ang=angs["psf"], axrat=axrats["psf"])
+  src = profitCubaSersic(mag=0,re=fwhm.src/2,nser=0.5,dim=dim,ang=angs["src"], axrat=axrats["src"])
+  
+  costh = cos((angs+90)*pi/180)
+  sinth = sin((angs+90)*pi/180)
+  
+  cov = list()
+  
+  fwhmtosigma = 2*sqrt(2*log(2))
+  
+  for(i in c("psf","src"))
+  {
+    cov[[i]] = matrix(c(costh[i],-sinth[i],sinth[i],costh[i]),2,2) %*% diag(fwhms[i]*c(1,axrats[i])) 
+    cov[[i]] = cov[[i]] %*% t(cov[[i]])
+  }
+  
+  eig.conv = eigen(cov$psf+cov$src)
+  
+  mineig = which.min(eig.conv$values)
+  fwhm.conv = sqrt(eig.conv$values[3-mineig])
+  axrat.conv=sqrt(min(eig.conv$values)/max(eig.conv$values))
+  mineig = which.min(eig.conv$values)
+  ang.conv = atan2(eig.conv$vectors[mineig,2],eig.conv$vectors[mineig,1])*180/pi
+  
+  conv.exact = profitCubaSersic(mag=0,re=fwhm.conv/2,nser=0.5,dim=dim,ang=ang.conv, axrat=axrat.conv)
+  conv = profitConvolvePSF(src,psf)
+  
+  print("Absolute error, integrated PSF:")
+  print(range(conv - conv.exact))
+  print("Relative error, integrated PSF:")
+  print(range((conv - conv.exact)/conv.exact))
+  
+  psfat = profitMakeModel(modellist = list(sersic = list(xcen = dim[1]/2, 
+          ycen = dim[2]/2, mag = 0, re = fwhm.psf/2, nser = 0.5, axrat = axrats["psf"], 
+          ang = angs["psf"])), dim = dim, rough = TRUE,remax = Inf)$z
+  conv.at = profitConvolvePSF(src,psfat)
+  print(range(conv.at - conv.exact))
+  
+  print("Absolute error, non-integrated PSF:")
+  print(range(conv.at - conv.exact))
+  print("Relative error, non-integrated PSF:")
+  print(range((conv.at - conv.exact)/conv.exact))
+  
+  psffine = profitCubaSersic(mag=0,re=fwhm.psf/2*finesample,nser=0.5,dim=dim*finesample,ang=angs["psf"], axrat=axrats["psf"])
+  srcfine = profitCubaSersic(mag=0,re=fwhm.src/2*finesample,nser=0.5,dim=dim*finesample,ang=angs["src"], axrat=axrats["src"])
+  convfine = profitConvolvePSF(srcfine,psffine)
+  convfinedown = profitDownsample(convfine,finesample)
+  
+  print("Absolute error, integrated PSF, 3x fine:")
+  print(range(convfinedown - conv.exact))
+  print("Relative error, integrated PSF, 3x fine:")
+  print(range((convfinedown - conv.exact)/conv.exact))
+  
+  conv.efficient = convolve.fine(srcfine,psffine,finesample)
+  print("Absolute error, efficient fine sampled convolution:")
+  print(range(conv.efficient - profitDownsample(convfine,finesample)))
+  
+  psfatfine = profitMakeModel(modellist = list(sersic = list(xcen = dim[1]*finesample/2, 
+          ycen = dim[2]*finesample/2, mag = 0, re = fwhm.psf*finesample/2, nser = 0.5, axrat = axrats["psf"], 
+          ang = angs["psf"])), dim = dim*finesample, rough = TRUE,remax = Inf)$z
+  
+  convfineatdown = convolve.fine(srcfine,psfatfine,finesample)
+  print("Absolute error, non-integrated PSF, 3x fine:")
+  print(range(convfineatdown - conv.exact))
+  print("Relative error, non-integrated PSF, 3x fine:")
+  print(range((convfineatdown - conv.exact)/conv.exact))
+}
 ```
-
+As you can see, the non-integrated kernel is more accurate for extended sources but has larger absolute errors for marginally-resolved sources. Having said that, even for objects smaller than the PSF, the accuracy of the non-integrated kernel improves much more quickly with fine sampling.
 And exponential with Gaussian, or exponential with exponential (work in progress):
