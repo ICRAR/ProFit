@@ -151,7 +151,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
           {
             for(i in benchi)
             {
-              imagei = profitConvolve(convolver, image, psf, !calcregion)
+              imagei = profitConvolve(convolver, image, psf, if(is.null(calcregion)==FALSE){!calcregion}else{NULL})
             }
           } else {
             for(i in benchi)
