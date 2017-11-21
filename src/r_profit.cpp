@@ -77,6 +77,12 @@ void _read_bool(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int
 		else if( TYPEOF(element) == INTSXP ) {
 			p->parameter(name, (bool)INTEGER(element)[idx]);
 		}
+		else if( TYPEOF(element) == REALSXP ) {
+			p->parameter(name, (bool)REAL(element)[idx]);
+		}
+		else if( TYPEOF(element) == INTSXP ) {
+			p->parameter(name, (bool)INTEGER(element)[idx]);
+		}
 		else {
 			Rf_error("Parameter %s[%u] should be of boolean or integer type", name, idx);
 		}
@@ -112,7 +118,7 @@ void _read_real(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int
 
 static
 void list_to_radial(SEXP radial_list, shared_ptr<Profile> p, unsigned int idx) {
-	p->parameter("adjust", true);
+	// p->parameter("adjust", true);
 	_read_real(p, radial_list, "xcen",  idx);
 	_read_real(p, radial_list, "ycen",  idx);
 	_read_real(p, radial_list, "mag",   idx);
@@ -121,6 +127,7 @@ void list_to_radial(SEXP radial_list, shared_ptr<Profile> p, unsigned int idx) {
 	_read_real(p, radial_list, "box",   idx);
 
 	_read_bool(p, radial_list, "rough",          idx);
+	_read_bool(p, radial_list, "adjust",         idx);
 	_read_real(p, radial_list, "acc",            idx);
 	_read_real(p, radial_list, "rscale_switch",  idx);
 	_read_uint(p, radial_list, "resolution",     idx);
