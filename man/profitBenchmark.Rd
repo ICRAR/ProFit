@@ -1,5 +1,5 @@
-\name{profitBenchmarkConvolvers}
-\alias{profitBenchmarkConvolvers}
+\name{profitBenchmark}
+\alias{profitBenchmark}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Benchmark convolution of an image with a kernel (usually a point spread function) using libprofit convolvers.
@@ -8,7 +8,7 @@ Benchmark convolution of an image with a kernel (usually a point spread function
 This function will benchmark convolution of an image with a kernel (usually a point spread function) using various libprofit convolvers. It returns a list of convolvers and the name of the fastest method and can output more detailed results, including measuring differences with a reference method (usually brute force convolution at double precision). It is called by \code{\link{profitSetupData}} by default and the convolver is used in \code{\link{profitMakeModel}}.
 }
 \usage{
-profitBenchmarkConvolvers(image, psf, calcregion=NULL, nbench=1,
+profitBenchmark(image, psf, calcregion=NULL, nbench=1,
   methods = profitAvailableConvolvers(), reference = "brute",
   fft_effort=0, omp_threads=1, openclenvs = list(),
   returnimages = FALSE)
