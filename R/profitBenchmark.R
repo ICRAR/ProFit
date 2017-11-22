@@ -77,8 +77,13 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
     dimimage = dim(image)
     benchi = 1:ceiling(nbench)
     doaccuracy = reference %in% bench$name
-    availusecalcregions = c(FALSE)
-    if(!is.null(calcregion)) availusecalcregions = c(availusecalcregions,TRUE)
+    availusecalcregions = FALSE
+    if(!is.null(calcregion))
+    {
+      availusecalcregions = c(availusecalcregions,TRUE)
+      # libprofit needs a negative mask
+      calcregion = !calcregion
+    }
     
     ptrvec = c()
     for(i in 1:nmethods) ptrvec = c(ptrvec, new("externalptr"))
@@ -151,7 +156,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
           {
             for(i in benchi)
             {
-              imagei = profitConvolve(convolver, image, psf, if(is.null(calcregion)==FALSE){!calcregion}else{NULL})
+              imagei = profitConvolve(convolver, image, psf, calcregioni)
             }
           } else {
             for(i in benchi)
