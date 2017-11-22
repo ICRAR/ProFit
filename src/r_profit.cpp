@@ -80,9 +80,6 @@ void _read_bool(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int
 		else if( TYPEOF(element) == REALSXP ) {
 			p->parameter(name, (bool)REAL(element)[idx]);
 		}
-		else if( TYPEOF(element) == INTSXP ) {
-			p->parameter(name, (bool)INTEGER(element)[idx]);
-		}
 		else {
 			Rf_error("Parameter %s[%u] should be of boolean or integer type", name, idx);
 		}
