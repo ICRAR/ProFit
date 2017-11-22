@@ -10,9 +10,14 @@ This is a utility function to get the user inputs in the format required for mod
 \usage{
 profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, priors,
 intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE,
-magzero=0, algo.func='LA', like.func="norm", magmu=FALSE, nbenchmarkconv=0L,
-benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE,
-openclenv = NULL, omp_threads = NULL)
+magzero=0, algo.func='LA', like.func="norm", magmu=FALSE, verbose=FALSE,
+omp_threads = NULL, openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
+nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
+benchintmethods=c("brute"), benchconvmethods = c("brute","fft"),
+benchprecisions="double", benchconvprecisions=benchprecisions,
+benchintprecisions=benchprecisions,
+benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
+printbenchmark=FALSE, printbenchint=printbenchmark, printbenchconv=printbenchmark)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -72,20 +77,56 @@ Character string specifying the likelihood distribution function to use. Chi-Squ
   \item{magmu}{
 Logical vector. If TRUE then the mag parameter in the input \option{modellist} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.
 }
-  \item{nbenchmarkconv}{
-  Integer; the number of times to benchmark the speed of the available convolution methods. The results of this benchmarking are saved, along with the optimal benchmarking method and any additional data required for efficient convolution (such as the FFT of the PSF, if it is not variable). Default 0 means no benchmarking is done, and brute force convolution is always used.
-  }
-  \item{benchmarkconvmethods}{
-  List of strings specifying which convolution methods to benchmark. See \code{profitBenchmarkConv} for details.
-}
   \item{verbose}{
   Logical; if TRUE then the value of parameters currently being assessed will be printed to screen. Useful for prototyping, but typically this produces a lot of screen output and can slow down the fitting process.
+  }
+  \item{omp_threads}{
+  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
   }
   \item{openclenv}{
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
   }
-  \item{omp_threads}{
-  An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
+  \item{openclenvint}{
+    The OpenCL environment to use for integrating profiles. Defaults to the value specified in \option{openclenv}.
+  }
+  \item{openclenvconv}{
+    The OpenCL environment to use for PSF convolution. Defaults to the value specified in \option{openclenv}.
+  }
+  \item{nbenchmark}{
+  Integer; the number of times to benchmark the speed of the available convolution and integration methods. The results of this benchmarking are saved, along with the optimal method.
+  }
+  \item{nbenchint}{
+  Integer; the number of times to benchmark the speed of the available profile integration methods. The results of this benchmarking are saved, along with the optimal benchmarking method. Defaults to the value specified in \option{nbenchmark}.
+  }
+  \item{nbenchconv}{
+  Integer; the number of times to benchmark the speed of the available convolution methods. The results of this benchmarking are saved, along with the optimal method and any additional data required for efficient convolution (such as the FFT of the PSF, if it is not variable). Defaults to the value specified in \option{nbenchmark}.
+  }
+  \item{benchconvmethods}{
+  List of strings specifying which profile integration methods to benchmark. See \code{profitBenchmark} for details.
+}
+  \item{benchconvmethods}{
+  List of strings specifying which convolution methods to benchmark. See \code{profitBenchmark} for details.
+}
+  \item{benchprecisions}{
+  List of floating point precisions to benchmark. Available options are "single" and "double". Defaults to "double", which should be used unless you are certain that single-precision roundoff errors are not important.
+}
+  \item{benchintprecisions}{
+  List of floating point precisions to benchmark profile integration with. Available options are "single" and "double". Defaults to \option{benchprecisions}.
+}
+  \item{benchconvprecisions}{
+  List of floating point precisions to benchmark convolution with. Available options are "single" and "double". Defaults to \option{benchprecisions}.
+}
+  \item{benchopenclenvs}{
+  List of OpenCL environments to benchmark. Defaults to all available environments. The optimal environment will then be used for \option{openclenvint} and \option{openclenvconv}, overriding any values set there.
+}
+  \item{printbenchmark}{
+  Logical; flag to output a summary of benchmarking results. Default false.
+  }
+  \item{printbenchmarkint}{
+  Logical; flag to output a summary of profile integration benchmarking results. Defaults to \option{printbenchmark}.
+  }
+  \item{printbenchmarkconv}{
+  Logical; flag to output a summary of convolution benchmarking results. Defaults to \option{printbenchmark}.
   }
 }
 \details{
@@ -308,8 +349,8 @@ List; complex structure of class profit.data containing:
 \item{region}{Logical matrix specifying which pixels are inside the fitting region.}
 \item{calcregion}{Logical matrix specifying which pixels should have their model values calculated and be convolved by the \option{psf}.}
 \item{usecalcregion}{Logical specifying whether the calcregion matrix should be used; it may be more efficient not to use it.}
-\item{convusecalcregion}{Logical specifying whether only the calcregion should be considered during convolution.}
-\item{convopt}{List specifying the preferred convolution method (Bruteconv, FFTconv, FFTWconv) and additional items to aid future convolution calculations (only relevant for FFTconv and FFTWconv). When \option{nbenchmark}=0L then the default of Bruteconv is assumed.}
+\item{convopt}{List including the optimal convolver object and its OpenCL environment (if any).}
+\item{benches}{List containing benchmarking results (if any).}
 \item{tofit}{The specified \option{tofit} list.}
 \item{tolog}{The specified \option{tolog} list.}
 \item{priors}{The specified \option{priors} function.}
@@ -439,7 +480,7 @@ profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 openclenvs = profitGetOpenCLEnvs(make.envs = TRUE)
 Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf, modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE, nbenchmark = 5L, benchconvmethods = profitAvailableConvolvers(), benchintmethods = profitAvailableIntegrators(), benchopenclenvs = openclenvs, printbenchmark = TRUE, omp_threads=4)
 
-profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=T)
+profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

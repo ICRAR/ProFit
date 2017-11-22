@@ -1,14 +1,14 @@
 profitSetupData=function(image, region, sigma, segim, mask, modellist,
   tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf),
   finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
-  like.func="norm", magmu=FALSE, verbose=FALSE, nbenchmark=0L,
-  nbenchint=nbenchmark, nbenchconv=nbenchmark, benchintmethods=c("brute"),
-  benchconvmethods = c("brute","fft"), benchprecisions="double",
-  benchconvprecisions=benchprecisions, benchintprecisions=benchprecisions,
-  benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
+  like.func="norm", magmu=FALSE, verbose=FALSE, omp_threads = NULL,
   openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
-  printbenchmark=FALSE, printbenchint=printbenchmark, printbenchconv=printbenchmark,
-  omp_threads = NULL)
+  nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
+  benchintmethods=c("brute"), benchconvmethods = c("brute","fft"),
+  benchprecisions="double", benchconvprecisions=benchprecisions,
+  benchintprecisions=benchprecisions,
+  benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
+  printbenchmark=FALSE, printbenchint=printbenchmark, printbenchconv=printbenchmark)
 {
   profitCheckFinesample(finesample)
   stopifnot(all(is.integer(c(nbenchconv,nbenchint))) && nbenchint >= 0L && nbenchconv >=0L)
@@ -131,6 +131,15 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   
   calcregion = profitUpsample(region,finesample)
   
+  if (!is.null(openclenv)) {
+    if (class(openclenv) == "externalptr") {
+      openclenv = openclenv
+    }
+    else if (identical(openclenv,"get")) {
+      openclenv = profitOpenCLEnv()
+    }
+  }
+  
   if(haspsf)
   {
     psfpad = floor(dim(psf)/2)
@@ -169,6 +178,8 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     print(paste0("Best integrator: '", bestint$name, "' device: '", bestint$dev_name,
       "', t=[",sprintf("%.2e",bestint$time)," ms]"))
     openclenv_int = bestint$openclenv
+  } else {
+    if(identical(openclenv_int,"get")) openclenv_int = openclenv
   }
   
   # Temporary - will need other items in convopt in the future, for finesampling/efficient complex FFT(W)s
@@ -210,7 +221,16 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
       # TODO: Test this
       convpsf = psf
       if(finesample > 1) convpsf = profitUpsample(psf, finesample)
-      convopt$convolver = profitMakeConvolver("brute",dim(modelimg),psf = convpsf)
+      if(identical(openclenv,"get")) openclenv_int = profitOpenCLEnv()
+      if(is.character(benchconvmethods) && length(benchconvmethods) > 0)
+      {
+        convmethod = benchconvmethods[1]
+      } else {
+        if(is.null(openclenv_conv)) convmethod = "brute"
+        else convmethod = "opencl"
+      }
+      convopt$convolver = profitMakeConvolver(convmethod,dim(modelimg),psf = convpsf,
+        openclenv=openclenv_conv)
     }
   }
   
@@ -221,14 +241,6 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   parm.names=names(init)
   mon.names=c("LL","LP","time")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
-  if (!is.null(openclenv)) {
-    if (class(openclenv) == "externalptr") {
-      openclenv = openclenv
-    }
-    else if (openclenv == "get") {
-      openclenv = profitOpenCLEnv()
-    }
-  }
   profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist,
                    psf=psf, psftype=psftype, fitpsf=fitpsf,
                    algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))),
