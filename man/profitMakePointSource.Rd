@@ -78,7 +78,7 @@ magimage(psf)
 angles = seq(0,180,by=90/4)
 par(mfrow=c(3,3))
 for(ang in angles) {
-  psf = round(profitMakePointSource(mag=0,model=list(
+  psf = round(profitMakePointSource(mag=0,modellist=list(
     sersic=list(re=2,nser=0.5,mag=0,axrat=0.5,ang=ang)), 
     image=matrix(0,15,15)),20)
   print(max(psf))
@@ -88,7 +88,7 @@ par(mfrow=c(1,1))
 
 # Now interpolate the last empirical PSF (less accurate than creating it from scratch):
 
-profitMakePointSource(xcen=7,ycen=7,mag=0,psf=psf,image=image,model=NULL, plot=TRUE)
+profitMakePointSource(xcen=7,ycen=7,mag=0,psf=psf,image=image,modellist=NULL, plot=TRUE)
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
