@@ -202,14 +202,22 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
   return(rv)
 }
 
-profitBenchmarkResultStripPointers <- function(benchmarks)
+profitBenchmarkResultStripPointers <- function(dataframe, colnames=as.vector(
+  outer(c("single","double"),c("env","convolver"),paste,sep="_")))
 {
-  for(prec in c("single","double"))
+  stopifnot(is.data.frame(dataframe))
+  isnumeric = is.numeric(colnames)
+  ischaracter = is.character(colnames)
+  ncols = ncol(dataframe)
+  nrows = nrow(dataframe)
+  allcols = colnames(dataframe)
+  for(cname in colnames)
   {
-    for(name in c("env","convolver"))
+    if((is.numeric && (cname >= 1) && (cname <= ncols)) || 
+      (ischaracter && cname %in% allcols))
     {
-      benchmarks[[paste0(name,"_",prec)]] = NULL
+      dataframe[[cname]] = as.list(capture.output(print(dataframe[[cname]]))[seq(2,3*nrows,by=3)])
     }
   }
-  return(benchmarks)
+  return(dataframe)
 }
