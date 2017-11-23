@@ -42,7 +42,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
   benchconvolution=is.matrix(psf),
   precisions=c("double"), omp_threads=1,
   openclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
-  reference = "brute", reusefftpsf = TRUE, fft_effort=0,
+  reference = "brute", reusepsffft = TRUE, fft_effort=0,
   returnimages = FALSE)
 {
   stopifnot(is.data.frame(openclenvs))
@@ -203,7 +203,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
 }
 
 profitBenchmarkResultStripPointers <- function(dataframe, colnames=as.vector(
-  outer(c("single","double"),c("env","convolver"),paste,sep="_")))
+  outer(c("env","convolver"),c("single","double"),paste,sep="_")))
 {
   stopifnot(is.data.frame(dataframe))
   isnumeric = is.numeric(colnames)
@@ -213,7 +213,7 @@ profitBenchmarkResultStripPointers <- function(dataframe, colnames=as.vector(
   allcols = colnames(dataframe)
   for(cname in colnames)
   {
-    if((is.numeric && (cname >= 1) && (cname <= ncols)) || 
+    if((isnumeric && (cname >= 1) && (cname <= ncols)) || 
       (ischaracter && cname %in% allcols))
     {
       dataframe[[cname]] = as.list(capture.output(print(dataframe[[cname]]))[seq(2,3*nrows,by=3)])

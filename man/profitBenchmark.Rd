@@ -13,7 +13,7 @@ profitBenchmark(image, methods=NULL, psf=NULL,
   benchconvolution=is.matrix(psf),
   precisions=c("double"), omp_threads=1,
   openclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
-  reference = "brute", reusefftpsf = TRUE, fft_effort=0,
+  reference = "brute", reusepsffft = TRUE, fft_effort=0,
   returnimages = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -54,7 +54,7 @@ Integer; the number of times to benchmark each method. Repeated convolutions can
   \item{reference}{
 String; the method to use as the reference result for comparing the accuracy of all other methods. This comparison is not done if reference is not contain in \option{methods}.
 }
-  \item{refftpsf}{
+  \item{reusepsffft}{
 Logical specifying whether to re-do the PSF FFT every iteration, which would be necessary if one is fitting the PSF.
 }
   \item{fft_effort}{
