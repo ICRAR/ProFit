@@ -86,10 +86,10 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
   \item{openclenv}{
   If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
   }
-  \item{openclenvint}{
+  \item{openclenv_int}{
     The OpenCL environment to use for integrating profiles. Defaults to the value specified in \option{openclenv}.
   }
-  \item{openclenvconv}{
+  \item{openclenv_conv}{
     The OpenCL environment to use for PSF convolution. Defaults to the value specified in \option{openclenv}.
   }
   \item{nbenchmark}{
@@ -101,7 +101,7 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
   \item{nbenchconv}{
   Integer; the number of times to benchmark the speed of the available convolution methods. The results of this benchmarking are saved, along with the optimal method and any additional data required for efficient convolution (such as the FFT of the PSF, if it is not variable). Defaults to the value specified in \option{nbenchmark}.
   }
-  \item{benchconvmethods}{
+  \item{benchintmethods}{
   List of strings specifying which profile integration methods to benchmark. See \code{profitBenchmark} for details.
 }
   \item{benchconvmethods}{
@@ -122,10 +122,10 @@ Logical vector. If TRUE then the mag parameter in the input \option{modellist} l
   \item{printbenchmark}{
   Logical; flag to output a summary of benchmarking results. Default false.
   }
-  \item{printbenchmarkint}{
+  \item{printbenchint}{
   Logical; flag to output a summary of profile integration benchmarking results. Defaults to \option{printbenchmark}.
   }
-  \item{printbenchmarkconv}{
+  \item{printbenchconv}{
   Logical; flag to output a summary of convolution benchmarking results. Defaults to \option{printbenchmark}.
   }
 }
