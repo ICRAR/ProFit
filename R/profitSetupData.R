@@ -203,7 +203,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     {
       benches$benchconv = profitBenchmark(image = modelimg$z, psf=psf,
         nbench = nbenchconv, calcregion = benchregion, 
-        reusefftpsf = !fitpsf, methods = benchconvmethods,
+        reusepsffft = !fitpsf, methods = benchconvmethods,
         openclenvs = benchopenclenvs, omp_threads = omp_threads)
   
       if(printbenchconv)

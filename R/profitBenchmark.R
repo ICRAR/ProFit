@@ -141,7 +141,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
         if(benchconvolution)
         {
           convolver = profitMakeConvolver(method,
-            image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusefftpsf,
+            image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusepsffft,
             omp_threads=omp_threads, openclenv=openclenv)
         }
         if(identical(bench$name[[methodi]],"fft")) usecalcregions = FALSE
