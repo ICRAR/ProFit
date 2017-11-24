@@ -50,7 +50,7 @@ The above might work with different versions of R (fairly likely) and different 
 
 #### Source Install
 
-If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch. You need a version of GCC or Clang that supports vaguely modern C++11 features. For Linux users this should be the case for any OS installed in the last 5 years, but for OSX the tool chain tends to be a fair amount older. If you have 10.9 (Mavericks) or newer and the associated X-Code (6+) then you should probably be fine. Other options might be to install a set of more recent tools from Homebrew (see instructions on installing a more modern Clang in the OpenCP and OpenMP document).
+If you do have the build tools, a development version of R, useful permissions, and a bit of bravery then you will be able to install the latest variants directly from the main ICRAR GitHub branch. You need a version of GCC or Clang that supports vaguely modern C++11 features. For Linux users this should be the case for any OS installed in the last 5 years, but for OSX the tool chain tends to be a fair amount older. If you have 10.9 (Mavericks) or newer and the associated X-Code (6+) then you should probably be fine. Other options might be to install a set of more recent tools from Homebrew (see instructions on installing a more modern Clang in the OpenCLMaybe 0.0 and OpenMP document).
 
 First you should make sure you have a sensible looking Makevars file in ~/.R/Makevars:
 
@@ -171,6 +171,10 @@ This package is designed to offer a fully featured Bayesian interface to galaxy 
 ## Contributors
 
 A.S.G. Robotham, D. Taranu, R. Tobar
+
+To see where our efforts have gone, check out our gource video!
+
+https://www.dropbox.com/s/75kdcx57cwka01m/gource_comp.mp4?dl=0
 
 ## License
 
