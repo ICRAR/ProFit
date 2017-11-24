@@ -48,6 +48,11 @@ matrix:
 # To build the vignettes we need rmarkdown
 r_packages: rmarkdown
 
+# The pracma binary uploaded to CRAN is for R 3.4.3 (a pre-release as of this writing),
+# and therefore we fail with WARNINGs about the package being compiled for a different R version
+before_script:
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then Rscript -e "install.packages('pracma', type = 'source')"; fi
+
 # Additional packages that are not fetched from CRAN
 # Care must be taken to specify the packages in their dependency order
 bioc_packages: EBImage
