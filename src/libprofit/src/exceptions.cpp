@@ -30,11 +30,9 @@
 #include "profit/exceptions.h"
 
 
-using namespace std;
-
 namespace profit {
 
-invalid_parameter::invalid_parameter(const string &what_arg) :
+invalid_parameter::invalid_parameter(const std::string &what_arg) :
 	exception(),
 	m_what(what_arg)
 {
@@ -50,7 +48,7 @@ const char *invalid_parameter::what() const throw() {
 }
 
 #ifdef PROFIT_OPENCL
-opencl_error::opencl_error(const string &what_arg) :
+opencl_error::opencl_error(const std::string &what_arg) :
 	exception(),
 	m_what(what_arg)
 {
@@ -65,5 +63,23 @@ const char *opencl_error::what() const throw() {
 	return m_what.c_str();
 }
 #endif /* PROFIT_OPENCL */
+
+
+#ifdef PROFIT_FFTW
+fft_error::fft_error(const std::string &what_arg) :
+	exception(),
+	m_what(what_arg)
+{
+	// no-op
+}
+
+fft_error::~fft_error() throw () {
+	// no-op
+}
+
+const char *fft_error::what() const throw() {
+	return m_what.c_str();
+}
+#endif /* PROFIT_FFTW */
 
 } /* namespace profit */

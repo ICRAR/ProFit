@@ -39,8 +39,6 @@
 #include "profit/radial.h"
 #include "profit/utils.h"
 
-using namespace std;
-
 namespace profit
 {
 
@@ -56,6 +54,8 @@ void RadialProfile::_image_to_profile_coordinates(double x, double y, double &x_
 double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1,
                                       unsigned int recur_level, unsigned int max_recursions,
                                       unsigned int resolution) {
+
+	using std::abs;
 
 	double xbin = (x1-x0) / resolution;
 	double ybin = (y1-y0) / resolution;
@@ -78,10 +78,10 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 #endif
 
 	/* The middle X/Y value is used for each pixel */
-	vector<tuple<double, double>> subsample_points;
+	std::vector<std::tuple<double, double>> subsample_points;
 	x = x0;
 
-	vector<unsigned int> idxs(resolution * resolution);
+	std::vector<unsigned int> idxs(resolution * resolution);
 	if( recurse ) {
 		for(i=0; i < resolution; i++) {
 			x += half_xbin;
@@ -95,7 +95,7 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 				double delta_y_prof = (-xbin*this->_sin_ang + ybin*this->_cos_ang)/this->axrat;
 				testval = this->evaluate_at(abs(x_prof), abs(y_prof) + abs(delta_y_prof));
 				if( abs(testval/subval - 1.0) > this->acc ) {
-					subsample_points.push_back(make_tuple(x, y));
+					subsample_points.push_back(std::make_tuple(x, y));
 				}
 				else {
 					total += subval;
@@ -121,8 +121,8 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 	}
 
 	for(auto &point: subsample_points) {
-		double x = get<0>(point);
-		double y = get<1>(point);
+		double x = std::get<0>(point);
+		double y = std::get<1>(point);
 		total += this->subsample_pixel(x - half_xbin, x + half_xbin,
 		                               y - half_ybin, y + half_ybin,
 		                               recur_level + 1, max_recursions,
@@ -149,7 +149,7 @@ void RadialProfile::initial_calculations() {
 	double box = this->box + 2;
 	double r_box = M_PI * box / (2*beta(1/box, 1/box));
 	double lumtot = this->get_lumtot(r_box);
-	this->_ie = pow(10, -0.4*(this->mag - this->model.magzero))/lumtot;
+	this->_ie = std::pow(10, -0.4*(this->mag - this->model.magzero))/lumtot;
 
 	/*
 	 * Optionally adjust the user-given rscale_switch and resolution parameters
@@ -167,9 +167,9 @@ void RadialProfile::initial_calculations() {
 		 * Calculate a bound, adaptive upscale
 		 */
 		unsigned int resolution;
-		resolution = (unsigned int)ceil(160 / (this->rscale_switch * this->rscale));
+		resolution = (unsigned int)std::ceil(160 / (this->rscale_switch * this->rscale));
 		resolution += resolution % 2;
-		resolution = max(4, min(16, (int)resolution));
+		resolution = std::max(4,std:: min(16, (int)resolution));
 		this->resolution = resolution;
 
 		/*
@@ -192,9 +192,9 @@ void RadialProfile::initial_calculations() {
 	 *
 	 * In galfit the angle started from the Y image axis.
 	 */
-	double angrad = fmod(this->ang + 90, 360.) * M_PI / 180.;
-	this->_cos_ang = cos(angrad);
-	this->_sin_ang = sin(angrad);
+	double angrad = std::fmod(this->ang + 90, 360.) * M_PI / 180.;
+	this->_cos_ang = std::cos(angrad);
+	this->_sin_ang = std::sin(angrad);
 
 }
 
@@ -231,7 +231,7 @@ void RadialProfile::subsampling_params(double x, double y,
 /**
  * The main profile evaluation function
  */
-void RadialProfile::evaluate(vector<double> &image) {
+void RadialProfile::evaluate(std::vector<double> &image) {
 
 	/*
 	 * Perform all the pre-calculations needed by the radial profiles
@@ -242,7 +242,7 @@ void RadialProfile::evaluate(vector<double> &image) {
 	 */
 	this->initial_calculations();
 
-	stats = make_shared<RadialProfileStats>();
+	stats = std::make_shared<RadialProfileStats>();
 #ifdef PROFIT_DEBUG
 	n_integrations.clear();
 #endif /* PROFIT_DEBUG */
@@ -268,7 +268,7 @@ void RadialProfile::evaluate(vector<double> &image) {
 			evaluate_opencl<float>(image);
 		}
 	} catch (const cl::Error &e) {
-		ostringstream os;
+		std::ostringstream os;
 		os << "OpenCL error: " << e.what() << ". OpenCL error code: " << e.err();
 		throw opencl_error(os.str());
 	}
@@ -276,7 +276,7 @@ void RadialProfile::evaluate(vector<double> &image) {
 
 }
 
-void RadialProfile::evaluate_cpu(vector<double> &image) {
+void RadialProfile::evaluate_cpu(std::vector<double> &image) {
 
 	double half_xbin = model.scale_x/2.;
 	double half_ybin = model.scale_y/2.;
@@ -308,7 +308,7 @@ void RadialProfile::evaluate_cpu(vector<double> &image) {
 			 * Check whether we need further refinement.
 			 * TODO: the radius calculation doesn't take into account boxing
 			 */
-			r_prof = sqrt(x_prof*x_prof + y_prof*y_prof);
+			r_prof = std::sqrt(x_prof*x_prof + y_prof*y_prof);
 			double pixel_val;
 			if( this->rscale_max > 0 && r_prof/this->rscale > this->rscale_max ) {
 				pixel_val = 0.;
@@ -337,28 +337,6 @@ void RadialProfile::evaluate_cpu(vector<double> &image) {
 #ifdef PROFIT_OPENCL
 
 /*
- * Small trait that describes specific floating types
- */
-template <typename T>
-struct float_traits {
-	const static bool is_float = false;
-	const static bool is_double = false;
-	constexpr const static char * name = "unknown";
-};
-template <>
-struct float_traits<float> {
-	const static bool is_float = true;
-	const static bool is_double = false;
-	constexpr const static char * name = "float";
-};
-template <>
-struct float_traits<double> {
-	const static bool is_float = false;
-	const static bool is_double = true;
-	constexpr const static char * name = "double";
-};
-
-/*
  * Simple structure holding a 2D point
  */
 template <typename FT>
@@ -373,6 +351,9 @@ struct point_t {
  */
 template <typename FT>
 struct ss_info_t {
+	ss_info_t() {};
+	ss_info_t(point_t<FT> point, FT xbin, FT ybin, unsigned int resolution, unsigned int max_recursion) :
+		point(point), xbin(xbin), ybin(ybin), resolution(resolution), max_recursion(max_recursion) {};
 	point_t<FT> point;
 	FT xbin;
 	FT ybin;
@@ -386,6 +367,7 @@ struct ss_info_t {
  */
 template <typename FT>
 struct ss_kinfo_t {
+	ss_kinfo_t() {};
 	point_t<FT> point;
 	FT xbin;
 	FT ybin;
@@ -394,7 +376,7 @@ struct ss_kinfo_t {
 
 template <typename FT>
 static inline
-unsigned int new_subsampling_points(const vector<ss_info_t<FT>> &prev_ss_info, vector<ss_info_t<FT>> &ss_info, unsigned int recur_level) {
+unsigned int new_subsampling_points(const std::vector<ss_info_t<FT>> &prev_ss_info, std::vector<ss_info_t<FT>> &ss_info, unsigned int recur_level) {
 
 	ss_info.clear();
 
@@ -440,16 +422,16 @@ unsigned int new_subsampling_points(const vector<ss_info_t<FT>> &prev_ss_info, v
 }
 
 static inline
-chrono::nanoseconds::rep to_nsecs(const chrono::system_clock::duration &d) {
-	return chrono::duration_cast<chrono::nanoseconds>(d).count();
+std::chrono::nanoseconds::rep to_nsecs(const std::chrono::system_clock::duration &d) {
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
 }
 
 template <typename FT>
-void RadialProfile::evaluate_opencl(vector<double> &image) {
+void RadialProfile::evaluate_opencl(std::vector<double> &image) {
 
 #define AS_FT(x) static_cast<FT>(x)
 
-	using chrono::system_clock;
+	using std::chrono::system_clock;
 	typedef point_t<FT> point_t;
 	typedef ss_info_t<FT> ss_info_t;
 	typedef ss_kinfo_t<FT> ss_kinfo_t;
@@ -467,9 +449,9 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 	t0 = system_clock::now();
 	unsigned int arg = 0;
 	auto kname = name + "_" + float_traits<FT>::name;
-	cl::Buffer image_buffer(env->context, CL_MEM_WRITE_ONLY, sizeof(FT)*imsize);
-	cl::Buffer subsampling_points_buffer(env->context, CL_MEM_WRITE_ONLY, sizeof(point_t)*imsize);
-	cl::Kernel kernel = cl::Kernel(env->program, kname.c_str());
+	cl::Buffer image_buffer = env->get_buffer<FT>(CL_MEM_WRITE_ONLY, imsize);
+	cl::Buffer subsampling_points_buffer = env->get_buffer<point_t>(CL_MEM_WRITE_ONLY, imsize);
+	cl::Kernel kernel = env->get_kernel(kname);
 	kernel.setArg(arg++, image_buffer);
 	kernel.setArg(arg++, subsampling_points_buffer);
 	kernel.setArg(arg++, model.width);
@@ -480,37 +462,37 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 	add_common_kernel_parameters<FT>(arg, kernel);
 	t_kprep = system_clock::now();
 
-	cl::Event fill_im_evt, fill_ss_points_evt, kernel_evt, read_evt, read_ss_points_evt;
+	cl::Event fill_im_evt, fill_ss_points_evt, read_evt;
 
 	// OpenCL 1.2 allows to do this; otherwise the work has to be done in the kernel
 	// (which we do)
 	cl::vector<cl::Event> k_wait_evts;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
-	if( env->version >= 120 ) {
-		env->queue.enqueueFillBuffer<FT>(image_buffer, 0, 0, sizeof(FT)*imsize, NULL, &fill_im_evt);
-		env->queue.enqueueFillBuffer<point_t>(subsampling_points_buffer, {-1, -1}, 0, sizeof(point_t)*imsize, NULL, &fill_ss_points_evt);
+	if( env->get_version() >= 120 ) {
+		fill_im_evt = env->queue_fill<FT>(image_buffer, 0);
+		fill_ss_points_evt = env->queue_fill<point_t>(subsampling_points_buffer, {-1, -1});
 		k_wait_evts.push_back(fill_im_evt);
 		k_wait_evts.push_back(fill_ss_points_evt);
 	}
 #endif /* CL_HPP_TARGET_OPENCL_VERSION >= 120 */
 
 	// Enqueue the kernel, and read back the resulting image + set of points to subsample
-	env->queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(imsize), cl::NullRange, &k_wait_evts, &kernel_evt);
+	auto kernel_evt = env->queue_kernel(kernel, cl::NDRange(imsize), &k_wait_evts);
 
 	// If FT is double we directly store the result in the profile image
 	// Otherwise we have to copy element by element to convert from float to double
 	cl::vector<cl::Event> read_waiting_evts{kernel_evt};
 	if( float_traits<FT>::is_double ) {
-		env->queue.enqueueReadBuffer(image_buffer, CL_FALSE, 0, sizeof(double)*imsize, image.data(), &read_waiting_evts, &read_evt);
+		read_evt = env->queue_read(image_buffer, image.data(), &read_waiting_evts);
 		read_evt.wait();
 		t_opencl = system_clock::now();
 	}
 	else {
-		vector<FT> image_from_kernel(image.size());
-		env->queue.enqueueReadBuffer(image_buffer, CL_FALSE, 0, sizeof(FT)*imsize, image_from_kernel.data(), &read_waiting_evts, &read_evt);
+		std::vector<FT> image_from_kernel(image.size());
+		read_evt = env->queue_read(image_buffer, image_from_kernel.data(), &read_waiting_evts);
 		read_evt.wait();
 		t_opencl = system_clock::now();
-		copy(image_from_kernel.begin(), image_from_kernel.end(), image.begin());
+		std::copy(image_from_kernel.begin(), image_from_kernel.end(), image.begin());
 		stats->final_image += to_nsecs(system_clock::now() - t_opencl);
 	}
 
@@ -519,7 +501,7 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 	cl_times0.total = to_nsecs(t_opencl - t_kprep);
 	if( env->use_profiling ) {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
-		if( env->version >= 120 ) {
+		if( env->get_version() >= 120 ) {
 			cl_times0.filling_times += cl_cmd_times(fill_im_evt) + cl_cmd_times(fill_ss_points_evt);
 		}
 #endif /* CL_HPP_TARGET_OPENCL_VERSION >= 120 */
@@ -530,20 +512,20 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 
 	// we're done here, record the timings and go
 	if( rough ) {
-		stats->cl_times = move(cl_times0);
+		stats->cl_times = std::move(cl_times0);
 		stats->total = to_nsecs(system_clock::now() - t0);
 		return;
 	}
 
-	vector<point_t> ss_points(image.size());
-	env->queue.enqueueReadBuffer(subsampling_points_buffer, CL_TRUE, 0, sizeof(point_t)*imsize, ss_points.data(), &read_waiting_evts, &read_ss_points_evt);
+	std::vector<point_t> ss_points(image.size());
+	cl::Event read_ss_points_evt = env->queue_read(subsampling_points_buffer, ss_points.data(), &read_waiting_evts);
 	read_ss_points_evt.wait();
 	if( env->use_profiling ) {
 		cl_times0.reading_times += cl_cmd_times(read_ss_points_evt);
 	}
 
 	// enrich the points to subsample with their subsampling information
-	vector<ss_info_t> last_ss_info;
+	std::vector<ss_info_t> last_ss_info;
 	last_ss_info.reserve(image.size());
 	unsigned int top_recursions = 0;
 	for(auto const &point: ss_points) {
@@ -552,24 +534,27 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 		}
 		unsigned int resolution, max_recursions;
 		subsampling_params(point.x, point.y, resolution, max_recursions);
-		top_recursions = max(top_recursions, max_recursions);
+		top_recursions = std::max(top_recursions, max_recursions);
 		last_ss_info.push_back({point, AS_FT(model.scale_x), AS_FT(model.scale_y), resolution, max_recursions});
 	}
 
 	auto ss_kname = name + "_subsample_" + float_traits<FT>::name;
-	cl::Kernel subsample_kernel = cl::Kernel(env->program, ss_kname.c_str());
+	cl::Kernel subsample_kernel = env->get_kernel(ss_kname);
 
-	typedef struct _im_result {
+	struct im_result_t {
+		im_result_t() {};
 		point_t point;
 		FT value;
-	} im_result_t;
-	vector<im_result_t> subimages_results;
+	};
+	std::vector<im_result_t> subimages_results;
 
 	// Preparing for the recursive subsampling
-	vector<ss_info_t> ss_info;
+	std::vector<ss_kinfo_t> ss_kinfo;
+	std::vector<ss_info_t> ss_info;
 	unsigned int recur_level = 0;
 
 	t_loopstart = system_clock::now();
+	unsigned int subimage_idx = 0;
 	while( recur_level <= top_recursions ) {
 
 		/* Points in time we want to measure */
@@ -596,34 +581,36 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 
 		/* Keeping things in size */
 		auto prev_im_size = subimages_results.size();
-		subimages_results.reserve(prev_im_size + subsamples);
+		subimages_results.resize(prev_im_size + subsamples);
 		last_ss_info.resize(subsamples);
 
 		try {
 
-			cl::Buffer ss_kinfo_buf(env->context, CL_MEM_READ_WRITE, sizeof(ss_kinfo_t)*subsamples);
+			cl::Buffer ss_kinfo_buf = env->get_buffer<ss_kinfo_t>(CL_MEM_READ_WRITE, subsamples);
 
 			arg = 0;
 			subsample_kernel.setArg(arg++, ss_kinfo_buf);
 			subsample_kernel.setArg(arg++, AS_FT(acc));
 			add_common_kernel_parameters<FT>(arg, subsample_kernel);
 
-			cl::Event kernel_evt, w_ss_kinfo_evt, r_ss_kinfo_evt;
 			t_kprep = system_clock::now();
 
 			// The information we pass down to the kernels is a subset of the original
-			vector<ss_kinfo_t> ss_kinfo(subsamples);
-			transform(ss_info.begin(), ss_info.end(), ss_kinfo.begin(), [](const ss_info_t &info) {
-				return ss_kinfo_t{info.point, info.xbin, info.ybin};
+			ss_kinfo.resize(subsamples);
+			std::transform(ss_info.begin(), ss_info.end(), ss_kinfo.begin(), ss_kinfo.begin(), [](const ss_info_t &info, ss_kinfo_t &kinfo) -> ss_kinfo_t {
+				kinfo.point = info.point;
+				kinfo.xbin = info.xbin;
+				kinfo.ybin = info.ybin;
+				return kinfo;
 			});
 			t_trans_h2k = system_clock::now();
 
-			env->queue.enqueueWriteBuffer(ss_kinfo_buf, CL_FALSE, 0, sizeof(ss_kinfo_t)*subsamples, ss_kinfo.data(), NULL, &w_ss_kinfo_evt);
+			auto w_ss_kinfo_evt = env->queue_write(ss_kinfo_buf, ss_kinfo.data());
 			cl::vector<cl::Event> kernel_waiting_evts{w_ss_kinfo_evt};
-			env->queue.enqueueNDRangeKernel(subsample_kernel, cl::NullRange, cl::NDRange(subsamples), cl::NullRange, &kernel_waiting_evts, &kernel_evt);
-			cl::vector<cl::Event> read_waiting_evts{kernel_evt};
-			env->queue.enqueueReadBuffer(ss_kinfo_buf, CL_FALSE, 0, sizeof(ss_kinfo_t)*subsamples, ss_kinfo.data(), &read_waiting_evts, &r_ss_kinfo_evt);
-			env->queue.finish();
+			auto ss_kernel_evt = env->queue_kernel(subsample_kernel, cl::NDRange(subsamples), &kernel_waiting_evts);
+			cl::vector<cl::Event> read_waiting_evts{ss_kernel_evt};
+			auto r_ss_kinfo_evt = env->queue_read(ss_kinfo_buf, ss_kinfo.data(), &read_waiting_evts);
+			r_ss_kinfo_evt.wait();
 			t_opencl = system_clock::now();
 
 			// Feed back the kinfo to the main subsampling info vectors
@@ -645,7 +632,9 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 					val /= (ss_info_it->resolution * ss_info_it->resolution);
 				}
 
-				subimages_results.push_back(im_result_t{ss_info_it->point, val});
+				subimages_results[subimage_idx].point = std::move(ss_info_it->point);
+				subimages_results[subimage_idx].value = val;
+				subimage_idx++;
 
 				last_ss_info_it++;
 				ss_info_it++;
@@ -658,7 +647,7 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 			ss_cl_times.kernel_prep += to_nsecs(t_kprep - t_newsamples);
 			ss_cl_times.total += to_nsecs(t_opencl - t_trans_h2k);
 			if( env->use_profiling ) {
-				ss_cl_times.kernel_times += cl_cmd_times(kernel_evt);
+				ss_cl_times.kernel_times += cl_cmd_times(ss_kernel_evt);
 				ss_cl_times.writing_times += cl_cmd_times(w_ss_kinfo_evt);
 				ss_cl_times.reading_times += cl_cmd_times(r_ss_kinfo_evt);
 			}
@@ -668,7 +657,7 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 			if( e.err() == CL_INVALID_BUFFER_SIZE ) {
 				break;
 			}
-			throw e;
+			throw;
 		}
 
 		recur_level++;
@@ -676,7 +665,7 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 
 	t_loopend = system_clock::now();
 
-	for_each(subimages_results.begin(), subimages_results.end(), [&image, this](const im_result_t &res) {
+	std::for_each(subimages_results.begin(), subimages_results.end(), [&image, this](const im_result_t &res) {
 		FT x = res.point.x / model.scale_x;
 		FT y = res.point.y / model.scale_y;
 		unsigned int idx = static_cast<unsigned int>(floor(x)) + static_cast<unsigned int>(floor(y)) * model.width;
@@ -685,7 +674,7 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 
 	// the image needs to be multiplied by the pixel scale
 	double scale = this->get_pixel_scale();
-	transform(image.begin(), image.end(), image.begin(), [scale](double pixel) {
+	std::transform(image.begin(), image.end(), image.begin(), [scale](double pixel) {
 		return pixel * scale;
 	});
 	t_imgtrans = system_clock::now();
@@ -694,8 +683,8 @@ void RadialProfile::evaluate_opencl(vector<double> &image) {
 	stats->subsampling.total = to_nsecs(t_loopend - t_loopstart);
 	stats->final_image += to_nsecs(t_imgtrans - t_loopend);
 	stats->total = to_nsecs(t_imgtrans - t0);
-	stats->cl_times = move(cl_times0);
-	stats->subsampling.cl_times = move(ss_cl_times);
+	stats->cl_times = std::move(cl_times0);
+	stats->subsampling.cl_times = std::move(ss_cl_times);
 
 }
 
@@ -727,7 +716,7 @@ bool RadialProfile::supports_opencl() const {
 /**
  * Constructor with sane defaults
  */
-RadialProfile::RadialProfile(const Model &model, const string &name) :
+RadialProfile::RadialProfile(const Model &model, const std::string &name) :
 	Profile(model, name),
 	xcen(0), ycen(0),
 	mag(15), ang(0),
@@ -748,7 +737,7 @@ std::map<int,int> RadialProfile::get_integrations() {
 }
 #endif
 
-bool RadialProfile::parameter_impl(const string &name, bool value) {
+bool RadialProfile::parameter_impl(const std::string &name, bool value) {
 
 	if( Profile::parameter_impl(name, value) ) {
 		return true;
@@ -763,7 +752,7 @@ bool RadialProfile::parameter_impl(const string &name, bool value) {
 	return true;
 }
 
-bool RadialProfile::parameter_impl(const string &name, double value) {
+bool RadialProfile::parameter_impl(const std::string &name, double value) {
 
 	if( Profile::parameter_impl(name, value) ) {
 		return true;
@@ -785,7 +774,7 @@ bool RadialProfile::parameter_impl(const string &name, double value) {
 	return true;
 }
 
-bool RadialProfile::parameter_impl(const string &name, unsigned int value) {
+bool RadialProfile::parameter_impl(const std::string &name, unsigned int value) {
 
 	if( Profile::parameter_impl(name, value) ) {
 		return true;

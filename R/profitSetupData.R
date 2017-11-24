@@ -1,6 +1,17 @@
-profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA', like.func="norm", magmu=FALSE, nbenchmarkconv=0L, benchmarkconvmethods = c("Bruteconv","FFTconv","FFTWconv"), verbose=FALSE, openclenv=NULL, omp_threads = NULL){
+profitSetupData=function(image, region, sigma, segim, mask, modellist,
+  tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf),
+  finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
+  like.func="norm", magmu=FALSE, verbose=FALSE, omp_threads = NULL,
+  openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
+  nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
+  benchintmethods=c("brute"), benchconvmethods = c("brute","fft"),
+  benchprecisions="double", benchconvprecisions=benchprecisions,
+  benchintprecisions=benchprecisions,
+  benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
+  printbenchmark=FALSE, printbenchint=printbenchmark, printbenchconv=printbenchmark)
+{
   profitCheckFinesample(finesample)
-  stopifnot(is.integer(nbenchmarkconv) && nbenchmarkconv >= 0L)
+  stopifnot(all(is.integer(c(nbenchconv,nbenchint))) && nbenchint >= 0L && nbenchconv >=0L)
   
   if(missing(image)){stop("User must supply an image matrix input!")}
   if(missing(modellist)){stop("User must supply a modellist input!")}
@@ -120,15 +131,26 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   
   calcregion = profitUpsample(region,finesample)
   
+  if (!is.null(openclenv)) {
+    if (class(openclenv) == "externalptr") {
+      openclenv = openclenv
+    }
+    else if (identical(openclenv,"get")) {
+      openclenv = profitOpenCLEnv()
+    }
+  }
+  
   if(haspsf)
   {
     psfpad = floor(dim(psf)/2)
     dimcr = dim(calcregion)
     calcxy = dimcr+2*psfpad
-    if(is.null(benchmarkconvmethods) || ("Bruteconv" %in% benchmarkconvmethods))
+    if(is.null(benchconvmethods) || ("brute" %in% benchconvmethods))
     {
       newregion = matrix(0,calcxy[1],calcxy[2])
       newregion[(1+psfpad[1]):(dimcr[1]+psfpad[1]),(1+psfpad[2]):(dimcr[2]+psfpad[2])] = calcregion
+      # TODO: Replace with profitConvolver
+      # Note: We use brute force convolution here because FFTs have ~1e-12 noise. It can be very slow, though
       calcregion=profitConvolvePSF(newregion,psf+1,options=list(method="Bruteconv"))
       calcregion=calcregion>0
     } else {
@@ -140,9 +162,32 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   fitpsf = psftype == "analytical" && any(unlist(tofit$psf)) && any(!(names(modellist) %in% c("psf","pointsource","sky")))
   usecalcregion=haspsf
   
-  if(haspsf & nbenchmarkconv>0)
+  benches=list()
+  if((length(benchintmethods) > 1) && nbenchint > 0)
   {
-    modelimg = profitMakeModel(modellist,dim=dim(image),finesample=finesample,psf=psf,returnfine = TRUE, returncrop = FALSE, openclenv=openclenv,omp_threads=omp_threads)
+    # TODO: Do the padding stuff correctly. This isn't padded
+    benches$benchint = profitBenchmark(image=image, modellist = modellist,
+      nbench = nbenchint, methods = benchintmethods, precisions = benchintprecisions,
+      openclenvs = benchopenclenvs, omp_threads = omp_threads)
+    if(printbenchint)
+    {
+      print(profitBenchmarkResultStripPointers(benches$benchint$result)[
+        c("name","env_name","version","dev_name",paste0("tinms.mean_",c("single","double")))])
+    }
+    bestint = profitBenchmarkResultBest(benches$benchint$result)
+    print(paste0("Best integrator: '", bestint$name, "' device: '", bestint$dev_name,
+      "', t=[",sprintf("%.2e",bestint$time)," ms]"))
+    openclenv_int = bestint$openclenv
+  } else {
+    if(identical(openclenv_int,"get")) openclenv_int = openclenv
+  }
+  
+  # Temporary - will need other items in convopt in the future, for finesampling/efficient complex FFT(W)s
+  convopt = list(convolver=NULL,openclenv=openclenv_conv)
+  if(haspsf)
+  {
+    modelimg = profitMakeModel(modellist, dim=dim(image), finesample=finesample, psf=psf,
+      returnfine = TRUE, returncrop = FALSE, openclenv=openclenv_int, omp_threads=omp_threads)
     dimmodel = dim(modelimg$z)
     dimregion = dim(calcregion)
     dimdiff = (dimmodel - dimregion)/2
@@ -154,28 +199,39 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
       benchregion = calcregion
     }
     
-    benchcalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmarkconv, calcregion = benchregion, 
-      refftpsf = fitpsf, methods = benchmarkconvmethods)
-    benchnocalc = profitBenchmarkConv(image = modelimg$z, psf=psf,nbench = nbenchmarkconv, fftwplan = benchcalc$fftwplan, 
-      refftpsf = fitpsf, methods = benchmarkconvmethods)
-    
-    convopt = list()
-    convusecalcregion = benchcalc$best$time < benchnocalc$best$time
-    if(convusecalcregion)
+    if(nbenchconv > 0)
     {
-      convopt = benchcalc
+      benches$benchconv = profitBenchmark(image = modelimg$z, psf=psf,
+        nbench = nbenchconv, calcregion = benchregion, 
+        reusepsffft = !fitpsf, methods = benchconvmethods,
+        openclenvs = benchopenclenvs, omp_threads = omp_threads)
+  
+      if(printbenchconv)
+      {
+        print(profitBenchmarkResultStripPointers(benches$benchconv$result)[
+          c("name","env_name","version","dev_name",paste0("tinms.mean_",c("single","double")))])
+      }
+      bestconv = profitBenchmarkResultBest(benches$benchconv$result)
+      print(paste0("Best convolver: '", bestconv$name, "' device: '", bestconv$dev_name, 
+        "', t=[",sprintf("%.2e",bestconv$time)," ms]"))
+      convopt$convolver = bestconv$convolver
+      convopt$openclenv = bestconv$openclenv
+      usecalcregion = bestconv$usecalcregion
     } else {
-      convopt = benchnocalc
+      # TODO: Test this
+      convpsf = psf
+      if(finesample > 1) convpsf = profitUpsample(psf, finesample)
+      if(identical(openclenv,"get")) openclenv_int = profitOpenCLEnv()
+      if(is.character(benchconvmethods) && length(benchconvmethods) > 0)
+      {
+        convmethod = benchconvmethods[1]
+      } else {
+        if(is.null(openclenv_conv)) convmethod = "brute"
+        else convmethod = "opencl"
+      }
+      convopt$convolver = profitMakeConvolver(convmethod,dim(modelimg),psf = convpsf,
+        openclenv=openclenv_conv)
     }
-    # No need to store the PSF FFT if it's varying
-    if(fitpsf)
-    {
-      convopt$fft$psf$r = NULL
-      convopt$fft$psf$w = NULL
-    }
-  } else {
-    convopt = list(method="Bruteconv")
-    convusecalcregion = TRUE
   }
   
   init = unlist(modellist)
@@ -185,20 +241,13 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist, tofit, to
   parm.names=names(init)
   mon.names=c("LL","LP","time")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
-  if (!is.null(openclenv)) {
-    if (class(openclenv) == "externalptr") {
-      openclenv = openclenv
-    }
-    else if (openclenv == "get") {
-      openclenv = profitOpenCLEnv()
-    }
-  }
-  profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist, psf=psf, psftype=psftype, fitpsf=fitpsf,
-                   algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))), region=region,
-                   calcregion=calcregion, usecalcregion=usecalcregion, convusecalcregion=convusecalcregion, convopt=convopt,
-                   tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints, like.func = like.func,
-                   magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu, openclenv=openclenv, 
-                   omp_threads=omp_threads)
+  profit.data=list(init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist,
+                   psf=psf, psftype=psftype, fitpsf=fitpsf,
+                   algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))),
+                   region=region, calcregion=calcregion, usecalcregion=usecalcregion, convopt=convopt,
+                   tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints,
+                   like.func = like.func, magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu,
+                   openclenv=openclenv, omp_threads=omp_threads, benches=benches)
   class(profit.data)="profit.data"
   return=profit.data
 }

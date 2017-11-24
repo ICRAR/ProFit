@@ -26,6 +26,7 @@
 #ifndef PROFIT_CORESERSIC_H
 #define PROFIT_CORESERSIC_H
 
+#include "profit/config.h"
 #include "profit/radial.h"
 
 namespace profit

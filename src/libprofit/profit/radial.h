@@ -30,6 +30,7 @@
 #include <map>
 #endif
 
+#include "profit/config.h"
 #include "profit/opencl.h"
 #include "profit/profile.h"
 

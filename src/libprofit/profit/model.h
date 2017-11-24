@@ -32,6 +32,9 @@
 #include <string>
 #include <vector>
 
+#include "profit/config.h"
+#include "profit/convolve.h"
+#include "profit/fft.h"
 #include "profit/opencl.h"
 
 namespace profit
@@ -53,14 +56,13 @@ class Model {
 
 public:
 
-
 	/**
 	 * Constructor
 	 *
 	 * It creates a new model to which profiles can be added, and that can be
 	 * used to calculate an image.
 	 */
-	Model();
+	Model(unsigned int width = 0, unsigned int height = 0);
 
 	/**
 	 * Creates a new profile for the given name and adds it to the given model.
@@ -163,13 +165,20 @@ public:
 	std::vector<bool> calcmask;
 
 	/**
+	 * The object used to carry out the convolution, if necessary.
+	 * If a convolver is present before calling `evaluate` then it is used.
+	 * If missing, then a new one is created internally.
+	 */
+	ConvolverPtr convolver;
+
+	/**
 	 * Whether the actual evaluation of profiles should be skipped or not.
 	 * Profile validation still occurs.
 	 */
 	bool dry_run;
 
 #ifdef PROFIT_OPENCL
-	std::shared_ptr<OpenCL_env> opencl_env;
+	OpenCLEnvPtr opencl_env;
 #endif /* PROFIT_OPENCL */
 
 #ifdef PROFIT_OPENMP

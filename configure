@@ -98,6 +98,105 @@ OMP
 	echo "NOT_FOUND"
 }
 
+has_fftw_headers() {
+	has_headers=no
+	echo "#include <fftw3.h>\nint main(){return 0;}" > $tmpdir/fftw_headers.c
+	$CC $CFLAGS -c $tmpdir/fftw_headers.c -o $tmpdir/fftw_headers.o 2> /dev/null
+	if [ $? -eq 0 ]; then
+		has_headers=yes
+	fi
+	echo $has_headers
+}
+
+has_fftw_lib() {
+	has_lib=no
+	echo "int main(){ fftw_cleanup(); }" > $tmpdir/fftw_lib.c
+	$CC $CFLAGS -c $tmpdir/fftw_lib.c -o $tmpdir/fftw_lib.o 2> /dev/null
+	if [ $? -eq 0 ]; then
+		$CC $LDFLAGS $tmpdir/fftw_lib.o -o $tmpdir/fftw_lib -lfftw3 2> /dev/null
+		if [ $? -eq 0 ]; then
+			has_lib="yes"
+		fi
+	fi
+	echo $has_lib
+}
+
+has_fftw_omp_lib() {
+	has_lib=no
+	if [ "$PROFIT_OPENMP" = "yes" ]; then
+		echo "int main(){ fftw_plan_with_nthreads(); }" > $tmpdir/fftw_omp_lib.c
+		$CC $CFLAGS -c $tmpdir/fftw_omp_lib.c -o $tmpdir/fftw_omp_lib.o 2> /dev/null
+		if [ $? -eq 0 ]; then
+			$CC $LDFLAGS $tmpdir/fftw_omp_lib.o -o $tmpdir/fftw_omp_lib -lfftw3 -lfftw3_omp 2> /dev/null
+			if [ $? -eq 0 ]; then
+				has_lib="yes"
+			fi
+		fi
+	fi
+	echo $has_lib
+}
+
+cmakedefine_sed_replacement() {
+	name=$1
+	eval value=\$$1
+	if [ "${value}" = "yes" ]; then
+		echo "s/#cmakedefine $name\$/#define $name/"
+	else
+		echo "s/#cmakedefine $name\$/#undef $name/"
+	fi
+}
+
+at_sed_replacement() {
+	name=$1
+	eval value=\$$1
+	echo "s/@$name@/$value/"
+}
+
+#
+# Variables used to generate the Makevars config.h files
+#
+
+# These are fixed
+PROFIT_VERSION=`cat src/libprofit/VERSION`
+PROFIT_USES_R=yes
+PROFIT_USES_GSL=no
+PROFIT_DEBUG=no
+
+# These are actually modified by this script
+PROFIT_OPENCL=no
+PROFIT_OPENCL_MAJOR=
+PROFIT_OPENCL_MINOR=
+PROFIT_OPENMP=no
+PROFIT_FFTW=no
+PROFIT_FFTW_OPENMP=no
+profit_CPPFLAGS=
+profit_LIBS=
+
+generate_file() {
+	echo "- Generating $1"
+	sed "$2" $1.in > $1
+}
+
+generate_makevars() {
+	sexpr="`at_sed_replacement profit_CPPFLAGS`"
+	sexpr="$sexpr; `at_sed_replacement profit_LIBS`"
+	generate_file src/Makevars "$sexpr"
+}
+
+generate_config_h() {
+	sexpr="`at_sed_replacement PROFIT_VERSION`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_USES_R`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_USES_GSL`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_DEBUG`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_OPENCL`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_OPENMP`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_FFTW`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_FFTW_OPENMP`"
+	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MAJOR`"
+	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MINOR`"
+	generate_file src/libprofit/profit/config.h "$sexpr"
+}
+
 #
 # Prepare for the show
 #
@@ -109,7 +208,6 @@ tmpdir=.profit_tmp
 # Check for OpenCL headers, libs and max OpenCL version
 # Skip if required
 #
-cl_cflags=""
 cl_libflags=""
 if [ -n "${PROFIT_NO_OPENCL}" ]; then
 	echo "- Skipping OpenCL detection"
@@ -129,7 +227,9 @@ else
 
 	if [ -n "$cl_ver_maj" ]; then
 		echo "- Compiling with OpenCL $cl_ver_maj.$cl_ver_min support"
-		cl_cflags="-DPROFIT_OPENCL -DPROFIT_OPENCL_MAJOR=$cl_ver_maj -DPROFIT_OPENCL_MINOR=$cl_ver_min"
+		PROFIT_OPENCL=yes
+		PROFIT_OPENCL_MAJOR=${cl_ver_maj}
+		PROFIT_OPENCL_MINOR=${cl_ver_min}
 		cl_libflags=`get_cl_libflags`
 	else
 		echo "- Compiling without OpenCL support"
@@ -147,7 +247,8 @@ else
 	omp_flag=`get_omp_cflag`
 	if [ "$omp_flag" != "NOT_FOUND" ]; then
 		echo "- Compiling with OpenMP support"
-		omp_cflags="-DPROFIT_OPENMP $omp_flag"
+		PROFIT_OPENMP=yes
+		omp_cflags="$omp_flag"
 		omp_libflags="$omp_flag"
 	else
 		echo "- Compiling without OpenMP support"
@@ -156,9 +257,36 @@ else
 fi
 
 #
+# Check for FFTW support, skip if required
+#
+fftw_libflags=""
+if [ -n "${PROFIT_NO_FFTW}" ]; then
+	echo "- Skipping FFTW detection"
+else
+	fftw_headers=`has_fftw_headers`
+	if [ "$fftw_headers" = "yes" ]; then
+		echo "- Found FFTW headers"
+		fftw_lib=`has_fftw_lib`
+		if [ "$fftw_lib" = "yes" ]; then
+			echo "- Found FFTW lib"
+			fftw_libflags="-lfftw3"
+			PROFIT_FFTW=yes
+			fftw_omp_lib=`has_fftw_omp_lib`
+			if [ "$fftw_omp_lib" = "yes" ]; then
+				echo "- Found FFTW OpenMP support lib"
+				PROFIT_FFTW_OPENMP=yes
+				fftw_libflags="$fftw_libflags -lfftw3_omp"
+			fi
+		fi
+	fi
+fi
+
+
+#
 # Cleanup and replace the values in Makevars.in and produce Makevars
 #
 rm -rf $tmpdir
-profit_CPPFLAGS="$cl_cflags $omp_cflags"
-profit_LIBS="$cl_libflags $omp_libflags"
-sed "s/@profit_CPPFLAGS@/$profit_CPPFLAGS/; s/@profit_LIBS@/$profit_LIBS/" src/Makevars.in > src/Makevars
+profit_CPPFLAGS="$omp_cflags"
+profit_LIBS="$cl_libflags $omp_libflags $fftw_libflags"
+generate_makevars
+generate_config_h

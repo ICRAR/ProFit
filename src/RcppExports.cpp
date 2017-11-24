@@ -29,25 +29,3 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-
-RcppExport SEXP R_profit_convolve(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP R_profit_has_openmp();
-RcppExport SEXP R_profit_make_model(SEXP);
-RcppExport SEXP R_profit_openclenv(SEXP, SEXP, SEXP);
-RcppExport SEXP R_profit_openclenv_info();
-
-static const R_CallMethodDef CallEntries[] = {
-    {"_ProFit_profitDownsample", (DL_FUNC) &_ProFit_profitDownsample, 2},
-    {"_ProFit_profitUpsample", (DL_FUNC) &_ProFit_profitUpsample, 2},
-    {"R_profit_convolve",        (DL_FUNC) &R_profit_convolve,        4},
-    {"R_profit_has_openmp",      (DL_FUNC) &R_profit_has_openmp,      0},
-    {"R_profit_make_model",      (DL_FUNC) &R_profit_make_model,      1},
-    {"R_profit_openclenv",       (DL_FUNC) &R_profit_openclenv,       3},
-    {"R_profit_openclenv_info",  (DL_FUNC) &R_profit_openclenv_info,  0},
-    {NULL, NULL, 0}
-};
-
-RcppExport void R_init_ProFit(DllInfo *dll) {
-    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
-    R_useDynamicSymbols(dll, FALSE);
-}

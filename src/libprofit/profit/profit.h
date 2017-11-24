@@ -27,9 +27,12 @@
 #ifndef PROFIT_PROFIT_H
 #define PROFIT_PROFIT_H
 
+#include "profit/config.h"
 #include "profit/common.h"
 #include "profit/convolve.h"
 #include "profit/exceptions.h"
+#include "profit/fft.h"
+#include "profit/image.h"
 #include "profit/model.h"
 #include "profit/opencl.h"
 #include "profit/profile.h"

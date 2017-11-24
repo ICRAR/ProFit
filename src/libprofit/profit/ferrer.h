@@ -26,6 +26,7 @@
 #ifndef PROFIT_FERRER_H
 #define PROFIT_FERRER_H
 
+#include "profit/config.h"
 #include "profit/radial.h"
 
 namespace profit

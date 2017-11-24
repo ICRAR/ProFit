@@ -17,10 +17,33 @@ using namespace std;
 
 static
 vector<double> _read_image(SEXP r_image, unsigned int *im_width, unsigned int *im_height) {
+
 	*im_width = Rf_nrows(r_image);
 	*im_height = Rf_ncols(r_image);
-	double *r_image_ptr = REAL(r_image);
-	vector<double> image(r_image_ptr, r_image_ptr + (*im_width * *im_height));
+	unsigned int size = *im_width * *im_height;
+
+	double *image_real_ptr;
+	int *image_int_ptr;
+	vector<double> image;
+	switch (TYPEOF(r_image)) {
+
+		case REALSXP:
+			image_real_ptr = REAL(r_image);
+			image = vector<double>(image_real_ptr, image_real_ptr + size);
+			break;
+
+		case INTSXP:
+			image_int_ptr = INTEGER(r_image);
+			image = vector<double>(size);
+			std::copy(image_int_ptr, image_int_ptr + size, image.begin());
+			break;
+
+		default:
+			Rf_error("Image not in one of the supported formats (integer, double)");
+			image = {};
+			break;
+	}
+
 	return image;
 }
 
@@ -36,7 +59,7 @@ vector<bool> _read_mask(SEXP r_mask, unsigned int *m_width, unsigned int *m_heig
 static
 SEXP _get_list_element(SEXP list, const char *name) {
 	SEXP names = Rf_getAttrib(list, R_NamesSymbol);
-	for(unsigned int i=0; i!=Rf_length(list); i++) {
+	for(int i=0; i < Rf_length(list); i++) {
 		if( !strcmp(name, CHAR(STRING_ELT(names, i))) ) {
 			return VECTOR_ELT(list, i);
 		}
@@ -53,6 +76,9 @@ void _read_bool(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int
 		}
 		else if( TYPEOF(element) == INTSXP ) {
 			p->parameter(name, (bool)INTEGER(element)[idx]);
+		}
+		else if( TYPEOF(element) == REALSXP ) {
+			p->parameter(name, (bool)REAL(element)[idx]);
 		}
 		else {
 			Rf_error("Parameter %s[%u] should be of boolean or integer type", name, idx);
@@ -89,7 +115,7 @@ void _read_real(shared_ptr<Profile> p, SEXP list, const char *name, unsigned int
 
 static
 void list_to_radial(SEXP radial_list, shared_ptr<Profile> p, unsigned int idx) {
-	p->parameter("adjust", true);
+	// p->parameter("adjust", true);
 	_read_real(p, radial_list, "xcen",  idx);
 	_read_real(p, radial_list, "ycen",  idx);
 	_read_real(p, radial_list, "mag",   idx);
@@ -98,6 +124,7 @@ void list_to_radial(SEXP radial_list, shared_ptr<Profile> p, unsigned int idx) {
 	_read_real(p, radial_list, "box",   idx);
 
 	_read_bool(p, radial_list, "rough",          idx);
+	_read_bool(p, radial_list, "adjust",         idx);
 	_read_real(p, radial_list, "acc",            idx);
 	_read_real(p, radial_list, "rscale_switch",  idx);
 	_read_uint(p, radial_list, "resolution",     idx);
@@ -314,7 +341,7 @@ SEXP _R_profit_openclenv_info() {
 }
 
 struct openclenv_wrapper {
-	shared_ptr<OpenCL_env> env;
+	OpenCLEnvPtr env;
 };
 
 static
@@ -332,13 +359,30 @@ void _R_profit_openclenv_finalizer(SEXP ptr) {
 }
 
 static
+OpenCLEnvPtr unwrap_openclenv(SEXP openclenv) {
+
+	if( TYPEOF(openclenv) != EXTPTRSXP ) {
+		Rf_error("Given openclenv not of proper type\n");
+		return nullptr;
+	}
+
+	openclenv_wrapper *wrapper = reinterpret_cast<openclenv_wrapper *>(R_ExternalPtrAddr(openclenv));
+	if( !wrapper ) {
+		Rf_error("No OpenCL environment found in openclenv\n");
+		return nullptr;
+	}
+
+	return wrapper->env;
+}
+
+static
 SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 
 	unsigned int platform_idx = INTEGER(plat_idx)[0];
 	unsigned int device_idx = INTEGER(dev_idx)[0];
 	bool use_double = static_cast<bool>(INTEGER(use_dbl)[0]);
 
-	std::shared_ptr<OpenCL_env> env;
+	OpenCLEnvPtr env;
 	try {
 		env = get_opencl_environment(platform_idx, device_idx, use_double, false);
 	} catch (const opencl_error &e) {
@@ -393,6 +437,133 @@ SEXP _R_profit_has_openmp() {
 }
 
 /*
+ * FFTW-related functionality follows
+ * ----------------------------------------------------------------------------
+ */
+static
+SEXP _R_profit_has_fftw() {
+	return Rf_ScalarLogical(
+#ifdef PROFIT_FFTW
+		TRUE
+#else
+		FALSE
+#endif /* PROFIT_FFTW */
+	);
+}
+
+/*
+ * Convolver exposure support follows
+ * ----------------------------------------------------------------------------
+ */
+struct convolver_wrapper {
+	ConvolverPtr convolver;
+};
+
+static
+void _R_profit_convolver_finalizer(SEXP ptr) {
+
+	if(!R_ExternalPtrAddr(ptr)) {
+		return;
+	}
+
+	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(ptr));
+	wrapper->convolver.reset();
+	delete wrapper;
+	R_ClearExternalPtr(ptr); /* not really needed */
+
+}
+
+static
+ConvolverPtr unwrap_convolver(SEXP convolver)
+{
+	if( TYPEOF(convolver) != EXTPTRSXP ) {
+		Rf_error("Given convolver not of proper type\n");
+		return nullptr;
+	}
+
+	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(convolver));
+	if (!wrapper) {
+		Rf_error("No Convolver found in convolver object");
+		return nullptr;
+	}
+
+	return wrapper->convolver;
+}
+
+static
+SEXP _R_profit_convolvers()
+{
+	static const vector<string> convolvers = {
+		"brute"
+#ifdef PROFIT_OPENCL
+		,"opencl"
+// Disabled for now as it's not ready
+//		,"opencl-local"
+#endif /* PROFIT_OPENCL */
+#ifdef PROFIT_FFTW
+		,"fft"
+#endif /* PROFIT_FFTW */
+	};
+
+	const size_t n_convolvers = convolvers.size();
+	SEXP convolvers_r = PROTECT(Rf_allocVector(STRSXP, n_convolvers));
+	for(size_t i = 0; i != n_convolvers; i++) {
+		SET_STRING_ELT(convolvers_r, i, Rf_mkChar(convolvers[i].c_str()));
+	}
+
+	UNPROTECT(1);
+	return convolvers_r;
+}
+
+static
+SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
+                              SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads,
+                              SEXP openclenv)
+{
+
+	ConvolverCreationPreferences conv_prefs;
+	conv_prefs.src_width = (unsigned int)INTEGER(image_dimensions)[0];
+	conv_prefs.src_height = (unsigned int)INTEGER(image_dimensions)[1];
+	_read_image(psf, &conv_prefs.krn_width, &conv_prefs.krn_height);
+
+#ifdef PROFIT_OPENMP
+	if( omp_threads != R_NilValue ) {
+		conv_prefs.omp_threads = (unsigned int)Rf_asInteger(omp_threads);
+	}
+#endif /* PROFIT_OPENMP */
+#ifdef PROFIT_FFTW
+	if (reuse_psf_fft != R_NilValue ) {
+		conv_prefs.reuse_krn_fft = (bool)Rf_asLogical(reuse_psf_fft);
+	}
+	if (fft_effort != R_NilValue) {
+		conv_prefs.effort = FFTPlan::effort_t((unsigned int)Rf_asInteger(fft_effort));
+	}
+#endif /* PROFIT_FFTW */
+#ifdef PROFIT_OPENCL
+	if (openclenv != R_NilValue ) {
+		if((conv_prefs.opencl_env = unwrap_openclenv(openclenv)) == nullptr) {
+			return R_NilValue;
+		}
+	}
+#endif /* PROFIT_OPENCL */
+
+	convolver_wrapper *wrapper = new convolver_wrapper();
+	std::string error;
+	try {
+		wrapper->convolver = create_convolver(CHAR(STRING_ELT(type, 0)), conv_prefs);
+	} catch (std::exception &e) {
+		Rf_error(e.what());
+		return R_NilValue;
+	}
+
+	SEXP r_convolver = R_MakeExternalPtr(wrapper, Rf_install("Convolver"), R_NilValue);
+	PROTECT(r_convolver);
+	R_RegisterCFinalizerEx(r_convolver, _R_profit_convolver_finalizer, TRUE);
+	UNPROTECT(1);
+	return r_convolver;
+}
+
+/*
  * Public exported functions follow now
  * ----------------------------------------------------------------------------
  */
@@ -406,8 +577,8 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	vector<bool> mask;
 
 	SEXP dimensions = _get_list_element(model_list, "dimensions");
-	img_w = (unsigned int)REAL(dimensions)[0];
-	img_h = (unsigned int)REAL(dimensions)[1];
+	img_w = (unsigned int)INTEGER(dimensions)[0];
+	img_h = (unsigned int)INTEGER(dimensions)[1];
 
 	SEXP magzero = _get_list_element(model_list, "magzero");
 	if( magzero == R_NilValue ) {
@@ -445,6 +616,15 @@ SEXP _R_profit_make_model(SEXP model_list) {
 		m.calcmask = _read_mask(r_calcregion, &mask_w, &mask_h);
 		if( mask_w != img_w || mask_h != img_h ) {
 			Rf_error("Calc region has different dimensions than the image");
+			return R_NilValue;
+		}
+	}
+
+	/* A convolver, if any */
+	SEXP convolver = _get_list_element(model_list, "convolver");
+	if (convolver != R_NilValue) {
+		m.convolver = unwrap_convolver(convolver);
+		if (!m.convolver) {
 			return R_NilValue;
 		}
 	}
@@ -500,7 +680,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	vector<double> model_image;
 	try {
 		model_image = m.evaluate();
-	} catch (invalid_parameter &e) {
+	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while calculating model: " << e.what() << endl;
 		Rf_error(ss.str().c_str());
@@ -517,24 +697,32 @@ SEXP _R_profit_make_model(SEXP model_list) {
 }
 
 static
-SEXP _R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
+SEXP _R_profit_convolve(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask) {
 
 	unsigned int img_w, img_h, psf_w, psf_h;
 
-	vector<double> image = _read_image(r_image, &img_w, &img_h);
-	vector<double> psf = _read_image(r_psf, &psf_w, &psf_h);
-
-	vector<bool> calc_region;
-	if( Rf_asLogical(r_do_calc_region) ) {
-		unsigned int calc_w, calc_h;
-		calc_region = _read_mask(r_calc_region, &calc_w, &calc_h);
-		if( calc_w != img_w || calc_h != img_h ) {
-			Rf_error("Calc region has different dimensions than the image");
-			return R_NilValue;
-		}
+	ConvolverPtr convolver = unwrap_convolver(r_convolver);
+	if (!convolver) {
+		return R_NilValue;
 	}
 
-	image = convolve(image, img_w, img_h, psf, psf_w, psf_h, calc_region);
+	vector<double> image = _read_image(r_image, &img_w, &img_h);
+	vector<double> psf = _read_image(r_psf, &psf_w, &psf_h);
+	vector<bool> mask;
+
+	if (r_mask != R_NilValue) {
+		unsigned int calc_w, calc_h;
+		mask = _read_mask(r_mask, &calc_w, &calc_h);
+		// we already checked that dimensions are fine
+	}
+
+	Image src_image(image, img_w, img_h);
+	Image psf_image(psf, psf_w, psf_h);
+	Mask mask_image;
+	if (r_mask != R_NilValue) {
+		mask_image = Mask(mask, img_w, img_h);
+	}
+	image = convolver->convolve(src_image, psf_image, mask_image).getData();
 	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, img_w * img_h));
 	memcpy(REAL(ret_image), image.data(), sizeof(double) * img_w * img_h);
 
@@ -548,12 +736,27 @@ extern "C" {
 		return _R_profit_make_model(model_list);
 	}
 
-	SEXP R_profit_convolve(SEXP r_image, SEXP r_psf, SEXP r_calc_region, SEXP r_do_calc_region) {
-		return _R_profit_convolve(r_image, r_psf, r_calc_region, r_do_calc_region);
+	SEXP R_profit_convolvers() {
+		return _R_profit_convolvers();
+	}
+
+	SEXP R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
+	                             SEXP reuse_psf_fft, SEXP fft_effort, SEXP omp_threads,
+	                             SEXP openclenv) {
+		return _R_profit_make_convolver(type, image_dimensions, psf, reuse_psf_fft,
+		                                fft_effort, omp_threads, openclenv);
+	}
+
+	SEXP R_profit_convolve(SEXP convolver, SEXP r_image, SEXP r_psf, SEXP mask) {
+		return _R_profit_convolve(convolver, r_image, r_psf, mask);
 	}
 
 	SEXP R_profit_has_openmp() {
 		return _R_profit_has_openmp();
+	}
+
+	SEXP R_profit_has_fftw() {
+		return _R_profit_has_fftw();
 	}
 
 	SEXP R_profit_openclenv_info() {
@@ -565,32 +768,50 @@ extern "C" {
 	}
 
 	/*
+	 * Defined in ProFit.cpp and generated in RcppExports.cpp
+	 * Needed here so we can register all exported symbols
+	 */
+	SEXP _ProFit_profitDownsample(SEXP, SEXP);
+	SEXP _ProFit_profitUpsample(SEXP, SEXP);
+
+	/*
 	 * Registering the methods above at module loading time
 	 * This should speed symbol lookup, and anyway it's considered a better
 	 * practice.
-	 *
-	 * TODO: The Rcpp-related routines should be included in this list too
-	 *       which is currently not the case. We need to decide how to list
-	 *       them here; otherwise .Calls to them from R will not succeed
 	 */
-//	static const R_CallMethodDef callMethods[]  = {
-//		{"R_profit_make_model", (DL_FUNC) &R_profit_make_model, 1},
-//		{"R_profit_make_convolve", (DL_FUNC) &R_profit_convolve, 4},
-//		{"R_profit_has_openmp", (DL_FUNC) &R_profit_has_openmp, 0},
-//		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
-//		{"R_profit_openclenv", (DL_FUNC) &R_profit_openclenv, 3},
-//		{NULL, NULL, 0}
-//	};
-//
-//	void R_init_ProFit(DllInfo *dll) {
-//		/* Using registered symbols only from now on */
-//		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
-//		R_useDynamicSymbols(dll, FALSE);
-//		R_forceSymbols(dll, TRUE);
-//	}
-//
-//	void R_unload_ProFit(DllInfo *info) {
-//		/* no-op */
-//	}
+	static const R_CallMethodDef callMethods[]  = {
+
+		/* Defined in this module */
+		{"R_profit_make_model",     (DL_FUNC) &R_profit_make_model,     1},
+		{"R_profit_convolvers",     (DL_FUNC) &R_profit_convolvers,     0},
+		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 7},
+		{"R_profit_convolve",       (DL_FUNC) &R_profit_convolve,       4},
+		{"R_profit_has_openmp",     (DL_FUNC) &R_profit_has_openmp,     0},
+		{"R_profit_has_fftw",       (DL_FUNC) &R_profit_has_fftw,       0},
+		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
+		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
+
+		/* Defined in ProFit.cpp and generated in RcppExports.cpp */
+		{"_ProFit_profitDownsample", (DL_FUNC) &_ProFit_profitDownsample, 2},
+		{"_ProFit_profitUpsample",   (DL_FUNC) &_ProFit_profitUpsample,   2},
+
+		/* Sentinel */
+		{NULL, NULL, 0}
+	};
+
+	void R_init_ProFit(DllInfo *dll) {
+#ifdef PROFIT_FFTW
+		FFTPlan::initialize();
+#endif
+		/* Using registered symbols only from now on */
+		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
+		R_useDynamicSymbols(dll, FALSE);
+	}
+
+	void R_unload_ProFit(DllInfo *info) {
+#ifdef PROFIT_FFTW
+		FFTPlan::finalize();
+#endif
+	}
 
 }

@@ -24,7 +24,6 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef PROFIT_OPENCL
 #include <fstream>
 #include <streambuf>
 #include <sstream>
@@ -35,7 +34,7 @@
 #include "profit/exceptions.h"
 #include "profit/opencl.h"
 
-using namespace std;
+#ifdef PROFIT_OPENCL
 
 namespace profit {
 
@@ -96,12 +95,12 @@ OpenCL_command_times cl_cmd_times(const cl::Event &evt) {
 
 static cl_ver_t get_opencl_version(const cl::Platform &platform) {
 
-	string version = platform.getInfo<CL_PLATFORM_VERSION>();
+	std::string version = platform.getInfo<CL_PLATFORM_VERSION>();
 
 	// Version string should be of type "OpenCL<space><major_version.minor_version><space><platform-specific information>"
 
 	if( version.find("OpenCL ") != 0) {
-		throw opencl_error(string("OpenCL version string doesn't start with 'OpenCL ': ") + version);
+		throw opencl_error(std::string("OpenCL version string doesn't start with 'OpenCL ': ") + version);
 	}
 
 	auto next_space = version.find(" ", 7);
@@ -117,49 +116,64 @@ static cl_ver_t get_opencl_version(const cl::Platform &platform) {
 }
 
 static
-map<int, OpenCL_plat_info> _get_opencl_info() {
+std::map<int, OpenCL_plat_info> _get_opencl_info() {
 
-	vector<cl::Platform> all_platforms;
-	cl::Platform::get(&all_platforms);
+	std::vector<cl::Platform> all_platforms;
+	try {
+		cl::Platform::get(&all_platforms);
+	} catch (const cl::Error &e) {
+		// No platform found by ICD loader, we tolerate that
+		if (e.err() != CL_PLATFORM_NOT_FOUND_KHR) {
+			throw;
+		}
+	}
 
-	map<int, OpenCL_plat_info> pinfo;
+	std::map<int, OpenCL_plat_info> pinfo;
 	unsigned int pidx = 0;
 	for(auto platform: all_platforms) {
-		vector<cl::Device> devices;
-		platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+		std::vector<cl::Device> devices;
 
-		map<int, OpenCL_dev_info> dinfo;
+		try {
+			platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+		} catch (const cl::Error &e) {
+			// If no devices are found we simply return an empty devices list.
+			if (e.err() != CL_DEVICE_NOT_FOUND) {
+				throw;
+			}
+		}
+
+		std::map<int, OpenCL_dev_info> dinfo;
 		unsigned int didx = 0;
 		for(auto device: devices) {
-			dinfo[didx] = OpenCL_dev_info{
+			dinfo[didx++] = OpenCL_dev_info{
 				device.getInfo<CL_DEVICE_NAME>(),
 				device.getInfo<CL_DEVICE_DOUBLE_FP_CONFIG>() != 0
 			};
 		}
 
-		string name = platform.getInfo<CL_PLATFORM_NAME>();
+		std::string name = platform.getInfo<CL_PLATFORM_NAME>();
 		pinfo[pidx++] = OpenCL_plat_info{name, get_opencl_version(platform), dinfo};
 	}
 
 	return pinfo;
 }
 
-map<int, OpenCL_plat_info> get_opencl_info() {
+std::map<int, OpenCL_plat_info> get_opencl_info() {
 
 	// Wrap cl::Error exceptions
 	try {
 		return _get_opencl_info();
 	} catch(const cl::Error &e) {
-		ostringstream os;
+		std::ostringstream os;
 		os << "OpenCL error: " << e.what() << ". OpenCL error code: " << e.err();
 		throw opencl_error(os.str());
 	}
 }
 
 static
-shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
+OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
 
-	vector<cl::Platform> all_platforms;
+	std::vector<cl::Platform> all_platforms;
 	if( cl::Platform::get(&all_platforms) != CL_SUCCESS ) {
 		throw opencl_error("Error while getting OpenCL platforms");
 	}
@@ -168,7 +182,7 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 	}
 
 	if( platform_idx >= all_platforms.size() ) {
-		ostringstream ss;
+		std::ostringstream ss;
 		ss << "OpenCL platform index " << platform_idx << " must be < " << all_platforms.size();
 		throw invalid_parameter(ss.str());
 	}
@@ -176,13 +190,13 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 	cl::Platform platform = all_platforms[platform_idx];
 
 	//get default device of the default platform
-	vector<cl::Device> all_devices;
+	std::vector<cl::Device> all_devices;
 	platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
 	if( all_devices.size() == 0 ){
 		throw opencl_error("No devices found. Check OpenCL installation");
 	}
 	if( device_idx >= all_devices.size() ) {
-		ostringstream ss;
+		std::ostringstream ss;
 		ss << "OpenCL device index " << device_idx << " must be < " << all_devices.size();
 		throw invalid_parameter(ss.str());
 	}
@@ -202,46 +216,52 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 	// shared library (instead of, for instance, loading the sources from a
 	// particular location on disk at runtime)
 	const char *common_float =
-#include "profit/cl/common-float.cl"
+#include "cl/common-float.cl"
 	;
 	const char *common_double =
-#include "profit/cl/common-double.cl"
+#include "cl/common-double.cl"
 	;
 	const char *sersic_float =
-#include "profit/cl/sersic-float.cl"
+#include "cl/sersic-float.cl"
 	;
 	const char *sersic_double =
-#include "profit/cl/sersic-double.cl"
+#include "cl/sersic-double.cl"
 	;
 	const char *moffat_float =
-#include "profit/cl/moffat-float.cl"
+#include "cl/moffat-float.cl"
 	;
 	const char *moffat_double =
-#include "profit/cl/moffat-double.cl"
+#include "cl/moffat-double.cl"
 	;
 	const char *ferrer_float =
-#include "profit/cl/ferrer-float.cl"
+#include "cl/ferrer-float.cl"
 	;
 	const char *ferrer_double =
-#include "profit/cl/ferrer-double.cl"
+#include "cl/ferrer-double.cl"
 	;
 	const char *king_float =
-#include "profit/cl/king-float.cl"
+#include "cl/king-float.cl"
 	;
 	const char *king_double =
-#include "profit/cl/king-double.cl"
+#include "cl/king-double.cl"
 	;
 	const char *brokenexp_float =
-#include "profit/cl/brokenexponential-float.cl"
+#include "cl/brokenexponential-float.cl"
 	;
 	const char *brokenexp_double =
-#include "profit/cl/brokenexponential-double.cl"
+#include "cl/brokenexponential-double.cl"
 	;
 	const char *coresersic_float =
-#include "profit/cl/coresersic-float.cl"
+#include "cl/coresersic-float.cl"
 	;
 	const char *coresersic_double =
-#include "profit/cl/coresersic-double.cl"
+#include "cl/coresersic-double.cl"
+	;
+	const char *convolve_float =
+#include "cl/convolve-float.cl"
+	;
+	const char *convolve_double =
+#include "cl/convolve-double.cl"
 	;
 
 	cl::Program::Sources sources;
@@ -252,6 +272,7 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 	sources.push_back(king_float);
 	sources.push_back(brokenexp_float);
 	sources.push_back(coresersic_float);
+	sources.push_back(convolve_float);
 	if( use_double ) {
 		sources.push_back(common_double);
 		sources.push_back(sersic_double);
@@ -260,6 +281,7 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 		sources.push_back(king_double);
 		sources.push_back(brokenexp_double);
 		sources.push_back(coresersic_double);
+		sources.push_back(convolve_double);
 	}
 
 	cl::Context context(device);
@@ -272,19 +294,49 @@ shared_ptr<OpenCL_env> _get_opencl_environment(unsigned int platform_idx, unsign
 
 	cl::CommandQueue queue(context, device, enable_profiling ? CL_QUEUE_PROFILING_ENABLE : 0);
 
-	return make_shared<OpenCL_env>(OpenCL_env{device, get_opencl_version(platform), context, queue, program, use_double, enable_profiling});
+	return std::make_shared<OpenCL_env>(device, get_opencl_version(platform), context, queue, program, use_double, enable_profiling);
 }
 
-shared_ptr<OpenCL_env> get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
+OpenCLEnvPtr get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
 
 	// Wrap cl::Error exceptions
 	try {
 		return _get_opencl_environment(platform_idx, device_idx, use_double, enable_profiling);
 	} catch(const cl::Error &e) {
-		ostringstream os;
+		std::ostringstream os;
 		os << "OpenCL error: " << e.what() << ". OpenCL error code: " << e.err();
 		throw opencl_error(os.str());
 	}
+}
+
+unsigned long OpenCL_env::max_local_memory() {
+	return device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+}
+
+unsigned int OpenCL_env::compute_units() {
+	return device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+}
+
+cl::Event OpenCL_env::queue_write(const cl::Buffer &buffer, const void *data, const std::vector<cl::Event>* wait_evts) {
+	cl::Event wevt;
+	queue.enqueueWriteBuffer(buffer, CL_FALSE, 0, buffer.getInfo<CL_MEM_SIZE>(), data, wait_evts, &wevt);
+	return wevt;
+}
+
+cl::Event OpenCL_env::queue_kernel(const cl::Kernel &kernel, const cl::NDRange global, const std::vector<cl::Event>* wait_evts, const cl::NDRange &local) {
+	cl::Event kevt;
+	queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local, wait_evts, &kevt);
+	return kevt;
+}
+
+cl::Event OpenCL_env::queue_read(const cl::Buffer &buffer, void *data, const std::vector<cl::Event>* wait_evts) {
+	cl::Event revt;
+	queue.enqueueReadBuffer(buffer, CL_FALSE, 0, buffer.getInfo<CL_MEM_SIZE>(), data, wait_evts, &revt);
+	return revt;
+}
+
+cl::Kernel OpenCL_env::get_kernel(const std::string &name) {
+	return cl::Kernel(program, name.c_str());
 }
 
 }

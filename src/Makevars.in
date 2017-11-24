@@ -1,6 +1,6 @@
 CXX_STD = CXX11
 
-PKG_CPPFLAGS = -Ilibprofit  -DPROFIT_VERSION=`cat libprofit/VERSION` -DHAVE_R -DPROFIT_BUILD @profit_CPPFLAGS@
+PKG_CPPFLAGS = -Ilibprofit -DPROFIT_BUILD @profit_CPPFLAGS@
 PKG_LIBS = @profit_LIBS@
 
 OBJECTS = libprofit/src/brokenexponential.o \
@@ -8,6 +8,8 @@ OBJECTS = libprofit/src/brokenexponential.o \
           libprofit/src/coresersic.o \
           libprofit/src/exceptions.o \
           libprofit/src/ferrer.o \
+          libprofit/src/fft.o \
+          libprofit/src/image.o \
           libprofit/src/king.o \
           libprofit/src/model.o \
           libprofit/src/moffat.o \

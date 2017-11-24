@@ -34,8 +34,6 @@
 #include "profit/utils.h"
 
 
-using namespace std;
-
 namespace profit
 {
 
@@ -49,15 +47,20 @@ void PsfProfile::validate()  {
 
 static inline
 unsigned int bind(double value, unsigned int max) {
-	int intval = static_cast<int>(floor(value));
+	int intval = static_cast<int>(std::floor(value));
 	if( intval < 0 ) {
 		return 0;
 	}
 	unsigned int uintval = static_cast<unsigned int>(intval);
-	return min(uintval, max);
+	return std::min(uintval, max);
 }
 
-void PsfProfile::evaluate(vector<double> &image) {
+void PsfProfile::evaluate(std::vector<double> &image) {
+
+	using std::floor;
+	using std::min;
+	using std::max;
+	using std::pow;
 
 	int psf_pix_x, psf_pix_y;
 	unsigned int pix_x, pix_y;
@@ -148,11 +151,11 @@ void PsfProfile::evaluate(vector<double> &image) {
 	if( total != 0 ) {
 		multiplier = scale / total;
 	}
-	transform(image.begin(), image.end(), image.begin(), [=](double v) {return v*multiplier;});
+	std::transform(image.begin(), image.end(), image.begin(), [=](double v) {return v*multiplier;});
 
 }
 
-PsfProfile::PsfProfile(const Model &model, const string &name) :
+PsfProfile::PsfProfile(const Model &model, const std::string &name) :
 	Profile(model, name),
 	xcen(0),
 	ycen(0),
@@ -161,7 +164,7 @@ PsfProfile::PsfProfile(const Model &model, const string &name) :
 	// no-op
 }
 
-bool PsfProfile::parameter_impl(const string &name, double val) {
+bool PsfProfile::parameter_impl(const std::string &name, double val) {
 
 	if( Profile::parameter_impl(name, val) ) {
 		return true;

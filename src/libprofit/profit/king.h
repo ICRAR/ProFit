@@ -26,6 +26,7 @@
 #ifndef PROFIT_KING_H
 #define PROFIT_KING_H
 
+#include "profit/config.h"
 #include "profit/radial.h"
 
 namespace profit

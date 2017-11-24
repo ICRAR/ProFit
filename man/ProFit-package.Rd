@@ -13,10 +13,10 @@
 \tabular{ll}{
 Package: \tab ProFit\cr
 Type: \tab Package\cr
-Version: \tab 1.0.5\cr
-Date: \tab 2017-09-14\cr
-License: \tab GPL-3+\cr
-Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon\cr
+Version: \tab 1.1.0\cr
+Date: \tab 2017-11-23\cr
+License: \tab LGPL-3\cr
+Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon, methods\cr
 LinkingTo: \tab Rcpp\cr
 Depends: \tab R (>= 3.0), Rcpp (>= 0.11.6), magicaxis (>= 2.0.3), celestial (>= 1.4.1), FITSio\cr
 Suggests: \tab knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager, ProFound, sn\cr

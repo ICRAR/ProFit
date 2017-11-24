@@ -32,8 +32,6 @@
 #include "profit/moffat.h"
 
 
-using namespace std;
-
 namespace profit
 {
 
@@ -52,6 +50,10 @@ namespace profit
  *  r_factor = ((x/rscale)^{2+b} + (y/rscale)^{2+b})^{1/(2+b)}
  */
 double MoffatProfile::evaluate_at(double x, double y) const {
+
+	using std::pow;
+	using std::abs;
+
 	double box = 2 + this->box;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./(box));
 	double r_factor = r/rscale;
@@ -72,30 +74,28 @@ void MoffatProfile::validate() {
 }
 
 double MoffatProfile::fluxfrac(double fraction) const {
-  double rfrac = this->rscale*sqrt(pow(1.-fraction,1./(1.-this->con))-1);
-	return rfrac;
+	return rscale * std::sqrt(std::pow(1 - fraction, 1/ (1 - con)) - 1);
 }
 
 double MoffatProfile::get_lumtot(double r_box) {
 	double con = this->con;
-	return pow(this->rscale, 2) * M_PI * axrat/(con-1)/r_box;
+	return std::pow(this->rscale, 2) * M_PI * axrat/(con-1)/r_box;
 }
 
 double MoffatProfile::get_rscale() {
-	return fwhm/(2*sqrt(pow(2,(1/con))-1));
+	return fwhm/(2*std::sqrt(std::pow(2,(1/con))-1));
 }
 
 // pchisq((1.823*2*sqrt(2*log(2)))^2,2) = 0.9999004
 // Contains 99.99% of the flux in the Gaussian limit
 // con -> 1 should contain < 50% so this may be redundant, but it's here just in case
 double MoffatProfile::adjust_rscale_switch() {
-	double rscale_switch = max(this->fluxfrac(0.9999),1.823*this->fwhm);
-  rscale_switch = max(min(rscale_switch, 20.), 2.)/this->rscale;
-	return rscale_switch;
+	double rscale_switch = std::max(fluxfrac(0.9999), 1.823 * fwhm);
+	return std::max(std::min(rscale_switch, 20.), 2.) / rscale;
 }
 
 double MoffatProfile::adjust_rscale_max() {
-  return ceil(max(fluxfrac(0.9999),2.)/this->rscale);
+	return std::ceil(std::max(fluxfrac(0.9999), 2.) / rscale);
 }
 
 double MoffatProfile::adjust_acc() {
@@ -103,14 +103,14 @@ double MoffatProfile::adjust_acc() {
 }
 
 
-MoffatProfile::MoffatProfile(const Model &model, const string &name) :
+MoffatProfile::MoffatProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	fwhm(3), con(2)
 {
 	// no-op
 }
 
-bool MoffatProfile::parameter_impl(const string &name, double val) {
+bool MoffatProfile::parameter_impl(const std::string &name, double val) {
 
 	if( RadialProfile::parameter_impl(name, val) ) {
 		return true;

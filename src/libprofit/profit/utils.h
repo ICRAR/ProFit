@@ -33,18 +33,15 @@ namespace profit
 {
 
 /**
- * Adds the individual values from `src` and `dest` and stores the result
- * in `dest`. Both images must have the same size.
+ * Checks whether values `x` and `y` are equals,
+ * with a difference of almost `e`.
+ * @param x The first value to compare
+ * @param y The second value to compare
+ * @param e The maximum allowed difference
+ * @return Whether the values are almost equals
  */
-void add_images(std::vector<double> &dest, const std::vector<double> &src);
+bool almost_equals(double x, double y, double e = 1e-10);
 
-/**
- * Normalizes the values of image so their total sum is 1.
- *
- * The values are written back into the image, so if the original needs to be retained
- * then a copy should be supplied.
- */
-void normalize(std::vector<double> &image);
 
 /**
  * Computes the quantile of the gamma distribution for ``p`` and ``shape``

@@ -32,8 +32,6 @@
 #include "profit/utils.h"
 
 
-using namespace std;
-
 namespace profit
 {
 
@@ -51,6 +49,11 @@ namespace profit
  *           B = box parameter
  */
 double CoreSersicProfile::evaluate_at(double x, double y) const {
+
+	using std::abs;
+	using std::exp;
+	using std::pow;
+
 	double box = this->box + 2.;
 	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
 	return pow(1 + pow(r/rb,-a), b/a) *
@@ -80,6 +83,10 @@ void CoreSersicProfile::validate() {
 }
 
 double CoreSersicProfile::integrate_at(double r) const {
+
+	using std::exp;
+	using std::pow;
+
 	return r * pow(1 + pow(r/rb,-a), b/a) *
 	       exp(-_bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
 }
@@ -91,7 +98,7 @@ double CoreSersicProfile::get_lumtot(double r_box) {
 	 * to get the total luminosity
 	 */
 	auto int_f = [](double r, void *ctx){
-		CoreSersicProfile *p = reinterpret_cast<CoreSersicProfile *>(ctx);
+		CoreSersicProfile *p = static_cast<CoreSersicProfile *>(ctx);
 		return p->integrate_at(r);
 	};
 	double magtot = integrate_qagi(int_f, 0, this);
@@ -127,13 +134,13 @@ double CoreSersicProfile::adjust_acc() {
 	return this->acc;
 }
 
-CoreSersicProfile::CoreSersicProfile(const Model &model, const string &name) :
+CoreSersicProfile::CoreSersicProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	re(1), rb(1), nser(4), a(1), b(1)
 {
 	// no-op
 }
-bool CoreSersicProfile::parameter_impl(const string &name, double val) {
+bool CoreSersicProfile::parameter_impl(const std::string &name, double val) {
 
 	if( RadialProfile::parameter_impl(name, val) ) {
 		return true;

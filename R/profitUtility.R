@@ -207,3 +207,53 @@ profitPoissonMonteCarlo <- function(x)
   dim(x) = dimx
   return(x)
 }
+
+profitGetOpenCLEnvs <- function(name="opencl",make.envs=FALSE)
+{
+  openclenvs = data.frame()
+  if(profitHasOpenCL())
+  {
+    openclinfo = profitOpenCLEnvInfo()
+    nenvs = length(openclinfo)
+    if(nenvs > 0)
+    {
+      for(envi in 1:length(openclinfo))
+      {
+        openclenv = openclinfo[[envi]]
+        devices = do.call(rbind, lapply(openclenv$devices,
+          data.frame, stringsAsFactors=FALSE))
+        names(devices)[names(devices) == "name"] = "dev_name"
+        devices$name = name
+        devices$env_i = envi
+        devices$env_name = openclenv$name
+        devices$version = openclenv$opencl_version
+        devices$dev_i = 1:nrow(devices)
+        devices = devices[,c(3:ncol(devices),1:2)]
+        devices$supports_single = TRUE
+        openclenvs = rbind(openclenvs,devices)
+      }
+    }
+    if(make.envs)
+    {
+      ptrvec = c()
+      for(i in 1:nrow(openclenvs)) ptrvec = c(ptrvec, new("externalptr"))
+      openclenvs$env_single = ptrvec
+      openclenvs$env_double = ptrvec
+      for(i in 1:nrow(openclenvs))
+      {
+        if(openclenvs$supports_single[i]) openclenvs$env_single[[i]] =
+            profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = FALSE)
+        if(openclenvs$supports_double[i]) openclenvs$env_double[[i]] =
+            profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = TRUE)
+      }
+    }
+  }
+  return(openclenvs)
+}
+
+profitAvailableIntegrators <- function()
+{
+  rv = c("brute")
+  if(profitHasOpenCL()) rv = c(rv,"opencl")
+  return(rv)
+}
