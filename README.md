@@ -1,5 +1,7 @@
 # ProFit (R package)
 
+[![Build Status](https://travis-ci.org/ICRAR/ProFit.svg?branch=master)](https://travis-ci.org/ICRAR/ProFit)
+
 ## Synopsis
 
 Get data / Define model / ??? / ProFit!
