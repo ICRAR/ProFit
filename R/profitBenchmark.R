@@ -42,7 +42,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
   benchconvolution=is.matrix(psf),
   precisions=c("double"), omp_threads=1,
   openclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
-  reference = "brute", reusefftpsf = TRUE, fft_effort=0,
+  reference = "brute", reusepsffft = TRUE, fft_effort=0,
   returnimages = FALSE)
 {
   stopifnot(is.data.frame(openclenvs))
@@ -77,8 +77,13 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
     dimimage = dim(image)
     benchi = 1:ceiling(nbench)
     doaccuracy = reference %in% bench$name
-    availusecalcregions = c(FALSE)
-    if(!is.null(calcregion)) availusecalcregions = c(availusecalcregions,TRUE)
+    availusecalcregions = FALSE
+    if(!is.null(calcregion))
+    {
+      availusecalcregions = c(availusecalcregions,TRUE)
+      # libprofit needs a negative mask
+      calcregion = !calcregion
+    }
     
     ptrvec = c()
     for(i in 1:nmethods) ptrvec = c(ptrvec, new("externalptr"))
@@ -136,7 +141,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
         if(benchconvolution)
         {
           convolver = profitMakeConvolver(method,
-            image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusefftpsf,
+            image_dimensions = dimimage, psf=psf, reuse_psf_fft = reusepsffft,
             omp_threads=omp_threads, openclenv=openclenv)
         }
         if(identical(bench$name[[methodi]],"fft")) usecalcregions = FALSE
@@ -151,7 +156,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
           {
             for(i in benchi)
             {
-              imagei = profitConvolve(convolver, image, psf, !calcregion)
+              imagei = profitConvolve(convolver, image, psf, calcregioni)
             }
           } else {
             for(i in benchi)
@@ -197,14 +202,22 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
   return(rv)
 }
 
-profitBenchmarkResultStripPointers <- function(benchmarks)
+profitBenchmarkResultStripPointers <- function(dataframe, colnames=as.vector(
+  outer(c("env","convolver"),c("single","double"),paste,sep="_")))
 {
-  for(prec in c("single","double"))
+  stopifnot(is.data.frame(dataframe))
+  isnumeric = is.numeric(colnames)
+  ischaracter = is.character(colnames)
+  ncols = ncol(dataframe)
+  nrows = nrow(dataframe)
+  allcols = colnames(dataframe)
+  for(cname in colnames)
   {
-    for(name in c("env","convolver"))
+    if((isnumeric && (cname >= 1) && (cname <= ncols)) || 
+      (ischaracter && cname %in% allcols))
     {
-      benchmarks[[paste0(name,"_",prec)]] = NULL
+      dataframe[[cname]] = as.list(capture.output(print(dataframe[[cname]]))[seq(2,3*nrows,by=3)])
     }
   }
-  return(benchmarks)
+  return(dataframe)
 }

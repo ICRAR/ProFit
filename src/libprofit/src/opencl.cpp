@@ -119,7 +119,14 @@ static
 std::map<int, OpenCL_plat_info> _get_opencl_info() {
 
 	std::vector<cl::Platform> all_platforms;
-	cl::Platform::get(&all_platforms);
+	try {
+		cl::Platform::get(&all_platforms);
+	} catch (const cl::Error &e) {
+		// No platform found by ICD loader, we tolerate that
+		if (e.err() != CL_PLATFORM_NOT_FOUND_KHR) {
+			throw;
+		}
+	}
 
 	std::map<int, OpenCL_plat_info> pinfo;
 	unsigned int pidx = 0;

@@ -52,6 +52,11 @@
 /* We use exceptions in our code */
 # define CL_HPP_ENABLE_EXCEPTIONS
 
+/* MacOS, and maybe other platforms might not define this */
+#if !defined(CL_PLATFORM_NOT_FOUND_KHR)
+# define CL_PLATFORM_NOT_FOUND_KHR -1001
+#endif
+
 #endif /* PROFIT_BUILD */
 
 /* Define the target OpenCL version based on the given major/minor version */

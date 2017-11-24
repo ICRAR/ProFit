@@ -98,7 +98,7 @@ convolver_brute = profitMakeConvolver("brute", c(400, 400), psf)
 
 if(has_openCL){
   convolver_bruteCL = profitMakeConvolver("opencl", c(400, 400), psf,
-  openclenv=profitOpenCLEnv(1,3))
+  openclenv=profitOpenCLEnv())
 }
 
 if(has_fft){

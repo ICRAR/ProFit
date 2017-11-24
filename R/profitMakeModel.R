@@ -217,11 +217,11 @@ profitMakeModel = function(modellist,
 						  new_profiles = add_defaults(new_profiles, 'ang', 0)
 						  new_profiles = add_defaults(new_profiles, 'axrat', 1)
 						  new_profiles = add_defaults(new_profiles, 'box', 0)
-						  new_profiles = add_defaults(new_profiles, 'rough', F)
+						  new_profiles = add_defaults(new_profiles, 'rough', FALSE)
 						  new_profiles = add_defaults(new_profiles, 'acc', acc)
 						  new_profiles = add_defaults(new_profiles, 'rscale_max', 0)
 						  if(comp == "sersic") {
-						    new_profiles = add_defaults(new_profiles, 'rescale_flux', F)
+						    new_profiles = add_defaults(new_profiles, 'rescale_flux', FALSE)
 						  }
 						}
 						# If there are only pointsources with this profile, the profile list will be null so create it first
