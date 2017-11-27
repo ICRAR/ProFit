@@ -5,7 +5,7 @@
 
 #include <profit/profit.h>
 
-/* Use the cannonical Rf_* names */
+/* Use the canonical Rf_* names */
 #define R_NO_REMAP
 #include <R.h>
 #include <Rmath.h>
@@ -731,6 +731,45 @@ SEXP _R_profit_convolve(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask)
 
 }
 
+static
+SEXP _R_profit_convolve_fft2(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask, SEXP r_image2) {
+
+	unsigned int img_w, img_h, psf_w, psf_h;
+
+	ConvolverPtr convolver = unwrap_convolver(r_convolver);
+	if (!convolver) {
+		return R_NilValue;
+	}
+
+	vector<double> image = _read_image(r_image, &img_w, &img_h);
+	vector<double> image2 = _read_image(r_image2, &img_w, &img_h);
+	vector<double> psf = _read_image(r_psf, &psf_w, &psf_h);
+	vector<bool> mask;
+
+	if (r_mask != R_NilValue) {
+		unsigned int calc_w, calc_h;
+		mask = _read_mask(r_mask, &calc_w, &calc_h);
+		// we already checked that dimensions are fine
+	}
+	
+	Image src_image(image, img_w, img_h);
+	Image src_image2(image2, img_w, img_h);
+	Image psf_image(psf, psf_w, psf_h);
+	Mask mask_image;
+	if (r_mask != R_NilValue) {
+		mask_image = Mask(mask, img_w, img_h);
+	}
+	
+	vector<double> conv = (reinterpret_cast<profit::FFTConvolver*>(convolver.get()))->convolve(
+	  src_image, psf_image, mask_image, &src_image2).getData();
+	
+	SEXP ret_image = PROTECT(Rf_allocVector(REALSXP, 2 * img_w * img_h));
+	memcpy(REAL(ret_image), conv.data(), 2 * sizeof(double) * img_w * img_h);
+
+	UNPROTECT(1);
+	return ret_image;
+}
+
 extern "C" {
 	SEXP R_profit_make_model(SEXP model_list) {
 		return _R_profit_make_model(model_list);
@@ -749,6 +788,10 @@ extern "C" {
 
 	SEXP R_profit_convolve(SEXP convolver, SEXP r_image, SEXP r_psf, SEXP mask) {
 		return _R_profit_convolve(convolver, r_image, r_psf, mask);
+	}
+  
+  SEXP R_profit_convolve_fft2(SEXP convolver, SEXP r_image, SEXP r_psf, SEXP mask, SEXP r_image2) {
+		return _R_profit_convolve_fft2(convolver, r_image, r_psf, mask, r_image2);
 	}
 
 	SEXP R_profit_has_openmp() {
@@ -786,6 +829,7 @@ extern "C" {
 		{"R_profit_convolvers",     (DL_FUNC) &R_profit_convolvers,     0},
 		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 7},
 		{"R_profit_convolve",       (DL_FUNC) &R_profit_convolve,       4},
+		{"R_profit_convolve_fft2",  (DL_FUNC) &R_profit_convolve_fft2,  5},
 		{"R_profit_has_openmp",     (DL_FUNC) &R_profit_has_openmp,     0},
 		{"R_profit_has_fftw",       (DL_FUNC) &R_profit_has_fftw,       0},
 		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},

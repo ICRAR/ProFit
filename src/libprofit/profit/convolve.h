@@ -123,7 +123,13 @@ public:
 	             FFTPlan::effort_t effort, unsigned int plan_omp_threads,
 	             bool reuse_krn_fft);
 
-	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
+  Image convolve(const Image &src, const Image &krn, const Mask &mask,
+    const Image * extra = nullptr, bool extraissrc=true);
+  
+	Image convolve(const Image &src, const Image &krn, const Mask &mask) override
+	{
+	  return this->convolve(src, krn, mask, nullptr, false);
+	};
 
 private:
 	std::unique_ptr<FFTPlan> plan;

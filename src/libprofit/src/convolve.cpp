@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
-#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -225,23 +224,77 @@ FFTConvolver::FFTConvolver(unsigned int src_width, unsigned int src_height,
 	plan = std::unique_ptr<FFTPlan>(new FFTPlan(convolution_size, effort, plan_omp_threads));
 }
 
-Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mask)
+Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mask, 
+  const Image * extra, bool extraissrc)
 {
-
+  const bool hasextra = extra != nullptr;
+  
 	typedef std::complex<double> complex;
 
-	auto src_width = src.getWidth();
-	auto src_height = src.getHeight();
-	auto krn_width = krn.getWidth();
-	auto krn_height = krn.getHeight();
+	const auto src_width = src.getWidth();
+	const auto src_height = src.getHeight();
+	const auto krn_width = krn.getWidth();
+	const auto krn_height = krn.getHeight();
+	const auto extra_width = hasextra ? extra->getWidth() : 0;
+	const auto extra_height = hasextra ? extra->getHeight() : 0;
+	const bool extra_src_dim_same = !hasextra ? false :
+	  (extra_width == src_width && extra_height == src_height);
 
-	// Create extended images first
+	if(hasextra)
+	{
+	  if(!(extra_width <= src_width) && !(extra_height <= src_height))
+	  {
+	    // TODO: Output more info like actual dimensions
+	    throw fft_error("Error! Extra image/kernel larger than source image.");
+	  }
+	}
+	
+	// Zero padding
 	auto ext_width = 2 * src_width;
 	auto ext_height = 2 * src_height;
-	Image ext_img = src.extend(ext_width, ext_height, 0, 0);
 
 	// Forward FFTs
-	std::vector<complex> src_fft = plan->forward(ext_img);
+	std::vector<complex> src_fft;
+	if(hasextra)
+	{
+	  src_fft.resize(ext_width*ext_height);
+
+	  const auto & srcvec = src.getData();
+	  const auto & extravec = extra->getData();
+
+	  // TODO: Test to see if this is actually faster.
+	  if(extra_src_dim_same)
+	  {
+	    for(unsigned int j = 0; j < src_height; j++) {
+  		  for(unsigned int i = 0; i < src_width; i++) {
+  			  src_fft[i + j*ext_width].real(srcvec[i + j*src_width]);
+  		    src_fft[i + j*ext_width].imag(extravec[i + j*src_width]);
+  		  }
+  	  }
+	  } else {
+	    auto start_x = 0;
+	    auto start_y = 0;
+  	  for(unsigned int j = 0; j < src_height; j++) {
+  		  for(unsigned int i = 0; i < src_width; i++) {
+  			  src_fft[(i+start_x) + (j+start_y)*ext_width].real(srcvec[i + j*src_width]);
+  		  }
+  	  }
+  	  // Shift the image a bit to allow for some zero padding which won't be discarded
+  	  start_x = (src_width-extra_width)/2;
+  	  start_y = (src_height-extra_height)/2;
+  	  for(unsigned int j = 0; j < extra_height; j++) {
+  		  for(unsigned int i = 0; i < extra_width; i++) {
+  			  src_fft[(i+start_x) + (j+start_y)*ext_width].imag(extravec[i + j*extra_width]);
+  		  }
+  	  }
+	  }
+	  // TODO: Can this be done in-place?
+	  src_fft = plan->forward(src_fft);
+	} else {
+	  // Create extended images first
+	  Image ext_img = src.extend(ext_width, ext_height, 0, 0);
+	  src_fft = plan->forward(ext_img);
+	}
 	if (krn_fft.empty()) {
 		auto krn_start_x = (src_width - krn_width) / 2;
 		auto krn_start_y = (src_height - krn_height) / 2;
@@ -256,10 +309,6 @@ Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mas
 		krn_fft.clear();
 	}
 
-	// inverse FFT and scale down
-	Image res(plan->backward_real(src_fft), ext_width, ext_height);
-	res /= res.getSize();
-
 	// crop the image to original size, apply the mask, and good bye
 	auto x_offset = src_width / 2;
 	auto y_offset = src_height / 2;
@@ -272,8 +321,45 @@ Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mas
 		y_offset -= 1;
 	}
 
-	auto cropped = res.crop(src_width, src_height, x_offset, y_offset);
-	cropped &= mask;
+	// inverse FFT and scale down
+	Image cropped;
+	if(hasextra)
+	{
+	  std::vector<complex> res = plan->backward(src_fft);
+	  const auto src_height2 = 2*src_height;
+	  std::vector<double> cropvec(src_width*src_height2);
+	  
+    // The result is an image of twice the original width, for (some) convenience
+    // It keeps the function signature the same, at least, although it then
+    // requires subsetting on the user side
+    
+    for(unsigned int j = 0; j < src_height; j++) {
+		  for(unsigned int i = 0; i < src_width; i++) {
+			  cropvec[i + j*src_width] = res[i + x_offset + (j + y_offset)*ext_width].real();
+		    cropvec[i + j*src_width + src_width*src_height] = res[i + x_offset + (j + y_offset)*ext_width].imag();
+		  }
+	  }
+    if(!mask.empty())
+    {
+      const auto & maskvec = mask.getData();
+      std::transform(cropvec.begin(), cropvec.begin() + src_width*src_height,
+        maskvec.begin(), cropvec.begin(),
+    		[](const double i, const bool m) {
+    			return m ? i : 0.;
+    	});
+      std::transform(cropvec.begin() + src_width*src_height, cropvec.end(),
+        maskvec.begin(), cropvec.begin() + src_width*src_height,
+    		[](const double i, const bool m) {
+    			return m ? i : 0.;
+    	});
+    }
+    cropped = Image(cropvec, src_width, src_height2);
+	} else {
+	  Image res = Image(plan->backward_real(src_fft), ext_width, ext_height);
+	  cropped = res.crop(src_width, src_height, x_offset, y_offset);
+	  cropped &= mask;
+	}
+	cropped /= ext_width*ext_height;
 	return cropped;
 }
 
