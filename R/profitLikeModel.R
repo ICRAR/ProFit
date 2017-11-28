@@ -34,11 +34,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     if(Data$usecalcregion){
       model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=psf, dim=dim(image), psfdim=psfdim,
         whichcomponents = whichcomponents, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
-        magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv_int, omp_threads=Data$omp_threads)
+        magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv, omp_threads=Data$omp_threads)
     }else{
       model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=psf, dim=dim(image), psfdim=psfdim,
         whichcomponents = whichcomponents, rough=rough,
-        magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv_int, omp_threads=Data$omp_threads)
+        magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=Data$openclenv, omp_threads=Data$omp_threads)
     }
   } else {
     stopifnot(is.list(model) && !is.null(model$z))

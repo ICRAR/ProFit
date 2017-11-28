@@ -179,7 +179,9 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
       "', t=[",sprintf("%.2e",bestint$time)," ms]"))
     openclenv_int = bestint$openclenv
   } else {
+    # Note if openclenv is "get", and openclenv_int isn't specified, it will inherit the "get" value
     if(identical(openclenv_int,"get")) openclenv_int = openclenv
+    # If that's false, it will simply use the passed-in openclenv
   }
   
   # Temporary - will need other items in convopt in the future, for finesampling/efficient complex FFT(W)s
@@ -218,10 +220,9 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
       convopt$openclenv = bestconv$openclenv
       usecalcregion = bestconv$usecalcregion
     } else {
-      # TODO: Test this
       convpsf = psf
       if(finesample > 1) convpsf = profitUpsample(psf, finesample)
-      if(identical(openclenv,"get")) openclenv_int = profitOpenCLEnv()
+      if(identical(openclenv_conv,"get")) openclenv_conv = profitOpenCLEnv()
       if(is.character(benchconvmethods) && length(benchconvmethods) > 0)
       {
         convmethod = benchconvmethods[1]
@@ -247,7 +248,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
                    region=region, calcregion=calcregion, usecalcregion=usecalcregion, convopt=convopt,
                    tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints,
                    like.func = like.func, magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu,
-                   openclenv=openclenv, omp_threads=omp_threads, benches=benches)
+                   openclenv=openclenv_int, omp_threads=omp_threads, benches=benches)
   class(profit.data)="profit.data"
   return=profit.data
 }
