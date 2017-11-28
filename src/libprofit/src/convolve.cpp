@@ -76,7 +76,7 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 			auto im_idx = i + j * src_width;
 
 			/* Don't convolve this pixel */
-			if( !mask.empty() and mask_data[im_idx]) {
+			if( !mask.empty() and !mask_data[im_idx]) {
 				out[im_idx] = 0;
 				continue;
 			}
