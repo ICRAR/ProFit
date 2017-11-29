@@ -72,9 +72,15 @@ profitAddMats=function(matbase, matadd, addloc=c(1,1), plot=FALSE, ...){
   return=output
 }
 
-profitCheckFinesample <- function(finesample)
+.profitIsPositiveInteger <- function(x)
 {
-  stopifnot(is.integer(finesample) && finesample >= 1L)
+  if(!is.numeric(x) || !is.finite(x)) return(FALSE)
+  return(identical(x %% 1,0))
+}
+
+profitCheckIsPositiveInteger <- function(x)
+{
+  stopifnot(.profitIsPositiveInteger(x))
 }
 
 profitParseLikefunc <- function(funcname)
@@ -158,7 +164,7 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
 
 profitDeprojectImageEllipse <- function(image, xcen, ycen, axrat, ang, upsample=5L)
 {
-  stopifnot(is.integer(upsample))
+  profitCheckIsPositiveInteger(upsample)
   if(axrat == 1) return(image)
   stopifnot(axrat > 0 && axrat < 1)
   if(!is.list(image)) image = list(img=image)

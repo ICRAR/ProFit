@@ -8,7 +8,7 @@ profitMakeModel = function(modellist,
                            convopt=NULL, psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
 
-	stopifnot(is.integer(finesample) && finesample >= 1)
+	profitCheckIsPositiveInteger(finesample)
 
   if(length(dim)==1){dim=rep(dim,2)}
 
@@ -284,6 +284,7 @@ profitMakeModel = function(modellist,
 	  }
 	}
 	if( !is.null(omp_threads) ) {
+	  profitCheckIsPositiveInteger(omp_threads)
 		model[['omp_threads']] = omp_threads
 	}
 

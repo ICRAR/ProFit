@@ -1,19 +1,19 @@
-\name{profitCheckFinesample}
-\alias{profitCheckFinesample}
+\name{profitCheckIsPositiveInteger}
+\alias{profitCheckIsPositiveInteger}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Check for Fine Sampling
+Check if a value is a positive integer
 }
 \description{
-A simple convenience function. Probably not useful to the user, but used by multiple functions so it should not be hidden.
+A simple convenience function to check if a value is a positive integer, which several arguments to functions need to be.
 }
 \usage{
-profitCheckFinesample(finesample)
+profitCheckIsPositiveInteger(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{finesample}{
-Integer.
+  \item{x}{
+Hopefully a positive integer.
 }
 }
 \value{
@@ -24,8 +24,8 @@ Dan Taranu
 }
 \examples{
 \dontrun{
-profitCheckFinesample(3L)
-profitCheckFinesample(3.1)
+profitCheckIsPositiveInteger(3L)
+profitCheckIsPositiveInteger(3.1)
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
