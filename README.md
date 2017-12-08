@@ -1,7 +1,7 @@
 # ProFit (R package)
 
 [![Build Status](https://travis-ci.org/ICRAR/ProFit.svg?branch=master)](https://travis-ci.org/ICRAR/ProFit)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/ICRAR/ProFit?branch=master&svg=true)](https://ci.appveyor.com/project/ICRAR/ProFit)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/ablnki926luepgi5/branch/master?svg=true)](https://ci.appveyor.com/project/rtobar/profit)
 
 ## Synopsis
 
