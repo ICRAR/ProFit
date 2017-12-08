@@ -27,7 +27,7 @@
 }
 
 # Note the PSF and calcregion must already be finesampled here. imgdim should not be.
-profitSetupDataBenchmark <- function(modellist, calcregion, imgdim,
+.profitSetupDataBenchmark <- function(modellist, calcregion, imgdim,
   finesample=1L, psf=NULL, fitpsf=FALSE, omp_threads=NULL, openclenv=NULL,
   openclenv_int=openclenv, openclenv_conv=openclenv,
   nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
@@ -267,7 +267,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   # Note this actually stores whether we are fitting the PSF image for convolution with extended sources
   # It should probably be renamed fitpsfimg but will remain as such for backwards compatibility for now
   fitpsf = psftype == "analytical" && any(unlist(tofit$psf)) && any(!(names(modellist) %in% c("psf","pointsource","sky")))
-  benchmarks = profitSetupDataBenchmark(modellist=modellist, calcregion=calcregion, imgdim=imagedim,
+  benchmarks = .profitSetupDataBenchmark(modellist=modellist, calcregion=calcregion, imgdim=imagedim,
     finesample=finesample, psf=psf, fitpsf=fitpsf, omp_threads=omp_threads,
     openclenv=openclenv, openclenv_int=openclenv_int, openclenv_conv=openclenv_conv,
     nbenchmark=nbenchmark, nbenchint=nbenchint, nbenchconv=nbenchint,

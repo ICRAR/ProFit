@@ -87,13 +87,9 @@ useID=ExampleIDs[1]
 
 image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
 package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),
-package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
 package="ProFit"))$imDat
 segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
-package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
 package="ProFit"))$imDat
 
 noise = sigma

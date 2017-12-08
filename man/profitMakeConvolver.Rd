@@ -88,6 +88,7 @@ Rodrigo Tobar
 \code{\link{profitOpenCLEnv}}
 }
 \examples{
+\dontrun{
 psf = profitMakeGaussianPSF(dim=c(100,100))
 
 has_openCL=profitHasOpenCL()
@@ -157,6 +158,7 @@ if(has_fft){
 if(has_fft & has_openMP){
   magimage(image_fftMP)
   magimage(image_brute-image_fftMP)
+}
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

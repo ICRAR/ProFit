@@ -103,8 +103,6 @@ useID=ExampleIDs[1]
 
 image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
 package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),
-package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
 package="ProFit"))$imDat
 segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
@@ -176,7 +174,7 @@ tolog=list(
 
 # Setup the minimal data structure we need for likelihood.
 
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE)
 
 # Finally, calculate the likelihood and make a plot:

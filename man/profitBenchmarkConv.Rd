@@ -93,6 +93,7 @@ Dan Taranu & Aaron Robotham
  \code{\link{profitBruteConv}}, \code{\link{profitConvolvePSF}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
+\dontrun{
 model = list(
 	sersic = list(
 		xcen   = c(180, 60),
@@ -146,6 +147,7 @@ profitBenchmarkConv(imagedim=c(200,200), psfdim=c(51,51), nbench=1)
 #FFTW is usually faster when imagedim>400 & psfdim>21
 
 profitBenchmarkConv(imagedim=c(400,400), psfdim=c(25,25), nbench=1)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

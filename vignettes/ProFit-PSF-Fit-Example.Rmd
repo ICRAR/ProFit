@@ -55,14 +55,14 @@ psfsigma=sqrt(abs(psf))/200 #To get reasonable PSF errors
 
 We can check the image of the PSF wiht magimage:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 temp=magimage(psf,lo=0,hi=1)
 contour(temp, add=T, col='red', drawlabels=FALSE)
 ```
 
 To check the profile a few 1D plots can be useful:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magplot(psf[13,],type='l')
 lines(psf[12,],lty=2,col='red')
 lines(psf[14,],lty=2,col='blue')
@@ -98,7 +98,7 @@ We can check what this default model looks like:
 psfmodel=profitMakeModel(modellist,dim=c(25,25))$z
 ```
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(psfmodel)
 magimage(abs(psfmodel-psf)/psfmodel,zlim=c(0,1))
 ```
@@ -162,7 +162,7 @@ Data=profitSetupData(image=psf, mask=(psf==0), sigma=psfsigma, modellist=modelli
 
 Check our rough model:
 
-```{r,  fig.width=7, fig.height=5, eval=F}
+```{r,  fig.width=7, fig.height=5, eval=FALSE}
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
@@ -213,7 +213,6 @@ Notice in the above we set a few parameters to be exactly where we want, e.g. th
 ```{r}
 useID=ExampleIDs[1]
 image=readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''), package="ProFit"))$imDat
-mask=readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''), package="ProFit"))$imDat
 sigma=readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''), package="ProFit"))$imDat
 segim=readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''), package="ProFit"))$imDat
 ```
@@ -248,19 +247,19 @@ modellist
 
 The pure model (no PSF):
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage(profitMakeModel(modellist,dim=dim(image)))
 ```
 
 The original image:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage(image)
 ```
 
 The convolved model (with PSF):
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage(profitMakeModel(modellist,dim=dim(image),psf=psfmodel))
 ```
 
@@ -318,7 +317,7 @@ intervals=list(
 Setup the data structure we need for optimisation, taking a few seconds to find the optimal convolution method:
 
 ```{r}
-Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psfmodel,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psfmodel,
                      modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals,
                      magzero=0, algo.func='optim', like.func="t", verbose=TRUE)
 ```
@@ -354,7 +353,7 @@ profitEllipsePlot(Data,modeloptim,pixscale=0.339,FWHM=1,SBlim=26)
 Now we can try the empirical PSF instead (for comparison):
 
 ```{r}
-Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
   modellist=modellist, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0,
   algo.func='optim', like.func="t", verbose=TRUE)
 ```
