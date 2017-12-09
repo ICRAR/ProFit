@@ -283,10 +283,16 @@ fi
 
 
 #
-# Cleanup and replace the values in Makevars.in and produce Makevars
+# Replace the values in config.h.in/Makevars.in and produce the respective files
 #
-rm -rf $tmpdir
+# config.h.in in particular might not contain a newline at the end of the file,
+# which is a problem for some sed implementations, it seems. Let's make them happy
+cp src/libprofit/profit/config.h.in $tmpdir
+echo "" >> src/libprofit/profit/config.h.in
 profit_CPPFLAGS="$omp_cflags"
 profit_LIBS="$cl_libflags $omp_libflags $fftw_libflags"
 generate_makevars
 generate_config_h
+mv $tmpdir/config.h.in src/libprofit/profit/
+
+rm -rf $tmpdir
