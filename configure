@@ -56,8 +56,8 @@ has_cl_lib() {
 
 max_cl_version() {
 	for ver in 20 12 11 10; do
-		maj=$(($ver/10))
-		min=$(($ver%10))
+		maj=`expr $ver / 10`
+		min=`expr $ver % 10`
 		echo "- Looking for OpenCL version $maj.$min"
 		cat > $tmpdir/clversion.c <<CLVER
 #if defined(__APPLE__) || defined(__MACOSX)
@@ -220,8 +220,8 @@ else
 			echo "- Found OpenCL libs"
 			max_cl_version
 			ver=$?
-			cl_ver_maj=$(($ver/10))
-			cl_ver_min=$(($ver%10))
+			cl_ver_maj=`expr $ver / 10`
+			cl_ver_min=`expr $ver % 10`
 		fi
 	fi
 
