@@ -80,6 +80,22 @@ CLVER
 			then
 				return $ver
 			fi
+
+			# Mmmh, this is not normal. Still, we are super-nice and try our best
+			echo ""
+			echo "################################################################################"
+			echo " The OpenCL headers found by the compiler declare version $maj.$min, but the OpenCL"
+			echo " library found by the linker doesn't implement it (because it's missing the"
+			echo " $funcname function, introduced in OpenCL $maj.$min)."
+			echo " This possibly indicates that there is a mixed OpenCL installation in your"
+			echo " machine, or that the flags given to the compiler are pointing to different"
+			echo " OpenCL installations."
+			echo ""
+			echo " We will continue looking for lower OpenCL versions, until we find one that"
+			echo " matches both headers and library, but you may want to double-check that "
+			echo " things are in order."
+			echo "################################################################################"
+			echo ""
 		fi
 	done
 
