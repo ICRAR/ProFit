@@ -53,7 +53,7 @@ install.packages('ProFit')
 
 The above variant of R will work easily even when you do not have the buld tools or root permission etc. The downside is the version hosted on CRAN is not the bleeding edge variant (CRAN do not allow very regular updating).
 
-There is a pre-built for R 3.4 and Mac OSX Siera (10.12+) v1.1.0 \code{ProFit} package (close to the most recent source version) available on Dropbox. You can download it to a local directory from <https://www.dropbox.com/s/gsniyhctsrg77qq/ProFit_1.1.0.tgz?dl=0>. Once downloaded you can install it within R via:
+There is a pre-built for R 3.4 and Mac OSX Siera (10.12+) v1.1.0 **ProFit** package (close to the most recent source version) available on Dropbox. You can download it to a local directory from <https://www.dropbox.com/s/gsniyhctsrg77qq/ProFit_1.1.0.tgz?dl=0>. Once downloaded you can install it within R via:
 
 ```R
 install.packages('PATH-TO-PACKAGE/ProFit_1.1.0.tgz', repos=NULL, type='mac.binary')
