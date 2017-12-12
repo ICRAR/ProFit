@@ -13,7 +13,19 @@ ProFit is a Bayesian galaxy fitting tool that uses a fast C++ image generation l
 
 ### Getting R
 
-Firs things first, you will probably want to install a recent version of R that lets you build packages from source. The advantage of choosing this route is you can then update bleeding edge versions directly from GitHub. If you rely on the pre-build binaries on CRAN you might be waiting much longer.
+First things first, you will probably want to install a recent version of R that lets you build packages from source. The advantage of choosing this route is you can then update bleeding edge versions directly from GitHub. If you rely on the pre-build binaries on CRAN you might be waiting much longer.
+
+#### Mac OS X
+
+Pretty simple, go here and install the most relevant **pkg** file: <https://cloud.r-project.org/bin/macosx/>
+
+#### Windows
+
+Pretty simple, go here and install the most relevant **exe** file: <https://cloud.r-project.org/bin/windows/base/>
+
+#### Linux
+
+Varies a bit by platform. All the info on binaries is here: <https://cloud.r-project.org/bin/linux/>
 
 Debian:	`sudo apt-get install r-base r-base-dev`
 
@@ -22,8 +34,6 @@ Fedora:	`sudo yum install R`
 Suse:	More of a pain, see here <https://cloud.r-project.org/bin/linux/suse/README.html>
 
 Ubuntu:	`sudo apt-get install r-base-dev`
-
-All the info on binaries is here: <https://cloud.r-project.org/bin/linux/>
 
 If you have a poorly supported version of Linux (e.g. CentOS) you will need to install R from source with the development flags (this bit is important). You can read more here: <https://cloud.r-project.org/sources.html>
 
@@ -43,10 +53,10 @@ install.packages('ProFit')
 
 The above variant of R will work easily even when you do not have the buld tools or root permission etc. The downside is the version hosted on CRAN is not the bleeding edge variant (CRAN do not allow very regular updating).
 
-There is a pre-built for R 3.4 and Mac OSX Siera (10.12+) v1.0.4 \code{ProFit} package (close to the most recent source version) available on Dropbox. You can download it to a local directory from <http://www.dropbox.com/s/82308b1j6ft8kdj/ProFit_1.0.4.tgz>. Once downloaded you can install it within R via:
+There is a pre-built for R 3.4 and Mac OSX Siera (10.12+) v1.1.0 \code{ProFit} package (close to the most recent source version) available on Dropbox. You can download it to a local directory from <https://www.dropbox.com/s/gsniyhctsrg77qq/ProFit_1.1.0.tgz?dl=0>. Once downloaded you can install it within R via:
 
 ```R
-install.packages('PATH-TO-PACKAGE/ProFit_1.0.4.tgz', repos=NULL, type='mac.binary')
+install.packages('PATH-TO-PACKAGE/ProFit_1.1.0.tgz', repos=NULL, type='mac.binary')
 ```
 
 The above might work with different versions of R (fairly likely) and different versions of OSX (not so likely), but it cannot be guaranteed (sorry). It might be worth giving it a try if you are not savvy with compiling code and fiddling with Makevars and flags (this might not be necessary, but in general installing from binary is much easier, when it works).
@@ -177,8 +187,8 @@ A.S.G. Robotham, D. Taranu, R. Tobar
 
 To see where our efforts have gone, check out our gource video!
 
-https://www.dropbox.com/s/75kdcx57cwka01m/gource_comp.mp4?dl=0
+<https://www.dropbox.com/s/75kdcx57cwka01m/gource_comp.mp4?dl=0>
 
 ## License
 
-GPL-3+
+LGPL-3
