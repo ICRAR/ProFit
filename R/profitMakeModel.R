@@ -130,10 +130,24 @@ profitMakeModel = function(modellist,
 	  ncomptodo = length(whichcomponents[[cname]])
 	  if((ncomponents > 0) && (ncomptodo > 0)) {
 	    stopifnot((max(whichcomponents[[cname]]) <= ncomponents) && (min(whichcomponents[[cname]]) >= 1))
-	    # Copy them
+
+	    # Copy the individual values
+	    # If for a given property the user specifies a single value, but
+	    # other properties for this profile list (specifically the "xcen" property)
+	    # have more values in it, we assume that she really meant for the same
+	    # single value to be used for all profiles.
 	    profiles[[cname]] = list()
 	    for( name in names(modellist[[cname]]) ) {
-	      profiles[[cname]][[name]] = c(unlist(as.numeric(modellist[[cname]][[name]][whichcomponents[[cname]]])))
+
+	      original_values = modellist[[cname]][[name]]
+	      nvals = length(original_values)
+
+	      if (ncomptodo > 1 && nvals == 1) {
+	        profiles[[cname]][[name]] = rep(original_values[[1]], ncomptodo)
+	      }
+	      else {
+	        profiles[[cname]][[name]] = c(unlist(as.numeric(original_values[whichcomponents[[cname]]])))
+	      }
 	    }
 
 	    if(cname == "sersic") {
