@@ -57,6 +57,13 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
     avail = profitAvailableIntegrators()
     convolver = NULL
   }
+  hasopenclenvs = nrow(openclenvs) > 0
+  if(!hasopenclenvs)
+  {
+    openclenvs = NULL
+    oclmethods = which(startsWith(methods,"opencl"))
+    if(length(oclmethods) > 0) methods = methods[-oclmethods]
+  }
   for(method in methods)
   {
     stopifnot(method %in% avail)
