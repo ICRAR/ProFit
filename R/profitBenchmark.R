@@ -131,7 +131,11 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
       precs = c()
       for(prec in c("single","double"))
       {
-        if(bench[[paste0("supports_",prec)]][[methodi]]) precs = c(precs,prec)
+        if(bench[[paste0("supports_",prec)]][[methodi]] &&
+           prec %in% precisions) 
+        {
+          precs = c(precs,prec)
+        }
       }
       for(prec in precs)
       {
