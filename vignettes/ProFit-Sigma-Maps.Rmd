@@ -42,7 +42,7 @@ image_elec=profitMakeModel(modellist=modellist, psf=psf, dim=c(400, 400), magzer
 Here we use a magzero point of 30, since this is a pretty typical value for astronomical Sloan r-band images that are in counts when we are working in the AB magntiude system (it is beyond the scope of this document to tell you why, but in short it is because galaxies span a fairly narrow range of surface brightness and CCDs tend to have well depths <100k electrons).
 
 Now we can check the image and the counts:
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage(image_elec)
 maghist(image_elec, log='x', majorn=c(10,5))
 ```
@@ -93,7 +93,7 @@ sigma_elec=sqrt(sigma_elec^2+dark_elec_noise^2+read_elec_noise^2)
 
 Already we can see that we cannot trivially go from image electron counts to the sigma electron map:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 maghist(sqrt(image_elec)/sigma_elec)
 ```
 
@@ -124,7 +124,7 @@ To this exact image (remember, this is our exact model still) we can add the var
 image_ADU_sub_noise=image_ADU_sub+rnorm(length(image_ADU_sub), mean=0, sd=sigma_elec)/gain_elec_ADU
 ```
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage(image_ADU_sub_noise)
 ```
 
@@ -147,7 +147,7 @@ sigma_est_1=sqrt((image_ADU_sub_noise+sky_ADU)*gain_elec_ADU + read_elec_noise^2
 
 Now we can compare this estimated sigma map against the exact answer we know from above. It should be a delta function at 1 if it was precisely correct everywhere on the image.
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 maghist((sigma_est_1/sigma_elec)*gain_elec_ADU)
 ```
 
@@ -163,20 +163,20 @@ segim=image_elec>=quantile(image_elec,0.5)
 
 This will look like a white circle when we plot it
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage(segim)
 ```
 
 Now we can look at the sky data in the non-object pixels:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
   sky_pix_ADU=image_ADU_sub_noise[segim==0]
 maghist(sky_pix_ADU)
 ```
 
 You should check how reasonable our selection of sky pixels is by comparing the negative sky pixels to their positive counterparts (remember, we have an image with subtracted sky so the noise should be symmetric around 0). There are no negative flux astronomical sources, so you tend to see a slight excess for positive counts if the masking is not agressive enough. In general more agressive masking of sources is wise when trying to estimate noise in this manner.
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magplot(density(log10(sky_pix_ADU[sky_pix_ADU>0]), bw=0.01), col='red', type='l')
 lines(density(log10(abs(sky_pix_ADU[sky_pix_ADU<0])), bw=0.01), col='blue')
 ```
@@ -190,42 +190,42 @@ sky_pix_ADU_noise=sd(sky_pix_ADU)
 sigma_est_2=sqrt(image_ADU_sub_noise/gain_elec_ADU+sky_pix_ADU_noise^2)
 ```
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 maghist(sigma_est_2/sigma_elec*gain_elec_ADU)
 ```
 
 As a convenience there also exists a helper function profitMakeSigma that does the scaling and error addition for you (if you are feeling lazy, or want to sanity check your own thought process). Below we compare both of the above methods to estimate the sigma maps:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 sigma_est_3=profoundMakeSigma(image=image_ADU_sub_noise, sky=0, skyRMS=sky_elec_noise, gain=gain_elec_ADU, readRMS=read_elec_noise, darkRMS=dark_elec_noise, sky_units='elec', read_units='elec', dark_units='elec')
 magimage(sigma_est_3)
 ```
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 sigma_est_4=profoundMakeSigma(image=image_ADU_sub_noise, sky=0, skyRMS=sky_pix_ADU_noise, gain=gain_elec_ADU)
 magimage(sigma_est_4)
 ```
 
 The only difference is the helper function does not allow negative sky counts to reduce the skyRMS floor:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magplot(sigma_est_2, sigma_est_3, pch='.', log='xy', grid=TRUE)
 ```
 
 The outputs of using profitMakeSigma either way is almost identical:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magplot(sigma_est_3, sigma_est_4, pch='.', log='xy', grid=TRUE)
 ```
 
 We can also use the segmentation map we made before to identify pure sky areas where the error should simply be the skyRMS:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 sigma_est_5=profoundMakeSigma(image=image_ADU_sub_noise, objects=segim>0, sky=0, skyRMS=sky_pix_ADU_noise, gain=gain_elec_ADU)
 magimage(sigma_est_5)
 ```
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magplot(sigma_est_2, sigma_est_5,pch='.',log='xy', grid=TRUE)
 abline(h=sky_pix_ADU_noise,col='red')
 ```
@@ -238,7 +238,7 @@ sd((image_ADU_sub_noise-image_ADU_sub)/sigma_elec)*gain_elec_ADU
 
 Let us see how our approximate sigma maps compare. Note if our sigma estimates are good then the sigma residual should look like featureless noise:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage((image_ADU_sub_noise-image_ADU_sub)/sigma_est_1)
 magimage((image_ADU_sub_noise-image_ADU_sub)/sigma_est_2)
 
@@ -253,13 +253,13 @@ sd((image_ADU_sub_noise-image_ADU_sub)/sigma_est_2)
 
 We can check how sensitive this approach might be to error:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magimage((image_ADU_sub_noise*1.01-image_ADU_sub)/sigma_est_1)
 ```
 
 Basically, both our two estimates are no worse than the correct answer. It is worth considering why there is a difference. Ultimately the sigma map should be derived from the exact model, not a noisy sample from it. I.e. we might be observing a pixel that intrinsically (averaged over infinite time and images) produces, e.g., 10,000 / 100 / 10 photon-electron counts in the time we integrate our image for, but in any given image we do not observe the exact answer. How inaccurate is this assumption?
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 maghist(sqrt(rpois(1e3,1e4)), breaks=20)
 maghist(sqrt(rpois(1e3,1e2)), breaks=20)
 maghist(sqrt(rpois(1e3,1e1)), breaks=20)

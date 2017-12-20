@@ -9,14 +9,11 @@ inst/doc
 rsconnect
 vignettes/rsconnect
 ProFit.Rproj
-
 # These are generated at build time
 Makevars
 src/libprofit/profit/config.h
-
 # Eclipse files
 .cproject
 .project
 .settings
-
 src/libprofit/profit/config.h

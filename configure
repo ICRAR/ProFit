@@ -40,24 +40,28 @@ get_cl_libflags() {
 }
 
 
-has_cl_lib() {
-	has_lib="no"
-	echo "int main() { clCreateContext(); }" > $tmpdir/clfunc.c
-	$CC $CFLAGS -c $tmpdir/clfunc.c -o $tmpdir/clfunc.o 2> /dev/null
+has_cl_func() {
+	func=$1
+	has_func="no"
+	echo "int main() { ${func}(); }" > $tmpdir/clfunc_$func.c
+	$CC $CFLAGS -c $tmpdir/clfunc_$func.c -o $tmpdir/clfunc_$func.o 2> /dev/null
 	if [ $? -eq 0 ]; then
-		$CC $LDFLAGS $tmpdir/clfunc.o -o $tmpdir/clfunc `get_cl_libflags` 2> /dev/null
+		$CC $LDFLAGS $tmpdir/clfunc_$func.o -o $tmpdir/clfunc_$func `get_cl_libflags` 2> /dev/null
 		if [ $? -eq 0 ]; then
-			has_lib="yes"
+			has_func="yes"
 		fi
 	fi
-	echo $has_lib
+	echo $has_func
 }
 
 
-max_cl_version() {
-	for ver in 20 12 11 10; do
-		maj=$(($ver/10))
-		min=$(($ver%10))
+find_max_cl_version() {
+	func20=clCreateCommandQueueWithProperties
+	func12=clCompileProgram
+	func11=clSetEventCallback
+	for ver in 20 12 11; do
+		maj=`expr $ver / 10`
+		min=`expr $ver % 10`
 		echo "- Looking for OpenCL version $maj.$min"
 		cat > $tmpdir/clversion.c <<CLVER
 #if defined(__APPLE__) || defined(__MACOSX)
@@ -70,9 +74,32 @@ CLVER
 
 		$CC $CFLAGS -c $tmpdir/clversion.c -o $tmpdir/clversion.o 2> /dev/null
 		if [ $? -eq 0 ]; then
-			return $ver
+			eval "funcname=\$func${ver}"
+			echo "- OpenCL version $maj.$min found in header, checking for function $funcname in library"
+			if [ `has_cl_func $funcname` = "yes" ]
+			then
+				return $ver
+			fi
+
+			# Mmmh, this is not normal. Still, we are super-nice and try our best
+			echo ""
+			echo "################################################################################"
+			echo " The OpenCL headers found by the compiler declare version $maj.$min, but the OpenCL"
+			echo " library found by the linker doesn't implement it (because it's missing the"
+			echo " $funcname function, introduced in OpenCL $maj.$min)."
+			echo " This possibly indicates that there is a mixed OpenCL installation in your"
+			echo " machine, or that the flags given to the compiler are pointing to different"
+			echo " OpenCL installations."
+			echo ""
+			echo " We will continue looking for lower OpenCL versions, until we find one that"
+			echo " matches both headers and library, but you may want to double-check that "
+			echo " things are in order."
+			echo "################################################################################"
+			echo ""
 		fi
 	done
+
+	return 0
 }
 
 get_omp_cflag() {
@@ -215,13 +242,12 @@ else
 	cl_headers=`has_cl_headers`
 	if [ "$cl_headers" = "yes" ]; then
 		echo "- Found OpenCL headers"
-		cl_lib=`has_cl_lib`
-		if [ "$cl_lib" = "yes" ]; then
+		find_max_cl_version
+		ver=$?
+		if [ $ver -gt 0 ]; then
 			echo "- Found OpenCL libs"
-			max_cl_version
-			ver=$?
-			cl_ver_maj=$(($ver/10))
-			cl_ver_min=$(($ver%10))
+			cl_ver_maj=`expr $ver / 10`
+			cl_ver_min=`expr $ver % 10`
 		fi
 	fi
 
@@ -283,10 +309,16 @@ fi
 
 
 #
-# Cleanup and replace the values in Makevars.in and produce Makevars
+# Replace the values in config.h.in/Makevars.in and produce the respective files
 #
-rm -rf $tmpdir
+# config.h.in in particular might not contain a newline at the end of the file,
+# which is a problem for some sed implementations, it seems. Let's make them happy
+cp src/libprofit/profit/config.h.in $tmpdir
+echo "" >> src/libprofit/profit/config.h.in
 profit_CPPFLAGS="$omp_cflags"
 profit_LIBS="$cl_libflags $omp_libflags $fftw_libflags"
 generate_makevars
 generate_config_h
+mv $tmpdir/config.h.in src/libprofit/profit/
+
+rm -rf $tmpdir

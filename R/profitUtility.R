@@ -27,28 +27,28 @@ profitSB2Flux=function(SB=0, magzero=0, pixscale=1){
 }
 
 profitInterp2d=function(x,y,image){
-    scale=sum(image)
-    imagelist=list(x=seq(-dim(image)[1]/2,dim(image)[1]/2,len=dim(image)[1]),y=seq(-dim(image)[2]/2,dim(image)[2]/2,len=dim(image)[2]),z=image)
-    ximage = seq(-dim(image)[1]/2,dim(image)[1]/2,len=dim(image)[1])
-    yimage = seq(-dim(image)[2]/2,dim(image)[2]/2,len=dim(image)[2])
-    zimage = image
-    nx = length(ximage)
-    ny = length(yimage)
-    lx = approx(ximage, 1:nx, x, rule=2)$y
-    ly = approx(yimage, 1:ny, y, rule=2)$y
-    lx1 = floor(lx)
-    ly1 = floor(ly)
-    ex = lx - lx1
-    ey = ly - ly1
-    ex[lx1 == nx] = 1
-    ey[ly1 == ny] = 1
-    lx1[lx1 == nx] = nx - 1
-    ly1[ly1 == ny] = ny - 1
-    z=
-	zimage[cbind(lx1, ly1)] * (1 - ex) * (1 - ey) +
-	zimage[cbind(lx1 + 1, ly1)] * ex * (1 - ey) +
-	zimage[cbind(lx1, ly1 + 1)] * (1 - ex) * ey +
-	zimage[cbind(lx1 + 1, ly1 + 1)] * ex * ey
+  scale=sum(image)
+  imagelist=list(x=seq(-dim(image)[1]/2,dim(image)[1]/2,len=dim(image)[1]),y=seq(-dim(image)[2]/2,dim(image)[2]/2,len=dim(image)[2]),z=image)
+  ximage = seq(-dim(image)[1]/2,dim(image)[1]/2,len=dim(image)[1])
+  yimage = seq(-dim(image)[2]/2,dim(image)[2]/2,len=dim(image)[2])
+  zimage = image
+  nx = length(ximage)
+  ny = length(yimage)
+  lx = approx(ximage, 1:nx, x, rule=2)$y
+  ly = approx(yimage, 1:ny, y, rule=2)$y
+  lx1 = floor(lx)
+  ly1 = floor(ly)
+  ex = lx - lx1
+  ey = ly - ly1
+  ex[lx1 == nx] = 1
+  ey[ly1 == ny] = 1
+  lx1[lx1 == nx] = nx - 1
+  ly1[ly1 == ny] = ny - 1
+  z=
+    zimage[cbind(lx1, ly1)] * (1 - ex) * (1 - ey) +
+    zimage[cbind(lx1 + 1, ly1)] * ex * (1 - ey) +
+    zimage[cbind(lx1, ly1 + 1)] * (1 - ex) * ey +
+    zimage[cbind(lx1 + 1, ly1 + 1)] * ex * ey
   return = cbind(X=x,Y=y,Z=z)
 }
 
@@ -65,16 +65,22 @@ profitAddMats=function(matbase, matadd, addloc=c(1,1), plot=FALSE, ...){
   output=(newmat[xrangebase,yrangebase])
   
   
-	if(plot){
-	  magimage(output, ...)
+  if(plot){
+    magimage(output, ...)
   }
   
   return=output
 }
 
-profitCheckFinesample <- function(finesample)
+.profitIsPositiveInteger <- function(x)
 {
-  stopifnot(is.integer(finesample) && finesample >= 1L)
+  if(!is.numeric(x) || !is.finite(x)) return(FALSE)
+  return(identical(x %% 1,0))
+}
+
+profitCheckIsPositiveInteger <- function(x)
+{
+  stopifnot(.profitIsPositiveInteger(x))
 }
 
 profitParseLikefunc <- function(funcname)
@@ -123,31 +129,31 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
   if(!is.null(means)) pformals$means = unlist(means)
   if(!is.null(tofit)) pformals$tofit = unlist(tofit)
   for(formal in names(pformals)) stopifnot(length(pformals[[formal]]) == nparams)
-      
+  
   # Define a valid prior function. 
   # tofit will only calculate the prior for fitted values
   # if not otherwise specified, the means will be taken from init
   priors <- function(new, init, sigmas=NULL, tolog=NULL, tofit=NULL, means=unlist(init), allowflat=FALSE)
   {
-  	LL = 0
-  	parms = unlist(new)
-  	if(!is.null(tofit)) ps = which(tofit)
-  	else ps = 1:length(parms)
-  	for(p in ps)
-  	{
-  	  if(!(allowflat && (sigmas[p] == Inf)))
-  	  {
-    		parm = parms[[p]]
-    		mean = means[[p]]
-    		if(tolog[p])
-    		{
-    		  parm = log10(parm)
-    		  mean = log10(mean)
-    		}
-    		LL = LL + dnorm(parm,mean,sigmas[p],log=TRUE)
-  	  }
-  	}
-  	return=LL
+    LL = 0
+    parms = unlist(new)
+    if(!is.null(tofit)) ps = which(tofit)
+    else ps = 1:length(parms)
+    for(p in ps)
+    {
+      if(!(allowflat && (sigmas[p] == Inf)))
+      {
+        parm = parms[[p]]
+        mean = means[[p]]
+        if(tolog[p])
+        {
+          parm = log10(parm)
+          mean = log10(mean)
+        }
+        LL = LL + dnorm(parm,mean,sigmas[p],log=TRUE)
+      }
+    }
+    return=LL
   }
   for(formal in names(pformals)) formals(priors)[[formal]] = pformals[[formal]]
   environment(priors) = globalenv()
@@ -158,7 +164,7 @@ profitMakePriors <- function(modellist, sigmas, tolog, means=NULL, tofit=NULL, a
 
 profitDeprojectImageEllipse <- function(image, xcen, ycen, axrat, ang, upsample=5L)
 {
-  stopifnot(is.integer(upsample))
+  profitCheckIsPositiveInteger(upsample)
   if(axrat == 1) return(image)
   stopifnot(axrat > 0 && axrat < 1)
   if(!is.list(image)) image = list(img=image)
@@ -221,7 +227,7 @@ profitGetOpenCLEnvs <- function(name="opencl",make.envs=FALSE)
       {
         openclenv = openclinfo[[envi]]
         devices = do.call(rbind, lapply(openclenv$devices,
-          data.frame, stringsAsFactors=FALSE))
+                                        data.frame, stringsAsFactors=FALSE))
         names(devices)[names(devices) == "name"] = "dev_name"
         devices$name = name
         devices$env_i = envi
@@ -232,19 +238,19 @@ profitGetOpenCLEnvs <- function(name="opencl",make.envs=FALSE)
         devices$supports_single = TRUE
         openclenvs = rbind(openclenvs,devices)
       }
-    }
-    if(make.envs)
-    {
-      ptrvec = c()
-      for(i in 1:nrow(openclenvs)) ptrvec = c(ptrvec, new("externalptr"))
-      openclenvs$env_single = ptrvec
-      openclenvs$env_double = ptrvec
-      for(i in 1:nrow(openclenvs))
+      if(make.envs)
       {
-        if(openclenvs$supports_single[i]) openclenvs$env_single[[i]] =
-            profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = FALSE)
-        if(openclenvs$supports_double[i]) openclenvs$env_double[[i]] =
-            profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = TRUE)
+        ptrvec = c()
+        for(i in 1:nrow(openclenvs)) ptrvec = c(ptrvec, new("externalptr"))
+        openclenvs$env_single = ptrvec
+        openclenvs$env_double = ptrvec
+        for(i in 1:nrow(openclenvs))
+        {
+          if(openclenvs$supports_single[i]) openclenvs$env_single[[i]] =
+              profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = FALSE)
+          if(openclenvs$supports_double[i]) openclenvs$env_double[[i]] =
+              profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = TRUE)
+        }
       }
     }
   }

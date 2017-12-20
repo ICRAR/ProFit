@@ -45,7 +45,6 @@ There are 10 example galaxies included. Here we run example 1:
 ```{r}
 useID=ExampleIDs[1]
 image=readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),package="ProFit"))$imDat
-mask=readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),package="ProFit"))$imDat
 sigma=readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),package="ProFit"))$imDat
 segim=readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),package="ProFit"))$imDat
 psf=readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),package="ProFit"))$imDat
@@ -81,19 +80,19 @@ modellist
 
 The pure model (no PSF):
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(profitMakeModel(modellist,dim=dim(image)))
 ```
 
 The original image:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(image)
 ```
 
 The convolved model (with PSF):
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(profitMakeModel(modellist,dim=dim(image),psf=psf))
 ```
 
@@ -218,7 +217,7 @@ The elements you access within the modellist structure must really exist or ProF
 Setup the data structure we need for optimisation, taking a few seconds to find the optimal convolution method:
 
 ```{r}
-Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
                      modellist=modellist, tofit=tofit, tolog=tolog, priors=priors,
                      intervals=intervals,magzero=0, algo.func='optim', like.func="t",
                      verbose=TRUE)
@@ -234,7 +233,7 @@ These are the parameters we wish to fit for, and we take the initial guesses fro
 
 We can test how things currently look (we get an output because we set verbose=TRUE earlier):
 
-```{r,  fig.width=7, fig.height=3, eval=TRUE}
+```{r,  fig.width=7, fig.height=3, dpi=40}
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 ```
 
@@ -382,7 +381,7 @@ In the previous examples, the resolution of the convolved model was limited by t
 To test this, set up the data again. This time we will fine-sample the model and PSF by a factor of 3, taking a minute to benchmark convolution methods:
 
 ```{r,eval=FALSE}
-Dataf=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
+Dataf=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
   modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
   magzero=0, algo.func='LD', verbose=TRUE, nbenchmark=3L, finesample=3L)
 ```

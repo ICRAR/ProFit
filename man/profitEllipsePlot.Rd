@@ -70,7 +70,6 @@ Projecting data back to 1D profiles is a knowingly imperfect process, but it can
 # Here we use galaxy G266033:
 
 image = readFITS(system.file("extdata", 'KiDS/G266033fitim.fits',package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", 'KiDS/G266033mskim.fits',package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", 'KiDS/G266033sigma.fits',package="ProFit"))$imDat
 segim = readFITS(system.file("extdata", 'KiDS/G266033segim.fits',package="ProFit"))$imDat
 psf = readFITS(system.file("extdata", 'KiDS/G266033psfim.fits',package="ProFit"))$imDat
@@ -175,7 +174,7 @@ intervals=list(
 
 # Setup the data structure we need for optimisation:
 
-Data=profitSetupData(image=image, mask=mask, sigma=sigma, segim=segim, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
 magzero=0, algo.func='optim', verbose=TRUE)
 

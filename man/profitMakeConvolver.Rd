@@ -14,7 +14,7 @@ instead of letting \code{\link{profitMakeModel}} create a default one.
 }
 \usage{
 profitMakeConvolver(type, image_dimensions, psf,
- reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1, openclenv = NULL)
+ reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = NULL, openclenv = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -88,6 +88,7 @@ Rodrigo Tobar
 \code{\link{profitOpenCLEnv}}
 }
 \examples{
+\dontrun{
 psf = profitMakeGaussianPSF(dim=c(100,100))
 
 has_openCL=profitHasOpenCL()
@@ -157,6 +158,7 @@ if(has_fft){
 if(has_fft & has_openMP){
   magimage(image_fftMP)
   magimage(image_brute-image_fftMP)
+}
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

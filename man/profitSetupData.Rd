@@ -342,7 +342,6 @@ List; complex structure of class profit.data containing:
 \item{psftype}{The type of PSF - "analytical" if supplied in \option{modellist}, "empirical" if supplied in \option{psf}, or "none".}
 \item{fitpsf}{Logical flag specifying whether the \option{modellist} PSF has any parameters \option{tofit}.}
 \item{algo.func}{The specified \option{algo.func} flag.}
-\item{mask}{The specified \option{mask} matrix.}
 \item{mon.names}{Character vector of parameters to be passed when using the LA/LD algorithms. Defaults to c("LL","LP","dof").}
 \item{parm.names}{Character vector of parameter names to be passed when using the LA/LD algorithms.}
 \item{N}{The number of pixels that will be used in fitting, i.e. the number of image pixels within the segmentation map, which is the same as sum(region).}
@@ -395,8 +394,6 @@ print(ExampleIDs)
 useID=ExampleIDs[1]
 
 image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
-package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", paste(datasource,'/',useID,'mskim.fits',sep=''),
 package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
 package="ProFit"))$imDat
@@ -469,16 +466,22 @@ tolog=list(
 
 # Setup the minimal data structure we need for likelihood.
 
-Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf,
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE)
 
 # Finally, calcualte the likelihood and make a plot:
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
-# If you're brave and your software/drivers are configured correctly, try benchmarking with OpenCL and OpenMP:
+# If you're brave and your software/drivers are configured correctly, try benchmarking
+# with OpenCL and OpenMP:
 openclenvs = profitGetOpenCLEnvs(make.envs = TRUE)
-Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf, modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE, nbenchmark = 5L, benchconvmethods = profitAvailableConvolvers(), benchintmethods = profitAvailableIntegrators(), benchopenclenvs = openclenvs, printbenchmark = TRUE, omp_threads=4)
+
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
+modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', verbose=TRUE,
+nbenchmark = 5L, benchconvmethods = profitAvailableConvolvers(),
+benchintmethods = profitAvailableIntegrators(), benchopenclenvs = openclenvs,
+printbenchmark = TRUE, omp_threads=4)
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
 }

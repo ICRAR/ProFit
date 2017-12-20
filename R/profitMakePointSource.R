@@ -2,7 +2,7 @@ profitMakePointSource=function(xcen,ycen,mag=0,magzero=0,
   modellist=list(sersic=list(mag=0,re=1,nser=0.5,axrat=1,ang=0)),
   psf=NULL,image=matrix(0,25,25),finesample=1L, add=FALSE, plot=FALSE, ...)
 {
-  profitCheckFinesample(finesample)
+  profitCheckIsPositiveInteger(finesample)
   haspsfimg = !is.null(psf)
   haspsfmodel = !is.null(modellist)
   stopifnot(xor(haspsfimg,haspsfmodel))

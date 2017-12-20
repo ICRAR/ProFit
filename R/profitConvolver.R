@@ -33,8 +33,10 @@ profitAvailableConvolvers = function() {
 }
 
 profitMakeConvolver = function(type, image_dimensions, psf,
-		reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = 1, openclenv = NULL)
+		reuse_psf_fft = TRUE, fft_effort = 0, omp_threads = NULL, openclenv = NULL)
 {
+  if(is.null(omp_threads)) omp_threads = 1L
+  else profitCheckIsPositiveInteger(omp_threads)
 	i = as.integer
 	l = as.logical
 	.Call('R_profit_make_convolver', type, i(image_dimensions), psf,

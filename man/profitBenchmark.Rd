@@ -88,7 +88,7 @@ TBD.
  \code{\link{profitAvailableConvolvers}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
-
+\dontrun{
 model = list(
 	sersic = list(
 		xcen   = c(180, 60),
@@ -137,6 +137,7 @@ for(finesample in c(1L:3L))
 
   # The old benchmarking method, for reference
   temp=profitBenchmarkConv(model.image, psf = psf, nbench=nbench)
+}
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

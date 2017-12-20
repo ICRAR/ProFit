@@ -28,8 +28,30 @@
 language: r
 cache: packages
 
+# Build matrix
+# We try at least one Linux and one MacOS environment
+matrix:
+ include:
+  - os: linux
+    r: oldrel
+  - os: linux
+    r: release
+  - os: linux
+    r: devel
+  - os: osx
+    osx_image: xcode7.3 # OSX 10.11
+  - os: osx
+    osx_image: xcode8.1 # OSX 10.12
+  - os: osx
+    osx_image: xcode9.1 # OSX 10.12
+
 # To build the vignettes we need rmarkdown
 r_packages: rmarkdown
+
+# The pracma binary uploaded to CRAN is for R 3.4.3 (a pre-release as of this writing),
+# and therefore we fail with WARNINGs about the package being compiled for a different R version
+before_script:
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then Rscript -e "install.packages('pracma', type = 'source')"; fi
 
 # Additional packages that are not fetched from CRAN
 # Care must be taken to specify the packages in their dependency order
@@ -39,8 +61,9 @@ r_github_packages:
  - asgr/magicaxis
  - asgr/ProFound
 
-# ProFit needs fftw3
+# ProFit benefits from having fftw3
 addons:
  apt:
   packages:
    - libfftw3-dev
+brew_packages: fftw

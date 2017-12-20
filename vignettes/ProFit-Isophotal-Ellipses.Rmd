@@ -21,7 +21,6 @@ Load data:
 ```{r}
 image = readFITS(system.file("extdata", 'KiDS/G278109fitim.fits', package="ProFit"))$imDat
 segim = readFITS(system.file("extdata", 'KiDS/G278109segim.fits', package="ProFit"))$imDat
-mask = readFITS(system.file("extdata", 'KiDS/G278109mskim.fits', package="ProFit"))$imDat
 sigma = readFITS(system.file("extdata", 'KiDS/G278109sigma.fits', package="ProFit"))$imDat
 segim = readFITS(system.file("extdata", 'KiDS/G278109segim.fits', package="ProFit"))$imDat
 psf = readFITS(system.file("extdata", 'KiDS/G278109psfim.fits', package="ProFit"))$imDat
@@ -29,13 +28,13 @@ psf = readFITS(system.file("extdata", 'KiDS/G278109psfim.fits', package="ProFit"
 
 Extract isophotal ellispes, notice we allow for boxy isophotes:
 
-```{r, fig.height=8, fig.width=5}
+```{r, fig.height=8, fig.width=5, dpi=40}
 ellipses_box = profoundGetEllipses(image=image, segim=segim, levels=20, dobox=TRUE, pixscale=1)
 ```
 
 Show the extracted isophotal surface brightness profile:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magplot(ellipses_box$ellipses[,c("radhi","SB")], xlim=c(0,100), ylim=c(30,20), grid=TRUE, xlab=' Radius / pixels', ylab='mag / pix^2')
 ```
 
@@ -63,7 +62,7 @@ method='L-BFGS-B', lower=lower, upper=upper)$par
   
 Plot the data and the fitted bulge/disk/total model:
 
-```{r, fig.width=5, fig.height=5}
+```{r, fig.width=5, fig.height=5, dpi=40}
 magplot(ellipses_box$ellipses$radhi, ellipses_box$ellipses$SB, xlim=c(0,100), ylim=c(30,20), grid=TRUE, type='l', xlab=' Radius / pixels', ylab='mag / pix^2')
 #A simple bulge+disk surface brightness profile:
 rlocs=seq(0,100,by=0.1)
@@ -152,12 +151,12 @@ intervals=list(
 Setup the basic Data:
 
 ```{r}
-Data=profitSetupData(image=image, sigma=sigma, segim=segim, mask=mask, psf=psf, modellist=model_init, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0, algo.func='optim')
+Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf, modellist=model_init, tofit=tofit, tolog=tolog, intervals=intervals, magzero=0, algo.func='optim')
 ```
 
 The inital guess bulge/disk/total plots:
 
-```{r, fig.width=8, fig.height=5}
+```{r, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(Data$init,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(Data$init,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(Data$init,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))
@@ -175,7 +174,7 @@ profitRemakeModellist(optimfit$par, Data=Data)$modellist
 
 And finally some bulge/disk/total plots:
 
-```{r, fig.width=8, fig.height=5, eval=FALSE}
+```{r, fig.width=8, fig.height=5, eval=FALSE, dpi=40}
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=1))
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic=2))
 profitLikeModel(optimfit$par,Data,makeplots=TRUE,whichcomponents=list(sersic='all'))

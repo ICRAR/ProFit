@@ -1,0 +1,30 @@
+CXX_STD = CXX11
+
+PKG_CPPFLAGS = -Ilibprofit -DPROFIT_BUILD
+PKG_LIBS =
+
+OBJECTS = libprofit/src/brokenexponential.o \
+          libprofit/src/convolve.o \
+          libprofit/src/coresersic.o \
+          libprofit/src/exceptions.o \
+          libprofit/src/ferrer.o \
+          libprofit/src/fft.o \
+          libprofit/src/image.o \
+          libprofit/src/king.o \
+          libprofit/src/model.o \
+          libprofit/src/moffat.o \
+          libprofit/src/opencl.o \
+          libprofit/src/profile.o \
+          libprofit/src/psf.o \
+          libprofit/src/radial.o \
+          libprofit/src/sersic.o \
+          libprofit/src/sky.o \
+          libprofit/src/utils.o \
+          r_profit.o \
+          ProFit.o \
+          RcppExports.o
+
+all: config_h ProFit.dll
+
+config_h:
+	sed 's/@PROFIT_VERSION@/1.6.0/; s/@PROFIT_OPENCL_MAJOR@//; s/@PROFIT_OPENCL_MINOR@//; s/#cmakedefine PROFIT_USES_R/#define PROFIT_USES_R/; s/#cmakedefine PROFIT_USES_GSL/#undef PROFIT_USES_GSL/; s/#cmakedefine PROFIT_DEBUG/#undef PROFIT_DEBUG/; s/#cmakedefine PROFIT_OPENCL/#undef PROFIT_OPENCL/; s/#cmakedefine PROFIT_OPENMP/#undef PROFIT_OPENMP/; s/#cmakedefine PROFIT_FFTW/#undef PROFIT_FFTW/; s/#cmakedefine PROFIT_FFTW_OPENMP/#undef PROFIT_FFTW_OPENMP/' libprofit/profit/config.h.in > libprofit/profit/config.h

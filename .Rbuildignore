@@ -6,3 +6,4 @@ README.md
 vignettes/rsconnect
 rsconnect
 ^src/libprofit/src/.*\.o$
+^appveyor\.yml$

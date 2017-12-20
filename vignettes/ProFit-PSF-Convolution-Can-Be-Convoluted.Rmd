@@ -46,13 +46,13 @@ for(i in 1:nsrcs)
 
 Check out the PSF:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(psf)
 ```
 
 ... and its convolution:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(conv[[1]])
 ```
 
@@ -69,7 +69,7 @@ for(i in 1:nsrcs)
 
 Check if they differ:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(conv[[1]]-conv.exact[[1]],magmap=F,zlim=c(-1,1)*2e-3)
 ```
 
@@ -87,7 +87,7 @@ for(i in 1:nsrcs)
 
 The discretized convolution is "softer" than it should be:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(diffrels[[1]],magmap=F,zlim=c(-1,1)*5e-2)
 ```
 
@@ -115,7 +115,7 @@ for(i in 1:nsrcs)
 
 Curiously, this has the exact opposite effect: for a poorly resolved image the convolved image is too concentrated, and the residual alternates from positive to negative:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(diffrels.at[[1]],magmap=F,zlim=c(-1,1)*5e-2)
 ```
 
@@ -142,7 +142,7 @@ print(diffrelfine[cens[1]+0:5,cens[2]])
 
 The residuals are just like before, only they are smaller by approximately finesample^2:
 
-```{r, fig.width=5, fig.height=5, eval=F}
+```{r, fig.width=5, fig.height=5, eval=FALSE}
 magimage(diffrelfine,magmap=F,zlim=c(-1,1)*5e-2/finesample^2)
 print(diffrels[[refsrcidx]][cens[1]+0:5,cens[2]]/diffrelfine[cens[1]+0:5,cens[2]])
 ```
