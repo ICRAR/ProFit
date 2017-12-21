@@ -96,7 +96,7 @@ Dan Taranu
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{profitSetupData}}, \code{\link{profitBenchmark}}, \code{\link{profitMakeConvolver}}
+\code{\link{profitSetupData}}, \code{\link{profitDataSetOptionsFromBenchmarks}}, \code{\link{profitBenchmark}}, \code{\link{profitMakeConvolver}}
 }
 \examples{
 # Load ProFit example data
