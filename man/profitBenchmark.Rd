@@ -142,4 +142,4 @@ for(finesample in c(1L:3L))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ data }
+\keyword{ benchmark, profit }

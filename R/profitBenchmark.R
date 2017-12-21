@@ -20,7 +20,7 @@ profitBenchmarkResultBest <- function(result, precision="double")
   best = which.min(time)
   convolver = result[[best,paste0("convolver_",precision)]]
   openclenv = NULL
-  usecalcregion = FALSE
+  usecalcregion = result[[best,paste0("convolver_usecalcregion_",precision)]]
   if(identical(result$name[best],"opencl"))
   {
     openclenv = result[[best,paste0("env_",precision)]]
@@ -85,12 +85,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
     benchi = 1:ceiling(nbench)
     doaccuracy = reference %in% bench$name
     availusecalcregions = FALSE
-    if(!is.null(calcregion))
-    {
-      availusecalcregions = c(availusecalcregions,TRUE)
-      # libprofit needs a negative mask
-      calcregion = !calcregion
-    }
+    if(!is.null(calcregion)) availusecalcregions = c(availusecalcregions,TRUE)
     
     ptrvec = c()
     for(i in 1:nmethods) ptrvec = c(ptrvec, new("externalptr"))
@@ -210,6 +205,7 @@ profitBenchmark <- function(image, methods=NULL, psf=NULL,
     rv$result = bench
     if(returnimages) rv$images = images
   }
+  class(rv)="profit.benchmark"
   return(rv)
 }
 
