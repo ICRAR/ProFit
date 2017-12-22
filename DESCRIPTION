@@ -12,5 +12,5 @@ BugReports: https://github.com/ICRAR/ProFit/issues
 Imports: fftw, R2Cuba, RColorBrewer, LaplacesDemon, methods
 Depends: R (>= 3.0), Rcpp (>= 0.11.6), magicaxis (>= 2.0.3), celestial (>= 1.4.1), FITSio
 LinkingTo: Rcpp
-Suggests: knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager, ProFound, sn
+Suggests: knitr, rmarkdown, foreach, doParallel, EBImage, akima, imager, ProFound, sn, nloptr
 VignetteBuilder: knitr

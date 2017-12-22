@@ -243,8 +243,9 @@ First we will try `optim` BFGS.
 
 ```{r, eval=FALSE}
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
-optimfit=optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
-control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))
+print(system.time(optimfit <- optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
+  control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))))
+print(optimfit$value)
 ```
 
 The best `optim` BFGS fit is given by:
@@ -278,16 +279,46 @@ constraints=function(modellist){
 Data$constraints=constraints
 ```
 
+Another useful library for non-linear optimization is `nloptr`. nloptr is an interface to a C library with numerous optimizers. The required C library `nlopt-devel` should be available to install from your favourite package manager. For optimal performance, we'll set up a vector of upper and lower bounds for the parameters. These can also be used in optim with the `L-BFGS-B` optimizer.
+```{r, eval=FALSE}
+if(isTRUE("nloptr" %in% rownames(installed.packages())))
+{
+  library(nloptr)
+  intervals = unlist(Data$intervals)
+  tofit = unlist(Data$tofit)
+  npar = length(tofit)
+  
+  whichfit = which(tofit)
+  whichfitlog = which(unlist(Data$tolog)[whichfit])
+  lower = intervals[2*(1:npar)-1][whichfit]
+  upper = intervals[2*(1:npar)][whichfit]
+  
+  system.time(nloptfit <- nloptr(
+    x0 = Data$init, eval_f=function(x,Data) { return(-profitLikeModel(x,Data=Data))}, lb = lower, ub = upper,
+    opts=list(algorithm=paste0("NLOPT_LN_NELDERMEAD"),xtol_rel=0,ftol_abs=1e-3,maxeval=2e3), Data=Data))
+  print(-nloptfit$objective)
+}
+```
+
+One important consideration is how to determine convergence. Most optimizers test for convergence based on absolute and/or relative changes in the likelihood and/or parameters, but can also stop after a given elapsed time or number of iterations. It is important to check why the optimization stopped, especially before running MCMC, which can be slower to converge to the global minimum.
+
 Now we can try a `LaplaceApproximation` LM fit. This should take a few minutes:
 
 ```{r, eval=FALSE}
-library(LaplacesDemon)
-Data$algo.func="LA"
-LAfit=LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
-                           Method='LM', CovEst='Identity', sir=FALSE)
+if(isTRUE("LaplacesDemon" %in% rownames(installed.packages())))
+{
+  library(LaplacesDemon)
+  Data$algo.func="LA"
+  system.time(LAfit <- LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
+    Method='LM', CovEst='Identity', sir=FALSE))
+  print(LAfit$LP.Final)
+  system.time(LAfitnm <- LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
+    Method='NM', CovEst='Identity', sir=FALSE))
+  print(LAfitnm$LP.Final)
+}
 ```
 
-The best LA LM fit is given by:
+Note that LaplaceApproximation is typically slower than nlopt/optim, but it can be used to estimate uncertainties more quickly than by doing MCMC. The best LA LM fit is given by:
 
 ```{r, eval=FALSE}
 LAfit$Summary1[,1]
@@ -318,14 +349,17 @@ install_github('taranu/cmaeshpc')
 It is recommended to use narrower priors than the very broad ones specified above to speed up convergence:
 
 ```{r, eval=FALSE}
-library(cmaeshpc)
-Data$algo.func="CMA"
-sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
-cmasigma=sigmas[which(unlist(tofit) == TRUE)]/3
-cmafit=cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
-  fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
-  diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness=0, stop.tolx=1e-3*cmasigma))
-profitLikeModel(cmafit$par,Data,makeplots=TRUE)
+if(isTRUE("cmaeshpc" %in% rownames(installed.packages())))
+{
+  library(cmaeshpc)
+  Data$algo.func="CMA"
+  sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
+  cmasigma=sigmas[which(unlist(tofit) == TRUE)]/3
+  cmafit=cmaeshpc(Data$init, profitLikeModel, Data=Data, control=list(maxit=1e3,
+    fnscale=-1.0, sigma=cmasigma, diag.sigma=TRUE, diag.eigen=TRUE, diag.pop=TRUE,
+    diag.value=TRUE, maxwalltime=Inf, trace=TRUE, stopfitness=0, stop.tolx=1e-3*cmasigma))
+  profitLikeModel(cmafit$par,Data,makeplots=TRUE)
+}
 ```
 
 `CMA-ES` sometimes takes longer than `LaplaceApproximation` - depending on the convergence criterion specified by `stop.tolx` - but it usually finds a better fit, and can be run many times to avoid becoming trapped in local minima. Alternately, you may wish to use the faster `LaplaceApproximation` first, redefine your priors, and then run `CMA-ES` to search around the `LaplaceApproximation` best fit.
