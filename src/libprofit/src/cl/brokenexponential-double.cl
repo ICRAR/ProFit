@@ -25,9 +25,46 @@ R"===(
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+inline static double _d_broken_exponential(double r, double h1, double h2, double rb, double a) {
+
+	/*
+	 * The broken exponential profile for radius r is:
+	 *
+	 *  exp(-r/h1)*(1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
+	 *
+	 * The problem with this direct approach is that exp(r-rb) diverges whereas
+	 * exp(-r/h1) converges to zero. To avoid this we perform the following
+	 * replacements and rewrite the equation:
+	 *
+	 *   base = r - rb
+	 *   exponent = 1/h1 - 1/h2
+	 *
+	 *    exp(-r/h1) * (1 + exp(a * base)) ^ (exponent / a)
+	 *  = exp(-r/h1) * exp(log((1 + exp(a * base)) ^ (exponent / a)))
+	 *  = exp(-r/h1 + log((1 + exp(a * base)) ^ (exponent / a))
+	 *  = exp(-r/h1 + exponent / a * log(1 + exp(a * base)))
+	 *
+	 * In this last expression, when (a * base) is big, then doing
+	 * log(1 + exp(a * base)) yields the same result as log(exp(a * base))
+	 * (which equals a * base, of course). This happens already at a * base = 34,
+	 * although we check 40 just to be conservative.
+	 * Thus, the final result in this case becomes:
+	 *
+	 *  = exp(-r/h1 + exponent * base)
+	 */
+
+	double base = r - rb;
+	double expo = 1 / h1 - 1 / h2;
+	if (a * base < 40) {
+		base = log(1 + exp(a * base)) / a;
+	}
+
+	return exp(-r / h1 + expo * base);
+}
+
 inline double d_evaluate_brokenexp(double x, double y, double box, double h1, double h2, double rb, double a) {
 	private double r = pow(pow(fabs(x), 2+box) + pow(fabs(y), 2+box), 1/(2+box));
-	return exp(-r/h1)*pow(1+exp(a*(r-rb)),(1/a)*(1/h1-1/h2));
+	return _d_broken_exponential(r, h1, h2, rb, a);
 }
 
 kernel void brokenexp_double(
