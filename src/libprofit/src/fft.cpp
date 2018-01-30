@@ -57,7 +57,7 @@ FFTPlan::FFTPlan(unsigned int size, effort_t effort, unsigned int omp_threads) :
 	size(0),
 	effort(effort),
 	omp_threads(omp_threads),
-	in(), out(),
+	in(), out(), real(),
 	forward_plan(NULL),
 	backward_plan(NULL)
 {
@@ -70,9 +70,15 @@ FFTPlan::FFTPlan(unsigned int size, effort_t effort, unsigned int omp_threads) :
 	if (!out_tmp) {
 		throw std::bad_alloc();
 	}
+	
+	double *real_tmp = fftw_alloc_real(size);
+	if (!real_tmp) {
+	  throw std::bad_alloc();
+	}
 
 	in.reset(in_tmp);
 	out.reset(out_tmp);
+	real.reset(real_tmp);
 
 #ifdef PROFIT_FFTW_OPENMP
 	fftw_plan_with_nthreads(omp_threads);
@@ -85,7 +91,15 @@ FFTPlan::FFTPlan(unsigned int size, effort_t effort, unsigned int omp_threads) :
 	}
 	backward_plan = fftw_plan_dft_1d(size, in_tmp, out_tmp, FFTW_BACKWARD, FFTW_DESTROY_INPUT | fftw_effort);
 	if (!backward_plan) {
-		throw fft_error("Error creating forward plan");
+		throw fft_error("Error creating backward plan");
+	}
+	forward_plan_real = fftw_plan_dft_r2c_1d(size, real_tmp, out_tmp, FFTW_DESTROY_INPUT | fftw_effort);
+	if (!forward_plan_real) {
+	  throw fft_error("Error creating forward plan (real)");
+	}
+	backward_plan_real = fftw_plan_dft_c2r_1d(size, in_tmp, real_tmp, FFTW_DESTROY_INPUT | fftw_effort);
+	if (!backward_plan_real) {
+	  throw fft_error("Error creating backward plan (real)");
 	}
 
 	this->size = size;
@@ -97,11 +111,16 @@ FFTPlan::FFTPlan(FFTPlan &&plan) :
 	omp_threads(plan.omp_threads),
 	in(std::move(plan.in)),
 	out(std::move(plan.out)),
+	real(std::move(plan.real)),
 	forward_plan(plan.forward_plan),
-	backward_plan(plan.backward_plan)
+	backward_plan(plan.backward_plan),
+	forward_plan_real(plan.forward_plan_real),
+	backward_plan_real(plan.backward_plan_real)
 {
-	plan.forward_plan = NULL;
-	plan.backward_plan = NULL;
+  plan.forward_plan = NULL;
+  plan.backward_plan = NULL;
+	plan.forward_plan_real = NULL;
+	plan.backward_plan_real = NULL;
 }
 
 FFTPlan::~FFTPlan()
@@ -112,6 +131,9 @@ FFTPlan::~FFTPlan()
 	if (in) {
 		fftw_free(in.release());
 	}
+	if (real) {
+	  fftw_free(real.release());
+	}
 	if (backward_plan) {
 		fftw_destroy_plan(backward_plan);
 		backward_plan = NULL;
@@ -119,6 +141,14 @@ FFTPlan::~FFTPlan()
 	if (forward_plan) {
 		fftw_destroy_plan(forward_plan);
 		forward_plan = NULL;
+	}
+	if (backward_plan_real) {
+	  fftw_destroy_plan(backward_plan_real);
+	  backward_plan = NULL;
+	}
+	if (forward_plan_real) {
+	  fftw_destroy_plan(forward_plan_real);
+	  forward_plan = NULL;
 	}
 }
 
@@ -170,6 +200,69 @@ std::vector<std::complex<double>> FFTPlan::execute(const std::vector<std::comple
 	return ret;
 }
 
+std::vector<std::complex<double>> FFTPlan::execute_fwd(const std::vector<double> &data, fftw_plan plan) const
+{
+  if (!plan) {
+    std::invalid_argument("This FFTPlan has not been setup. Call .setup() first");
+  }
+  
+  if (data.size() != size) {
+    std::ostringstream os;
+    os << "data size != plan size: " << data.size() << " != " << size;
+    throw std::invalid_argument(os.str());
+  }
+  
+  double *in_it = real.get();
+  for(auto &d: data) {
+    (*in_it) = d;
+    in_it++;
+  }
+  
+  fftw_execute(plan);
+  
+  std::vector<std::complex<double>> ret;
+  ret.reserve(size);
+  fftw_complex *out_it = out.get();
+  for(unsigned int i = 0; i < size; i++) {
+    ret.push_back({(*out_it)[0], (*out_it)[1]});
+    out_it++;
+  }
+  
+  return ret;
+}
+
+std::vector<double> FFTPlan::execute_back(const std::vector<std::complex<double>> &data, fftw_plan plan) const
+{
+  if (!plan) {
+    std::invalid_argument("This FFTPlan has not been setup. Call .setup() first");
+  }
+  
+  if (data.size() != size) {
+    std::ostringstream os;
+    os << "data size != plan size: " << data.size() << " != " << size;
+    throw std::invalid_argument(os.str());
+  }
+  
+  fftw_complex *in_it = in.get();
+  for(auto &d: data) {
+    (*in_it)[0] = d.real();
+    (*in_it)[1] = d.imag();
+    in_it++;
+  }
+  
+  fftw_execute(plan);
+  
+  std::vector<double> ret;
+  ret.reserve(size);
+  auto *out_it = real.get();
+  for(unsigned int i = 0; i < size; i++) {
+    ret.push_back(*out_it);
+    out_it++;
+  }
+  
+  return ret;
+}
+
 std::vector<std::complex<double>> FFTPlan::forward(const std::vector<std::complex<double>> &data) const
 {
 	return execute(data, forward_plan);
@@ -177,7 +270,12 @@ std::vector<std::complex<double>> FFTPlan::forward(const std::vector<std::comple
 
 std::vector<std::complex<double>> FFTPlan::forward(const Image &image) const
 {
-	return execute(to_complex(image), forward_plan);
+  return execute(to_complex(image), forward_plan);
+}
+
+std::vector<std::complex<double>> FFTPlan::forward_real(const Image &image) const
+{
+	return execute_fwd(image.getData(), forward_plan_real);
 }
 
 std::vector<std::complex<double>> FFTPlan::backward(const std::vector<std::complex<double>> &data) const
@@ -192,7 +290,7 @@ std::vector<std::complex<double>> FFTPlan::backward(const Image &image) const
 
 std::vector<double> FFTPlan::backward_real(const std::vector<std::complex<double>> &data) const
 {
-	return to_double(execute(data, backward_plan));
+	return execute_back(data, backward_plan_real);
 }
 
 std::vector<std::complex<double>> FFTPlan::to_complex(const Image &image) const

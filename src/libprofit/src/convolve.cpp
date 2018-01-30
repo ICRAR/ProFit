@@ -293,13 +293,14 @@ Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mas
 	} else {
 	  // Create extended images first
 	  Image ext_img = src.extend(ext_width, ext_height, 0, 0);
-	  src_fft = plan->forward(ext_img);
+	  src_fft = plan->forward_real(ext_img);
 	}
 	if (krn_fft.empty()) {
 		auto krn_start_x = (src_width - krn_width) / 2;
 		auto krn_start_y = (src_height - krn_height) / 2;
 		Image ext_krn = krn.extend(ext_width, ext_height, krn_start_x, krn_start_y);
-		krn_fft = plan->forward(ext_krn);
+		if(hasextra) krn_fft = plan->forward(ext_krn);
+		else krn_fft = plan->forward_real(ext_krn);
 	}
 
 	// element-wise multiplication

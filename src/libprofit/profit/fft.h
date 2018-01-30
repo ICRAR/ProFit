@@ -93,6 +93,14 @@ public:
 	 * @return The FFT of ``image``
 	 */
 	std::vector<std::complex<double>> forward(const Image &image) const;
+	
+	/**
+	 * Returns the FFT of ``image`` (real)
+	 *
+	 * @param data The image to transform
+	 * @return The FFT of ``image``
+	 */
+	std::vector<std::complex<double>> forward_real(const Image &image) const;
 
 	/**
 	 * Returns the inverse FFT of ``data``
@@ -134,13 +142,18 @@ private:
 	unsigned int omp_threads;
 	std::unique_ptr<fftw_complex> in;
 	std::unique_ptr<fftw_complex> out;
+	std::unique_ptr<double> real;
 	fftw_plan forward_plan;
 	fftw_plan backward_plan;
+	fftw_plan forward_plan_real;
+	fftw_plan backward_plan_real;
 
 	int get_fftw_effort() const;
 	std::vector<std::complex<double>> to_complex(const Image &image) const;
 	std::vector<double> to_double(const std::vector<std::complex<double>> &data) const;
 	std::vector<std::complex<double>> execute(const std::vector<std::complex<double>> &data, fftw_plan plan) const;
+	std::vector<std::complex<double>> execute_fwd(const std::vector<double> &data, fftw_plan plan) const;
+	std::vector<double> execute_back(const std::vector<std::complex<double>> &data, fftw_plan plan) const;
 
 };
 
