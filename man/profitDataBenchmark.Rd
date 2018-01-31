@@ -26,6 +26,9 @@ List; required, the initial model list that describes the analytic model to be c
   \item{calcregion}{
 Logical matrix; optional, specifying the parts of the image to be used for fitting. If provided this matrix *must* be the same dimensions as \option{imgdim}. Can be integer 1/0 or boolean TRUE/FALSE type logic.
 }
+  \item{imgdim}{
+Numeric; the dimensions of the image to create using the \option{modellist}. These dimensions will be padded by the dimensions of the \option{psf} (if any).
+}
   \item{finesample}{
 An integer factor to determine how much finer of a grid the model image and PSF should be evaluated on. Because the PSF is discretized, convolution introduces additional discretization of the model, diminishing the accuracy of the convolved model. If this parameter is set to an integer greater than one, the model and PSF (but see \option{psffinesampled}) will be upsampled prior to convolution, and then downsampled after convolution. The fine sampling factor must be an integer to avoid non-integral re-binning artefacts when downsampling. Large finesample factors will significantly increase convolution time and accuracy, while moderately increasing model generation time and accuracy, so it is recommended to set \option{nbenchmark} to at least a few when using this option.
 }
