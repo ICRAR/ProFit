@@ -25,7 +25,7 @@ R"===(
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-inline static float _f_broken_exponential(double r, double h1, double h2, double rb, double a) {
+inline static float _f_broken_exponential(float r, float h1, float h2, float rb, float a) {
 
 	/*
 	 * The broken exponential profile for radius r is:
