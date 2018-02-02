@@ -62,8 +62,12 @@ r_github_packages:
  - asgr/ProFound
 
 # ProFit benefits from having fftw3
+# nlopt-dev is needed to prevent the nlopt R package from downloading its own copy of nlopt,
+# which fails in R <= 3.3 (its internal downloading mechanism doesn't support https, which gets
+# deferred to libcurl's, which eventually fails to download a file from S3).
 addons:
  apt:
   packages:
    - libfftw3-dev
+   - libnlopt-dev
 brew_packages: fftw
