@@ -253,6 +253,7 @@ profitMakeModel = function(modellist,
 		  if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
 
 				# Copy the values
+				profiles[['psf']] = list()
 				for( name in names(modellist$pointsource) ) {
 				  profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][whichcomponents$pointsource]))
 				}
