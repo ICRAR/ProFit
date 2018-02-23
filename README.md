@@ -45,7 +45,7 @@ Now you have the development version of R installed (hopefully) I would also sug
 
 You can start R simply by typing "R" in your terminal. I would advocate running it from R-Studio though (a much nicer IDE experience for most people).
 
-Within R you can get the v1.1.0 pre-built binary from CRAN by running (note as of 20/02/2018 it is not on CRAN it might reappear at a future date though- basically CRAN removed support for some of the packages we use):
+Within R you can get the v1.1.0 pre-built binary from CRAN by running (note as of 20/02/2018 it is not on CRAN. It might reappear at a future date though- basically CRAN removed support for some of the packages we use):
 
 ```R
 install.packages('ProFit')
