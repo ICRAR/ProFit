@@ -67,7 +67,12 @@ profitMakeModel = function(modellist,
 	  if(all(names(modellist) %in% c("pointsource", "psf","sky"))) {
 	    psf = matrix(1,1,1)
 	  } else {
-	    psf = profitMakePointSource(image=matrix(0,psfdim[1],psfdim[2]), mag=0, modellist = modellist$psf)
+	    if(finesample > 1L)
+	    {
+	      stopifnot(identical(psfdim %% finesample, c(0L,0L)))
+	    }
+	    psf = profitMakePointSource(image=matrix(0,psfdim[1]/finesample,psfdim[2]/finesample),
+        mag=0, modellist = modellist$psf, finesample=finesample, returnfine=TRUE)
 	    sumpsf = sum(psf)
       psfsumdiff = abs(sumpsf-1)
       if(!(psfsumdiff < 1e-2))  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 0.01; ",
@@ -262,15 +267,14 @@ profitMakeModel = function(modellist,
 				profiles$psf[['xcen']] = profiles$psf[['xcen']] + psfpad[1]/finesample
 				profiles$psf[['ycen']] = profiles$psf[['ycen']] + psfpad[2]/finesample
 			}
-
-		  # Brute force convolve if a psf is given
-		  for(pname in profilenames) {
-		    ncomp = length(whichcomponents[[pname]])
-		    if(length(modellist[[pname]]) > 0 && (ncomp > 0)) {
-		      profiles[[pname]][['convolve']] = rep(haspsf, ncomp)
-		    }
-		  }
 		}
+	  # Convolve if a psf is given
+	  for(pname in profilenames) {
+	    ncomp = length(whichcomponents[[pname]])
+	    if(length(modellist[[pname]]) > 0 && (ncomp > 0)) {
+	      profiles[[pname]][['convolve']] = rep(haspsf, ncomp)
+	    }
+	  }
 	}
 	
 	if ( length(modellist$sky) > 0 ){

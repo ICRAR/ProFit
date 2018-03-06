@@ -10,8 +10,8 @@
     else
     {
       stopifnot(!is.null(psfdim))
-      psfdim = psfdim*finesample
-      psf = profitMakePointSource(modellist=modellist$psf,finesample=finesample,image=matrix(0,psfdim[1],psfdim[2]))
+      psf = profitMakePointSource(modellist=modellist$psf,finesample=finesample,
+        image=matrix(0,psfdim[1],psfdim[2]), returnfine = TRUE)
       sumpsf = sum(psf)
       psfsumdiff = !abs(sumpsf-1) < 1e-2
       if(psfsumdiff)  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 1e-2; ",
@@ -252,6 +252,9 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
         regrid=expand.grid(xrange-dimpsf[1]/2,yrange-dimpsf[2]/2)
         psf=matrix(profitInterp2d(regrid[,1],regrid[,2],psf)[,3],length(xrange),length(yrange))
       }
+    } else if(psftype == "analytical")
+    {
+      psffinesampled = finesample > 1
     }
     psf = psf/sum(psf)
   }
