@@ -45,7 +45,7 @@ Now you have the development version of R installed (hopefully) I would also sug
 
 You can start R simply by typing "R" in your terminal. I would advocate running it from R-Studio though (a much nicer IDE experience for most people).
 
-Within R you can get the v1.0.0 pre-built binary from CRAN by running:
+Within R you can get the v1.1.0 pre-built binary from CRAN by running (note as of 20/02/2018 it is not on CRAN. It might reappear at a future date though- basically CRAN removed support for some of the packages we use):
 
 ```R
 install.packages('ProFit')
@@ -106,7 +106,7 @@ library(ProFit)
 
 #### Package Dependencies
 
-The above (binary or source install) should also install the required packages. If you have trouble with this you can try installing the required packages manually first and then retry the installation for \code{ProFit}:
+The above (binary or source install) should also install the required packages. If you have trouble with this you can try installing the required packages manually first and then retry the installation for **ProFit**:
 
 ```R
 install.packages(c('Rcpp', 'fftw', 'R2Cuba', 'RColorBrewer', 'LaplacesDemon', 'imager', 'magicaxis', 'FITSio', 'data.table'))
@@ -115,14 +115,14 @@ library(devtools)
 install_github("ICRAR/ProFit")
 ```
 
-To use the **profitMakeSegim** and **profitProFound** function for image segmentation you will need to have \code{EBImage} installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
+To use the **profitMakeSegim** and **profitProFound** function for image segmentation you will need to have **EBImage** installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
 
 ```R
 source("http://bioconductor.org/biocLite.R")
 biocLite("EBImage")
 ```
 
-Be warned, it will probably ask you to update a whole bunch of stuff. Just say **no** and only install \code{EBImage} for now. If something else needs updating or is missing you will get a warning when trying to use it, and you can update those packages as neccessary. If you say yes you will probably sit there for an hour whilst it builds dozens of packages from source that you do not need to really update.
+Be warned, it will probably ask you to update a whole bunch of stuff. Just say **no** and only install **EBImage** for now. If something else needs updating or is missing you will get a warning when trying to use it, and you can update those packages as neccessary. If you say yes you will probably sit there for an hour whilst it builds dozens of packages from source that you do not need to really update.
 
 Linux users might also need to install some non-standard graphics libraries (depending on your install). If you do not have them already, you should look to install **Cairo**, **jpeg** and **tiff** libraries (these are apparently technically not entirely free, hence not coming by default on some strictly open source Linux variants). For **Cairo** you might need to install the development version, so check this if you are having issues.
 
