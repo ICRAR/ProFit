@@ -18,9 +18,7 @@ knitr::opts_chunk$set(echo=TRUE)
 First load the libraries we need:
 
 ```{r}
-library(knitr)
 library(ProFit)
-library(FITSio)
 ```
 
 Next we load a table of data describing GAMA galaxies:

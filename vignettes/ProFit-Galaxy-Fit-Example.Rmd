@@ -14,9 +14,8 @@ vignette: >
 First load the libraries we need:
 
 ```{r}
-library(knitr)
 library(ProFit)
-library(FITSio)
+library(knitr)
 ```
 
 Next we load a table of data describing GAMA galaxies:

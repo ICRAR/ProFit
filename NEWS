@@ -1,5 +1,9 @@
 Latest version is always on GitHub at ICRAR/ProFit. Noted which version is on CRAN.
 
+v1.1.1  Fixed vignettes to not run ProFound (and by proxy EBImage, which is not supported by CRAN now).
+
+v1.1  Added OpenCL support
+
 v1.0  First released on CRAN & GitHub
 
 v1.0.1  Released on GitHub

@@ -62,21 +62,21 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     }
     legend('topleft',legend='Data')
     
-    magimage(modelimage,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix')
+    magimage(modelimage,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=cmap,xlab='x/pix',labels=c(TRUE,FALSE))
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=TRUE,drawlabels=FALSE,levels=1,col='darkgreen')
     }
     legend('topleft',legend='Model')
     
-    magimage(residual,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=errcmap,xlab='x/pix')
+    magimage(residual,stretchscale=stretchscale,locut=-maximg,hicut=maximg,type='num',zlim=c(0,1),col=errcmap,xlab='x/pix',labels=c(TRUE,FALSE))
     if(missing(region)==FALSE & all(region)==FALSE){
       contour(tempcon,add=TRUE,drawlabels=FALSE,levels=1,col='darkgreen')
       legend('topleft',legend='Data-Model')
     }
     
     diff=residual[region]/error[region]
-    hist(diff[!is.na(diff)],main='',breaks=100,axes=FALSE)
-    magaxis(1,xlab='Sigma offset / Cnts')
+    maghist(diff[!is.na(diff)],main='',breaks=100,xlab='Sigma offset / Cnts',labels=c(TRUE,FALSE))
+    #magaxis(1,xlab='Sigma offset / Cnts')
     abline(v=0,lty=2,col='red')
     legend('topleft',legend='(Data-Model)/Sigma')
   }

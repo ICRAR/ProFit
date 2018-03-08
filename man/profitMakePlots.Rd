@@ -93,7 +93,8 @@ segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',
 package="ProFit"))$imDat
 
 noise = sigma
-for(i in 1:length(noise)) noise[i] = rnorm(1,mean=0,sd=noise[i])
+set.seed(666)
+noise[] = rnorm(length(noise),mean=0,sd=noise)
 region = segim == segim[dim(segim)[1]/2,dim(segim)[2]/2]
 
 profitMakePlots(image = image, modelimage = image+noise, region = region, sigma = sigma, 
@@ -101,5 +102,4 @@ profitMakePlots(image = image, modelimage = image+noise, region = region, sigma 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ plot }
