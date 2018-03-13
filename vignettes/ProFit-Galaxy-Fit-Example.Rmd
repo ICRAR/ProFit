@@ -9,15 +9,21 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-## Prepare the test data
+Get the latest version of **ProFit**:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('ICRAR/ProFit')
+```
 
 First load the libraries we need:
 
 ```{r}
-library(knitr)
 library(ProFit)
-library(FITSio)
+library(knitr)
 ```
+
+## Prepare the test data
 
 Next we load a table of data describing GAMA galaxies:
 

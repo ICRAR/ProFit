@@ -9,13 +9,25 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+Get the latest version of **ProFound** and **ProFit**:
+
+```{r, eval=FALSE}
+library(devtools)
+install_github('asgr/ProFound')
+install_github('ICRAR/ProFit')
+```
+
+Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
+
+```{r}
+evalglobal=FALSE
+```
+
 First load the libraries we need:
 
 ```{r}
-library(knitr)
 library(ProFit)
 library(ProFound)
-library(FITSio)
 library(RColorBrewer)
 ```
 
@@ -41,13 +53,13 @@ It is Z-band data from the VIKING survey, and in the second image it is possible
 
 The first thing to do is to create an object segmentation of the full image. Here we input the known magnitude zero-point for this frame (30), and the pixel scale for VISTA VIRCAM (0.34 asec/pix). If these are not provided then outputs would be in terms on ADUs and pixels rather than AB mag and asec.
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 segim=profoundMakeSegim(image, magzero=30, pixscale=0.34, plot=TRUE)
 ```
 
 This is a pretty decent start, and it has identified all the main sources of interest. We can look at the object information in the attached table:
 
-```{r}
+```{r, eval=evalglobal}
 head(segim$segstats)
 ```
 
@@ -55,7 +67,7 @@ The output is approximately in descending flux order. This data happened to have
 
 The next step is to expand out the segmantation for our target galaxy. this is a good idea because we want our model fit to descend into sky dominated pixels and not to be tightly defined by bright central pixels:
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 segim_expand=profoundMakeSegimExpand(image, segim$segim, expand=6, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, rotstats=TRUE, plot=TRUE)
 ```
 
@@ -63,14 +75,14 @@ Notice because we set expand=6 only our object of interest (with segID=6) has be
 
 We can use this output to calculate an approximate sky surface brightness limit (taken as being the RMS of the sky):
 
-```{r}
+```{r, eval=evalglobal}
 SBlim=profitFlux2SB(segim_expand$skyRMS, magzero=30, pixscale=0.34)
 print(SBlim)
 ```
 
 Given this segmentation we can look at some statistics on our apparent sky pixels.
 
-```{r}
+```{r, eval=evalglobal}
 object_frac=length(which(segim_expand$objects==1))/length(image)
 qnorm(1-object_frac)
 ```
@@ -79,7 +91,7 @@ The above tells us that at a skycut level of ~1.4 is the point where we would ex
 
 It is also instructive to make the **qqplot** of sky pixels:
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 temp=qqnorm(sort((image[segim_expand$objects==0]-segim_expand$sky)/segim_expand$skyRMS), plot.it = FALSE)
 magplot(0,0,xlim=c(-5,5),ylim=c(-5,5), grid=TRUE, type='n', xlab='Normal Quantile', ylab='Sky Pixel Quantile')
 lines(temp)
@@ -90,7 +102,7 @@ As we should hope, the **qqplot** crosses at very close to [0,0], but we can see
 
 Now we have a decent segmentation we can estimate the image gain and the sigma map:
 
-```{r}
+```{r, eval=evalglobal}
 gain=profoundGainEst(image,objects=segim_expand$objects, sky=segim_expand$sky, skyRMS=segim_expand$skyRMS)
 gain
 ```
@@ -99,7 +111,7 @@ The number found is ~0.5. Since the gain estimation routine is typically accurat
 
 Now we have the segmentation, sky estimates and the gain, we can make a sgima map:
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 sigma=profoundMakeSigma(image, objects=segim_expand$objects, gain=gain, sky=segim_expand$sky, skyRMS =segim_expand$skyRMS, plot=TRUE)
 ```
 
@@ -109,7 +121,7 @@ The sigma map will look much liek our original image, but with sky pixels set to
 
 Next we want to find the PSF for fitting, so we should extract a a bright but non-saturated star from the list above:
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 magplot(segim_expand$segstats$R50, segim_expand$segstats$con,log='x', ylim=c(0,1), col=hsv(magmap(segim_expand$segstats$axrat, flip=TRUE)$map), xlab='Major Axis / pix', ylab='Concentration')
 magbar('topleft', title='Axrat', titleshift=1)
 abline(h=c(0.4,0.65), lty=2)
@@ -126,14 +138,14 @@ abline(v=c(0.4), lty=2)
 
 We want to extract very red (axial ratio ~ 1) stars from the above region contained by the horizontal and vertical dashed lines:
 
-```{r}
+```{r, eval=evalglobal}
 starlist=segim_expand$segstats[segim_expand$segstats$axrat>0.9 & segim_expand$segstats$con>0.4 & segim_expand$segstats$con<0.65 & segim_expand$segstats$R50>0.7 & segim_expand$segstats$R50<1.2 & segim_expand$segstats$SB_N50<23.5 & segim_expand$segstats$asymm<0.2,]
 print(starlist)
 ```
 
 There are 5 sensible looking options it seems. We can extract the brightest of these likely stars to do our rough PSF estimate. When doing this in anger you might want to consider fitting all 5 stars (or however many make it through the selection cuts above). This gives you a way to marginalise over the uncertainty in the PSF (I discuss PSF uncertainty in some more detail at the end of this vignette).
 
-```{r}
+```{r, eval=evalglobal}
 psf_image=magcutout(image, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
 psf_sigma=magcutout(sigma, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
 psf_segim=magcutout(segim_expand$segim, loc=starlist[1,c('xcen','ycen')], box=c(31,31))
@@ -141,7 +153,7 @@ psf_segim=magcutout(segim_expand$segim, loc=starlist[1,c('xcen','ycen')], box=c(
 
 Look at our target star to check we are happy:
 
-```{r, fig.width=5, fig.height=5, dpi=40, eval=FALSE}
+```{r, fig.width=5, fig.height=5, dpi=40, eval=evalglobal}
 magimage(psf_image$image)
 magimage(psf_sigma$image)
 magimage(psf_segim$image)
@@ -149,7 +161,7 @@ magimage(psf_segim$image)
 
 Next we make our initial model, where we take our PSF estimates from the segmentation stats:
 
-```{r}
+```{r, eval=evalglobal}
 psf_x=psf_image$loc[1]
 psf_y=psf_image$loc[2]
 psf_mag=starlist[1,'mag']
@@ -171,7 +183,7 @@ psf_modellist=list(
 
 We also need to set up the tofit, tolog and intervals structure
 
-```{r}
+```{r, eval=evalglobal}
 psf_tofit=list(
   moffat=list(
     xcen=TRUE,
@@ -211,31 +223,31 @@ psf_intervals=list(
 
 Since there are no other sources in the frame we can use the full **psf_image** to attempt our profile fit (so no need to provide **psf_segim**):
 
-```{r}
+```{r, eval=evalglobal}
 psf_Data=profitSetupData(psf_image$image, sigma=psf_sigma$image, modellist=psf_modellist, tofit=psf_tofit, tolog=psf_tolog, magzero=30, algo.func='optim', intervals=psf_intervals)
 ```
 
 We can check our initial guess easily:
 
-```{r, fig.width=8, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(parm=psf_Data$init, Data=psf_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 Not bad, but not perfect. We can do an optim fit to improve things:
 
-```{r}
+```{r, eval=evalglobal}
 psf_fit=optim(psf_Data$init, profitLikeModel, method='BFGS', Data=psf_Data, control=list(fnscale=-1))
 ```
 
 Now we plot the output:
 
-```{r, fig.width=8, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(parm=psf_fit$par, Data=psf_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 This looks like a very good fit. We will now contruct our model PSF:
 
-```{r}
+```{r, eval=evalglobal}
 psf_modellist_fit=profitRemakeModellist(parm=psf_fit$par, Data=psf_Data)$modellist
 psf_modellist_fit$moffat$xcen=25/2
 psf_modellist_fit$moffat$ycen=25/2
@@ -244,7 +256,7 @@ psf_model=profitMakeModel(modellist=psf_modellist_fit, dim=c(25,25))$z
 
 And now we can look at our final PSF model:
 
-```{r, fig.width=5, fig.height=5, dpi=40, eval=FALSE}
+```{r, fig.width=5, fig.height=5, dpi=40, eval=evalglobal}
 magimage(psf_model)
 ```
 
@@ -254,7 +266,7 @@ Now we have all the key bits we need in order to fit our target galaxy!
 
 A more complicated alternative is to fit all the good stars (5 in this case) with the same profile simultaneously. Basically we have 5 PSFs distributed around our image, but we want to fit them all with the same PSF, modulo different xcen, ycen and mag:
 
-```{r}
+```{r, eval=evalglobal}
 psf_x=starlist$xcen
 psf_y=starlist$ycen
 psf_mag=starlist$mag
@@ -281,18 +293,18 @@ psf_modellist2=list(
 
 We need to make our own region map since our object to fit will not be centrally located. First we should expand our segments of interest (not always vital- it depends whether you think there is much PSF flux hidden in broad wings or not):
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 segim_expand_psf=profoundMakeSegimExpand(image, segim$segim, expand=starlist$segID, expandsigma=3, skycut=-1, magzero=30, pixscale=0.34, plot=TRUE)
 ```
 
-```{r}
+```{r, eval=evalglobal}
 psf_region=matrix(0, dim(image)[1], dim(image)[2])
 psf_region[segim_expand$segim %in% starlist$segID]=1
 ```
 
 We now need to prepare a more complicated fitting structure. We want to fit the 5 stars with the same PSF, modulo different xcen, ycen and mag:
 
-```{r}
+```{r, eval=evalglobal}
 psf_tofit2=list(
   pointsource = list(
     xcen = rep(TRUE,5),
@@ -347,31 +359,31 @@ psf_intervals2=list(
 
 From here everything is much simpler again, since we just feed our prepared objects into our setup function as per usual:
 
-```{r}
+```{r, eval=evalglobal}
 psf_Data2=profitSetupData(image, sigma=sigma, modellist=psf_modellist2, tofit=psf_tofit2, tolog=psf_tolog2, magzero=30, algo.func='optim', intervals=psf_intervals2, region=psf_region)
 ```
 
 We check the initial guess. Notice the three stars are visible as the three circled regions. Given the image scale it is a bit tricky to see how good our initial guesses actually were, but probably not too bad.
 
-```{r, fig.width=8, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(parm=psf_Data2$init, Data=psf_Data2, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 So like before, not bad, but not perfect. We can do an optim fit to improve things:
 
-```{r}
+```{r, eval=evalglobal}
 psf_fit2=optim(psf_Data2$init, profitLikeModel, method='BFGS', Data=psf_Data2, control=list(fnscale=-1))
 ```
 
 Now we plot the output:
 
-```{r, fig.width=8, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(parm=psf_fit2$par, Data=psf_Data2, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 Maybe useful to zoom in a bit:
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 psf_modellist_fit2=profitRemakeModellist(parm=psf_fit2$par, Data=psf_Data2)$modellist
 psf_model_full2=profitMakeModel(psf_modellist_fit2,dim=dim(image),magzero=30)$z
 for(i in 1:5){
@@ -382,7 +394,7 @@ for(i in 1:5){
 
 This looks like a very good fit. We will now contruct our model PSF:
 
-```{r}
+```{r, eval=evalglobal}
 psf_modellist_fit2$psf$moffat$xcen=25/2
 psf_modellist_fit2$psf$moffat$ycen=25/2
 psf_model2=profitMakeModel(modellist=psf_modellist_fit2$psf, magzero=30, dim=c(25,25))$z
@@ -390,7 +402,7 @@ psf_model2=profitMakeModel(modellist=psf_modellist_fit2$psf, magzero=30, dim=c(2
 
 And now we can look at our final PSF model:
 
-```{r, fig.width=5, fig.height=5, dpi=40, eval=FALSE}
+```{r, fig.width=5, fig.height=5, dpi=40, eval=evalglobal}
 magimage(psf_model2)
 ```
 
@@ -398,7 +410,7 @@ magimage(psf_model2)
 
 Much like we did with the PSF fit, we have to extract the region of interest and setup our fitting structures:
 
-```{r}
+```{r, eval=evalglobal}
 gal_image=magcutout(image, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
 gal_sigma=magcutout(sigma, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
 gal_segim=magcutout(segim_expand$segim, loc=segim_expand$segstats[6,c('xcen','ycen')], box=c(101,101))
@@ -406,7 +418,7 @@ gal_segim=magcutout(segim_expand$segim, loc=segim_expand$segstats[6,c('xcen','yc
 
 Check the cutout regions:
 
-```{r, fig.width=5, fig.height=5, dpi=40, eval=FALSE}
+```{r, fig.width=5, fig.height=5, dpi=40, eval=evalglobal}
 magimage(gal_image$image)
 magimage(gal_sigma$image)
 magimage(gal_segim$image)
@@ -414,7 +426,7 @@ magimage(gal_segim$image)
 
 As before, we have to setup some reasonable guesses for our galaxy fit. We give it a very faint initial bulge since we can tell it is a very disky system and we are only using a simple optimiser so we do not want it to get stuck in an odd local minima with a massive bulge. To do this properly and with psychic inputs you would use a better optimiser (e.g. full MCMC or genetic algorithm).
 
-```{r}
+```{r, eval=evalglobal}
 gal_x=gal_image$loc[1]
 gal_y=gal_image$loc[2]
 gal_mag=segim_expand$segstats[6,'mag']
@@ -438,7 +450,7 @@ gal_modellist=list(
 
 And now we make the other inputs we need for our fitting **Data** structure:
 
-```{r}
+```{r, eval=evalglobal}
 gal_tofit=list(
   sersic=list(
     xcen= c(TRUE,NA), #We fit for xcen and tie the two togther
@@ -481,30 +493,30 @@ gal_intervals=list(
 
 Now we can set up our full fitting structure with averything we have made (notice we use our simpler PSF model here):
 
-```{r}
+```{r, eval=evalglobal}
 gal_Data=profitSetupData(gal_image$image, sigma=gal_sigma$image, modellist=gal_modellist, tofit=gal_tofit, tolog=gal_tolog, magzero=30, algo.func='optim', intervals=gal_intervals, psf=psf_model, segim=gal_segim$image)
 ```
 
-```{r, fig.width=8, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(parm=gal_Data$init, Data=gal_Data, makeplots=TRUE, plotchisq=TRUE)
 ```
 
 Not a bad start, but certainly not great. Let's do an optim fit:
 
-```{r}
+```{r, eval=evalglobal}
 gal_fit=optim(gal_Data$init, profitLikeModel, method='BFGS', Data=gal_Data, control=list(fnscale=-1))
 ```
 
 We can now recreate our optimised **modellist**:
 
-```{r}
+```{r, eval=evalglobal}
 gal_fit_modellist=profitRemakeModellist(gal_fit$par, Data=gal_Data)$modellist
 print(gal_fit_modellist)
 ```
 
 And we can then plot the output:
 
-```{r, fig.width=8, fig.height=5, dpi=40}
+```{r, eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
 profitLikeModel(parm=gal_fit$par, Data=gal_Data, makeplots=TRUE, plotchisq=TRUE)
 profitEllipsePlot(Data=gal_Data, modellist=gal_fit_modellist, pixscale=0.34, SBlim=SBlim)
 ```

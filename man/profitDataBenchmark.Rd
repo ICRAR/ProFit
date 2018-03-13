@@ -102,6 +102,7 @@ Dan Taranu
 \code{\link{profitSetupData}}, \code{\link{profitDataSetOptionsFromBenchmarks}}, \code{\link{profitBenchmark}}, \code{\link{profitMakeConvolver}}
 }
 \examples{
+\dontrun{
 # Load ProFit example data
 
 # There are 2 data source options: KiDS or SDSS (the galaxies are the same)
@@ -213,6 +214,7 @@ benchmarks = profitDataBenchmark(modellist = Data$modellist, calcregion = Data$c
 Data = profitDataSetOptionsFromBenchmarks(Data, benchmarks)
 
 system.time(profitLikeModel(parm=Data$init, Data=Data))
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
