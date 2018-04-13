@@ -162,9 +162,17 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   if(algo.func=='LA' | algo.func=='LD')
   {
     Monitor=c(LL=LL,LP=LP)
-    if("time" %in% Data$mon.names) Monitor = c(Monitor,tend = proc.time()["elapsed"])
-    if("chisq" %in% Data$mon.names) Monitor = c(Monitor,chisq = chisq)
-    if(ist) Monitor=c(Monitor,dof=dof)
+    if("time" %in% Data$mon.names){
+      Monitor = c(Monitor,tend = proc.time()["elapsed"])
+    }
+    if("chisq" %in% Data$mon.names){
+      Monitor[which(Data$mon.names=="chisq")] = chisq
+      names(Monitor)[which(Data$mon.names=="chisq")]='chisq'
+    }
+    if("dof" %in% Data$mon.names){
+      Monitor[which(Data$mon.names=="dof")] = dof
+      names(Monitor)[which(Data$mon.names=="dof")]='dof'
+    }
     out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
   }
   return=out
