@@ -45,8 +45,8 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
   
   parmar = par("mar")
   
-  medimg = median(abs(image[image>0 & region]))
-  maximg = max(abs(image[region]))
+  medimg = median(abs(image[which(image>0 & region)]), na.rm=TRUE)
+  maximg = max(abs(image[region]), na.rm=TRUE)
   
   stretchscale = 1/medimg
     
