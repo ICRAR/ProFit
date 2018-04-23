@@ -118,7 +118,7 @@ install_github("ICRAR/ProFit")
 To use the **profitMakeSegim** and **profitProFound** function for image segmentation you will need to have **EBImage** installed. Since this can be a bit cumbersome on some platforms (given its dependencies) this is only listed as a suggested package. You can have a go at installing it by running:
 
 ```R
-source("http://bioconductor.org/biocLite.R")
+source("https://bioconductor.org/biocLite.R")
 biocLite("EBImage")
 ```
 
