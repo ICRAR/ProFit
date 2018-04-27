@@ -25,11 +25,25 @@
  */
 
 #include <algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cerrno>
 #include <functional>
 #include <limits>
 #include <numeric>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
+
+#ifdef _WIN32
+# include <windows.h>
+#else
+# include <dirent.h>
+# include <sys/stat.h>
+# include <sys/time.h>
+# include <sys/types.h>
+# include <unistd.h>
+#endif // _WIN32
 
 #include "profit/common.h"
 #include "profit/config.h"
@@ -241,7 +255,241 @@ double integrate_qagi(integration_func_t f, double a, void *params) {
 double integrate_qags(integration_func_t f, double a, double b, void *params) {
 	return __r_integrate_qag(f, params, a, b, false);
 }
+#endif // defined(PROFIT_USES_GSL) / defined(PROFIT_USES_R)
 
+#ifdef _WIN32
+static inline
+bool path_exists(const std::string &path, const DWORD expected_attr)
+{
+	auto attrs = GetFileAttributes(path.c_str());
+	if (attrs == INVALID_FILE_ATTRIBUTES) {
+
+		auto last_error = GetLastError();
+		if (last_error == ERROR_FILE_NOT_FOUND || last_error == ERROR_PATH_NOT_FOUND ||
+		    last_error == ERROR_INVALID_NAME || last_error == ERROR_INVALID_DRIVE ||
+		    last_error == ERROR_BAD_PATHNAME) {
+			return false;
+		}
+
+		std::ostringstream os;
+		os << "Unexpected error found when inspecting " << path << ": " << last_error;
+		throw std::runtime_error(os.str());
+	}
+
+	return attrs & expected_attr;
+}
+#else
+static inline
+bool inode_exists(const std::string &fname, mode_t expected_type, const char *type_name) {
+
+	struct ::stat st;
+	int result = ::stat(fname.c_str(), &st);
+
+	if (result == -1) {
+
+		// it doesn't exist
+		if (errno == ENOENT) {
+			return false;
+		}
+
+		// Another kind of unexpected error
+		std::ostringstream os;
+		os << "Unexpected error found when inspecting " << fname << ": ";
+		os << strerror(errno);
+		throw std::runtime_error(os.str());
+	}
+
+
+	// it exists, but is it a the expected type
+	bool is_expected = (st.st_mode & S_IFMT) == expected_type;
+	if (!is_expected) {
+		std::ostringstream os;
+		os << fname << " exists but is not a " << type_name << ". Please remove it and try again";
+		throw std::runtime_error(os.str());
+	}
+
+	return true;
+}
+#endif // _WIN32
+
+bool dir_exists(const std::string &fname)
+{
+#ifdef _WIN32
+	return path_exists(fname, FILE_ATTRIBUTE_DIRECTORY);
+#else
+	return inode_exists(fname, S_IFDIR, "directory");
+#endif // _WIN32
+}
+
+bool file_exists(const std::string &fname)
+{
+#ifdef _WIN32
+	return path_exists(fname, FILE_ATTRIBUTE_NORMAL);
+#else
+	return inode_exists(fname, S_IFREG, "regular file");
+#endif // _WIN32
+}
+
+static inline
+void create_dir(const std::string &fname) {
+#ifdef _WIN32
+	CreateDirectory(fname.c_str(), NULL);
+#else
+	// mkdir with 755 permissions
+	::mkdir(fname.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+#endif // _WIN32
+}
+
+std::string create_dirs(const std::string &at, const std::vector<std::string> &parts)
+{
+	std::string the_dir = at;
+	for(auto &part: parts) {
+#ifdef _WIN32
+		the_dir += "\\" + part;
+#else
+		the_dir += "/" + part;
 #endif
+		if (!dir_exists(the_dir)) {
+			create_dir(the_dir);
+		}
+	}
+	return the_dir;
+}
+
+static
+void _removal_error(const char *path)
+{
+	std::ostringstream os;
+	os << "Unexpected error found when removing " << path << ": ";
+#ifdef _WIN32
+	auto err = GetLastError();
+	LPTSTR errormsg = 0;
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr, err, 0, (LPTSTR)&errormsg, 0, NULL);
+	os << errormsg;
+	LocalFree(errormsg);
+#else
+	os << errno << "(" << strerror(errno) << ")";
+#endif
+	throw std::runtime_error(os.str());
+}
+
+static
+void _recursive_remove(const char *path)
+{
+#ifdef _WIN32
+	std::string pattern(path);
+	pattern.append("\\*");
+
+	WIN32_FIND_DATA data;
+	HANDLE find_handle = FindFirstFile(pattern.c_str(), &data);
+	if (find_handle == INVALID_HANDLE_VALUE) {
+		_removal_error(path);
+	}
+
+	do {
+
+		if (!strcmp(".", data.cFileName) || !strcmp("..", data.cFileName)) {
+			continue;
+		}
+
+		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			std::ostringstream full_path;
+			full_path << path << "\\" << data.cFileName;
+			_recursive_remove(full_path.str().c_str());
+		}
+		else {
+			std::ostringstream full_path;
+			full_path << path << "\\" << data.cFileName;
+			if (!DeleteFile(full_path.str().c_str())) {
+				_removal_error(full_path.str().c_str());
+			}
+		}
+	} while (FindNextFile(find_handle, &data) != 0);
+
+	FindClose(find_handle);
+
+	if (!RemoveDirectory(path)) {
+		_removal_error(path);
+	}
+#else
+
+	struct ::stat st;
+	int result = ::stat(path, &st);
+	if (result == -1) {
+		_removal_error(path);
+	}
+
+	auto mode = st.st_mode & S_IFMT;
+	if (mode == S_IFDIR) {
+
+		// We open the directory, recursively remove its contents
+		// (making sure we skip . and ..), close it, and finally remove it
+		DIR *dir;
+		if ((dir = ::opendir(path)) == nullptr) {
+			_removal_error(path);
+		}
+
+		struct dirent *ent;
+		while ((ent = ::readdir (dir)) != nullptr) {
+
+			if (!strcmp(".", ent->d_name) || !strcmp("..", ent->d_name)) {
+				continue;
+			}
+
+			std::ostringstream full_path;
+			full_path << path << "/" << ent->d_name;
+			_recursive_remove(full_path.str().c_str());
+		}
+
+		if (::closedir(dir) == -1) {
+			_removal_error(path);
+		}
+
+		if (::rmdir(path) == -1) {
+			_removal_error(path);
+		}
+
+		return;
+	}
+
+	// No recursion needed, just remove
+	auto ret = ::unlink(path);
+	if (ret == -1) {
+		_removal_error(path);
+	}
+#endif // _WIN32
+}
+
+void recursive_remove(const std::string &path)
+{
+	_recursive_remove(path.c_str());
+}
+
+
+std::string get_profit_home()
+{
+	auto profit_home = std::getenv("PROFIT_HOME");
+	if (profit_home) {
+		if (!dir_exists(profit_home)) {
+			create_dir(profit_home);
+		}
+		return profit_home;
+	}
+
+#ifdef _WIN32
+	constexpr const char *home_var = "APPDATA";
+	constexpr const char *profit_basedir = "profit";
+#else
+	constexpr const char *home_var = "HOME";
+	constexpr const char *profit_basedir = ".profit";
+#endif // _WIN32
+
+	auto user_home = std::getenv(home_var);
+	if (!user_home) {
+		throw std::runtime_error("User doesn't have a home :(");
+	}
+
+	return create_dirs(user_home, {std::string(profit_basedir)});
+}
 
 } /* namespace profit */

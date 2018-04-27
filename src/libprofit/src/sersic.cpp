@@ -222,7 +222,7 @@ void SersicProfile::init_eval_function() {
 	m_eval_function = eval_function<boxy, t>;
 }
 
-void SersicProfile::evaluate(std::vector<double> &image) {
+void SersicProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) {
 
 	// inv_exponent is exactly what is yield by the templated _invexp function
 	// later on during each individual evaluation
@@ -250,7 +250,7 @@ void SersicProfile::evaluate(std::vector<double> &image) {
 		else                                       init_eval_function<false, general>();
 	}
 
-	return RadialProfile::evaluate(image);
+	return RadialProfile::evaluate(image, mask, scale, magzero);
 }
 
 double SersicProfile::fluxfrac(double fraction) const {
@@ -315,12 +315,12 @@ void SersicProfile::initial_calculations() {
  * The scale by which each image pixel value is multiplied.
  * The sersic profile supports a rescale factor that is applied here.
  */
-double SersicProfile::get_pixel_scale() {
-	double scale = RadialProfile::get_pixel_scale();
+double SersicProfile::get_pixel_scale(const PixelScale &scale) {
+	double flux_scale = RadialProfile::get_pixel_scale(scale);
 	if( this->rescale_flux ) {
-		scale *= this->_rescale_factor;
+		flux_scale *= this->_rescale_factor;
 	}
-	return scale;
+	return flux_scale;
 }
 
 double SersicProfile::get_rscale() {
@@ -335,9 +335,10 @@ void SersicProfile::subsampling_params(double x, double y,
 
 	RadialProfile::subsampling_params(x, y, resolution, max_recursions);
 
-	/* Higher subsampling params for central pixel if nser > 1 */
-	bool center_pixel = abs(x - this->xcen) < this->model.scale_x && abs(y - this->ycen) < this->model.scale_y;
-	if( adjust and center_pixel && this->nser > 1 ) {
+	/* Higher subsampling params for central pixel if nser > 1 (only when auto-adjusting) */
+	bool center_pixel = abs(x - xcen) < model.get_image_pixel_scale().first &&
+	                    abs(y - ycen) < model.get_image_pixel_scale().second;
+	if( adjust && center_pixel && nser > 1 ) {
 		resolution = 8;
 		max_recursions = 10;
 	}

@@ -1,5 +1,5 @@
 /**
- * Header file with public definitions to use libprofit
+ * crc32 checksum declaration for libprofit
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -24,18 +24,21 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PROFIT_PROFIT_H
-#define PROFIT_PROFIT_H
+#ifndef PROFIT_CRC_H_
+#define PROFIT_CRC_H_
 
-#include "profit/config.h"
-#include "profit/common.h"
-#include "profit/convolve.h"
-#include "profit/exceptions.h"
-#include "profit/fft.h"
-#include "profit/image.h"
-#include "profit/library.h"
-#include "profit/model.h"
-#include "profit/opencl.h"
-#include "profit/profile.h"
+#include <cstdint>
+#include <string>
 
-#endif /* PROFIT_PROFIT_H */
+namespace profit {
+
+/// Calculates the checksum of @par data, which is 0-ended, using the
+/// "CRC-32" model as found in http://reveng.sourceforge.net/crc-catalogue/17plus.htm
+///
+/// @par data The data to checksum
+/// @return The checksum of the data using the "CRC-32" model.
+uint32_t crc32(const std::string &data);
+
+} // namespace profit
+
+#endif // PROFIT_CRC_H_

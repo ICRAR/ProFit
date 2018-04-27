@@ -28,31 +28,8 @@ R"===(
 inline static double _d_broken_exponential(double r, double h1, double h2, double rb, double a) {
 
 	/*
-	 * The broken exponential profile for radius r is:
-	 *
-	 *  exp(-r/h1)*(1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
-	 *
-	 * The problem with this direct approach is that exp(r-rb) diverges whereas
-	 * exp(-r/h1) converges to zero. To avoid this we perform the following
-	 * replacements and rewrite the equation:
-	 *
-	 *   base = r - rb
-	 *   exponent = 1/h1 - 1/h2
-	 *
-	 *    exp(-r/h1) * (1 + exp(a * base)) ^ (exponent / a)
-	 *  = exp(-r/h1) * exp(log((1 + exp(a * base)) ^ (exponent / a)))
-	 *  = exp(-r/h1 + log((1 + exp(a * base)) ^ (exponent / a))
-	 *  = exp(-r/h1 + exponent / a * log(1 + exp(a * base)))
-	 *
-	 * In this last expression, when (a * base) is big, then doing
-	 * log(1 + exp(a * base)) yields the same result as log(exp(a * base))
-	 * (which equals a * base, of course). This happens already at a * base = 34,
-	 * although we check 40 just to be conservative.
-	 * Thus, the final result in this case becomes:
-	 *
-	 *  = exp(-r/h1 + exponent * base)
+	 * See brokenexponential.cpp for an explanation about this
 	 */
-
 	double base = r - rb;
 	double expo = 1 / h1 - 1 / h2;
 	if (a * base < 40) {

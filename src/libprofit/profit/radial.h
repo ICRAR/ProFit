@@ -31,7 +31,7 @@
 #endif
 
 #include "profit/config.h"
-#include "profit/opencl.h"
+#include "profit/opencl_impl.h"
 #include "profit/profile.h"
 
 namespace profit
@@ -69,7 +69,7 @@ public:
 	 * ---------------------------------------------
 	 */
 	void validate() override;
-	void evaluate(std::vector<double> &image) override;
+	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) override;
 
 #ifdef PROFIT_DEBUG
 	std::map<int,int> get_integrations();
@@ -114,8 +114,10 @@ protected:
 	 * multiplied to yield the final pixel value. The default implementation
 	 * returns the pixel area multiplied by Ie, but subclasses might need to
 	 * rescale this.
+	 *
+	 * @param scale the pixel scale as given by the Model when calling @ref evaluate
 	 */
-	virtual double get_pixel_scale();
+	virtual double get_pixel_scale(const PixelScale &scale);
 
 	/*
 	 * ------------------------------------------
@@ -239,6 +241,10 @@ protected:
 	 * anymore
 	 */
 	double rscale_max;
+
+	/// Whether the CPU evaluation method should be used, even if an OpenCL
+	/// environment has been given (and libprofit has been compiled with OpenCL support)
+	bool force_cpu;
 	// @}
 
 	/*
@@ -251,10 +257,11 @@ protected:
 	double _ie;
 	double _cos_ang;
 	double _sin_ang;
+	double magzero;
 
 private:
 
-	void evaluate_cpu(std::vector<double> &image);
+	void evaluate_cpu(Image &image, const Mask &mask, const PixelScale &scale);
 
 	void _image_to_profile_coordinates(double x, double y, double &x_prof, double &y_prof);
 
@@ -284,7 +291,7 @@ private:
 
 	/* Evaluates this radial profile using an OpenCL kernel and floating type FT */
 	template <typename FT>
-	void evaluate_opencl(std::vector<double> &image);
+	void evaluate_opencl(Image &image, const Mask &mask, const PixelScale &scale, OpenCLEnvImplPtr &env);
 
 	template <typename FT>
 	void add_common_kernel_parameters(unsigned int argIdx, cl::Kernel &kernel) const;

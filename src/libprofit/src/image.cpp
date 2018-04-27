@@ -25,6 +25,7 @@
  */
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <numeric>
 #include <utility>
@@ -33,36 +34,88 @@
 
 namespace profit {
 
+Mask::Mask(unsigned int width, unsigned int height) :
+	surface({width, height})
+{
+}
+
+Mask::Mask(Dimensions dimensions) :
+	surface(dimensions)
+{
+}
+
+Mask::Mask(const std::vector<bool>& data, unsigned int width, unsigned int height) :
+	surface(data, {width, height})
+{
+}
+
+Mask::Mask(const std::vector<bool>& data, Dimensions dimensions) :
+	surface(data, dimensions)
+{
+}
+
+Mask::Mask(std::vector<bool>&& data, unsigned int width, unsigned int height) :
+	surface(std::move(data), {width, height})
+{
+}
+
+Mask::Mask(std::vector<bool>&& data, Dimensions dimensions) :
+	surface(std::move(data), dimensions)
+{
+}
+
+Mask::Mask(const Mask& other) :
+	surface(other)
+{
+}
+
+Mask::Mask(Mask&& other) :
+	surface(std::move(other))
+{
+}
+
 Image::Image(unsigned int width, unsigned int height) :
-	_2ddata(width, height)
+	surface({width, height})
 {
 }
 
-Image::Image(const std::vector<double>& data, unsigned int width,
-		unsigned int height) :
-	_2ddata(data, width, height)
+Image::Image(Dimensions dimensions) :
+	surface(dimensions)
 {
 }
 
-Image::Image(std::vector<double>&& data, unsigned int width,
-		unsigned int height) :
-	_2ddata(std::move(data), width, height)
+Image::Image(const std::vector<double>& data, unsigned int width, unsigned int height) :
+	surface(data, {width, height})
+{
+}
+
+Image::Image(const std::vector<double>& data, Dimensions dimensions) :
+	surface(data, dimensions)
+{
+}
+
+Image::Image(std::vector<double> &&data, unsigned int width, unsigned int height) :
+	surface(std::move(data), {width, height})
+{
+}
+
+Image::Image(std::vector<double>&& data, Dimensions dimensions) :
+	surface(std::move(data), dimensions)
 {
 }
 
 Image::Image(const Image& other) :
-	_2ddata(other)
+	surface(other)
 {
 }
 
 Image::Image(Image&& other) :
-	_2ddata(std::move(other))
+	surface(std::move(other))
 {
 }
 
 double Image::getTotal() const {
-	const auto &data = getData();
-	return std::accumulate(data.begin(), data.end(), 0.);
+	return std::accumulate(begin(), end(), 0.);
 }
 
 void Image::normalize()
@@ -80,65 +133,101 @@ Image Image::normalize() const
 	return normalized;
 }
 
-Image Image::extend(unsigned int new_width, unsigned int new_height,
-                    unsigned int start_x, unsigned int start_y) const
+Image Image::upsample(unsigned int factor, UpsamplingMode mode) const
 {
-	auto width = getWidth();
-	auto height = getHeight();
-
-	if (new_width < width) {
-		throw std::invalid_argument("new_width should be >= width");
+	if (factor == 0) {
+		throw std::invalid_argument("upsampling factor is 0");
 	}
-	if (new_height < height) {
-		throw std::invalid_argument("new_height should be >= height");
-	}
-	if (start_x + width > new_width) {
-		throw std::invalid_argument("start_x + new_width should be <= width");
-	}
-	if (start_y + height > new_height) {
-		throw std::invalid_argument("start_y + new_height <= image.height");
+	if (factor == 1) {
+		return Image(*this);
 	}
 
-	Image extended(new_width, new_height);
-	const auto &data = getData();
-	auto &extended_data = extended.getData();
-	for(unsigned int j = 0; j < height; j++) {
-		for(unsigned int i = 0; i < width; i++) {
-			extended_data[(i+start_x) + (j+start_y)*new_width] = data[i + j*width];
+	auto up_dims = getDimensions() * factor;
+	Image upsampled(up_dims);
+
+	// Each pixel from this image is repeated `factor x factor` times
+	double divide_factor = mode == SCALE ? (factor * factor) : 1;
+	for (unsigned int row_u = 0; row_u != up_dims.y; row_u++) {
+		auto row = row_u / factor;
+		for (unsigned int col_u = 0; col_u != up_dims.x; col_u++) {
+			auto col = col_u / factor;
+			upsampled[col_u + row_u * up_dims.x] = this->operator[]({col, row}) / divide_factor;
 		}
 	}
-	return extended;
+	return upsampled;
 }
 
-Image Image::crop(unsigned int new_width, unsigned int new_height,
-                  unsigned int start_x, unsigned int start_y) const
+Image Image::downsample(unsigned int factor, DownsamplingMode mode) const
 {
-	auto width = getWidth();
-	auto height = getHeight();
+	using std::ceil;
 
-	if (new_width > width) {
-		throw std::invalid_argument("new_width should be <= width");
+	if (factor == 0) {
+		throw std::invalid_argument("downsampling factor is 0");
 	}
-	if (new_height > height) {
-		throw std::invalid_argument("new_height should be <= height");
-	}
-	if (start_x + new_width > width) {
-		throw std::invalid_argument("start_x + new_width should be <= image.width");
-	}
-	if (start_y + new_height > height) {
-		throw std::invalid_argument("start_y + new_height should be <= image.height");
+	if (factor == 1) {
+		return Image(*this);
 	}
 
-	Image crop(new_width, new_height);
-	const auto &data = getData();
-	auto &crop_data = crop.getData();
-	for(unsigned int j = 0; j < new_height; j++) {
-		for(unsigned int i = 0; i < new_width; i++) {
-			crop_data[i + j * new_width] = data[(i + start_x) + (j + start_y) * width];
+	auto dims = getDimensions();
+	auto down_dims = Dimensions{static_cast<unsigned int>(ceil(dims.x / float(factor))),
+	                            static_cast<unsigned int>(ceil(dims.y / float(factor)))};
+	Image downsampled(down_dims);
+
+	// The following implementations might not be ideal, but our images are not
+	// that big usually.
+
+	if (mode == SAMPLE) {
+		// We loop over the dimensions of the downsampled image and copy the
+		// value of the first pixel of this image that corresponds
+		for (unsigned int row_d = 0; row_d != down_dims.y; row_d++) {
+			auto row = row_d * factor;
+			for (unsigned int col_d = 0; col_d != down_dims.x; col_d++) {
+				auto col = col_d * factor;
+				downsampled[col_d + row_d * down_dims.x] = this->operator[]({col, row});
+			}
 		}
-	};
-	return crop;
+	}
+	else if (mode == SUM) {
+		// Pixels of this image are summed into the corresponding target pixels
+		for (unsigned int row = 0; row != dims.y; row++) {
+			auto row_d = row / factor;
+			for (unsigned int col = 0; col != dims.x; col++) {
+				auto col_d = col / factor;
+				downsampled[col_d + row_d * down_dims.x] += this->operator[]({col, row});
+			}
+		}
+	}
+	else { // mode == AVERAGE
+		// Pixels of this image are averaged into the corresponding target pixels
+		for (unsigned int row_d = 0; row_d != down_dims.y; row_d++) {
+
+			auto row_0 = row_d * factor;
+			auto row_last = std::min(row_0 + factor, dims.y);
+
+			for (unsigned int col_d = 0; col_d != down_dims.x; col_d++) {
+
+				auto col_0 = col_d * factor;
+				auto col_last = std::min(col_0 + factor, dims.x);
+
+				// Accumulate the total flux from all the pixels that correspond
+				// to this downsampled pixel and divide by the count
+				double total = 0;
+				unsigned int count = 0;
+				for (unsigned int row = row_0; row != row_last; row++) {
+					for (unsigned int col = col_0; col != col_last; col++) {
+						total += this->operator[]({col, row});
+						count++;
+					}
+				}
+				downsampled[col_d + row_d * down_dims.x] = total / count;
+
+			}
+		}
+	}
+
+	return downsampled;
 }
+
 
 Image &Image::operator&=(const Mask &mask)
 {
@@ -147,9 +236,7 @@ Image &Image::operator&=(const Mask &mask)
 		return *this;
 	}
 
-	auto &data = getData();
-	const auto &mask_data = mask.getData();
-	std::transform(data.begin(), data.end(), mask_data.begin(), data.begin(),
+	std::transform(begin(), end(), mask.begin(), begin(),
 		[](const double i, const bool m) {
 			return m ? i : 0.;
 	});
@@ -163,21 +250,13 @@ const Image Image::operator&(const Mask &mask) const
 	return masked;
 }
 
-Image &Image::operator=(Image &&rhs)
-{
-	_2ddata<double>::operator=(std::move(rhs));
-	return *this;
-}
-
 Image &Image::operator+=(const Image& rhs)
 {
-	auto &data = getData();
-	const auto &other_data = rhs.getData();
-	std::transform(data.begin(), data.end(), other_data.begin(), data.begin(), std::plus<double>());
+	std::transform(begin(), end(), rhs.begin(), begin(), std::plus<double>());
 	return *this;
 }
 
-const Image Image::operator+(const Image& rhs) const
+Image Image::operator+(const Image& rhs) const
 {
 	Image sum(*this);
 	sum += rhs;
@@ -188,17 +267,34 @@ const Image Image::operator+(const Image& rhs) const
 Image &Image::operator/=(double denominator)
 {
 	using std::placeholders::_1;
-	auto &data = getData();
-	std::transform(data.begin(), data.end(), data.begin(),
+	std::transform(begin(), end(), begin(),
 	               std::bind(std::divides<double>(), _1, denominator));
 	return *this;
 }
 
-const Image Image::operator/(double denominator) const
+Image &Image::operator*=(double multiplier)
+{
+	using std::placeholders::_1;
+	std::transform(begin(), end(), begin(),
+	               std::bind(std::multiplies<double>(), _1, multiplier));
+	return *this;
+}
+
+Image Image::operator/(double denominator) const
 {
 	Image sum(*this);
 	sum /= denominator;
 	return sum;
+}
+
+Image Image::operator/(int denominator) const
+{
+	return operator/(static_cast<double>(denominator));
+}
+
+Image Image::operator/(unsigned int denominator) const
+{
+	return operator/(static_cast<double>(denominator));
 }
 
 }

@@ -47,7 +47,6 @@ const char *invalid_parameter::what() const throw() {
 	return m_what.c_str();
 }
 
-#ifdef PROFIT_OPENCL
 opencl_error::opencl_error(const std::string &what_arg) :
 	exception(),
 	m_what(what_arg)
@@ -62,10 +61,8 @@ opencl_error::~opencl_error() throw () {
 const char *opencl_error::what() const throw() {
 	return m_what.c_str();
 }
-#endif /* PROFIT_OPENCL */
 
 
-#ifdef PROFIT_FFTW
 fft_error::fft_error(const std::string &what_arg) :
 	exception(),
 	m_what(what_arg)
@@ -80,6 +77,5 @@ fft_error::~fft_error() throw () {
 const char *fft_error::what() const throw() {
 	return m_what.c_str();
 }
-#endif /* PROFIT_FFTW */
 
 } /* namespace profit */

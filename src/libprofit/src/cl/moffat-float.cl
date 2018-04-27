@@ -27,7 +27,6 @@ R"===(
 
 inline float f_evaluate_moffat(float x, float y, float box, float rscale, float con) {
 	private float r = pow(pow(fabs(x), 2+box) + pow(fabs(y), 2+box), 1/(2+box));
-	private float r_factor = r/rscale;
 	return pow(1 + r*r/(rscale*rscale), -con);
 }
 

@@ -35,6 +35,7 @@
 #include "profit/king.h"
 #include "profit/model.h"
 #include "profit/moffat.h"
+#include "profit/null.h"
 #include "profit/psf.h"
 #include "profit/sersic.h"
 #include "profit/sky.h"
@@ -43,21 +44,22 @@
 
 namespace profit {
 
+Point Model::NO_OFFSET;
+
 Model::Model(unsigned int width, unsigned int height) :
-	width(width), height(height),
-	scale_x(1), scale_y(1),
+	requested_dimensions(width, height),
+	finesampling(1),
+	scale(1, 1),
 	magzero(0),
-	psf(), psf_width(0), psf_height(0),
-	psf_scale_x(1), psf_scale_y(1),
-	calcmask(),
+	psf(),
+	psf_scale(1, 1),
+	mask(),
 	convolver(),
+	crop(true),
 	dry_run(false),
-#ifdef PROFIT_OPENCL
+	return_finesampled(true),
 	opencl_env(),
-#endif /* PROFIT_OPENCL */
-#ifdef PROFIT_OPENMP
 	omp_threads(0),
-#endif /* PROFIT_OPENMP */
 	profiles()
 {
 	// no-op
@@ -72,7 +74,10 @@ std::shared_ptr<Profile> Model::add_profile(const std::string &profile_name) {
 	using std::make_shared;
 
 	std::shared_ptr<Profile> profile;
-	if( profile_name == "sky" ) {
+	if (profile_name == "null") {
+		profile = make_shared<NullProfile>(*this, profile_name);
+	}
+	else if( profile_name == "sky" ) {
 		profile = make_shared<SkyProfile>(*this, profile_name);
 	}
 	else if ( profile_name == "sersic" ) {
@@ -106,19 +111,23 @@ std::shared_ptr<Profile> Model::add_profile(const std::string &profile_name) {
 	return profile;
 }
 
-std::vector<double> Model::evaluate() {
+static
+void inform_offset(const Point &offset, Point &offset_out) {
+	if (&offset_out != &Model::NO_OFFSET) {
+		offset_out = offset;
+	}
+}
+
+Image Model::evaluate(Point &offset_out) {
 
 	/* Check limits */
-	if( !this->width ) {
-		throw invalid_parameter( "Model's width is 0");
+	if( !requested_dimensions ) {
+		throw invalid_parameter( "Model's requested dimensions are 0");
 	}
-	else if( !this->height ) {
-		throw invalid_parameter("Model's height is 0");
-	}
-	else if( this->scale_x <= 0 ) {
+	else if( this->scale.first <= 0 ) {
 		throw invalid_parameter("Model's scale_x cannot be negative or zero");
 	}
-	else if( this->scale_y <= 0 ) {
+	else if( this->scale.second <= 0 ) {
 		throw invalid_parameter("Model's scale_y cannot be negative or zero");
 	}
 
@@ -126,23 +135,11 @@ std::vector<double> Model::evaluate() {
 	 * If at least one profile is requesting convolving we require
 	 * a valid psf.
 	 */
-	for(auto profile: this->profiles) {
+	for(auto &profile: this->profiles) {
 		if( profile->do_convolve() ) {
-			if( this->psf.empty() ) {
+			if( !this->psf ) {
 				std::ostringstream ss;
-				ss << "Profile " << profile->get_name() << " requires convolution but no psf was provided";
-				throw invalid_parameter(ss.str());
-			}
-			if( !this->psf_width ) {
-				throw invalid_parameter("Model's psf width is 0");
-			}
-			if( !this->psf_height ) {
-				throw invalid_parameter("Model's psf height is 0");
-			}
-			if( this->psf_width * this->psf_height != this->psf.size() ) {
-				std::ostringstream ss;
-				ss << "PSF dimensions (" << psf_width << "x" << psf_height <<
-				      ") don't correspond to PSF length (" << psf.size() << ")";
+				ss << "Profile " << profile->get_name() << " requires convolution but no valid psf was provided";
 				throw invalid_parameter(ss.str());
 			}
 			break;
@@ -158,11 +155,14 @@ std::vector<double> Model::evaluate() {
 	}
 
 	// The image we'll eventually return
-	Image image(width, height);
+	auto image_dims = requested_dimensions * finesampling;
+	Image image(image_dims);
+	Point offset(0, 0);
 
 	/* so long folks! */
 	if( dry_run ) {
-		return image.getData();
+		inform_offset(offset, offset_out);
+		return image;
 	}
 
 	/*
@@ -170,17 +170,17 @@ std::vector<double> Model::evaluate() {
 	 */
 	std::vector<Image> profile_images;
 	for(auto &profile: this->profiles) {
-		Image profile_image(width, height);
-		profile->evaluate(profile_image.getData());
+		Image profile_image(image_dims);
+		profile->adjust_for_finesampling(finesampling);
+		profile->evaluate(profile_image, mask, {scale.first / finesampling, scale.second / finesampling}, magzero);
 		profile_images.push_back(std::move(profile_image));
 	}
 
 	/*
 	 * Sum up all results
-	 *
-	 * We first sum up all images that need convolving, we convolve them
-	 * and after that we add up the remaining images.
 	 */
+
+	// We first sum up all images that need convolving
 	bool do_convolve = false;
 	auto it = profile_images.begin();
 	for(auto &profile: this->profiles) {
@@ -190,28 +190,50 @@ std::vector<double> Model::evaluate() {
 		}
 		it++;
 	}
+
+	// Now perform convolution on these images
+	// The convolution process might produce a larger image;
+	// thus we keep track of this bigger size, and the offset
+	// of the original image with respect to the new, larger one
+	Dimensions conv_dims = image.getDimensions();
 	if( do_convolve ) {
-		Image psf_img(psf, psf_width, psf_height);
+		Image psf_img(psf);
 		psf_img.normalize();
 		if (!convolver) {
 			convolver = create_convolver(BRUTE);
 		}
-		Mask mask_img;
-		if (!calcmask.empty()) {
-			mask_img = Mask(calcmask, width, height);
-		}
-		image = convolver->convolve(image, psf_img, mask_img);
+		image = convolver->convolve(image, psf_img, mask, crop, offset);
+		conv_dims = image.getDimensions();
 	}
+
+	// Sum images of profiles that do not require convolution
+	Image no_convolved_images(image_dims);
 	it = profile_images.begin();
 	for(auto &profile: this->profiles) {
 		if( !profile->do_convolve() ) {
-			image += *it;
+			no_convolved_images += *it;
 		}
 		it++;
 	}
 
+	// Add non-convolved images on top of the convolved ones
+	// taking into account the convolution extension/offset, if any
+	if (conv_dims != image_dims) {
+		image += no_convolved_images.extend(conv_dims, offset);
+	}
+	else {
+		image += no_convolved_images;
+	}
+
+	// Downsample image if necessary
+	if (finesampling > 1 && !return_finesampled) {
+		image = image.downsample(finesampling, Image::DownsamplingMode::SUM);
+		offset /= finesampling;
+	}
+
 	/* Done! Good job :-) */
-	return image.getData();
+	inform_offset(offset, offset_out);
+	return image;
 }
 
 std::map<std::string, std::shared_ptr<ProfileStats>> Model::get_stats() const {

@@ -29,20 +29,28 @@
 
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "profit/config.h"
+#include "profit/common.h"
 #include "profit/convolve.h"
-#include "profit/fft.h"
 #include "profit/opencl.h"
+#include "profit/profile.h"
 
 namespace profit
 {
 
 /* Forward declaration */
 struct ProfileStats;
-class Profile;
+
+/**
+ * A pair of double values that specify a the scale of a pixel in a particular image
+ * with respect to that image's coordinate space.
+ */
+typedef std::pair<double, double> PixelScale;
 
 /**
  * The overall model to be created
@@ -52,7 +60,7 @@ class Profile;
  * allows us to specify pixel position with decimal places; e.g., the center
  * point for a given profile.
  */
-class Model {
+class PROFIT_API Model {
 
 public:
 
@@ -72,9 +80,9 @@ public:
 	 * exception is thrown.
 	 *
 	 * @param profile_name The name of the profile that should be created
-	 * @returns A shared pointer to the new profile that corresponds to the given name
+	 * @returns A pointer to the new profile that corresponds to the given name
 	 */
-	std::shared_ptr<Profile> add_profile(const std::string &profile_name);
+	ProfilePtr add_profile(const std::string &profile_name);
 
 	/**
 	 * Whether this model contains any profiles or not.
@@ -86,13 +94,23 @@ public:
 
 	/**
 	 * Calculates an image using the information contained in the model.
-	 * The result of the computation is stored in the image field.
+	 * The result of the computation is returned as an Image, which may be of a
+	 * different size from the one originally requested if the user set this
+	 * model's ``crop`` property to ``false`` (via @ref set_crop). If users want to know the offset
+	 * at which the image resulting of evaluating this Model with its configured
+	 * parameters is with respect to the Image value returned by this method,
+	 * hen they must provide a Point in @p offset_out, which will contain
+	 * the information after the method returns.
 	 *
-	 * @returns The image created by libprofit. The data is organized by rows
-	 *          first, columns later; i.e pixel ``(x,y)`` is accessed by
-	 *          ``image[y*width + x]``
+	 * In other words, the Image returned by this method can be bigger than the
+	 * Model's dimensions if the user requested this Model to return a non-cropped Image.
+	 *
+	 * @param offset_out The potential offset with respect to the image returned by
+	 * this method at which the image of this Model's dimensions can be found.
+	 *
+	 * @returns The image created by libprofit.
 	 */
-	std::vector<double> evaluate();
+	Image evaluate(Point &offset_out = NO_OFFSET);
 
 #ifdef PROFIT_DEBUG
 	std::map<std::string, std::map<int, int>> get_profile_integrations() const;
@@ -106,98 +124,218 @@ public:
 	std::map<std::string, std::shared_ptr<ProfileStats>> get_stats() const;
 
 	/**
-	 * The width of the model to generate
+	 * Sets the dimensions of the model image to generate
+	 * @param dimensions The dimensions of the model image to generate
 	 */
-	unsigned int width;
+	void set_dimensions(const Dimensions &dimensions) {
+		requested_dimensions = dimensions;
+	}
 
 	/**
-	 * The height of the model to generate
+	 * Sets the finesampling factor to use in this Model
 	 */
-	unsigned int height;
+	void set_finesampling(unsigned int finesampling) {
+		if (finesampling == 0) {
+			throw std::invalid_argument("finesampling must be > 0");
+		}
+		this->finesampling = finesampling;
+	}
 
 	/**
-	 * The X scale; that is, the width of a single pixel in image coordinates
+	 * Sets the PSF image that this Model should use
+	 * @param psf The PSF image that this Model should use
 	 */
-	double scale_x;
+	void set_psf(const Image &psf) {
+		this->psf = psf;
+	}
 
 	/**
-	 * The Y scale; that is, the height of a single pixel in image coordinates
+	 * @see set_psf(const Image &psf)
 	 */
-	double scale_y;
+	void set_psf(Image &&psf) {
+		this->psf = psf;
+	}
 
 	/**
-	 * The base magnitude applied to all models
+	 * Sets the pixel scale of the generated model image.
+	 *
+	 * The image scale is the width (and height) of a single
+	 * pixel in image coordinates.
+	 *
+	 * @param scale The pixel scale of the model image
 	 */
-	double magzero;
+	void set_image_pixel_scale(const PixelScale &scale) {
+		this->scale = scale;
+	}
 
 	/**
-	 * The point spread function (psf) to use when convolving images
+	 * Returns the pixel scale of the generated model image.
+	 *
+	 * @return the image scale of the generated model image
+	 * @see set_image_pixel_scale(double, double)
 	 */
-	std::vector<double> psf;
+	PixelScale get_image_pixel_scale() const {
+		return scale;
+	}
 
 	/**
-	 * The psf's width
+	 * Sets the PSF's pixel scale.
+	 *
+	 * @param scale The pixel scale of the PSF
+	 * @see set_image_pixel_scale(double, double)
 	 */
-	unsigned int psf_width;
+	void set_psf_pixel_scale(const PixelScale &scale) {
+		psf_scale = scale;
+	}
 
 	/**
-	 * The psf's height
+	 * Returns the pixel scale of the PSF.
+	 *
+	 * @return the image scale of the generated model image
+	 * @see set_psf_pixel_scale(double, double)
 	 */
-	unsigned int psf_height;
+	PixelScale get_psf_pixel_scale() const {
+		return psf_scale;
+	}
+
 
 	/**
-	 * The PSF's X scale; that is, the width of a single PSF pixel in image
-	 * coordinates
+	 * Sets the base magnitude to be applied to all profiles.
+	 *
+	 * @param magzero The base magnitude to be applied to all profiles.
 	 */
-	double psf_scale_x;
+	void set_magzero(double magzero) {
+		this->magzero = magzero;
+	}
 
 	/**
-	 * The PSF's Y scale; that is, the height of a single PSF pixel in image
-	 * coordinates
-	 */
-	double psf_scale_y;
-
-	/**
-	 * The calculation mask. If given it must be the same size of the expected
+	 * Set the calculation mask. If given it must be the same size of the expected
 	 * output image, and its values are used to limit the profile calculation
 	 * only to a given area (i.e., those cells where the value is ``true``).
+	 *
+	 * @param mask The mask to use to limit profile calculations
 	 */
-	std::vector<bool> calcmask;
+	void set_mask(const Mask &mask) {
+		this->mask = mask;
+	}
 
 	/**
-	 * The object used to carry out the convolution, if necessary.
+	 * @see set_mask(const Mask &mask)
+	 */
+	void set_mask(Mask &&mask) {
+		this->mask = mask;
+	}
+
+	/**
+	 * Set a convolver for this Model.
+	 * A convolver is an object used to carry out the convolution, if necessary.
 	 * If a convolver is present before calling `evaluate` then it is used.
-	 * If missing, then a new one is created internally.
+	 * If missing and one is required, a new one is created internally.
 	 */
-	ConvolverPtr convolver;
+	void set_convolver(ConvolverPtr convolver) {
+		this->convolver = convolver;
+	}
 
 	/**
-	 * Whether the actual evaluation of profiles should be skipped or not.
-	 * Profile validation still occurs.
+	 * Set the cropping flag.
+	 *
+	 * Due to their internal workings, some convolvers produce actually bigger
+	 * which are (by default) cropped to the size of the original images created
+	 * by the profiles. If this option is set to true, then the result of the
+	 * convolution will *not* be cropped, meaning that the result of the model
+	 * evaluation will be bigger than what was originally requested.
+	 *
+	 * @param crop Whether this model returns a cropped image (default) or not
+	 * to the user.
 	 */
-	bool dry_run;
+	void set_crop(bool crop) {
+		this->crop = crop;
+	}
 
-#ifdef PROFIT_OPENCL
-	OpenCLEnvPtr opencl_env;
-#endif /* PROFIT_OPENCL */
-
-#ifdef PROFIT_OPENMP
 	/**
-	 * Maximum number of OpenMP threads to use to evaluate the profiles
+	 * Sets the dry run flag. The dry run flag determines whether the actual
+	 * evaluation of profiles should be skipped or not; if skipped profile validation
+	 * still takes place.
+	 *
+	 * @param dry_run Whether evaluation of profiles should take place (default)
+	 * or not
+	 */
+	void set_dry_run(bool dry_run) {
+		this->dry_run = dry_run;
+	}
+
+	/**
+	 * Set the return finesampled flag.
+	 *
+	 * When users set a finesampling factor on the model (via
+	 * set_finesampling()) the image calculated by this model will have bigger
+	 * dimensions than those originally set in the Model. This flag controls
+	 * whether this bigger image should be returned (default behavior), or
+	 * whether a smaller version of the image with dimensions equals to the ones
+	 * requested (plus any padding introduced by convolution) should be
+	 * returned. If a smaller image is returned, the total flux of the image is
+	 * still preserved.
+	 *
+	 * @param return_finesampled Whether this model should return finesampled
+	 * images as-is (`true`) or if they should be downsampled to match the
+	 * original model dimensions.
+	 */
+	void set_return_finesampled(bool return_finesampled) {
+		this->return_finesampled = return_finesampled;
+	}
+
+	void set_opencl_env(const OpenCLEnvPtr &opencl_env) {
+		this->opencl_env = opencl_env;
+	}
+
+	OpenCLEnvPtr get_opencl_env() const {
+		return opencl_env;
+	}
+
+	/**
+	 * Sets the maximum number of OpenMP threads to use to evaluate the profiles
 	 * contained in this model. 0 threads means that no OpenMP support
 	 * has been requested.
+	 *
+	 * @param omp_threads the number of OpenMP threads to use for profile evaluation
 	 */
-	unsigned int omp_threads;
-#endif /* PROFIT_OPENMP */
+	void set_omp_threads(unsigned int omp_threads) {
+		this->omp_threads = omp_threads;
+	}
+
+	/**
+	 * Returns the number of OpenMP threads this Model has been configured to work with
+	 * @return the number of OpenMP threads this Model has been configured to work with
+	 */
+	unsigned int get_omp_threads() {
+		return this->omp_threads;
+	}
+
+	/**
+	 * The Point object that indicates that users don't want to retrieve back
+	 * the potential image offset when calling @ref evaluate(Point &)
+	 */
+	static Point NO_OFFSET;
 
 private:
 
-	/**
-	 * A list of pointers to the individual profiles used to generate the
-	 * model's image
-	 */
-	std::vector<std::shared_ptr<Profile>> profiles;
+	Dimensions requested_dimensions;
+	unsigned int finesampling;
+	PixelScale scale;
+	double magzero;
+	Image psf;
+	PixelScale psf_scale;
+	Mask mask;
+	ConvolverPtr convolver;
+	bool crop;
+	bool dry_run;
+	bool return_finesampled;
+	OpenCLEnvPtr opencl_env;
+	unsigned int omp_threads;
+	std::vector<ProfilePtr> profiles;
 
+	friend class PsfProfile;
+	friend class RadialProfile;
 };
 
 } /* namespace profit */

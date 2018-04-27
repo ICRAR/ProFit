@@ -6,11 +6,13 @@ PKG_LIBS = @profit_LIBS@
 OBJECTS = libprofit/src/brokenexponential.o \
           libprofit/src/convolve.o \
           libprofit/src/coresersic.o \
+          libprofit/src/crc.o \
           libprofit/src/exceptions.o \
           libprofit/src/ferrer.o \
           libprofit/src/fft.o \
           libprofit/src/image.o \
           libprofit/src/king.o \
+          libprofit/src/library.o \
           libprofit/src/model.o \
           libprofit/src/moffat.o \
           libprofit/src/opencl.o \

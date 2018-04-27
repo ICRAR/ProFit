@@ -1,5 +1,5 @@
 /**
- * Header file with public definitions to use libprofit
+ * Header file for null profile implementation
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -23,19 +23,27 @@
  * You should have received a copy of the GNU General Public License
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef PROFIT_NULL_H
+#define PROFIT_NULL_H
 
-#ifndef PROFIT_PROFIT_H
-#define PROFIT_PROFIT_H
-
-#include "profit/config.h"
-#include "profit/common.h"
-#include "profit/convolve.h"
-#include "profit/exceptions.h"
-#include "profit/fft.h"
-#include "profit/image.h"
-#include "profit/library.h"
-#include "profit/model.h"
-#include "profit/opencl.h"
 #include "profit/profile.h"
 
-#endif /* PROFIT_PROFIT_H */
+namespace profit
+{
+
+/**
+ * A null profile.
+ *
+ * The null profiles has no parameters, and leaves the incoming input
+ * image untouched. It is only useful for testing purposes.
+ */
+class NullProfile : public Profile {
+public:
+	NullProfile(const Model &model, const std::string &name) : Profile(model, name) {}
+	void validate() override {};
+	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) {};
+};
+
+} /* namespace profit */
+
+#endif /* PROFIT_NULL_H */

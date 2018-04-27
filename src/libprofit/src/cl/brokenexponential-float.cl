@@ -28,34 +28,14 @@ R"===(
 inline static float _f_broken_exponential(float r, float h1, float h2, float rb, float a) {
 
 	/*
-	 * The broken exponential profile for radius r is:
-	 *
-	 *  exp(-r/h1)*(1+exp(a*(r-rb)))^((1/a)*(1/h1-1/h2))
-	 *
-	 * The problem with this direct approach is that exp(r-rb) diverges whereas
-	 * exp(-r/h1) converges to zero. To avoid this we perform the following
-	 * replacements and rewrite the equation:
-	 *
-	 *   base = r - rb
-	 *   exponent = 1/h1 - 1/h2
-	 *
-	 *    exp(-r/h1) * (1 + exp(a * base)) ^ (exponent / a)
-	 *  = exp(-r/h1) * exp(log((1 + exp(a * base)) ^ (exponent / a)))
-	 *  = exp(-r/h1 + log((1 + exp(a * base)) ^ (exponent / a))
-	 *  = exp(-r/h1 + exponent / a * log(1 + exp(a * base)))
-	 *
-	 * In this last expression, when (a * base) is big, then doing
-	 * log(1 + exp(a * base)) yields the same result as log(exp(a * base))
-	 * (which equals a * base, of course). This happens already at a * base = 34,
-	 * although we check 40 just to be conservative.
-	 * Thus, the final result in this case becomes:
-	 *
-	 *  = exp(-r/h1 + exponent * base)
+	 * See brokenexponential.cpp for an explanation about this.
+	 * The only difference here is that since we are using single floating
+	 * point precision, the limit at which we simplify the maths is lower
+	 * (i.e., 20 instead of 40, although the limit seems to be at 15).
 	 */
-
 	float base = r - rb;
 	float expo = 1 / h1 - 1 / h2;
-	if (a * base < 40) {
+	if (a * base < 20) {
 		base = log(1 + exp(a * base)) / a;
 	}
 

@@ -190,15 +190,19 @@ at_sed_replacement() {
 #
 
 # These are fixed
-PROFIT_VERSION=`cat src/libprofit/VERSION`
 PROFIT_USES_R=yes
 PROFIT_USES_GSL=no
 PROFIT_DEBUG=no
 
 # These are actually modified by this script
+PROFIT_VERSION_MAJOR=
+PROFIT_VERSION_MINOR=
+PROFIT_VERSION_PATCH=
+PROFIT_VERSION_SUFFIX=
 PROFIT_OPENCL=no
 PROFIT_OPENCL_MAJOR=
 PROFIT_OPENCL_MINOR=
+PROFIT_OPENCL_TARGET_VERSION=
 PROFIT_OPENMP=no
 PROFIT_FFTW=no
 PROFIT_FFTW_OPENMP=no
@@ -217,7 +221,10 @@ generate_makevars() {
 }
 
 generate_config_h() {
-	sexpr="`at_sed_replacement PROFIT_VERSION`"
+	sexpr="`at_sed_replacement PROFIT_VERSION_MAJOR`"
+	sexpr="$sexpr; `at_sed_replacement PROFIT_VERSION_MINOR`"
+	sexpr="$sexpr; `at_sed_replacement PROFIT_VERSION_PATCH`"
+	sexpr="$sexpr; `at_sed_replacement PROFIT_VERSION_SUFFIX`"
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_USES_R`"
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_USES_GSL`"
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_DEBUG`"
@@ -227,6 +234,7 @@ generate_config_h() {
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_FFTW_OPENMP`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MAJOR`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MINOR`"
+	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_TARGET_VERSION`"
 	generate_file src/libprofit/profit/config.h "$sexpr"
 }
 
@@ -236,6 +244,22 @@ generate_config_h() {
 detect_system
 tmpdir=.profit_tmp
 [ -d $tmpdir ] || mkdir $tmpdir || { echo "couldn't create temporary directory $tmpdir" && exit 1; }
+
+#
+# Calculate the version components
+#
+version=`cat src/libprofit/VERSION`
+echo "- Compiling Profit using libprofit $version"
+PROFIT_VERSION_MAJOR=${version%%.*}
+version=${version#*.}
+PROFIT_VERSION_MINOR=${version%%.*}
+version=${version#*.}
+PROFIT_VERSION_PATCH=${version%%-*}
+version_without_dash=${version#*-}
+if [ "$version" != "${version_without_dash}" ]
+then
+	PROFIT_VERSION_SUFFIX=${version_without_dash}
+fi
 
 #
 # Check for OpenCL headers, libs and max OpenCL version
@@ -263,6 +287,14 @@ else
 		PROFIT_OPENCL_MAJOR=${cl_ver_maj}
 		PROFIT_OPENCL_MINOR=${cl_ver_min}
 		cl_libflags=`get_cl_libflags`
+		PROFIT_OPENCL_TARGET_VERSION=110
+
+		# In OSX 10.8 (Darwin 12.0) the Apple OpenCL platform was already 1.2,
+		# and trying to compile with a target version of 1.1
+		# (depending on the compiler) generates lots of deprecation warnings
+		if [ "$OS" = "Darwin" -a "`uname -r`" \> "12" ]; then
+			PROFIT_OPENCL_TARGET_VERSION=120
+		fi
 	else
 		echo "- Compiling without OpenCL support"
 	fi

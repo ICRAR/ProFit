@@ -1,5 +1,5 @@
 /**
- * Header file for the image convolution implementation
+ * Public header file for the image convolution classes and methods
  *
  * ICRAR - International Centre for Radio Astronomy Research
  * (c) UWA - The University of Western Australia, 2016
@@ -31,8 +31,8 @@
 #include <vector>
 
 #include "profit/common.h"
-#include "profit/image.h"
 #include "profit/fft.h"
+#include "profit/image.h"
 #include "profit/opencl.h"
 
 namespace profit
@@ -42,16 +42,19 @@ namespace profit
  * The types of convolvers supported by libprofit
  */
 enum ConvolverType {
-	BRUTE = 0,
-#ifdef PROFIT_OPENCL
-	OPENCL,
-	OPENCL_LOCAL,
-#endif // PROFIT_OPENCL
-#ifdef PROFIT_FFTW
-	FFT,
-#endif // PROFIT_FFTW
-};
 
+	/// @copydoc BruteForceConvolver
+	BRUTE_OLD = 0,
+
+	/// @copydoc AssociativeBruteForceConvolver
+	BRUTE,
+
+	/// @copydoc OpenCLConvolver
+	OPENCL,
+
+	/// @copydoc FFTConvolver
+	FFT,
+};
 
 /**
  * A convolver object convolves two images.
@@ -59,7 +62,7 @@ enum ConvolverType {
  * This is the base class for all Convolvers. Deriving classes must implement
  * the convolve method, which performs the actual operation.
  */
-class Convolver {
+class PROFIT_API Convolver {
 
 public:
 	virtual ~Convolver();
@@ -68,171 +71,87 @@ public:
 	 * Convolves image `src` with the kernel `krn`.
 	 * A mask parameter also controls which pixels from the original image
 	 * should be convolved. If empty, all pixels are convolved.
-
+	 *
+	 * If the convolver extends the original image to perform the convolution,
+	 * users might want to have the extended image returned, instead of getting
+	 * a cropped image (that will be the same size as `src`). This behaviour is
+	 * controlled with the `crop` parameter. If the image is not cropped, the
+	 * offset of the otherwise cropped result with respect to the uncropped one
+	 * is optionally stored in offset_out.
+	 *
 	 * @param src The source image
 	 * @param krn The convolution kernel
 	 * @param mask An mask indicating which pixels of the resulting image should
 	 *             be convolved
-	 * @return The convolved image
+	 * @param crop If ``true`` return an image with the same dimensions of ``src``.
+	 *             If ``false`` the image returned might be potentially bigger,
+	 *             depending on the internal workings of the convolver.
+	 * @param offset_out If `crop` is ``false`` and ``offset`` is different from
+	 *             NO_OFFSET, stores the potential offset of the original image
+	 *             with respect to the uncropped image returned by this method.
+	 * @return The convolved image, optionally without the cropping caused due
+	 *         to internal implementation details of the convolver. The potential
+	 *         offset is written into offset_out.
 	 */
 	virtual
-	Image convolve(const Image &src, const Image &krn, const Mask &mask) = 0;
+	Image convolve(const Image &src, const Image &krn, const Mask &mask,
+	               bool crop = true, Point &offset_out = NO_OFFSET) = 0;
 
+protected:
+
+	Image mask_and_crop(Image &img, const Mask &mask, bool crop,
+	                    const Dimensions orig_dims, const Dimensions &ext_dims,
+	                    const Point &ext_offset, Point &offset_out);
+
+	static Point NO_OFFSET;
 };
-
-/**
- * A brute-force convolver. It optionally uses OpenMP to accelerate the
- * convolution.
- */
-class BruteForceConvolver : public Convolver {
-
-public:
-	BruteForceConvolver(unsigned int omp_threads) :
-		omp_threads(omp_threads) {}
-
-	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
-
-private:
-	unsigned int omp_threads;
-};
-
-#ifdef PROFIT_FFTW
-/**
- * A convolver that uses an FFTPlan to carry out FFT-based convolution.
- *
- * The result of the convolution of images im1 and im2 is::
- *
- *  res = iFFT(FFT(im1) * FFT(im2))
- *
- * To do this, this convolver creates extended versions of the input images.
- * The size of the new images is 4 times that of the source image, which is
- * assumed to be larger than the kernel. The extended version of the source
- * image contains the original image at (0,0), while the extended version of the
- * kernel image contains the original kernel centered at the original image's
- * new mapping (i.e., ``((src_width-krn_width)/2, (src_height-krn_height)/2)``).
- * After convolution the result is cropped back to the original image's
- * dimensions starting at the center of the original image's mapping on the
- * extended image (i.e., ``(src_width/2, src_height/2)`` minus one if the
- * original dimensions are odd).
- */
-class FFTConvolver : public Convolver {
-
-public:
-	FFTConvolver(unsigned int src_width, unsigned int src_height,
-	             unsigned int krn_width, unsigned int krn_height,
-	             FFTPlan::effort_t effort, unsigned int plan_omp_threads,
-	             bool reuse_krn_fft);
-
-	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
-
-private:
-	std::unique_ptr<FFTPlan> plan;
-
-	std::vector<std::complex<double>> krn_fft;
-
-	bool reuse_krn_fft;
-};
-
-#endif /* PROFIT_FFTW */
-
-#ifdef PROFIT_OPENCL
-
-/**
- * A brute-force convolver that is implemented using OpenCL
- *
- * Depending on the floating-point support found at runtime in the given OpenCL
- * environment this convolver will use a float-based or a double-based kernel.
- */
-class OpenCLConvolver : public Convolver {
-
-public:
-	OpenCLConvolver(OpenCLEnvPtr opencl_env);
-
-	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
-
-private:
-	OpenCLEnvPtr env;
-
-	Image _convolve(const Image &src, const Image &krn, const Mask &mask);
-
-	template<typename T>
-	Image _clpadded_convolve(const Image &src, const Image &krn, const Image &orig_src);
-};
-
-/**
- * Like OpenCLConvolver, but uses a local memory cache
- */
-class OpenCLLocalConvolver : public Convolver {
-
-public:
-	OpenCLLocalConvolver(OpenCLEnvPtr opencl_env);
-
-	Image convolve(const Image &src, const Image &krn, const Mask &mask) override;
-
-private:
-	OpenCLEnvPtr env;
-
-	Image _convolve(const Image &src, const Image &krn, const Mask &mask);
-
-	template<typename T>
-	Image _clpadded_convolve(const Image &src, const Image &krn, const Image &orig_src);
-};
-
-
-#endif // PROFIT_OPENCL
-
 
 ///
 /// A set of preferences used to create convolvers.
 ///
-class ConvolverCreationPreferences {
+class PROFIT_API ConvolverCreationPreferences {
 
 public:
 	ConvolverCreationPreferences() :
-		src_width(0),
-		src_height(0),
-		krn_width(0),
-		krn_height(0),
-		omp_threads(1)
-#ifdef PROFIT_OPENCL
-		,opencl_env()
-#endif // PROFIT_OPENCL
-#ifdef PROFIT_FFTW
-		,effort(FFTPlan::ESTIMATE)
-		,reuse_krn_fft(false)
-#endif // PROFIT_FFTW
+		src_dims(),
+		krn_dims(),
+		omp_threads(1),
+		opencl_env(),
+		effort(effort_t::ESTIMATE),
+		reuse_krn_fft(false)
 	{};
 
-	/// The width of the image being convolved.
-	unsigned int src_width;
+	ConvolverCreationPreferences(
+	    Dimensions src_dims, Dimensions krn_dims, unsigned int omp_threads,
+	    OpenCLEnvPtr opencl_env, effort_t effort, bool reuse_krn_fft) :
+		src_dims(src_dims),
+		krn_dims(krn_dims),
+		omp_threads(omp_threads),
+		opencl_env(opencl_env),
+		effort(effort),
+		reuse_krn_fft(reuse_krn_fft)
+	{};
 
-	/// The height of the image being convolved.
-	unsigned int src_height;
 
-	/// The width of the convolution kernel.
-	unsigned int krn_width;
+	/// The dimensions of the image being convolved.
+	Dimensions src_dims;
 
-	/// The height of the convolution kernel.
-	unsigned int krn_height;
+	/// The dimensions of the convolution kernel.
+	Dimensions krn_dims;
 
 	/// The amount of OpenMP threads (if OpenMP is available) to use by the
 	/// convolver. Used by the FFT convolver (to create and execute the plan
-	/// using OpenMP, when available) and the brute-force convolver.
+	/// using OpenMP, when available) and the brute-force convolvers.
 	unsigned int omp_threads;
 
-#ifdef PROFIT_OPENCL
-	/// A pointer to an OpenCL environment. Used by the OpenCL convolvers.
+	/// A pointer to an OpenCL environment. Used by the ConvolverType::OPENCL convolvers.
 	OpenCLEnvPtr opencl_env;
-#endif // PROFIT_OPENCL
 
-#ifdef PROFIT_FFTW
+	/// The amount of effort to put into the plan creation. Used by the @ref ConvolverType::FFT convolver.
+	effort_t effort;
 
-	/// The amount of effort to put into the plan creation. Used by the FFT convolver.
-	FFTPlan::effort_t effort;
-
-	/// Whether to reuse or not the FFT'd kernel or not. Used by the FFT convolver.
+	/// Whether to reuse or not the FFT'd kernel or not. Used by the @ref ConvolverType::FFT convolver.
 	bool reuse_krn_fft;
-#endif // PROFIT_FFTW
 
 };
 
@@ -246,7 +165,7 @@ typedef std::shared_ptr<Convolver> ConvolverPtr;
  * @param prefs The creation preferences used to create the new convolver
  * @return A shared pointer to a new convolver
  */
-ConvolverPtr
+PROFIT_API ConvolverPtr
 create_convolver(const ConvolverType type,
                  const ConvolverCreationPreferences &prefs = ConvolverCreationPreferences());
 
@@ -256,7 +175,7 @@ create_convolver(const ConvolverType type,
  *
  * @overload
  */
-ConvolverPtr
+PROFIT_API ConvolverPtr
 create_convolver(const std::string &type,
                  const ConvolverCreationPreferences &prefs = ConvolverCreationPreferences());
 

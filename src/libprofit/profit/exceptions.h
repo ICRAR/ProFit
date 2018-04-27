@@ -30,7 +30,7 @@
 #include <exception>
 #include <string>
 
-#include "profit/config.h"
+#include "profit/common.h"
 
 namespace profit
 {
@@ -39,7 +39,7 @@ namespace profit
  * Exception class thrown when an invalid parameter has been supplied to either
  * a model or a specific profile.
  */
-class invalid_parameter : public std::exception
+class PROFIT_API invalid_parameter : public std::exception
 {
 
 public:
@@ -52,11 +52,10 @@ private:
 
 };
 
-#ifdef PROFIT_OPENCL
 /**
  * Exception class thrown when an error occurs while dealing with OpenCL.
  */
-class opencl_error : public std::exception
+class PROFIT_API opencl_error : public std::exception
 {
 
 public:
@@ -68,14 +67,12 @@ private:
 	std::string m_what;
 
 };
-#endif /* PROFIT_OPENCL */
 
 
-#ifdef PROFIT_FFTW
 /**
  * Exception class thrown when an error occurs while dealing with FFT.
  */
-class fft_error : public std::exception
+class PROFIT_API fft_error : public std::exception
 {
 
 public:
@@ -87,7 +84,6 @@ private:
 	std::string m_what;
 
 };
-#endif /* PROFIT_FFTW */
 
 } /* namespace profit */
 
