@@ -37,6 +37,12 @@ profitMakeConvolver = function(type, image_dimensions, psf,
 {
   if(is.null(omp_threads)) omp_threads = 1L
   else profitCheckIsPositiveInteger(omp_threads)
+
+	# libprofit >= 1.7.0 recognizes "fft" and not "fftw"
+	if (type == "fftw") {
+		type = "fft"
+	}
+
 	i = as.integer
 	l = as.logical
 	.Call('R_profit_make_convolver', type, i(image_dimensions), psf,
