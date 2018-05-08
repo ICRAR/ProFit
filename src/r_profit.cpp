@@ -564,6 +564,9 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	Model m {img_w, img_h};
 	m.set_image_pixel_scale({scale_x, scale_y});
 	m.set_magzero(Rf_asReal(magzero));
+	m.set_finesampling(static_cast<unsigned int>(Rf_asInteger(_get_list_element(model_list, "finesampling"))));
+	m.set_return_finesampled(static_cast<bool>(Rf_asLogical(_get_list_element(model_list, "returnfine"))));
+	m.set_crop(static_cast<bool>(Rf_asLogical(_get_list_element(model_list, "crop"))));
 
 	SEXP r_psf = _get_list_element(model_list, "psf");
 	if( r_psf != R_NilValue ) {
@@ -635,9 +638,10 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	}
 
 	/* Go, go, go! */
-	vector<double> model_image;
+	Image image;
+	Point offset;
 	try {
-		model_image = m.evaluate();
+		image = m.evaluate(offset);
 	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while calculating model: " << e.what() << endl;
@@ -645,12 +649,13 @@ SEXP _R_profit_make_model(SEXP model_list) {
 		return R_NilValue;
 	}
 
-	/* Copy the image, clean up, and good bye */
-	SEXP image = PROTECT(Rf_allocVector(REALSXP, model_image.size()));
-	memcpy(REAL(image), model_image.data(), sizeof(double) * model_image.size());
-
-	UNPROTECT(1);
-	return image;
+	/* Copy the image into a matrix, pack together with the offset, and bye */
+	SEXP r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
+	SEXP r_offset = PROTECT(Rf_list2(Rf_ScalarInteger(offset.x + 1), Rf_ScalarInteger(offset.y + 1)));
+	memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
+	SEXP ret = PROTECT(Rf_list2(r_image, r_offset));
+	UNPROTECT(3);
+	return ret;
 }
 
 static

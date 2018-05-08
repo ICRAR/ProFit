@@ -10,119 +10,75 @@ profitMakeModel = function(modellist,
 
 	profitCheckIsPositiveInteger(finesample)
 
-  if(length(dim)==1){dim=rep(dim,2)}
+	if (length(dim) == 1) {
+		dim = rep(dim,2)
+	}
 
-  # Some defaults...
-  rough = rough == TRUE
-  stopifnot(is.logical(rough) && length(rough) == 1)
-  profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
-  componentnames = c(profilenames,"pointsource")
-  for(wcname in componentnames) {
-    if(is.null(whichcomponents[[wcname]]) || identical(whichcomponents[[wcname]],"all")) {
-      if(length(modellist[[wcname]]) > 0){
-        whichcomponents[[wcname]] = 1:length(modellist[[wcname]][[1]])
-      }else{
-        whichcomponents[[wcname]] = 0
-      }
-    }
-  }
-  if( missing(remax) ) {
-    remax = 0
-  }
-
-	# Regarding "psfpad" and "returncrop"
-	# ===================================
-	#
-	# When convolving an analytical model with a PSF, the model must be padded by
-	# the PSF size (half width on either side) and then cropped in order to
-	# properly model light scattered from *outside* of the original image dimensions
-	# by the PSF, back into the PSF-convolved image's dimensions. We usually don't
-	# care about light scattered from within the original image dimensions back
-	# outside; nonetheless, the "returncrop" option can be set to FALSE if the
-	# user wants the full model image for some reason (mostly for the
-	# convenience of having the padded instead of cropped dimensions).
-	#
-	# Note that for the same reason mentioned above, if returncrop is FALSE,
-	# the data for the model in the padded region will be slightly underestimated,
-	# lacking the light scattered from outside of the padded region back into it.
-
-	psfpad = c(0,0)
-	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
+	# Some defaults...
+	rough = rough == TRUE
+	stopifnot(is.logical(rough) && length(rough) == 1)
+	profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
+	componentnames = c(profilenames,"pointsource")
+	for(wcname in componentnames) {
+		if(is.null(whichcomponents[[wcname]]) || identical(whichcomponents[[wcname]],"all")) {
+			if(length(modellist[[wcname]]) > 0){
+				whichcomponents[[wcname]] = 1:length(modellist[[wcname]][[1]])
+			} else {
+				whichcomponents[[wcname]] = 0
+			}
+		}
+	}
+	if (missing(remax)) {
+		remax = 0
+	}
 
 	# If the "psf" argument is not given, users can still provide an analytical
 	# PSF function by specifing a "psf model"; that is, a list of profiles
 	# that will be evaluated in a small area, producing an image that we will
 	# then use as our PSF.
-
+	#
 	# Normally the user would want to pre-generate this PSF image for efficiency,
 	# unless they are fitting the PSF - in which case it may need to be
 	# re-generated constantly
+	haspsf = !is.null(psf) && length(dim(psf) == 2) && all(dim(psf) > 1)
 	haspsfmodel = !is.null(modellist$psf)
-	if( haspsfmodel && !haspsf)
-	{
-	  haspsf = TRUE
-	  # If there are ANY extended sources, make a PSF
-	  # Otherwise, you don't actually need a PSF image for anything and there's no need to
-	  # add any padding to the model
-	  if(all(names(modellist) %in% c("pointsource", "psf","sky"))) {
-	    psf = matrix(1,1,1)
-	  } else {
-	    if(finesample > 1L)
-	    {
-	      stopifnot(identical(psfdim %% finesample, c(0L,0L)))
-	    }
-	    psf = profitMakePointSource(image=matrix(0,psfdim[1]/finesample,psfdim[2]/finesample),
-        mag=0, modellist = modellist$psf, finesample=finesample, returnfine=TRUE)
-	    sumpsf = sum(psf)
-      psfsumdiff = abs(sumpsf-1)
-      if(!(psfsumdiff < 1e-2))  stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 0.01; ",
-        "please adjust your PSF model or psf dimensions until it is properly normalized."))
-      psf = psf/sumpsf
-	  }
-	}
-	
-	if( haspsf ) {
-		psfpad = floor(dim(psf)/2)
-	}
+	if (haspsfmodel && !haspsf) {
 
-	# Regarding finesampling
-	# ======================
-	#
-	# The purpose of fine sampling is to generate a bigger image (in pixels) so
-	# the evaluation of the different profiles is more precise on each of the
-	# pixels. The resulting image is then downscaled (or not, depending on the
-	# 'returnfine' parameter) and returned to the user.
-	#
-	# libprofit supports specifying (separately) horizontal and vertical pixel
-	# scales both for the resulting image and for the given PSF. These scales
-	# indicate how much of the image coordinate space each pixel represents on
-	# each dimension. For example, if we give libprofit width=100 and scale_x=2,
-	# we are instructing it to generate an image 100 pixels wide, but 200 units
-	# wide in the image coordinate space.
-	#
-	# Thus to implement finesampling we instruct libprofit to generate a bigger
-	# image but stating at the same time that the scale of each of the pixels is
-	# lower (so that the image coordinate space isn't altered). For example, if
-	# this method receives dim=c(50,50) and finesample=3, we tell libprofit to
-	# generate an image with width=150, height=150, scale_x=1/3 and scale_y=1/3,
-	# which will preserve an image coordinate space of 50x50 internally.
-	#
-	# Note that even after all the explained above the user-given coordinates
-	# shouldn't be corrected at all. However because of "psfpad" and
-	# "returncrop" (see above) we still have to.
+		haspsf = TRUE
 
-	dimbase = c(dim[1]*finesample + 2*psfpad[1], dim[2]*finesample + 2*psfpad[2])
-	scale_x = 1/as.double(finesample)
-	scale_y = 1/as.double(finesample)
+		# If there are ANY extended sources, make a PSF
+		# Otherwise, you don't actually need a PSF image for anything and there's no need to
+		# add any padding to the model
+		if(all(names(modellist) %in% c("pointsource", "psf","sky"))) {
+			psf = matrix(1,1,1)
+		} else {
+
+			if(finesample > 1L) {
+				stopifnot(identical(psfdim %% finesample, c(0L,0L)))
+			}
+
+			psf = profitMakePointSource(
+			           image=matrix(0, psfdim[1]/finesample, psfdim[2]/finesample),
+			           mag=0, modellist=modellist$psf, finesample=finesample,
+			           returnfine=TRUE)
+			sumpsf = sum(psf)
+			psfsumdiff = abs(sumpsf-1)
+			if(!(psfsumdiff < 1e-2)) {
+				stop(paste0("Error; model psf has |sum| -1 = ",psfsumdiff," > 0.01; ",
+				"please adjust your PSF model or psf dimensions until it is properly normalized."))
+			}
+			psf = psf/sumpsf
+		}
+	}
 
 	# Wrong calcregion dimensions, should be the same as the model's
 	if( docalcregion ) {
 		if( missing(calcregion) ) {
 			stop("calcregion is missing")
 		}
-		if( all(dim(calcregion) == dimbase) == FALSE ) {
+		if (all(dim(calcregion) == dim) == FALSE) {
 			stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2],
-			           " and they must be ",dimbase[1],":",dimbase[2],"!",sep=""))
+			           " and they must be ",dim[1],":",dim[2],"!",sep=""))
 		}
 	}
 
@@ -162,9 +118,7 @@ profitMakeModel = function(modellist,
 	        profiles$sersic[['mag']] = mag
 	      }
 	    }
-	    # Adjust the X/Y center of the profile for padding and finesampling
-	    profiles[[cname]][['xcen']] = profiles[[cname]][['xcen']] + psfpad[1]/finesample
-	    profiles[[cname]][['ycen']] = profiles[[cname]][['ycen']] + psfpad[2]/finesample
+
 	    # Down in libprofit these values are specified per-profile instead of globally,
 	    # so we simply replicate them here
 	    profiles[[cname]][['rough']] = rep(as.integer(rough), ncomptodo)
@@ -195,12 +149,12 @@ profitMakeModel = function(modellist,
 
 		if( haspsfmodel ) {
 
-		  if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
+			if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
 
 				submodel = modellist$psf
-        npointsources = length(modellist$pointsource$xcen)
+				npointsources = length(modellist$pointsource$xcen)
 				stopifnot(all(lapply(modellist$pointsource,length) == npointsources))
-				
+
 				for(i in 1:npointsources) {
 
 					for(comp in names(submodel)) {
@@ -210,8 +164,8 @@ profitMakeModel = function(modellist,
 						compmag = new_profiles[['mag']]
 						stopifnot(!is.null(compmag))
 						n_profiles = length(new_profiles[['mag']])
-						xcen = modellist$pointsource$xcen[[i]] + psfpad[1]/finesample
-						ycen = modellist$pointsource$ycen[[i]] + psfpad[2]/finesample
+						xcen = modellist$pointsource$xcen[[i]]
+						ycen = modellist$pointsource$ycen[[i]]
 						new_profiles$xcen = rep(xcen, n_profiles)
 						new_profiles$ycen = rep(ycen, n_profiles)
 
@@ -244,7 +198,7 @@ profitMakeModel = function(modellist,
 						  }
 						}
 						# If there are only pointsources with this profile, the profile list will be null so create it first
-            if(is.null(profiles[[comp]])) profiles[[comp]] = list()
+						if(is.null(profiles[[comp]])) profiles[[comp]] = list()
 						# Merge into the main list of profiles
 						for(name in c(names(modellist$comp), names(new_profiles))) {
 							profiles[[comp]][[name]] = c(profiles[[comp]][[name]], new_profiles[[name]])
@@ -255,19 +209,20 @@ profitMakeModel = function(modellist,
 		}
 
 		else {
-		  if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
+			if( length(modellist$pointsource) > 0 && length(whichcomponents$pointsource) > 0 ) {
 
 				# Copy the values
 				profiles[['psf']] = list()
 				for( name in names(modellist$pointsource) ) {
-				  profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][whichcomponents$pointsource]))
+					profiles[['psf']][[name]] = c(unlist(modellist$pointsource[[name]][whichcomponents$pointsource]))
 				}
 
 				# Fix X/Y center of the pointsource profile as needed
-				profiles$psf[['xcen']] = profiles$psf[['xcen']] + psfpad[1]/finesample
-				profiles$psf[['ycen']] = profiles$psf[['ycen']] + psfpad[2]/finesample
+				profiles$psf[['xcen']] = profiles$psf[['xcen']]
+				profiles$psf[['ycen']] = profiles$psf[['ycen']]
 			}
 		}
+
 	  # Convolve if a psf is given
 	  for(pname in profilenames) {
 	    ncomp = length(whichcomponents[[pname]])
@@ -276,34 +231,36 @@ profitMakeModel = function(modellist,
 	    }
 	  }
 	}
-	
-	if ( length(modellist$sky) > 0 ){
-	  profiles[['sky']]=modellist$sky
-	  # libprofit doesn't finesample the sky brightness at the moment
-	  if(finesample > 1) profiles$sky$bg = profiles$sky$bg/finesample^2
+
+	if (length(modellist$sky) > 0) {
+		profiles[['sky']] = modellist$sky
 	}
 
 	# Build the top-level model structure
 	model = list(
 		magzero = magzero,
-		dimensions = as.integer(dimbase),
-		scale_x = scale_x,
-		scale_y = scale_y,
+		dimensions = as.integer(dim),
+		finesampling = as.integer(finesample),
+		returnfine = returnfine,
+		crop = returncrop,
+		scale_x = 1,
+		scale_y = 1,
 		profiles = profiles,
 		psf = psf
 	)
 	if( docalcregion ) {
 		model[['calcregion']] = calcregion
 	}
-	if( !is.null(openclenv) ) {
-	  if(class(openclenv)=='externalptr'){
-		  model[['openclenv']] = openclenv
-	  }else if(openclenv=='get'){
-	    model[['openclenv']]=profitOpenCLEnv()
-	  }
+	if (!is.null(openclenv)) {
+		if (class(openclenv) == 'externalptr') {
+			model[['openclenv']] = openclenv
+		}
+		else if (openclenv == 'get') {
+			model[['openclenv']] = profitOpenCLEnv()
+		}
 	}
-	if( !is.null(omp_threads) ) {
-	  profitCheckIsPositiveInteger(omp_threads)
+	if (!is.null(omp_threads)) {
+		profitCheckIsPositiveInteger(omp_threads)
 		model[['omp_threads']] = omp_threads
 	}
 
@@ -314,47 +271,23 @@ profitMakeModel = function(modellist,
 	}
 
 	# Go, go, go!
-	basemat = .Call("R_profit_make_model",model)
-	if( is.null(basemat) ) {
+	result = .Call("R_profit_make_model", model)
+	if( is.null(result) ) {
 		return(NULL)
 	}
-	dim(basemat) = dimbase
 
-	# Up to this point basemat has been convolved already
-	# That means that we're explicitly ignoring the convopt parameter
-	# and doing always a brute-force convolution inside libprofit,
-	# since that's the only one supported at the moment
-
-	# Crop the resulting image - we only requested a bigger one to include the PSF buffer
-	if( haspsf && returncrop ) {
-		dimbase = dim*finesample
-		psfcrop = floor(dim(psf)/2)
-		stopifnot(all((psfcrop %% 1) == 0))
-		basemat = basemat[(1:dimbase[1]) + psfcrop[1], (1:dimbase[2]) + psfcrop[2]]
-	}
-
-	# Downsample if necessary, create final structure and return
-	if( finesample > 1 && !returnfine )
-	{
-		basemat = profitDownsample(basemat, finesample)
-	}
-
-	pixdim = 1
-	if( returnfine ) {
-		pixdim = 1/finesample
-	}
-	if( !returncrop ) {
-		dim = dim + 2*psfpad/finesample
-	}
+	image = result[[1]]
+	offset = result[[2]]
+	dims = dim(image)
 
 	rval = list()
-	rval$x = seq(pixdim/2,dim[1]-pixdim/2,by=pixdim)
-	rval$y = seq(pixdim/2,dim[2]-pixdim/2,by=pixdim)
-	rval$z = basemat
+	rval$x = seq(-offset[[1]] + 0.5, -offset[[1]] + dims[1] + 0.5)
+	rval$y = seq(-offset[[2]] + 0.5, -offset[[2]] + dims[2] + 0.5)
+	rval$z = image
 
 	if(plot){
-	  magimage(rval, ...)
+		magimage(rval, ...)
 	}
-	
-	return=rval
+
+	return = rval
 }
