@@ -20,9 +20,7 @@ OBJECTS = libprofit/src/brokenexponential.o \
           libprofit/src/sersic.o \
           libprofit/src/sky.o \
           libprofit/src/utils.o \
-          r_profit.o \
-          ProFit.o \
-          RcppExports.o
+          r_profit.o
 
 all: config_h ProFit.dll
 

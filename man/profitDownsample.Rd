@@ -9,19 +9,16 @@ Down/Up-Samples an Image
 Function to do integer down/up sampling of an image. Used for finesampling.
 }
 \usage{
-profitDownsample(IMG, DOWNSAMPLEFAC)
-profitUpsample(IMG, UPSAMPLEFAC)
+profitDownsample(img, factor)
+profitUpsample(img, factor)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{IMG}{
+  \item{img}{
 The image matrix to be down-sampled.
 }
-  \item{DOWNSAMPLEFAC}{
-Integer down-sampling factor.
-}
-  \item{UPSAMPLEFAC}{
-Integer up-sampling factor.
+  \item{factor}{
+Integer down- or up-sampling factor.
 }
 }
 \value{

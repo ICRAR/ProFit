@@ -38,8 +38,15 @@ Image _read_image(SEXP r_image) {
 			std::copy(image_int_ptr, image_int_ptr + size, image.begin());
 			break;
 
+		case LGLSXP:
+			image_int_ptr = LOGICAL(r_image);
+			image = vector<double>(size);
+			std::copy(image_int_ptr, image_int_ptr + size, image.begin());
+			break;
+
+
 		default:
-			Rf_error("Image not in one of the supported formats (integer, double)");
+			Rf_error("Image not in one of the supported formats (logical, integer, double)");
 			image = {};
 			break;
 	}
@@ -670,6 +677,56 @@ SEXP _R_profit_convolve(SEXP r_convolver, SEXP r_image, SEXP r_psf, SEXP r_mask)
 
 }
 
+static
+SEXP _R_profit_downsample(SEXP img, SEXP factor)
+{
+	auto image = _read_image(img);
+	if (!image) {
+		return R_NilValue;
+	}
+
+	try {
+		image = image.downsample((unsigned int)Rf_asInteger(factor), Image::DownsamplingMode::SUM);
+	} catch (const std::exception &e) {
+		stringstream ss;
+		ss << "Error while downsampling image: " << e.what() << endl;
+		Rf_error(ss.str().c_str());
+		return R_NilValue;
+	}
+
+	/* Copy the image, clean up, and good bye */
+	SEXP r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
+	memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
+
+	UNPROTECT(1);
+	return r_image;
+}
+
+static
+SEXP _R_profit_upsample(SEXP img, SEXP factor)
+{
+	auto image = _read_image(img);
+	if (!image) {
+		return R_NilValue;
+	}
+
+	try {
+		image = image.upsample((unsigned int)Rf_asInteger(factor), Image::UpsamplingMode::COPY);
+	} catch (const std::exception &e) {
+		stringstream ss;
+		ss << "Error while downsampling image: " << e.what() << endl;
+		Rf_error(ss.str().c_str());
+		return R_NilValue;
+	}
+
+	/* Copy the image, clean up, and good bye */
+	SEXP r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
+	memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
+
+	UNPROTECT(1);
+	return r_image;
+}
+
 extern "C" {
 	SEXP R_profit_make_model(SEXP model_list) {
 		return _R_profit_make_model(model_list);
@@ -706,12 +763,13 @@ extern "C" {
 		return _R_profit_openclenv(plat_idx, dev_idx, use_dbl);
 	}
 
-	/*
-	 * Defined in ProFit.cpp and generated in RcppExports.cpp
-	 * Needed here so we can register all exported symbols
-	 */
-	SEXP _ProFit_profitDownsample(SEXP, SEXP);
-	SEXP _ProFit_profitUpsample(SEXP, SEXP);
+	SEXP R_profit_downsample(SEXP img, SEXP factor) {
+		return _R_profit_downsample(img, factor);
+	}
+
+	SEXP R_profit_upsample(SEXP img, SEXP factor) {
+		return _R_profit_upsample(img, factor);
+	}
 
 	/*
 	 * Registering the methods above at module loading time
@@ -729,10 +787,8 @@ extern "C" {
 		{"R_profit_has_fftw",       (DL_FUNC) &R_profit_has_fftw,       0},
 		{"R_profit_openclenv_info", (DL_FUNC) &R_profit_openclenv_info, 0},
 		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
-
-		/* Defined in ProFit.cpp and generated in RcppExports.cpp */
-		{"_ProFit_profitDownsample", (DL_FUNC) &_ProFit_profitDownsample, 2},
-		{"_ProFit_profitUpsample",   (DL_FUNC) &_ProFit_profitUpsample,   2},
+		{"R_profit_downsample",     (DL_FUNC) &R_profit_downsample,     2},
+		{"R_profit_upsample",       (DL_FUNC) &R_profit_upsample,       2},
 
 		/* Sentinel */
 		{NULL, NULL, 0}
