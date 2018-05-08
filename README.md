@@ -109,7 +109,7 @@ library(ProFit)
 The above (binary or source install) should also install the required packages. If you have trouble with this you can try installing the required packages manually first and then retry the installation for **ProFit**:
 
 ```R
-install.packages(c('Rcpp', 'fftw', 'R2Cuba', 'RColorBrewer', 'LaplacesDemon', 'imager', 'magicaxis', 'FITSio', 'data.table'))
+install.packages(c('fftw', 'R2Cuba', 'RColorBrewer', 'LaplacesDemon', 'imager', 'magicaxis', 'FITSio', 'data.table'))
 install.packages('devtools')
 library(devtools)
 install_github("ICRAR/ProFit")

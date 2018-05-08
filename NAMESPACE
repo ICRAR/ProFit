@@ -1,6 +1,5 @@
 useDynLib(ProFit)
 exportPattern("^[[:alpha:]]+")
-importFrom(Rcpp, evalCpp)
 import("fftw")
 import("FITSio")
 import("magicaxis")
