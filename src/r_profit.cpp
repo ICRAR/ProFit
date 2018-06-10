@@ -387,7 +387,7 @@ SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 		env = get_opencl_environment(platform_idx, device_idx, use_double, false);
 	} catch (const opencl_error &e) {
 		ostringstream os;
-		os << "Error while creating OpenCL environment: " << e.what();
+		os << "Error while creating OpenCL environment for plat/dev/double " << platform_idx << "/" << device_idx << "/" << use_double << ": " << e.what();
 		Rf_error(os.str().c_str());
 		return R_NilValue;
 	} catch (const invalid_parameter &e) {
