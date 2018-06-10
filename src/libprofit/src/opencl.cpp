@@ -93,10 +93,8 @@ OpenCL_command_times cl_cmd_times(const cl::Event &evt) {
 	return times;
 }
 
-static cl_ver_t get_opencl_version(const cl::Platform &platform) {
-
-	std::string version = platform.getInfo<CL_PLATFORM_VERSION>();
-
+static cl_ver_t get_opencl_version(const std::string &version)
+{
 	// Version string should be of type "OpenCL<space><major_version.minor_version><space><platform-specific information>"
 
 	if( version.find("OpenCL ") != 0) {
@@ -113,6 +111,27 @@ static cl_ver_t get_opencl_version(const cl::Platform &platform) {
 	unsigned long major = stoul(opencl_version.substr(0, dot_idx));
 	unsigned long minor = stoul(opencl_version.substr(dot_idx+1, opencl_version.npos));
 	return major*100u + minor*10u;
+}
+
+static cl_ver_t get_opencl_version(const cl::Platform &platform) {
+
+	return get_opencl_version(platform.getInfo<CL_PLATFORM_VERSION>());
+}
+
+static cl_ver_t get_opencl_version(const cl::Device &device) {
+
+	return get_opencl_version(device.getInfo<CL_DEVICE_VERSION>());
+}
+
+static
+bool supports_double(const cl::Device &device)
+{
+	if (get_opencl_version(device) < 120) {
+		std::string extensions = device.getInfo<CL_DEVICE_EXTENSIONS>();
+		return extensions.find("cl_khr_fp64") != std::string::npos;
+	}
+
+	return device.getInfo<CL_DEVICE_DOUBLE_FP_CONFIG>() != 0;
 }
 
 static
@@ -147,7 +166,7 @@ std::map<int, OpenCL_plat_info> _get_opencl_info() {
 		for(auto device: devices) {
 			dinfo[didx++] = OpenCL_dev_info{
 				device.getInfo<CL_DEVICE_NAME>(),
-				device.getInfo<CL_DEVICE_DOUBLE_FP_CONFIG>() != 0
+				supports_double(device)
 			};
 		}
 
@@ -203,11 +222,8 @@ OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int dev
 
 	cl::Device device = all_devices[device_idx];
 
-	if( use_double ) {
-		auto config = device.getInfo<CL_DEVICE_DOUBLE_FP_CONFIG>();
-		if( config == 0 ) {
-			throw opencl_error("Double precision requested but not supported by device");
-		}
+	if( use_double and not supports_double(device)) {
+		throw opencl_error("Double precision requested but not supported by device");
 	}
 
 	// Create a program with all the relevant kernels
