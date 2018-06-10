@@ -1,6 +1,10 @@
 Latest version is always on GitHub at ICRAR/ProFit. Noted which version is on CRAN.
 
-v1.1.1  Released on CRAN (latest) & GitHub 
+v1.1.2
+
+FIXED: Replaced R2CUBA with cubature since R2CUBA is being removed from CRAN.
+
+v1.1.1
 
 FIXED: Vignettes to not run ProFound (and by proxy EBImage, which is not supported by CRAN now).
 

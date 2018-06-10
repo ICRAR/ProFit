@@ -33,7 +33,11 @@
 }
 
 .profitBrokenExpExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, h1=1, h2=1, rb=1, a=1, ang=0, axrat=1, box=0, rel.tol=1e-3, abs.tol= 1e-10){
-return(cuhre(2, 1, .profitBrokenExpXY, xcen=xcen, ycen=ycen, h1=h1, h2=h2, rb=rb, a=a, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
+return(hcubature(.profitBrokenExpXY, lowerLimit=c(xpix[1],ypix[1]), upperLimit=c(xpix[2],ypix[2]), xcen=xcen, ycen=ycen, h1=h1, h2=h2, rb=rb, a=a, ang=ang, axrat=axrat, box=box, tol=rel.tol, absError=abs.tol)$integral)
+}
+
+.profitSersicExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, re=1, nser=4, ang=0, axrat=1, box=0, tol=tol, bn= qgamma(0.5, 2 * nser)){
+return(pcubature(.profitSersicXY, lowerLimit=c(xpix[1],ypix[1]), upperLimit=c(xpix[2],ypix[2]), xcen=xcen, ycen=ycen, re=re, nser=nser, ang=ang, axrat=axrat, box=box, bn=bn, tol=tol, vectorInterface=FALSE)$integral)
 }
 
 profitRadialBrokenExp=function(r=1, mag=15, h1=1, h2=h1, rb=h1, a=1, ang=0, axrat=1, box=0){

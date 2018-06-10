@@ -13,8 +13,8 @@
 \tabular{ll}{
 Package: \tab ProFit\cr
 Type: \tab Package\cr
-Version: \tab 1.1.1\cr
-Date: \tab 2018-03-08\cr
+Version: \tab 1.1.2\cr
+Date: \tab 2018-06-10\cr
 License: \tab LGPL-3\cr
 Imports: \tab fftw, R2Cuba, RColorBrewer, LaplacesDemon, methods\cr
 LinkingTo: \tab Rcpp\cr

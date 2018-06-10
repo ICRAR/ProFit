@@ -30,7 +30,7 @@
 }
 
 .profitCoreSersicExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, re=1, rb=1, nser=4, a=1, b=1, ang=0, axrat=1, box=0, rel.tol=1e-3, abs.tol= 1e-10, bn= qgamma(0.5, 2 * nser)){
-return(cuhre(2, 1, .profitCoreSersicXY, xcen=xcen, ycen=ycen, re=re, rb=rb, nser=nser, a=a, b=b, ang=ang, axrat=axrat, box=box, bn=bn, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
+return(hcubature(.profitCoreSersicXY, lowerLimit=c(xpix[1],ypix[1]), upperLimit=c(xpix[2],ypix[2]), xcen=xcen, ycen=ycen, re=re, rb=rb, nser=nser, a=a, b=b, ang=ang, axrat=axrat, box=box, bn=bn, tol=rel.tol, absError=abs.tol)$integral)
 }
 
 profitRadialCoreSersic=function(r=1, mag=15, re=1, rb=1, nser=4, a=1, b=1, ang=0, axrat=1, box=0){

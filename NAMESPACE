@@ -11,6 +11,6 @@ import("grDevices")
 
 importFrom("utils", "relist", "capture.output")
 importFrom("RColorBrewer", "brewer.pal")
-importFrom("R2Cuba", "cuhre")
+importFrom("cubature", "hcubature")
 importFrom("LaplacesDemon", "LaplaceApproximation", "LaplacesDemon")
 importFrom("methods", "new")

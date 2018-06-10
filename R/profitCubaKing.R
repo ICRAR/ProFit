@@ -30,7 +30,9 @@
 }
 
 .profitKingExactSumPix=function(xpix=c(0,1), ypix=c(0,1), xcen=0, ycen=0, rc=1, rt=3, a=2, ang=0, axrat=1, box=0, rel.tol=1e-3, abs.tol= 1e-10){
-return(cuhre(2, 1, .profitKingXY, xcen=xcen, ycen=ycen, rc=rc, rt=rt, a=a, ang=ang, axrat=axrat, box=box, rel.tol= rel.tol, abs.tol= abs.tol, lower=c(xpix[1],ypix[1]), upper=c(xpix[2],ypix[2]), flags= list(verbose=0))$value)
+  
+  #HERE, still need to fix King and Moffat!!
+return(hcubature(.profitKingXY, lowerLimit=c(xpix[1],ypix[1]), upperLimit=c(xpix[2],ypix[2]), xcen=xcen, ycen=ycen, rc=rc, rt=rt, a=a, ang=ang, axrat=axrat, box=box, tol=rel.tol, absError=abs.tol)$integral)
 }
 
 profitRadialKing=function(r=1, mag=15, rc=1, rt=3, a=2, ang=0, axrat=1, box=0){
