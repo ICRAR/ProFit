@@ -246,10 +246,18 @@ profitGetOpenCLEnvs <- function(name="opencl",make.envs=FALSE)
         openclenvs$env_double = ptrvec
         for(i in 1:nrow(openclenvs))
         {
-          if(openclenvs$supports_single[i]) openclenvs$env_single[[i]] =
-              profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = FALSE)
-          if(openclenvs$supports_double[i]) openclenvs$env_double[[i]] =
-              profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = TRUE)
+          if (openclenvs$supports_single[i])
+          {
+            env = profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = FALSE)
+            if (!is.null(env))
+              openclenvs$env_single[[i]] = env
+          }
+          if (openclenvs$supports_double[i])
+          {
+            env = profitOpenCLEnv(openclenvs$env_i[i],openclenvs$dev_i[i],use_double = TRUE)
+            if (!is.null(env))
+              openclenvs$env_double[[i]] = env
+          }
         }
       }
     }

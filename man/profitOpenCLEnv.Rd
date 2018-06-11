@@ -29,6 +29,7 @@ If your computer has a single card (or you do not know what platforms and device
 }
 \value{
 The output is an external pointer of class 'externalptr' to be parsed to \code{\link{profitMakeModel}} and/or \code{\link{profitSetupData}}.
+If there is any error building the OpenCL environment object an error is printed and NULL is returned.
 }
 \author{
 Rodrigo Tobar & Aaron Robotham
