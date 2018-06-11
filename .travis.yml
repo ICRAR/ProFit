@@ -28,6 +28,14 @@
 language: r
 cache: packages
 
+# Silence warnings. This is not optimal, but on the other hand
+# we are getting WARNING messages when loading the sm package
+# (an indirect dependency we have through magicaxis) because
+# it does not find a DISPLAY variable. This does not seem to
+# be a problem for the sm package in CRAN though, so we choose
+# to silence these warnings (in a very coarse way though).
+warnings_are_errors: false
+
 # Build matrix
 # We try at least one Linux and one MacOS environment
 matrix:
