@@ -272,13 +272,12 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   
   if(haspsf)
   {
-    psfpad = floor(dim(psf)/2)
     dimcr = dim(calcregion)
-    calcxy = dimcr+2*psfpad
+    calcxy = dimcr
     if(is.null(benchconvmethods) || ("brute" %in% benchconvmethods))
     {
       newregion = matrix(0,calcxy[1],calcxy[2])
-      newregion[(1+psfpad[1]):(dimcr[1]+psfpad[1]),(1+psfpad[2]):(dimcr[2]+psfpad[2])] = calcregion
+      newregion[,] = calcregion
       # TODO: Replace with profitConvolver
       # Note: We use brute force convolution here because FFTs have ~1e-12 noise. It can be very slow, though
       calcregion=profitConvolvePSF(newregion,psf+1,options=list(method="Bruteconv"))
