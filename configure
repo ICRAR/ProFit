@@ -118,8 +118,14 @@ OMP
 	for flag in "" "-fopenmp" "-fopenmp=libomp" "-openmp" "-xopenmp" "-mp"; do
 		$CC $CFLAGS $flag -c $tmpdir/openmp.c -o $tmpdir/openmp.o 2> /dev/null
 		if [ $? -eq 0 ]; then
-			echo $flag
-			return
+			$CC $LDFLAGS $flag $tmpdir/openmp.o -o $tmpdir/openmp 2> /dev/null
+			if [ $? -eq 0 ]; then
+				echo $flag
+				return
+			else
+				echo "CANNOT_LINK"
+				return
+			fi
 		fi
 	done
 	echo "NOT_FOUND"
@@ -271,13 +277,27 @@ if [ -n "${PROFIT_NO_OPENMP}" ]; then
 	echo "- Skipping OpenMP detection"
 else
 	omp_flag=`get_omp_cflag`
-	if [ "$omp_flag" != "NOT_FOUND" ]; then
+	if [ "$omp_flag" = "NOT_FOUND" ]; then
+		echo "- Compiling without OpenMP support"
+	elif [ "$omp_flag" = "CANNOT_LINK" ]; then
+		echo ""
+		echo "################################################################################"
+		echo " Using the OpenMP compilation flag '$flag' your compiler is able to *compile*"
+		echo " code using OpenMP, but it still fails to *link* (i.e., produce a library or an"
+		echo " executable)."
+		echo " This possibly indicates either a faulty installation of your compiler, of your"
+		echo " OpenMP library, or a missing dependency for the OpenMP library."
+		echo ""
+		echo " Since we cannot use '$flag' to provide a working compilation process, we will"
+		echo " compile ProFit without OpenMP support"
+		echo "################################################################################"
+		echo ""
+		break
+	else
 		echo "- Compiling with OpenMP support"
 		PROFIT_OPENMP=yes
 		omp_cflags="$omp_flag"
 		omp_libflags="$omp_flag"
-	else
-		echo "- Compiling without OpenMP support"
 	fi
 
 fi
