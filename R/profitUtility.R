@@ -6,6 +6,10 @@ profitUpsample <- function(img, factor) {
 	.Call('R_profit_upsample', img, factor)
 }
 
+profitClearCache <- function() {
+	.Call('R_profit_clear_cache')
+}
+
 profitMag2Mu=function(mag=15, re=1, axrat=1, pixscale=1){
   return(mag+2.5*log10(pi*re^2*axrat)-2.5*log10(0.5)+5*log10(pixscale))
 }

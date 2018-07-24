@@ -771,6 +771,11 @@ extern "C" {
 		return _R_profit_upsample(img, factor);
 	}
 
+	SEXP R_profit_clear_cache() {
+		profit::clear_cache();
+		return R_NilValue;
+	}
+
 	/*
 	 * Registering the methods above at module loading time
 	 * This should speed symbol lookup, and anyway it's considered a better
@@ -789,6 +794,7 @@ extern "C" {
 		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
 		{"R_profit_downsample",     (DL_FUNC) &R_profit_downsample,     2},
 		{"R_profit_upsample",       (DL_FUNC) &R_profit_upsample,       2},
+		{"R_profit_clear_cache",    (DL_FUNC) &R_profit_clear_cache,    0},
 
 		/* Sentinel */
 		{NULL, NULL, 0}
