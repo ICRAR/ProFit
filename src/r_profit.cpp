@@ -739,8 +739,14 @@ extern "C" {
 	};
 
 	void R_init_ProFit(DllInfo *dll) {
-		// TODO: check return value
-		profit::init();
+
+		auto success = profit::init();
+		if (!success) {
+			std::ostringstream os;
+			os << "Error when initializing libprofit: " << profit::init_diagnose();
+			Rf_error(os.str().c_str());
+		}
+
 		/* Using registered symbols only from now on */
 		R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
 		R_useDynamicSymbols(dll, FALSE);
@@ -748,6 +754,12 @@ extern "C" {
 
 	void R_unload_ProFit(DllInfo *info) {
 		profit::finish();
+		auto diagnose = profit::finish_diagnose();
+		if (!diagnose.empty()) {
+			std::ostringstream os;
+			os << "Warning when finishing libprofit: " << diagnose;
+			Rf_warning(os.str().c_str());
+		}
 	}
 
 }
