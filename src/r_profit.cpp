@@ -530,7 +530,6 @@ SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
 static
 SEXP _R_profit_make_model(SEXP model_list) {
 
-	ssize_t size;
 	unsigned int img_w, img_h;
 	double scale_x = 1, scale_y = 1;
 	string error;
