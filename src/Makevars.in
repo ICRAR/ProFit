@@ -1,6 +1,6 @@
 CXX_STD = CXX11
 
-PKG_CPPFLAGS = -Ilibprofit -DPROFIT_BUILD @profit_CPPFLAGS@
+PKG_CPPFLAGS = -Ilibprofit -Dprofit_EXPORTS @profit_CPPFLAGS@
 PKG_LIBS = @profit_LIBS@
 
 OBJECTS = libprofit/src/brokenexponential.o \
