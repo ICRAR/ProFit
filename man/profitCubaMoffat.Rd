@@ -88,7 +88,9 @@ Aaron Robotham
 \code{\link{profitMakeModel}}, \code{\link{profitSersic}}, \code{\link{profitFerrer}}, \code{\link{profitCoreSersic}}, \code{\link{profitKing}}
 }
 \examples{
+\dontrun{
 magimage(profitCubaMoffat(axrat=0.7, ang=30))
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

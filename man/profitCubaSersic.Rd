@@ -86,6 +86,7 @@ Aaron Robotham
 \code{\link{profitMakeModel}}, \code{\link{profitMoffat}}, \code{\link{profitFerrer}}, \code{\link{profitCoreSersic}}, \code{\link{profitKing}}
 }
 \examples{
+\dontrun{
 model = list(
   sersic = list(
     xcen = 10,
@@ -111,6 +112,7 @@ tempProFit=profitMakeModel(model, dim=dim)$z
 magimage((tempExact-tempProFit)/tempExact, magmap=FALSE, zlim=c(-0.01,0.01))
 #They differ by no more the 1\% in flux for any pixel, and in general much less than that:
 hist((tempExact-tempProFit)/tempExact)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -249,8 +249,8 @@ First we will try `optim` BFGS.
 
 ```{r, eval=FALSE}
 sigmas=c(2,2,2,2,5,5,1,1,1,1,30,30,0.3,0.3)
-print(system.time(optimfit <- optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
-  control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))))
+print(system.time({optimfit = optim(Data$init, profitLikeModel, method='BFGS', Data=Data,
+  control=list(fnscale=-1,parscale=sigmas[which(unlist(tofit))]))}))
 print(optimfit$value)
 ```
 
@@ -286,6 +286,7 @@ Data$constraints=constraints
 ```
 
 Another useful library for non-linear optimization is `nloptr`. nloptr is an interface to a C library with numerous optimizers. The required C library `nlopt-devel` should be available to install from your favourite package manager. For optimal performance, we'll set up a vector of upper and lower bounds for the parameters. These can also be used in optim with the `L-BFGS-B` optimizer.
+
 ```{r, eval=FALSE}
 if(isTRUE("nloptr" %in% rownames(installed.packages())))
 {
@@ -298,10 +299,12 @@ if(isTRUE("nloptr" %in% rownames(installed.packages())))
   whichfitlog = which(unlist(Data$tolog)[whichfit])
   lower = intervals[2*(1:npar)-1][whichfit]
   upper = intervals[2*(1:npar)][whichfit]
+  lower[whichfitlog]=log10(lower[whichfitlog])
+  upper[whichfitlog]=log10(upper[whichfitlog])
   
-  system.time(nloptfit <- nloptr(
+  system.time({nloptfit = nloptr(
     x0 = Data$init, eval_f=function(x,Data) { return(-profitLikeModel(x,Data=Data))}, lb = lower, ub = upper,
-    opts=list(algorithm=paste0("NLOPT_LN_NELDERMEAD"),xtol_rel=0,ftol_abs=1e-3,maxeval=2e3), Data=Data))
+    opts=list(algorithm=paste0("NLOPT_LN_NELDERMEAD"),xtol_rel=0,ftol_abs=1e-3,maxeval=2e3), Data=Data)})
   print(-nloptfit$objective)
 }
 ```
@@ -315,11 +318,11 @@ if(isTRUE("LaplacesDemon" %in% rownames(installed.packages())))
 {
   library(LaplacesDemon)
   Data$algo.func="LA"
-  system.time(LAfit <- LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
-    Method='LM', CovEst='Identity', sir=FALSE))
+  system.time({LAfit = LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
+    Method='LM', CovEst='Identity', sir=FALSE)})
   print(LAfit$LP.Final)
-  system.time(LAfitnm <- LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
-    Method='NM', CovEst='Identity', sir=FALSE))
+  system.time({LAfitnm = LaplaceApproximation(profitLikeModel, parm=Data$init, Data=Data, Iterations=1e3,
+    Method='NM', CovEst='Identity', sir=FALSE)})
   print(LAfitnm$LP.Final)
 }
 ```
