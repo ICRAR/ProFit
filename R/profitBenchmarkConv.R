@@ -118,8 +118,8 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
       if(refftpsf) psffftw = .profitBenchmarkPadFFT(data$psf$z,padimagedim,psfranges,fftw=TRUE,fftwplan = fftwplan)
       rimagepad = matrix(0,padimagedim[1],padimagedim[2])
       rimagepad[1:imagedim[1],1:imagedim[2]] = data$image$z
-      imagefftw = FFT(rimagepad, plan=fftwplan) * psffftw
-      imagefftw = IFFT(imagefftw,plan=fftwplan)
+      imagefftw = fftw::FFT(rimagepad, plan=fftwplan) * psffftw
+      imagefftw = fftw::IFFT(imagefftw,plan=fftwplan)
       dim(imagefftw) = padimagedim
       imagefftw = Re(imagefftw[cropx,cropy])
     }
