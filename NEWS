@@ -1,5 +1,11 @@
 Latest version is always on GitHub at ICRAR/ProFit. Noted which version is on CRAN.
 
+v1.2.0
+
+FEATURE: Some more code is now pushed across to libprofit, especially on the fine sampling and padding side.
+
+FIXED: Some build issues flagged by CRAN.
+
 v1.1.2
 
 FIXED: Replaced R2CUBA with cubature since R2CUBA is being removed from CRAN.
@@ -8,11 +14,13 @@ v1.1.1
 
 FIXED: Vignettes to not run ProFound (and by proxy EBImage, which is not supported by CRAN now).
 
-v1.1  Added OpenCL support
+v1.1
+
+FEATURE: Added OpenCL support
 
 v1.0  First released on CRAN & GitHub
 
-v1.0.1  Released on GitHub
+v1.0.1
 
 FEATURE: You can now directly specify the region to use for fitting in profitSetupData (before it always used a combination of segim and mask, which it will use if this is not provided). Old code will work as before. Argument order has changed to accommodate.
 
@@ -24,7 +32,7 @@ FIXED: Solaris issue with gauss.cpp.
 
 FIXED: profitMakePlots so the region is shown correctly.
 
-v1.0.2 Released on CRAN (latest) & GitHub
+v1.0.2
 
 CHANGE: Minor internal naming changes.
 
@@ -32,7 +40,7 @@ FIXED: Occassional issue with profitMakePlots failing for certain region over-pl
 
 FIXED:  Intervals now work properly with the PSF model.
 
-v1.0.3 GitHub only
+v1.0.3
 
 FEATURE: GPU support via OpenCL (see vignettes).
 
@@ -40,7 +48,7 @@ FEATURE: OpenMP support (see vignettes).
 
 Some minor mixes.
 
-v1.0.4 GitHub only (latest)
+v1.0.4
 
 FEATURE: A large number of utility functions added to aid in creating inputs for profitSetupData. In particular profitMakeSegim and profitMakeSegimExpand (for segmenting an image and making a segim map, this requires EBImage to be installed), profitSkyEst (for estimating the sky), profitGainEst (for estimating the gain), profitMakeSigma (for making a sigma map), and profitImBlur / profitImGrad / profitImDiff for transforming images. Also profitSkyEstLoc (local sky) and profitMakeSkyMap (coarse sky map generator) and profitMakeSkyGrid (fine sky map generator). Various very short utility functions added.
 
