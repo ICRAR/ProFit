@@ -32,6 +32,9 @@
   psfpad[psfranges[[1]],psfranges[[2]]] = psf
   if(fftw) 
   {
+    if(!requireNamespace("fftw", quietly = TRUE)){
+      stop('The fftw package is needed for the FFTWconv option to work. Please install it from CRAN.', call. = FALSE)
+    }
     if(!is.null(fftwplan)) return(fftw::FFT(psfpad,plan = fftwplan))
     return(fftw::FFT(psfpad))
   }
@@ -67,6 +70,9 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   
   if(is.null(fftwplan))
   {
+    if(!requireNamespace("fftw", quietly = TRUE)){
+      stop('The fftw package is needed for the FFTWconv option to work. Please install it from CRAN.', call. = FALSE)
+    }
     fftwplan = fftw::planFFT(padimagedim[1]*padimagedim[2], effort=0)
     # factors = unique(c(gmp::as.bigz(2),gmp::factorize(imagedim[1]),gmp::factorize(imagedim[2])))
     # t = proc.time()[['elapsed']]
@@ -113,6 +119,9 @@ profitBenchmarkConv <- function(image=NULL, psf=NULL, calcregion=NULL, nbench=10
   }
   
   if("FFTWconv" %in% names) {
+    if(!requireNamespace("fftw", quietly = TRUE)){
+      stop('The fftw package is needed for the FFTWconv option to work. Please install it from CRAN.', call. = FALSE)
+    }
     for(i in benchi)
     {
       if(refftpsf) psffftw = .profitBenchmarkPadFFT(data$psf$z,padimagedim,psfranges,fftw=TRUE,fftwplan = fftwplan)

@@ -25,6 +25,9 @@ profitConvolvePSF=function(image, psf, calcregion, docalcregion=FALSE,
   isbc1 = options$method == "Bruteconv"
   isfftr = options$method == "FFTconv"
   isfftw = options$method == "FFTWconv"
+  if(isfftw & !requireNamespace("fftw", quietly = TRUE)){
+    stop('The fftw package is needed for the FFTWconv option to work. Please install it from CRAN.', call. = FALSE)
+  }
   isfft = isfftr || isfftw
   if(isbc1)
   {
