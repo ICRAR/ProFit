@@ -250,16 +250,12 @@ tmpdir=.profit_tmp
 #
 version=`cat src/libprofit/VERSION`
 echo "- Compiling Profit using libprofit $version"
-PROFIT_VERSION_MAJOR=${version%%.*}
-version=${version#*.}
-PROFIT_VERSION_MINOR=${version%%.*}
-version=${version#*.}
-PROFIT_VERSION_PATCH=${version%%-*}
-version_without_dash=${version#*-}
-if [ "$version" != "${version_without_dash}" ]
-then
-	PROFIT_VERSION_SUFFIX=${version_without_dash}
-fi
+
+# We were previously using POSIX-compliant ${name%%word} expansions here
+# like normal people would do, but Solaris' /bin/sh doesn't implement them
+PROFIT_VERSION_MAJOR=`echo $version | sed -e 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)/\1/'`
+PROFIT_VERSION_MINOR=`echo $version | sed -e 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)/\2/'`
+PROFIT_VERSION_PATCH=`echo $version | sed -e 's/\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)\.\([0-9]\{1,\}\)/\3/'`
 
 #
 # Check for OpenCL headers, libs and max OpenCL version
