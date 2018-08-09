@@ -732,6 +732,20 @@ SEXP _R_profit_upsample(SEXP img, SEXP factor)
 	return r_image;
 }
 
+// TODO: to be moved down to libprofit at some point
+namespace detail {
+
+int setenv(const char *name, const char *value)
+{
+#ifdef _WIN32
+	return ::_putenv_s(name, value);
+#else
+	return ::setenv(name, value, 1);
+#endif
+}
+
+} // namespace detail
+
 extern "C" {
 	SEXP R_profit_make_model(SEXP model_list) {
 		return _R_profit_make_model(model_list);
@@ -806,6 +820,36 @@ extern "C" {
 	};
 
 	void R_init_ProFit(DllInfo *dll) {
+
+		/*
+		 * Changing PROFIT_HOME's environment variable to point to R's session
+		 * temporary directory. It was originally suggested that this could be
+		 * done in the .onLoad() function, but that would be too late, as this
+		 * shared library would have been loaded already, which in turn means
+		 * that the profit::init function (the one actually creating the
+		 * PROFIT_HOME directory if non-existing) would have executed already.
+		 *
+		 * This is to avoid violating CRAN's policy that packages should not
+		 * write anywhere on the filesystem apart from the R session's tmp dir
+		 * Obviously this completely misses the point of having a cache in the
+		 * first place, so in the future we'll have to revisit this and figure
+		 * out how to cache things in R.
+		 *
+		 * For the life of me, I also couldn't find an entry point in R's C API
+		 * that would return the R session's temporary directory. This is
+		 * required by both R_tmpnam and R_tmpnam2, which surprisingly do not
+		 * calculate this themselves. The two solutions I could find were: a)
+		 * using the R_TempDir symbol declared in Rembedded.h (but is not meant
+		 * to be used, it issues a check warning), or b) call the tempdir R
+		 * function, which returns exactly what we need. Here I implemented the
+		 * latter.
+		 */
+		SEXP r_session_tmpdir;
+		PROTECT(r_session_tmpdir = Rf_eval(Rf_lang1(Rf_install("tempdir")), R_GlobalEnv));
+		auto tmpdir = R_tmpnam("profit", CHAR(STRING_ELT(r_session_tmpdir, 0)));
+		detail::setenv("PROFIT_HOME", tmpdir);
+		free(tmpdir);
+		UNPROTECT(1);
 
 		auto success = profit::init();
 		if (!success) {
