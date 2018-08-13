@@ -30,9 +30,7 @@
 #ifdef PROFIT_FFTW
 
 #include <complex>
-#include <iterator>
 #include <memory>
-#include <stdexcept>
 #include <vector>
 
 #include <fftw3.h>
@@ -100,26 +98,6 @@ protected:
 		return size;
 	}
 
-	template <typename T>
-	void check_size(const std::vector<T> &data) const
-	{
-		if (data.size() != size) {
-			std::ostringstream os;
-			os << "data size != plan size: " << data.size() << " != " << size;
-			throw std::invalid_argument(os.str());
-		}
-	}
-
-	dcomplex_vec as_dcomplex_vec(const fftw_complex *cdata) const
-	{
-		dcomplex_vec ret;
-		ret.reserve(size);
-		std::transform(cdata, cdata + size, std::inserter(ret, ret.begin()), [](const fftw_complex &c) {
-			return dcomplex {c[0], c[1]};
-		});
-		return ret;
-	}
-
 private:
 	unsigned int size;
 	effort_t effort;
@@ -158,6 +136,7 @@ public:
 	std::vector<double> backward(const dcomplex_vec &data) const override;
 
 private:
+	unsigned int hermitian_size;
 	std::unique_ptr<double> real_buf;
 	std::unique_ptr<fftw_complex> complex_buf;
 	fftw_plan forward_plan;

@@ -34,6 +34,24 @@
 
 namespace profit {
 
+template <typename T>
+void check_size(const std::vector<T> &data, unsigned int size)
+{
+	if (data.size() != size) {
+		std::ostringstream os;
+		os << "data size != plan size: " << data.size() << " != " << size;
+		throw std::invalid_argument(os.str());
+	}
+}
+
+FFTTransformer::dcomplex_vec as_dcomplex_vec(const fftw_complex *cdata, unsigned int size)
+{
+	FFTTransformer::dcomplex_vec ret(size);
+	std::transform(cdata, cdata + size, ret.begin(), [](const fftw_complex &c) {
+		return FFTTransformer::dcomplex {c[0], c[1]};
+	});
+	return ret;
+}
 
 int FFTTransformer::get_fftw_effort() const
 {
@@ -54,6 +72,7 @@ int FFTTransformer::get_fftw_effort() const
 
 FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsigned int omp_threads) :
 	FFTTransformer(size, effort, omp_threads),
+	hermitian_size(size / 2 + 1),
 	real_buf(), complex_buf(),
 	forward_plan(nullptr),
 	backward_plan(nullptr)
@@ -64,7 +83,7 @@ FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsig
 		throw std::bad_alloc();
 	}
 
-	fftw_complex *complex_tmp = fftw_alloc_complex(size);
+	fftw_complex *complex_tmp = fftw_alloc_complex(hermitian_size);
 	if (!complex_tmp) {
 		throw std::bad_alloc();
 	}
@@ -108,7 +127,7 @@ FFTRealTransformer::~FFTRealTransformer()
 
 FFTTransformer::dcomplex_vec FFTRealTransformer::forward(const std::vector<double> &data) const
 {
-	check_size(data);
+	check_size(data, get_size());
 
 	// Copy image data into input array, transform,
 	// and copy output of transformation into returned vector
@@ -116,12 +135,12 @@ FFTTransformer::dcomplex_vec FFTRealTransformer::forward(const std::vector<doubl
 
 	fftw_execute(forward_plan);
 
-	return as_dcomplex_vec(complex_buf.get());
+	return as_dcomplex_vec(complex_buf.get(), hermitian_size);
 }
 
 std::vector<double> FFTRealTransformer::backward(const dcomplex_vec &cdata) const
 {
-	check_size(cdata);
+	check_size(cdata, hermitian_size);
 
 	// Copy input data into complex buffer, execute plan,
 	// and copy data out of the real buffer into the returned Image
@@ -135,10 +154,9 @@ std::vector<double> FFTRealTransformer::backward(const dcomplex_vec &cdata) cons
 	fftw_execute(backward_plan);
 
 	auto size = get_size();
-	std::vector<double> ret;
-	ret.reserve(size);
+	std::vector<double> ret(size);
 	auto *out_it = real_buf.get();
-	std::copy(out_it, out_it + size, std::inserter(ret, ret.begin()));
+	std::copy(out_it, out_it + size, ret.begin());
 
 	return ret;
 }
