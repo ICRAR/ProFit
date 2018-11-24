@@ -206,7 +206,7 @@ PROFIT_OPENCL_TARGET_VERSION=
 PROFIT_OPENMP=no
 PROFIT_FFTW=no
 PROFIT_FFTW_OPENMP=no
-profit_CPPFLAGS=
+profit_CXXFLAGS=
 profit_LIBS=
 
 generate_file() {
@@ -215,7 +215,7 @@ generate_file() {
 }
 
 generate_makevars() {
-	sexpr="`at_sed_replacement profit_CPPFLAGS`"
+	sexpr="`at_sed_replacement profit_CXXFLAGS`"
 	sexpr="$sexpr; `at_sed_replacement profit_LIBS`"
 	generate_file src/Makevars "$sexpr"
 }
@@ -363,7 +363,7 @@ fi
 # which is a problem for some sed implementations, it seems. Let's make them happy
 cp src/libprofit/profit/config.h.in $tmpdir
 echo "" >> src/libprofit/profit/config.h.in
-profit_CPPFLAGS="$omp_cflags"
+profit_CXXFLAGS="$omp_cflags"
 profit_LIBS="$cl_libflags $omp_libflags $fftw_libflags"
 generate_makevars
 generate_config_h
