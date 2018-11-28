@@ -844,12 +844,13 @@ extern "C" {
 		 * function, which returns exactly what we need. Here I implemented the
 		 * latter.
 		 */
-		SEXP r_session_tmpdir;
-		PROTECT(r_session_tmpdir = Rf_eval(Rf_lang1(Rf_install("tempdir")), R_GlobalEnv));
+		SEXP tempdir_func, r_session_tmpdir;
+		PROTECT(tempdir_func = Rf_lang1(Rf_install("tempdir")));
+		PROTECT(r_session_tmpdir = Rf_eval(tempdir_func, R_GlobalEnv));
 		auto tmpdir = R_tmpnam("profit", CHAR(STRING_ELT(r_session_tmpdir, 0)));
 		detail::setenv("PROFIT_HOME", tmpdir);
 		free(tmpdir);
-		UNPROTECT(1);
+		UNPROTECT(2);
 
 		auto success = profit::init();
 		if (!success) {
