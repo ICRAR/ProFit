@@ -52,6 +52,9 @@ matrix:
     osx_image: xcode9.1 # OSX 10.12
   - os: osx
     osx_image: xcode10.1 # OSX 10.13
+ allow_failures:
+  - os: linux
+    r: devel
 
 # To build the vignettes we need rmarkdown
 r_packages: rmarkdown
