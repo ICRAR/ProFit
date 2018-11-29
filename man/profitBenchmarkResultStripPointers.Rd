@@ -32,12 +32,14 @@ Dan Taranu
  \code{\link{profitBenchmark}}, \code{\link{profitGetOpenCLEnvs}}
 }
 \examples{
+\dontrun{
   openclenvs = profitGetOpenCLEnvs(make.envs=TRUE)
   print(profitBenchmarkResultStripPointers(openclenvs))
   img = profitMakeGaussianPSF()
   bench=profitBenchmark(img, psf=img, nbench=1L, methods=profitAvailableConvolvers())
   print(profitBenchmarkResultStripPointers(bench$result)[
     c("name","env_name","version","dev_name",paste0("tinms.mean_",c("single","double")))])
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

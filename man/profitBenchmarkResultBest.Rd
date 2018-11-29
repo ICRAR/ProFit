@@ -41,13 +41,14 @@ Dan Taranu
  \code{\link{profitBenchmark}}, \code{\link{profitSetupData}}
 }
 \examples{
-
+\dontrun{
 img = profitMakeGaussianPSF()
 bench=profitBenchmark(img, psf=img, nbench=1L, methods=profitAvailableConvolvers())
 print(profitBenchmarkResultStripPointers(bench$result)[
   c("name","env_name","version","dev_name",paste0("tinms.mean_",c("single","double")))])
 best = profitBenchmarkResultBest(bench$result)
 print(paste('Name:',best$name,'time:',best$time))
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
