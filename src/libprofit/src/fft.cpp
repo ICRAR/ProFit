@@ -27,6 +27,7 @@
 #include <string>
 #include <stdexcept>
 
+#include "profit/common.h"
 #include "profit/exceptions.h"
 #include "profit/fft_impl.h"
 
@@ -71,7 +72,7 @@ int FFTTransformer::get_fftw_effort() const
 
 
 FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsigned int omp_threads) :
-	FFTTransformer(size, effort, omp_threads),
+	FFTTransformer(size, effort),
 	hermitian_size(size / 2 + 1),
 	real_buf(), complex_buf(),
 	forward_plan(nullptr),
@@ -93,6 +94,8 @@ FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsig
 
 #ifdef PROFIT_FFTW_OPENMP
 	fftw_plan_with_nthreads(omp_threads);
+#else
+	UNUSED(omp_threads);
 #endif /* PROFIT_FFTW_OPENMP */
 
 	int fftw_effort = get_fftw_effort();

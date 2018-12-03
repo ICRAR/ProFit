@@ -30,6 +30,7 @@
 #include <sstream>
 #include <vector>
 
+#include "profit/common.h"
 #include "profit/convolver_impl.h"
 #include "profit/exceptions.h"
 #include "profit/utils.h"
@@ -85,7 +86,9 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 
 	/* Convolve! */
 	/* Loop around the output image first... */
-#ifdef PROFIT_OPENMP
+#ifndef PROFIT_OPENMP
+	UNUSED(omp_threads);
+#else
 	bool use_omp = omp_threads > 1;
 	#pragma omp parallel for collapse(2) schedule(dynamic, 10) if(use_omp) num_threads(omp_threads)
 #endif // PROFIT_OPENMP
@@ -151,7 +154,9 @@ Image AssociativeBruteForceConvolver::convolve(const Image &src, const Image &kr
 
 	/* Convolve! */
 	/* Loop around the output image first... */
-#ifdef PROFIT_OPENMP
+#ifndef PROFIT_OPENMP
+	UNUSED(omp_threads);
+#else
 	bool use_omp = omp_threads > 1;
 	#pragma omp parallel for collapse(2) schedule(dynamic, 10) if(use_omp) num_threads(omp_threads)
 #endif // PROFIT_OPENMP

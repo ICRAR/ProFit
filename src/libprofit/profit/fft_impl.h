@@ -67,8 +67,8 @@ public:
 	 * @param effort The kind of effort that should be put into creating this plan
 	 * @param omp_threads The number of threads to use to execute the plan
 	 */
-	FFTTransformer(unsigned int size, effort_t effort, unsigned int omp_threads) :
-		size(size), effort(effort), omp_threads(omp_threads) {}
+	FFTTransformer(unsigned int size, effort_t effort) :
+		size(size), effort(effort) {}
 
 	virtual ~FFTTransformer() {}
 
@@ -101,7 +101,6 @@ protected:
 private:
 	unsigned int size;
 	effort_t effort;
-	unsigned int omp_threads;
 
 };
 
