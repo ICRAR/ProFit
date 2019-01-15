@@ -28,7 +28,7 @@ Next we load a table of data describing GAMA galaxies:
 
 ```{r}
 data('ExampleInit', package="ProFit")
-kable(head(ExampleInit, 10))
+head(ExampleInit, 10)
 ```
 
 Here we will use an SDSS example:
