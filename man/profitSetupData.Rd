@@ -473,6 +473,7 @@ modellist=modellist, tofit=tofit, tolog=tolog, magzero=0, algo.func='optim', ver
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE)
 
+\dontrun{
 # If you're brave and your software/drivers are configured correctly, try benchmarking
 # with OpenCL and OpenMP:
 openclenvs = profitGetOpenCLEnvs(make.envs = TRUE)
@@ -484,6 +485,7 @@ benchintmethods = profitAvailableIntegrators(), benchopenclenvs = openclenvs,
 printbenchmark = TRUE, omp_threads=4)
 
 profitLikeModel(parm=Data$init, Data=Data, makeplots=TRUE, plotchisq=TRUE)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
