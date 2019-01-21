@@ -357,7 +357,6 @@ void _R_profit_openclenv_finalizer(SEXP ptr) {
 	}
 
 	openclenv_wrapper *wrapper = reinterpret_cast<openclenv_wrapper *>(R_ExternalPtrAddr(ptr));
-	wrapper->env.reset();
 	delete wrapper;
 	R_ClearExternalPtr(ptr); /* not really needed */
 
@@ -445,7 +444,6 @@ void _R_profit_convolver_finalizer(SEXP ptr) {
 	}
 
 	convolver_wrapper *wrapper = reinterpret_cast<convolver_wrapper *>(R_ExternalPtrAddr(ptr));
-	wrapper->convolver.reset();
 	delete wrapper;
 	R_ClearExternalPtr(ptr); /* not really needed */
 
