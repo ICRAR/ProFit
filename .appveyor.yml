@@ -18,12 +18,12 @@ cache:
 environment:
   matrix:
   - R_VERSION: release
+    BIOC_USE_DEVEL: FALSE
 
 
 build_script:
-  - Rscript -e "source('http://bioconductor.org/biocLite.R')"
   - travis-tool.sh install_deps
-  - travis-tool.sh install_bioc EBImage
+  - travis-tool.sh install_bioc_deps EBImage
   - travis-tool.sh install_github asgr/celestial
   - travis-tool.sh install_github asgr/magicaxis
   - travis-tool.sh install_github asgr/ProFound
