@@ -3,7 +3,13 @@ Type: Package
 Title: Fit Projected 2D Profiles to Galaxy Images
 Version: 1.2.7
 Date: 2019-01-21
-Author: Aaron Robotham, Dan Taranu, Rodrigo Tobar
+Authors@R: c(
+    person(given='Aaron', family='Robotham', email='aaron.robotham@uwa.edu.au',
+        role=c('aut', 'cre'), comment=c(ORCID='0000-0003-0429-3579')),
+    person(given='Dan', family='Taranu', email='dtaranu@astro.princeton.edu',
+        role='aut', comment=c(ORCID='0000-0001-6268-1882')),
+    person(given='Rodrigo', family='Tobar', email='rtobar@icrar.org',
+        role='aut', comment=c(ORCID='0000-0002-1052-0611')))
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Get data / Define model / ??? / Profit! 'ProFit' is a Bayesian galaxy fitting tool that uses a fast 'C++' image generation library and a flexible interface to a large number of likelihood samplers.
 License: LGPL-3
