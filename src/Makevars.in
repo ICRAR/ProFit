@@ -1,6 +1,6 @@
 CXX_STD = CXX11
 
-PKG_CPPFLAGS = -Ilibprofit -Dprofit_EXPORTS
+PKG_CPPFLAGS = -Ilibprofit/include -Dprofit_EXPORTS
 PKG_CXXFLAGS = @profit_CXXFLAGS@
 PKG_LIBS = @profit_LIBS@
 

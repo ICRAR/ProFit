@@ -1,5 +1,5 @@
 #!/bin/sh
 
-rm -f src/Makevars src/libprofit/profit/config.h
+rm -f src/Makevars src/libprofit/include/profit/config.h
 rm -f src/*.o
 rm -f src/libprofit/src/*.o
