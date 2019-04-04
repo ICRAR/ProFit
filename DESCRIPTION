@@ -2,7 +2,7 @@ Package: ProFit
 Type: Package
 Title: Fit Projected 2D Profiles to Galaxy Images
 Version: 1.2.7
-Date: 2019-01-21
+Date: 2019-04-04
 Authors@R: c(
     person(given='Aaron', family='Robotham', email='aaron.robotham@uwa.edu.au',
         role=c('aut', 'cre'), comment=c(ORCID='0000-0003-0429-3579')),
