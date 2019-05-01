@@ -649,7 +649,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
 
 	/* Copy the image into a matrix, pack together with the offset, and bye */
 	SEXP r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
-	SEXP r_offset = PROTECT(Rf_list2(Rf_ScalarInteger(offset.x + 1), Rf_ScalarInteger(offset.y + 1)));
+	SEXP r_offset = PROTECT(Rf_list2(Rf_ScalarInteger(offset.x), Rf_ScalarInteger(offset.y)));
 	memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
 	SEXP ret = PROTECT(Rf_list2(r_image, r_offset));
 	UNPROTECT(3);

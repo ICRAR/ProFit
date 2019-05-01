@@ -281,8 +281,8 @@ profitMakeModel = function(modellist,
 	dims = dim(image)
 
 	rval = list()
-	rval$x = seq(-offset[[1]] + 0.5, -offset[[1]] + dims[1] + 0.5)
-	rval$y = seq(-offset[[2]] + 0.5, -offset[[2]] + dims[2] + 0.5)
+	rval$x = seq(-offset[[1]] + 0.5, -offset[[1]] + dims[1] - 0.5)
+	rval$y = seq(-offset[[2]] + 0.5, -offset[[2]] + dims[2] - 0.5)
 	rval$z = image
 
 	if(plot){
