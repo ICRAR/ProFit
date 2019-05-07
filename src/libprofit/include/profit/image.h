@@ -139,6 +139,11 @@ _2dcoordinate operator-(int x, const _2dcoordinate &other) {
 	return _2dcoordinate(x, x) - other;
 }
 
+/// Element-wise max() function for _2dcoordinate objects
+inline _2dcoordinate max(const _2dcoordinate a, const _2dcoordinate b)
+{
+	return _2dcoordinate {std::max(a.x, b.x), std::max(a.x, b.x)};
+}
 
 /// A point in a 2-dimensional surface
 typedef _2dcoordinate Point;

@@ -93,9 +93,13 @@ public:
 	 *         to internal implementation details of the convolver. The potential
 	 *         offset is written into offset_out.
 	 */
-	virtual
 	Image convolve(const Image &src, const Image &krn, const Mask &mask,
-	               bool crop = true, Point &offset_out = NO_OFFSET) = 0;
+	               bool crop = true, Point &offset_out = NO_OFFSET);
+
+	// Implemented by subclasses and called by convolve
+	virtual
+	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask,
+	                    bool crop = true, Point &offset_out = NO_OFFSET) = 0;
 
 protected:
 

@@ -46,6 +46,32 @@ Convolver::~Convolver()
 	// no-op
 }
 
+Image Convolver::convolve(const Image &src, const Image &krn, const Mask &mask,
+                          bool crop, Point &offset_out)
+{
+	// convolve_impl requires images to be not smaller than kernels. If that's
+	// not the case we expand the image, convolve, then crop down the expansion.
+	// During the final cropping we make sure we only crop out the padding we
+	// added, and not the extra padding the convolution implementation might
+	// have added
+	auto src_dims = src.getDimensions();
+	auto krn_dims = krn.getDimensions();
+	if (krn_dims.x > src_dims.x || krn_dims.y > src_dims.y) {
+		auto new_dims = max(src_dims, krn_dims);
+		auto dims_diff = new_dims - src_dims;
+		auto extended_src = src.extend(new_dims);
+		auto extended_mask = Mask{};
+		if (mask) {
+			extended_mask = mask.extend(new_dims);
+		}
+		auto result = convolve_impl(extended_src, krn, extended_mask, crop, offset_out);
+		return result.crop(result.getDimensions() - dims_diff);
+	}
+	else {
+		return convolve_impl(src, krn, mask, crop, offset_out);
+	}
+}
+
 Image Convolver::mask_and_crop(Image &img, const Mask &mask, bool crop, const Dimensions orig_dims, const Dimensions &ext_dims, const Point &ext_offset, Point &offset_out) {
 
 	// No cropping requested
@@ -66,10 +92,8 @@ Image Convolver::mask_and_crop(Image &img, const Mask &mask, bool crop, const Di
 	return img.crop(orig_dims, ext_offset) & mask;
 }
 
-
-Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
+Image BruteForceConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
 {
-
 	const auto src_dims = src.getDimensions();
 	const auto krn_dims = krn.getDimensions();
 	const auto src_width = src_dims.x;
@@ -134,7 +158,7 @@ Image BruteForceConvolver::convolve(const Image &src, const Image &krn, const Ma
 }
 
 
-Image AssociativeBruteForceConvolver::convolve(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
+Image AssociativeBruteForceConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
 {
 
 	const auto src_dims = src.getDimensions();
@@ -306,18 +330,12 @@ FFTConvolver::FFTConvolver(const Dimensions &src_dims, const Dimensions &krn_dim
 	krn_fft(),
 	reuse_krn_fft(reuse_krn_fft)
 {
-
-	if (krn_dims.x > src_dims.x) {
-		throw invalid_parameter("krn_width must be <= src_width");
-	}
-	if (krn_dims.y > src_dims.y) {
-		throw invalid_parameter("krn_height must be <= src_height");
-	}
-	auto convolution_size = 4 * src_dims.x * src_dims.y;
+	auto effective_dims = max(src_dims, krn_dims);
+	auto convolution_size = 4 * effective_dims.x * effective_dims.y;
 	fft_transformer = std::unique_ptr<FFTTransformer>(new FFTRealTransformer(convolution_size, effort, plan_omp_threads));
 }
 
-Image FFTConvolver::convolve(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
+Image FFTConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
 {
 
 	typedef std::complex<double> complex;
@@ -372,7 +390,7 @@ OpenCLConvolver::OpenCLConvolver(OpenCLEnvImplPtr opencl_env) :
 	}
 }
 
-Image OpenCLConvolver::convolve(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
+Image OpenCLConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
 {
 	try {
 		return _convolve(src, krn, mask, crop, offset_out);
@@ -466,7 +484,7 @@ OpenCLLocalConvolver::OpenCLLocalConvolver(OpenCLEnvImplPtr opencl_env) :
 	}
 }
 
-Image OpenCLLocalConvolver::convolve(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
+Image OpenCLLocalConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
 {
 	try {
 		return _convolve(src, krn, mask, crop, offset_out);
