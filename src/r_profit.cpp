@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <sstream>
@@ -744,6 +745,24 @@ int setenv(const char *name, const char *value)
 
 } // namespace detail
 
+static
+SEXP _R_profit_adjust_mask(SEXP r_mask, SEXP r_img_dims, SEXP r_psf, SEXP r_finesampling)
+{
+	auto mask = _read_mask(r_mask);
+	auto psf = _read_image(r_psf);
+	auto img_dims = Dimensions{
+	    static_cast<unsigned int>(INTEGER(r_img_dims)[0]),
+	    static_cast<unsigned int>(INTEGER(r_img_dims)[1])
+	};
+	auto finesampling = static_cast<unsigned int>(Rf_asInteger(r_finesampling));
+	Model::adjust(mask, img_dims, psf, finesampling);
+	SEXP r_modified_mask = PROTECT(Rf_allocMatrix(LGLSXP, mask.getWidth(), mask.getHeight()));
+	int *modified_mask = LOGICAL(r_modified_mask);
+	std::copy(mask.begin(), mask.end(), modified_mask);
+	UNPROTECT(1);
+	return r_modified_mask;
+}
+
 extern "C" {
 	SEXP R_profit_make_model(SEXP model_list) {
 		return _R_profit_make_model(model_list);
@@ -788,6 +807,10 @@ extern "C" {
 		return _R_profit_upsample(img, factor);
 	}
 
+	SEXP R_profit_adjust_mask(SEXP mask, SEXP img_dims, SEXP psf, SEXP finesampling) {
+		return _R_profit_adjust_mask(mask, img_dims, psf, finesampling);
+	}
+
 	SEXP R_profit_clear_cache() {
 		profit::clear_cache();
 		return R_NilValue;
@@ -811,6 +834,7 @@ extern "C" {
 		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
 		{"R_profit_downsample",     (DL_FUNC) &R_profit_downsample,     2},
 		{"R_profit_upsample",       (DL_FUNC) &R_profit_upsample,       2},
+		{"R_profit_adjust_mask",    (DL_FUNC) &R_profit_adjust_mask,    4},
 		{"R_profit_clear_cache",    (DL_FUNC) &R_profit_clear_cache,    0},
 
 		/* Sentinel */
