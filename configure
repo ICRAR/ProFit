@@ -169,6 +169,27 @@ has_fftw_omp_lib() {
 	echo $has_lib
 }
 
+has_simd_extension() {
+   simd_name=$1
+	simd_header=$2
+	simd_type=$3
+	simd_zero=$4
+	simd_add=$5
+	cat > $tmpdir/simd_${simd_name}.c <<SIMD
+#include <${simd_header}>
+int main(int argc, char *argv[]) {
+	volatile ${simd_type} x = ${simd_zero}();
+	volatile ${simd_type} y = ${simd_add}(x, x);
+}
+SIMD
+	has_simd="no"
+	$CC $CFLAGS -c $tmpdir/simd_${simd_name}.c -o $tmpdir/simd_${simd_name}.o 2> /dev/null
+	if [ $? -eq 0 ]; then
+		has_simd="yes"
+	fi
+	echo $has_simd
+}
+
 cmakedefine_sed_replacement() {
 	name=$1
 	eval value=\$$1
@@ -206,6 +227,8 @@ PROFIT_OPENCL_TARGET_VERSION=
 PROFIT_OPENMP=no
 PROFIT_FFTW=no
 PROFIT_FFTW_OPENMP=no
+PROFIT_HAS_SSE2=no
+PROFIT_HAS_AVX=no
 profit_CXXFLAGS=
 profit_LIBS=
 
@@ -232,6 +255,8 @@ generate_config_h() {
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_OPENMP`"
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_FFTW`"
 	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_FFTW_OPENMP`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_HAS_SSE2`"
+	sexpr="$sexpr; `cmakedefine_sed_replacement PROFIT_HAS_AVX`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MAJOR`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MINOR`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_TARGET_VERSION`"
@@ -353,6 +378,14 @@ else
 			fi
 		fi
 	fi
+fi
+
+if [ -n "${PROFIT_NO_SIMD}" ]; then
+	echo "- Skipping SIMD extensions detection"
+else
+	PROFIT_HAS_SSE2=`has_simd_extension SSE2 emmintrin.h __m128d _mm_setzero_pd _mm_add_pd`
+	PROFIT_HAS_AVX=`has_simd_extension AVX immintrin.h __m256d _mm256_setzero_pd _mm256_add_pd`
+	echo "- SSE2/AVX extensions found: ${PROFIT_HAS_SSE2}/${PROFIT_HAS_AVX}"
 fi
 
 
