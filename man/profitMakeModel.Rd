@@ -12,7 +12,7 @@ profitMakeModel(modellist, magzero = 0, psf=NULL, dim = c(100, 100),
 whichcomponents=list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "all", 
 coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
 acc = 0.1, finesample=1L, returnfine=FALSE, returncrop=TRUE, calcregion,
-docalcregion=FALSE, magmu=FALSE, remax, rescaleflux = FALSE,
+docalcregion=FALSE, adjust_calcregion = TRUE, magmu=FALSE, remax, rescaleflux = FALSE,
 convopt=NULL, psfdim = c(25, 25), openclenv = NULL,
 omp_threads = NULL, plot = FALSE, ...)
 }
@@ -53,6 +53,12 @@ Matrix; logical image matrix the same size as the input \option{image} matrix. I
 }
   \item{docalcregion}{
 Logical; should the \option{calcregion} logical matrix be used to define a subset of pixels to be convolved.
+}
+  \item{adjust_calcregion}{
+Logical; indicates if the given calcregion needs to be internally adjusted (or not)
+in order to correctly consider the flux going outside of the image and captured by the convolution process.
+By default this is \code{TRUE}, but during profile fitting this option is set to \code{TRUE}
+because the \code{\link{profitSetupData}} procedure pre-calculates these adjustments.
 }
   \item{magmu}{
 Logical vector. If TRUE then the mag parameter in the input \option{modellist} list is interpreted as the mean surface brightness within Re in units of mag/pix^2. If this is of length 1 then all mag values will be interpreted in the same sense, otherwise it should be the same length as the number of components being generated. If FALSE mag is taken to mean total magnitude of the integrated profile. Using this flag might be useful for disk components since they occupy and relatively narrow range in surface brightness, but can have essentially any total magnitude.

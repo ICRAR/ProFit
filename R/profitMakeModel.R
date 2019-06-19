@@ -3,7 +3,7 @@ profitMakeModel = function(modellist,
                            whichcomponents=list(sersic="all", moffat="all", ferrer="all", ferrers="all", coresersic="all", king="all", brokenexp="all", pointsource="all"),
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
-                           calcregion, docalcregion=FALSE,
+                           calcregion, docalcregion=FALSE, adjust_calcregion=TRUE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
                            convopt=NULL, psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
@@ -250,6 +250,7 @@ profitMakeModel = function(modellist,
 	)
 	if( docalcregion ) {
 		model[['calcregion']] = calcregion
+		model[['adjust_calcregion']] = adjust_calcregion
 	}
 	if (!is.null(openclenv)) {
 		if (class(openclenv) == 'externalptr') {

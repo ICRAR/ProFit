@@ -585,6 +585,7 @@ SEXP _R_profit_make_model(SEXP model_list) {
 			return R_NilValue;
 		}
 		m.set_mask(std::move(mask));
+		m.set_adjust_mask(bool(Rf_asLogical(_get_list_element(model_list, "adjust_calcregion"))));
 	}
 
 	/* A convolver, if any */
