@@ -102,6 +102,34 @@ CLVER
 	return 0
 }
 
+generate_cl_kernel_code_header() {
+	name=$1
+	varname=$2
+	source=src/libprofit/src/cl/${name}.cl
+	header_name=src/libprofit/include/profit/cl/${name}.h
+
+	cat > ${header_name} <<CLHEADER
+/**
+ * C++-compatible OpenCL kernel source code from ${name}
+ *
+ * THIS FILE HAS BEEN AUTOMATICALLY GENERATED FROM ${source}
+ * DO NOT EDIT
+ */
+
+#include <string>
+
+namespace profit {
+
+const std::string ${varname} = R"===(
+CLHEADER
+	cat "$source" >> ${header_name}
+	cat >> ${header_name} <<CLHEADER
+)===";
+
+} // namespace profit
+CLHEADER
+}
+
 get_omp_cflag() {
 
 	cat > $tmpdir/openmp.c <<OMP
@@ -316,6 +344,14 @@ else
 		if [ "$OS" = "Darwin" -a "`uname -r`" \> "12" ]; then
 			PROFIT_OPENCL_TARGET_VERSION=120
 		fi
+
+		# Generate C++ headers with kernel sources as constant string variables,
+		# which is how they are incorporated into libprofit
+		for kernel in brokenexponential common convolve coresersic ferrer king moffat sersic; do
+			for data_type in float double; do
+				generate_cl_kernel_code_header "$kernel-${data_type}" "${kernel}_${data_type}"
+			done
+		done
 	else
 		echo "- Compiling without OpenCL support"
 	fi
