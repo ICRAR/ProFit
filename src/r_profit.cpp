@@ -294,7 +294,7 @@ SEXP _R_profit_openclenv_info() {
 	map<int, OpenCL_plat_info> clinfo;
 	try {
 		clinfo = get_opencl_info();
-	} catch (const exception &e) {
+	} catch (const std::exception &e) {
 		ostringstream os;
 		os << "Error while querying OpenCL environment: " << e.what();
 		Rf_error(os.str().c_str());
@@ -735,20 +735,6 @@ SEXP _R_profit_upsample(SEXP img, SEXP factor)
 	return r_image;
 }
 
-// TODO: to be moved down to libprofit at some point
-namespace detail {
-
-int setenv(const char *name, const char *value)
-{
-#ifdef _WIN32
-	return ::_putenv_s(name, value);
-#else
-	return ::setenv(name, value, 1);
-#endif
-}
-
-} // namespace detail
-
 static
 SEXP _R_profit_adjust_mask(SEXP r_mask, SEXP r_img_dims, SEXP r_psf, SEXP r_finesampling)
 {
@@ -874,7 +860,7 @@ extern "C" {
 		PROTECT(tempdir_func = Rf_lang1(Rf_install("tempdir")));
 		PROTECT(r_session_tmpdir = Rf_eval(tempdir_func, R_GlobalEnv));
 		auto tmpdir = R_tmpnam("profit", CHAR(STRING_ELT(r_session_tmpdir, 0)));
-		detail::setenv("PROFIT_HOME", tmpdir);
+		profit::setenv("PROFIT_HOME", tmpdir);
 		free(tmpdir);
 		UNPROTECT(2);
 
