@@ -57,8 +57,7 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
   if((length(benchintmethods) > 1) && nbenchint > 0)
   {
     # Hopefully avoids a pointless allocation of an empty image, but maybe not
-    if(finesample==1) image = calcregion
-    else image = matrix(0,imgdim[1],imgdim[2])
+    image = matrix(0,imgdim[1],imgdim[2])
     benches$benchint = profitBenchmark(image=image, modellist = modellist,
       nbench = nbenchint, methods = benchintmethods, precisions = benchintprecisions,
       openclenvs = benchopenclenvs, omp_threads = omp_threads, finesample = finesample)
