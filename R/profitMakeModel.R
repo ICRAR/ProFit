@@ -71,17 +71,6 @@ profitMakeModel = function(modellist,
 		}
 	}
 
-	# Wrong calcregion dimensions, should be the same as the model's
-	if( docalcregion ) {
-		if( missing(calcregion) ) {
-			stop("calcregion is missing")
-		}
-		if (all(dim(calcregion) == dim) == FALSE) {
-			stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2],
-			           " and they must be ",dim[1],":",dim[2],"!",sep=""))
-		}
-	}
-
 	# Let's start collecting profiles now...
 	profiles = list()
 	# Collect the profiles that the user specified

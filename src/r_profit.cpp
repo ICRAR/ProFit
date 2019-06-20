@@ -580,10 +580,6 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	SEXP r_calcregion = _get_list_element(model_list, "calcregion");
 	if( r_calcregion != R_NilValue ) {
 		auto mask = _read_mask(r_calcregion);
-		if (mask.getDimensions() != Dimensions{img_w, img_h}) {
-			Rf_error("Calc region has different dimensions than the image");
-			return R_NilValue;
-		}
 		m.set_mask(std::move(mask));
 		m.set_adjust_mask(bool(Rf_asLogical(_get_list_element(model_list, "adjust_calcregion"))));
 	}
