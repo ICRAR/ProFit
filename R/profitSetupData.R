@@ -1,3 +1,8 @@
+.prepare_calcregion <- function(calcregion, imgdim, psf, finesample)
+{
+  .Call('R_profit_adjust_mask', calcregion, imgdim, psf, finesample)
+}
+
 .profitParsePSF <- function(psf, modellist, psfdim=dim(psf), finesample=1L)
 {
   haspsf = length(psf) > 0
@@ -259,8 +264,6 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     psf = psf/sum(psf)
   }
   
-  calcregion = profitUpsample(region,finesample)
-  
   if (!is.null(openclenv)) {
     if (class(openclenv) == "externalptr") {
       openclenv = openclenv
@@ -269,23 +272,9 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
       openclenv = profitOpenCLEnv()
     }
   }
-  
-  if(haspsf)
-  {
-    dimcr = dim(calcregion)
-    calcxy = dimcr
-    if(is.null(benchconvmethods) || ("brute" %in% benchconvmethods))
-    {
-      newregion = matrix(0,calcxy[1],calcxy[2])
-      newregion[,] = calcregion
-      # TODO: Replace with profitConvolver
-      # Note: We use brute force convolution here because FFTs have ~1e-12 noise. It can be very slow, though
-      calcregion=profitConvolvePSF(newregion,psf+1,options=list(method="Bruteconv"))
-      calcregion=calcregion>0
-    } else {
-      calcregion = matrix(TRUE,calcxy[1],calcxy[2])
-    }
-  }
+
+  calcregion = .prepare_calcregion(region, imagedim, psf, finesample)
+
   # Note this actually stores whether we are fitting the PSF image for convolution with extended sources
   # It should probably be renamed fitpsfimg but will remain as such for backwards compatibility for now
   fitpsf = psftype == "analytical" && any(unlist(tofit$psf)) && any(!(names(modellist) %in% c("psf","pointsource","sky")))
