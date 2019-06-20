@@ -19,6 +19,10 @@ using namespace std;
 static
 Image _read_image(SEXP r_image) {
 
+	if (r_image == R_NilValue) {
+		return Image{};
+	}
+
 	unsigned int im_width = Rf_nrows(r_image);
 	unsigned int im_height = Rf_ncols(r_image);
 	unsigned int size = im_width * im_height;
