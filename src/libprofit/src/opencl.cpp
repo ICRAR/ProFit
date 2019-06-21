@@ -38,6 +38,7 @@
 #include "profit/utils.h"
 
 // The individual kernel sources, generated from the coresponding .cl files
+#ifdef PROFIT_OPENCL
 #include "profit/cl/common-float.h"
 #include "profit/cl/common-double.h"
 #include "profit/cl/sersic-float.h"
@@ -54,6 +55,7 @@
 #include "profit/cl/coresersic-double.h"
 #include "profit/cl/convolve-float.h"
 #include "profit/cl/convolve-double.h"
+#endif // PROFIT_OPENCL
 
 namespace profit {
 
