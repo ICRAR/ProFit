@@ -160,10 +160,10 @@ void Model::analyze_expansion_requirements(const Dimensions &dimensions,
 	// If the mask is conveniently smaller and centrally located over the image
 	// then we can actually avoid having to generated bigger model images
 	analysis.mask_needs_convolution = false;
+	analysis.mask_needs_psf_padding = false;
 	bool model_needs_psf_padding = analysis.convolution_required;
 	if (mask && !adjust_mask) {
 		model_needs_psf_padding = mask.getDimensions() > dimensions * finesampling;
-		analysis.mask_needs_psf_padding = false;
 	}
 	else if (mask && analysis.convolution_required) {
 		auto bounds = mask.bounding_box() * finesampling;
