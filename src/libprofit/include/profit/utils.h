@@ -27,6 +27,7 @@
 #ifndef PROFIT_UTILS_H
 #define PROFIT_UTILS_H
 
+#include <string>
 #include <vector>
 
 #include "profit/common.h"
@@ -148,6 +149,60 @@ PROFIT_API void recursive_remove(const std::string &path);
  * @return The name of the libprofit home directory.
  */
 PROFIT_API std::string get_profit_home();
+
+/**
+ * Set the environment variable @a name to @a value. If a variable with that
+ * name exists its value is replaced. If @a value is empty the variable is
+ * removed from the environment
+ *
+ * @param name The environment variable's name
+ * @param value The new value for the environment variable. An empty string
+ * causes the variable to be removed from the environment.
+ */
+PROFIT_API void setenv(const std::string &name, const std::string &value);
+
+/**
+ * Breaks down @p s into substrings delimited by @p delims
+ * @param s The string to split
+ * @param delims The individual delimiters
+ * @return The individual substrings after splitting
+ */
+PROFIT_API std::vector<std::string> split(const std::string &s, const std::string &delims);
+
+/**
+ * Trims @p s on both ends
+ * @param s The string to trim
+ * @return A reference to @p s
+ */
+PROFIT_API std::string &trim(std::string &s);
+
+/**
+ * Trims @p s on both ends
+ * @param s The string to trim
+ * @return The new trimmed string
+ */
+PROFIT_API std::string trim(const std::string &s);
+
+/**
+ * Like std::stoul, but returns an unsigned int
+ * @param s The string to convert
+ * @return The unsigned int
+ */
+inline unsigned int stoui(const std::string &s)
+{
+	return static_cast<unsigned int>(std::stoul(s));
+}
+
+/**
+ * Returns the ceiling of the division between @p x and @p y
+ * @param x The dividend
+ * @param y The divisor
+ * @return The ceiling of divind @p x by @p y
+ */
+inline unsigned int ceil_div(unsigned int x, unsigned int y)
+{
+	return (x + y - 1) / y;
+}
 
 } /* namespace profit */
 

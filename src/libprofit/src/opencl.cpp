@@ -37,32 +37,37 @@
 #include "profit/opencl_impl.h"
 #include "profit/utils.h"
 
-namespace profit {
+// The individual kernel sources, generated from the coresponding .cl files
+#include "profit/cl/common-float.h"
+#include "profit/cl/common-double.h"
+#include "profit/cl/sersic-float.h"
+#include "profit/cl/sersic-double.h"
+#include "profit/cl/moffat-float.h"
+#include "profit/cl/moffat-double.h"
+#include "profit/cl/ferrer-float.h"
+#include "profit/cl/ferrer-double.h"
+#include "profit/cl/king-float.h"
+#include "profit/cl/king-double.h"
+#include "profit/cl/brokenexponential-float.h"
+#include "profit/cl/brokenexponential-double.h"
+#include "profit/cl/coresersic-float.h"
+#include "profit/cl/coresersic-double.h"
+#include "profit/cl/convolve-float.h"
+#include "profit/cl/convolve-double.h"
 
-OpenCL_command_times::OpenCL_command_times() :
-	submit(0), exec(0)
-{
-	// no-op
-}
+namespace profit {
 
 OpenCL_command_times &OpenCL_command_times::operator+=(const OpenCL_command_times &other) {
 	submit += other.submit;
+	wait += other.wait;
 	exec += other.exec;
 	return *this;
 }
 
 const OpenCL_command_times OpenCL_command_times::operator+(const OpenCL_command_times &other) const {
-	OpenCL_command_times t1;
+	OpenCL_command_times t1 = *this;
 	t1 += other;
 	return t1;
-}
-
-OpenCL_times::OpenCL_times() :
-	kernel_prep(0), nwork_items(0),
-	writing_times(), reading_times(), filling_times(), kernel_times(),
-	total(0)
-{
-	// no-op
 }
 
 // Simple implementation of public methods for non-OpenCL builds
@@ -73,6 +78,10 @@ std::map<int, OpenCL_plat_info> get_opencl_info() {
 
 OpenCLEnvPtr get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling)
 {
+	UNUSED(platform_idx);
+	UNUSED(device_idx);
+	UNUSED(use_double);
+	UNUSED(enable_profiling);
 	return nullptr;
 }
 
@@ -96,15 +105,17 @@ nsecs_t _cl_submit_time(const cl::Event &evt) {
 }
 
 static
+nsecs_t _cl_wait_time(const cl::Event &evt) {
+	return _cl_duration<CL_PROFILING_COMMAND_SUBMIT, CL_PROFILING_COMMAND_START>(evt);
+}
+
+static
 nsecs_t _cl_exec_time(const cl::Event &evt) {
 	return _cl_duration<CL_PROFILING_COMMAND_START, CL_PROFILING_COMMAND_END>(evt);
 }
 
 OpenCL_command_times cl_cmd_times(const cl::Event &evt) {
-	OpenCL_command_times times;
-	times.submit = _cl_submit_time(evt);
-	times.exec = _cl_exec_time(evt);
-	return times;
+	return {_cl_submit_time(evt), _cl_wait_time(evt), _cl_exec_time(evt)};
 }
 
 static cl_ver_t get_opencl_version(const std::string &version)
@@ -122,9 +133,9 @@ static cl_ver_t get_opencl_version(const std::string &version)
 		throw opencl_error("OpenCL version doesn't contain a dot: " + opencl_version);
 	}
 
-	unsigned long major = stoul(opencl_version.substr(0, dot_idx));
-	unsigned long minor = stoul(opencl_version.substr(dot_idx+1, opencl_version.npos));
-	return major*100u + minor*10u;
+	auto major = stoui(opencl_version.substr(0, dot_idx));
+	auto minor = stoui(opencl_version.substr(dot_idx+1, opencl_version.npos));
+	return major * 100U + minor * 10U;
 }
 
 static cl_ver_t get_opencl_version(const cl::Platform &platform) {
@@ -202,7 +213,7 @@ std::map<int, OpenCL_plat_info> get_opencl_info() {
 	}
 }
 
-class invalid_cache_entry : std::exception {
+class invalid_cache_entry : public std::exception {
 };
 
 class KernelCache {
@@ -238,75 +249,30 @@ void KernelCache::init_sources() {
 
 void KernelCache::_init_sources() {
 
-	std::string common_float, common_double, sersic_float, sersic_double,
-	            moffat_float, moffat_double, ferrer_float, ferrer_double,
-	            king_float, king_double, brokenexp_float, brokenexp_double,
-	            coresersic_float, coresersic_double, convolve_float, convolve_double;
-
-	common_float =
-#include "cl/common-float.cl"
-	;
-	common_double =
-#include "cl/common-double.cl"
-	;
-	sersic_float =
-#include "cl/sersic-float.cl"
-	;
-	sersic_double =
-#include "cl/sersic-double.cl"
-	;
-	moffat_float =
-#include "cl/moffat-float.cl"
-	;
-	moffat_double =
-#include "cl/moffat-double.cl"
-	;
-	ferrer_float =
-#include "cl/ferrer-float.cl"
-	;
-	ferrer_double =
-#include "cl/ferrer-double.cl"
-	;
-	king_float =
-#include "cl/king-float.cl"
-	;
-	king_double =
-#include "cl/king-double.cl"
-	;
-	brokenexp_float =
-#include "cl/brokenexponential-float.cl"
-	;
-	brokenexp_double =
-#include "cl/brokenexponential-double.cl"
-	;
-	coresersic_float =
-#include "cl/coresersic-float.cl"
-	;
-	coresersic_double =
-#include "cl/coresersic-double.cl"
-	;
-	convolve_float =
-#include "cl/convolve-float.cl"
-	;
-	convolve_double =
-#include "cl/convolve-double.cl"
-	;
-
 	auto sources = common_float + sersic_float + moffat_float + ferrer_float +
-	               king_float + brokenexp_float + coresersic_float + convolve_float;
+	               king_float + brokenexponential_float + coresersic_float + convolve_float;
 	float_only_sources = std::make_pair(sources, crc32(sources));
 
 	sources += common_double + sersic_double + moffat_double + ferrer_double +
-	           king_double + brokenexp_double + coresersic_double + convolve_double;
+	           king_double + brokenexponential_double + coresersic_double + convolve_double;
 	all_sources = std::make_pair(sources, crc32(sources));
 }
 
+static
+std::string &valid_fname(std::string &&name)
+{
+	std::string::size_type pos = 0;
+	while ((pos = name.find_first_of("/;: ", pos)) != name.npos) {
+		name.replace((pos++), 1, "_");
+	}
+	return name;
+}
 
 std::string KernelCache::get_entry_name_for(const cl::Device &device)
 {
 	cl::Platform plat(device.getInfo<CL_DEVICE_PLATFORM>());
-	auto plat_part = plat.getInfo<CL_PLATFORM_NAME>() + std::to_string(get_opencl_version(plat));
-	auto dev_part = device.getInfo<CL_DEVICE_NAME>() + std::to_string(get_opencl_version(device));
+	auto plat_part = valid_fname(plat.getInfo<CL_PLATFORM_NAME>()) + "_" + std::to_string(get_opencl_version(plat));
+	auto dev_part = valid_fname(device.getInfo<CL_DEVICE_NAME>()) + "_" + std::to_string(get_opencl_version(device));
 	auto the_dir = create_dirs(get_profit_home(), {std::string("opencl_cache"), plat_part});
 	return the_dir + "/" + dev_part;
 }
@@ -333,7 +299,7 @@ cl::Program KernelCache::build(const cl::Context &context, const cl::Device &dev
 cl::Program KernelCache::from_cache(const cl::Context &context, const std::string &cache_entry_name, const SourceInformation &source_info)
 {
 
-	if (not file_exists(cache_entry_name)) {
+	if (!file_exists(cache_entry_name)) {
 		throw invalid_cache_entry();
 	}
 
@@ -416,7 +382,7 @@ cl::Program KernelCache::get_program(const cl::Context &context, const cl::Devic
 		sources_for_device = all_sources;
 	}
 
-	// Act as a cache! Load compiled program from file if it exists;
+	// Act as a cache! Load compiled program from file if it exists,
 	// otherwise build it from source
 	auto cache_entry = get_entry_name_for(device);
 	try {
@@ -437,8 +403,8 @@ KernelCache get_cache() {
 }
 
 static
-OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
-
+cl::Platform get_platform(unsigned int platform_idx)
+{
 	std::vector<cl::Platform> all_platforms;
 	if( cl::Platform::get(&all_platforms) != CL_SUCCESS ) {
 		throw opencl_error("Error while getting OpenCL platforms");
@@ -453,9 +419,12 @@ OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int dev
 		throw invalid_parameter(ss.str());
 	}
 
-	cl::Platform platform = all_platforms[platform_idx];
+	return all_platforms[platform_idx];
+}
 
-	//get default device of the default platform
+static
+cl::Device get_device(const cl::Platform &platform, unsigned int device_idx, bool use_double)
+{
 	std::vector<cl::Device> all_devices;
 	platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
 	if( all_devices.size() == 0 ){
@@ -467,11 +436,19 @@ OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int dev
 		throw invalid_parameter(ss.str());
 	}
 
-	cl::Device device = all_devices[device_idx];
-
+	auto device = all_devices[device_idx];
 	if( use_double && !supports_double(device)) {
 		throw opencl_error("Double precision requested but not supported by device");
 	}
+	return device;
+}
+
+static
+OpenCLEnvPtr _get_opencl_environment(unsigned int platform_idx, unsigned int device_idx, bool use_double, bool enable_profiling) {
+
+	auto platform = get_platform(platform_idx);
+	auto device = get_device(platform, device_idx, use_double);
+
 	cl::Context context(device);
 
 	// Check if there is an entry in the cache for this platform/device

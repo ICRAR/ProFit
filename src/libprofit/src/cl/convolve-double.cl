@@ -1,4 +1,3 @@
-R"===(
 /**
  * double 2D convolution OpenCL implementation for libprofit
  *
@@ -162,5 +161,3 @@ __kernel void convolve_local_double(
 
 	output[X + Y * W] = sum;
 }
-
-)==="

@@ -1,4 +1,3 @@
-R"===(
 /**
  * Double-precision Ferrer profile OpenCL kernel implementation for libprofit
  *
@@ -114,4 +113,3 @@ kernel void ferrer_subsample_double(
 	}
 
 }
-)==="

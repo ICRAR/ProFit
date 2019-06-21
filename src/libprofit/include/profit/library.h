@@ -95,6 +95,16 @@ PROFIT_API bool has_fftw_with_openmp();
 /// @return Whether libprofit was compiled with OpenCL support
 PROFIT_API bool has_opencl();
 
+/// Returns whether libprofit was compiled with support for the specified SIMD
+/// instruction set
+///
+/// @param instruction_set The instruction set to check.
+///  @ref AUTO and @ref NONE will
+///  always be supported
+/// @return whether libprofit was compiled with support for the specified SIMD
+/// instruction set
+PROFIT_API bool has_simd_instruction_set(simd_instruction_set instruction_set);
+
 /// If OpenCL is supported, returns the major portion of the highest OpenCL
 /// platform version libprofit can work against. For example, if libprofit was
 /// compiled against a platform supporting OpenCL 2.1, this method returns 2.

@@ -24,15 +24,15 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include "profit/config.h"
 #include "profit/library.h"
 #include "profit/utils.h"
-
-#ifdef PROFIT_FFTW
-#include <fftw3.h>
-#endif // PROFIT_FFTW
+#include "profit/fft_impl.h"
 
 namespace profit {
 
@@ -66,16 +66,19 @@ std::string version_suffix()
 	return PROFIT_VERSION_SUFFIX;
 }
 
+#ifdef PROFIT_FFTW
 static inline
 std::string get_fftw_wisdom_filename()
 {
 	auto fftw_cache_dir = create_dirs(get_profit_home(), {std::string("fftw_cache")});
 #ifdef PROFIT_FFTW_OPENMP
-	return fftw_cache_dir + "/threaded-wisdom";
+	auto fftw_wisdom_fname = fftw_cache_dir + "/threaded-wisdom";
 #else
-	return fftw_cache_dir + "/unthreaded-wisdom";
+	auto fftw_wisdom_fname = fftw_cache_dir + "/unthreaded-wisdom";
 #endif
+	return fftw_wisdom_fname + "_" + fftw_version;
 }
+#endif // PROFIT_FFTW
 
 static std::string _init_diagnose;
 static std::string _finish_diagnose;
@@ -93,8 +96,10 @@ std::string finish_diagnose()
 bool init()
 {
 	// Initialize FFTW library, including its OpenMP support
-	// It is important to configure the OpenMP support before reading the wisdom;
+	// It is important to configure the OpenMP support before reading the wisdom,
 	// otherwise the plans will fail to import
+#ifdef PROFIT_FFTW
+	std::lock_guard<std::mutex> guard(fftw_mutex);
 #ifdef PROFIT_FFTW_OPENMP
 	int res = fftw_init_threads();
 	if (!res) {
@@ -105,25 +110,31 @@ bool init()
 	}
 #endif // PROFIT_FFTW_OPENMP
 
-#ifdef PROFIT_FFTW
 	auto fftw_wisdom_filename = get_fftw_wisdom_filename();
 	if (file_exists(fftw_wisdom_filename)) {
-		auto import_status = fftw_import_wisdom_from_filename(fftw_wisdom_filename.c_str());
-		if (import_status == 0) {
+		auto *fftw_wisdom_file = fopen(fftw_wisdom_filename.c_str(), "r");
+		if (!fftw_wisdom_file) {
 			std::ostringstream os;
-			os << "Importing fftw wisdom from " << fftw_wisdom_filename << " failed";
+			os << "Opening fftw wisdom from " << fftw_wisdom_filename << " failed: " << strerror(errno);
 			_init_diagnose = os.str();
+		}
+		else {
+			auto import_status = fftw_import_wisdom_from_file(fftw_wisdom_file);
+			if (import_status == 0) {
+				std::ostringstream os;
+				os << "Importing fftw wisdom from " << fftw_wisdom_filename << " failed: " << import_status;
+				_init_diagnose = os.str();
+			}
+			fclose(fftw_wisdom_file);
 		}
 	}
 
 #if !(defined(__WIN32__) || defined(WIN32) || defined(_WINDOWS))
-	if (file_exists("/etc/fftw/wisdom")) {
-		if (fftw_import_system_wisdom() == 0) {
-			std::ostringstream os;
-			os << _init_diagnose << '\n';
-			os << "Importing fftw system wisdom failed (returned 0)";
-			_init_diagnose = os.str();
-		}
+	if (file_exists("/etc/fftw/wisdom") && fftw_import_system_wisdom() == 0) {
+		std::ostringstream os;
+		os << _init_diagnose << '\n';
+		os << "Importing fftw system wisdom failed (returned 0)";
+		_init_diagnose = os.str();
 	}
 #endif // !WIN32
 #endif // PROFIT_FFTW
@@ -134,12 +145,17 @@ bool init()
 void finish()
 {
 #ifdef PROFIT_FFTW
-	auto fftw_wisdom_file = get_fftw_wisdom_filename();
-	auto export_status = fftw_export_wisdom_to_filename(fftw_wisdom_file.c_str());
-	if (export_status != 1) {
+	std::lock_guard<std::mutex> guard(fftw_mutex);
+	auto fftw_wisdom_filename = get_fftw_wisdom_filename();
+	auto *fftw_wisdom_file = fopen(fftw_wisdom_filename.c_str(), "w");
+	if (!fftw_wisdom_file) {
 		std::ostringstream os;
-		os << "Error when exporting fftw wisdom from " << fftw_wisdom_file << ": " << export_status;
+		os << "Error when exporting fftw wisdom from " << fftw_wisdom_file << ": " << strerror(errno);
 		_finish_diagnose = os.str();
+	}
+	else {
+		fftw_export_wisdom_to_file(fftw_wisdom_file);
+		fclose(fftw_wisdom_file);
 	}
 #ifdef PROFIT_FFTW_OPENMP
 	fftw_cleanup_threads();
@@ -202,11 +218,42 @@ unsigned short opencl_version_minor()
 #endif // PROFIT_OPENCL
 }
 
+bool has_simd_instruction_set(simd_instruction_set instruction_set)
+{
+	if (instruction_set == simd_instruction_set::AUTO || instruction_set == simd_instruction_set::NONE) {
+		return true;
+	}
+
+	// AVX implies SSE2
+#ifdef PROFIT_HAS_SSE2
+	if (instruction_set == simd_instruction_set::SSE2) {
+		return true;
+	}
+#endif // PROFIT_HAS_SSE2
+#ifdef PROFIT_HAS_AVX
+	if (instruction_set == simd_instruction_set::AVX) {
+		return true;
+	}
+#endif // PROFIT_HAS_AVX
+
+	return false;
+}
+
+bool has_avx()
+{
+#ifdef PROFIT_HAS_AVX
+	return true;
+#else
+	return false;
+#endif // PROFIT_HAS_AVX
+}
+
 void clear_cache()
 {
 	auto profit_home = get_profit_home();
 
 #ifdef PROFIT_FFTW
+	std::lock_guard<std::mutex> guard(fftw_mutex);
 	fftw_forget_wisdom();
 	auto fftw_cache = profit_home + "/fftw_cache";
 	if (dir_exists(fftw_cache)) {
@@ -222,4 +269,4 @@ void clear_cache()
 #endif
 }
 
-}
+} // namespace profit

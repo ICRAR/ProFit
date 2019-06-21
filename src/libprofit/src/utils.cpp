@@ -25,6 +25,7 @@
  */
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <cstdlib>
 #include <cerrno>
@@ -47,53 +48,51 @@
 
 #include "profit/common.h"
 #include "profit/config.h"
+#include "profit/exceptions.h"
 #include "profit/utils.h"
 
 /*
  * We use either GSL or R to provide the low-level
  * beta, gamma and pgamma and qgamma functions needed by some profiles.
  * If neither is given the compilation should fail
+ *
+ * R and Rmath play a tricky game where functions with "fully qualified
+ * names" (e.g., Rf_qgamma) are present only when compiling code with
+ * undef(MATHLIB_STANDALONE) || undef(R_NO_REMAP_RMATH).
+ * We currently use the same names in some of our functions. On the other
+ * hand we compile this code both using the stand-alone Rmath library and
+ * as part of an R extension. This means that:
+ *
+ * * When compiling as standalone we can't access the Rf_* names and
+ * * When compiling as an R extension our function names are replaced during
+ *   pre-processing with Rf_* names, and our namespace ends up containing
+ *   functions like profit::Rf_qgamma.
+ *
+ * The code below solves these two problems by avoiding name clashes and
+ * letting us use the Rf_* names in our code seamessly. In the future we may
+ * want to change our function names and be safer
  */
 #if defined(PROFIT_USES_GSL)
-	#include <gsl/gsl_errno.h>
-	#include <gsl/gsl_cdf.h>
-	#include <gsl/gsl_sf_gamma.h>
-	#include <gsl/gsl_integration.h>
+#  include <gsl/gsl_errno.h>
+#  include <gsl/gsl_cdf.h>
+#  include <gsl/gsl_sf_gamma.h>
+#  include <gsl/gsl_integration.h>
 #elif defined(PROFIT_USES_R)
-	#include <Rmath.h>
-	#include <R_ext/Applic.h>
-
-	/*
-	 * R and Rmath play a tricky game where functions with "fully qualified
-	 * names" (e.g., Rf_qgamma) are present only when compiling code with
-	 * undef(MATHLIB_STANDALONE) || undef(R_NO_REMAP_RMATH).
-	 * We currently use the same names in some of our functions. On the other
-	 * hand we compile this code both using the stand-alone Rmath library and
-	 * as part of an R extension. This means that:
-	 *
-	 * * When compiling as standalone we can't access the Rf_* names and
-	 * * When compiling as an R extension our function names are replaced during
-	 *   pre-processing with Rf_* names, and our namespace ends up containing
-	 *   functions like profit::Rf_qgamma.
-	 *
-	 * The code below solves these two problems by avoiding name clashes and
-	 * letting us use the Rf_* names in our code seamessly. In the future we may
-	 * want to change our function names and be safer
-	 */
-	#if defined(MATHLIB_STANDALONE)
-	#define Rf_qgamma   qgamma
-	#define Rf_pgamma   pgamma
-	#define Rf_gammafn  gammafn
-	#define Rf_beta     beta
-	#else
-	#undef qgamma
-	#undef pgamma
-	#undef gammafn
-	#undef beta
-	#endif
-
+#  include <Rmath.h>
+#  include <R_ext/Applic.h>
+#  if defined(MATHLIB_STANDALONE)
+#    define Rf_qgamma   qgamma
+#    define Rf_pgamma   pgamma
+#    define Rf_gammafn  gammafn
+#    define Rf_beta     beta
+#  else
+#    undef qgamma
+#    undef pgamma
+#    undef gammafn
+#    undef beta
+#  endif
 #else
-	#error("No high-level library (GSL or R) provided")
+#  error("No high-level library (GSL or R) provided")
 #endif
 
 
@@ -162,8 +161,10 @@ double __gsl_integrate_qag(integration_func_t f, void *params,
 	gsl_function F;
 	F.function = f;
 	F.params = params;
-	double epsabs = 1e-4, epsrel = 1e-4;
-	double result, abserr;
+	double epsabs = 1e-4;
+	double epsrel = 1e-4;
+	double result;
+	double abserr;
 
 	if( to_infinity ) {
 		gsl_integration_qagiu(&F, a, epsabs, epsrel, limit, w, &result, &abserr);
@@ -259,7 +260,7 @@ double integrate_qags(integration_func_t f, double a, double b, void *params) {
 
 #ifdef _WIN32
 static inline
-bool path_exists(const std::string &path, const DWORD expected_attr)
+bool path_exists(const std::string &path, bool dir_expected)
 {
 	auto attrs = GetFileAttributes(path.c_str());
 	if (attrs == INVALID_FILE_ATTRIBUTES) {
@@ -276,7 +277,8 @@ bool path_exists(const std::string &path, const DWORD expected_attr)
 		throw std::runtime_error(os.str());
 	}
 
-	return attrs & expected_attr;
+	bool is_dir = attrs & FILE_ATTRIBUTE_DIRECTORY;
+	return is_dir == dir_expected;
 }
 #else
 static inline
@@ -296,7 +298,7 @@ bool inode_exists(const std::string &fname, mode_t expected_type, const char *ty
 		std::ostringstream os;
 		os << "Unexpected error found when inspecting " << fname << ": ";
 		os << strerror(errno);
-		throw std::runtime_error(os.str());
+		throw fs_error(os.str());
 	}
 
 
@@ -305,7 +307,7 @@ bool inode_exists(const std::string &fname, mode_t expected_type, const char *ty
 	if (!is_expected) {
 		std::ostringstream os;
 		os << fname << " exists but is not a " << type_name << ". Please remove it and try again";
-		throw std::runtime_error(os.str());
+		throw fs_error(os.str());
 	}
 
 	return true;
@@ -315,7 +317,7 @@ bool inode_exists(const std::string &fname, mode_t expected_type, const char *ty
 bool dir_exists(const std::string &fname)
 {
 #ifdef _WIN32
-	return path_exists(fname, FILE_ATTRIBUTE_DIRECTORY);
+	return path_exists(fname, true);
 #else
 	return inode_exists(fname, S_IFDIR, "directory");
 #endif // _WIN32
@@ -324,7 +326,7 @@ bool dir_exists(const std::string &fname)
 bool file_exists(const std::string &fname)
 {
 #ifdef _WIN32
-	return path_exists(fname, FILE_ATTRIBUTE_NORMAL);
+	return path_exists(fname, false);
 #else
 	return inode_exists(fname, S_IFREG, "regular file");
 #endif // _WIN32
@@ -357,7 +359,7 @@ std::string create_dirs(const std::string &at, const std::vector<std::string> &p
 }
 
 static
-void _removal_error(const char *path)
+fs_error _removal_error(const char *path)
 {
 	std::ostringstream os;
 	os << "Unexpected error found when removing " << path << ": ";
@@ -368,9 +370,9 @@ void _removal_error(const char *path)
 	os << errormsg;
 	LocalFree(errormsg);
 #else
-	os << errno << "(" << strerror(errno) << ")";
+	os << errno << " (" << strerror(errno) << ")";
 #endif
-	throw std::runtime_error(os.str());
+	return fs_error(os.str());
 }
 
 static
@@ -383,7 +385,7 @@ void _recursive_remove(const char *path)
 	WIN32_FIND_DATA data;
 	HANDLE find_handle = FindFirstFile(pattern.c_str(), &data);
 	if (find_handle == INVALID_HANDLE_VALUE) {
-		_removal_error(path);
+		throw _removal_error(path);
 	}
 
 	do {
@@ -401,7 +403,7 @@ void _recursive_remove(const char *path)
 			std::ostringstream full_path;
 			full_path << path << "\\" << data.cFileName;
 			if (!DeleteFile(full_path.str().c_str())) {
-				_removal_error(full_path.str().c_str());
+				throw _removal_error(full_path.str().c_str());
 			}
 		}
 	} while (FindNextFile(find_handle, &data) != 0);
@@ -409,14 +411,14 @@ void _recursive_remove(const char *path)
 	FindClose(find_handle);
 
 	if (!RemoveDirectory(path)) {
-		_removal_error(path);
+		throw _removal_error(path);
 	}
 #else
 
 	struct ::stat st;
 	int result = ::stat(path, &st);
 	if (result == -1) {
-		_removal_error(path);
+		throw _removal_error(path);
 	}
 
 	auto mode = st.st_mode & S_IFMT;
@@ -426,7 +428,7 @@ void _recursive_remove(const char *path)
 		// (making sure we skip . and ..), close it, and finally remove it
 		DIR *dir;
 		if ((dir = ::opendir(path)) == nullptr) {
-			_removal_error(path);
+			throw _removal_error(path);
 		}
 
 		struct dirent *ent;
@@ -442,11 +444,11 @@ void _recursive_remove(const char *path)
 		}
 
 		if (::closedir(dir) == -1) {
-			_removal_error(path);
+			throw _removal_error(path);
 		}
 
 		if (::rmdir(path) == -1) {
-			_removal_error(path);
+			throw _removal_error(path);
 		}
 
 		return;
@@ -455,7 +457,7 @@ void _recursive_remove(const char *path)
 	// No recursion needed, just remove
 	auto ret = ::unlink(path);
 	if (ret == -1) {
-		_removal_error(path);
+		throw _removal_error(path);
 	}
 #endif // _WIN32
 }
@@ -468,7 +470,7 @@ void recursive_remove(const std::string &path)
 
 std::string get_profit_home()
 {
-	auto profit_home = std::getenv("PROFIT_HOME");
+	auto *profit_home = std::getenv("PROFIT_HOME");
 	if (profit_home) {
 		if (!dir_exists(profit_home)) {
 			create_dir(profit_home);
@@ -484,12 +486,66 @@ std::string get_profit_home()
 	constexpr const char *profit_basedir = ".profit";
 #endif // _WIN32
 
-	auto user_home = std::getenv(home_var);
+	auto *user_home = std::getenv(home_var);
 	if (!user_home) {
-		throw std::runtime_error("User doesn't have a home :(");
+		throw exception("User doesn't have a home :(");
 	}
 
 	return create_dirs(user_home, {std::string(profit_basedir)});
+}
+
+void setenv(const std::string &name, const std::string &value)
+{
+#ifdef _WIN32
+	::_putenv_s(name.c_str(), value.c_str());
+#else
+	if (!value.empty()) {
+		::setenv(name.c_str(), value.c_str(), 1);
+	}
+	else {
+		::unsetenv(name.c_str());
+	}
+#endif // _WIN32
+}
+
+// Adapted from: http://oopweb.com/CPP/Documents/CPPHOWTO/Volume/C++Programming-HOWTO-7.html
+std::vector<std::string> split(const std::string &s, const std::string &delims)
+{
+	auto lastPos = s.find_first_not_of(delims, 0);
+	auto pos = s.find_first_of(delims, lastPos);
+
+	std::vector<std::string> tokens;
+	while (std::string::npos != pos || std::string::npos != lastPos) {
+		tokens.push_back(s.substr(lastPos, pos - lastPos));
+		lastPos = s.find_first_not_of(delims, pos);
+		pos = s.find_first_of(delims, lastPos);
+	}
+	return tokens;
+}
+
+// trim from start
+static inline std::string &ltrim(std::string &s) {
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+	        std::not1(std::ptr_fun<int, int>(std::isspace))));
+	return s;
+}
+
+// trim from end
+static inline std::string &rtrim(std::string &s) {
+	s.erase(std::find_if(s.rbegin(), s.rend(),
+	        std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+	return s;
+}
+
+// trim from both ends
+std::string &trim(std::string &s) {
+	return ltrim(rtrim(s));
+}
+
+std::string trim(const std::string &s) {
+	std::string s_copy(s);
+	ltrim(rtrim(s_copy));
+	return s_copy;
 }
 
 } /* namespace profit */

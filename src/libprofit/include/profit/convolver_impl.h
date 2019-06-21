@@ -37,7 +37,7 @@ namespace profit {
 class BruteForceConvolver : public Convolver {
 
 public:
-	BruteForceConvolver(unsigned int omp_threads) :
+	explicit BruteForceConvolver(unsigned int omp_threads) :
 		omp_threads(omp_threads) {}
 
 	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop = true, Point &offset_out = NO_OFFSET) override;
@@ -62,13 +62,19 @@ private:
  *
  * The internal loop structure of this class is also slightly different from
  * BruteForceConvolver, but is still pure CPU-based code.
+ *
+ * Additionally, and depending on the underlying CPU support, this convolver
+ * can use dot product implementations based on SIMD operations available in
+ * different CPU extended instruction sets. The default is to use the fastest
+ * one available, although users might want to use a different one.
  */
+template <simd_instruction_set SIMD>
 class AssociativeBruteForceConvolver : public Convolver {
 
 public:
-	AssociativeBruteForceConvolver(unsigned int omp_threads) :
-		omp_threads(omp_threads) {}
+	explicit AssociativeBruteForceConvolver(unsigned int omp_threads) : omp_threads(omp_threads) {};
 
+protected:
 	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop = true, Point &offset_out = NO_OFFSET) override;
 
 private:
@@ -93,22 +99,38 @@ private:
  * dimensions starting at the center of the original image's mapping on the
  * extended image (i.e., ``(src_width/2, src_height/2)`` minus one if the
  * original dimensions are odd).
+ *
+ * This convolver has been implemented in such a way that no memory allocation
+ * happens during convolution (other than the final Image's allocation) to
+ * improve performance.
  */
 class FFTConvolver : public Convolver {
 
 public:
-	FFTConvolver(const Dimensions &src_dims, const Dimensions &krn_dims,
+	explicit FFTConvolver(const Dimensions &src_dims, const Dimensions &krn_dims,
 	             effort_t effort, unsigned int plan_omp_threads,
 	             bool reuse_krn_fft);
 
+	PointPair padding(const Dimensions &src_dims, const Dimensions &krn_dims) const override;
+
+protected:
 	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop = true, Point &offset_out = NO_OFFSET) override;
 
 private:
-	std::unique_ptr<FFTTransformer> fft_transformer;
 
+	void resize(const Dimensions &src_dims, const Dimensions &krn_dims);
+
+	Point offset_after_convolution(const Dimensions &src_dims, const Dimensions &krn_dims) const;
+
+	std::unique_ptr<FFTRealTransformer> fft_transformer;
+
+	std::vector<std::complex<double>> src_fft;
 	std::vector<std::complex<double>> krn_fft;
+	Image ext_src;
+	Image ext_krn;
 
 	bool reuse_krn_fft;
+	bool krn_fft_initialized;
 };
 
 #endif /* PROFIT_FFTW */
@@ -124,12 +146,18 @@ private:
 class OpenCLConvolver : public Convolver {
 
 public:
-	OpenCLConvolver(OpenCLEnvImplPtr opencl_env);
+	explicit OpenCLConvolver(OpenCLEnvImplPtr opencl_env);
 
+	PointPair padding(const Dimensions &src_dims, const Dimensions &krn_dims) const override;
+
+protected:
 	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop = true, Point &offset_out = NO_OFFSET) override;
 
 private:
 	OpenCLEnvImplPtr env;
+
+	// returns the extra OpenCL-imposed padding
+	Dimensions cl_padding(const Dimensions &src_dims) const;
 
 	Image _convolve(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out);
 
@@ -143,8 +171,9 @@ private:
 class OpenCLLocalConvolver : public Convolver {
 
 public:
-	OpenCLLocalConvolver(OpenCLEnvImplPtr opencl_env);
+	explicit OpenCLLocalConvolver(OpenCLEnvImplPtr opencl_env);
 
+protected:
 	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop = true, Point &offset_out = NO_OFFSET) override;
 
 private:

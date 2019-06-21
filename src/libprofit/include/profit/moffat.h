@@ -65,23 +65,18 @@ public:
 protected:
 
 	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double val) override;
-
-	/*
 	 * ----------------------------
 	 * Inherited from RadialProfile
 	 * ----------------------------
 	 */
-	double get_lumtot(double r_box) override;
+	double get_lumtot() override;
 	double get_rscale() override;
-	double adjust_acc() override;
+	double adjust_acc(double acc) override;
 	double adjust_rscale_switch() override;
 	double adjust_rscale_max() override;
 	double evaluate_at(double x, double y) const override;
+
+private:
 
 	/*
 	 * -------------------------
@@ -103,8 +98,7 @@ protected:
 	double con;
 	// @}
 
-private:
-  double fluxfrac(double fraction) const;
+	double fluxfrac(double fraction) const;
 
 #ifdef PROFIT_OPENCL
 

@@ -29,6 +29,7 @@
 
 #include <cmath>
 #include <chrono>
+#include <iosfwd>
 
 /* M_PI is not part of C/C++, but usually there */
 #ifndef M_PI
@@ -41,15 +42,7 @@
 #endif
 
 // Proper function exporting/importing under Windows
-#ifdef _WIN32
-# ifdef profit_EXPORTS
-#  define PROFIT_API __declspec(dllexport)
-# else
-#  define PROFIT_API __declspec(dllimport)
-# endif
-#else
-# define PROFIT_API
-#endif
+#define PROFIT_API
 
 /* Sometimes we don't use all arguments */
 #define UNUSED(x) do { (void)x; } while(0)
@@ -59,27 +52,82 @@ namespace profit {
 	/// A type to hold nanosecond values
 	typedef std::chrono::nanoseconds::rep nsecs_t;
 
+	/// Trait naming different types
+	template <typename T>
+	struct type_info {};
+
+	template <>
+	struct type_info<bool> {
+		constexpr static const char *name = "bool";
+	};
+
+	template <>
+	struct type_info<unsigned int> {
+		constexpr static const char *name = "unsigned int";
+	};
+
+	template <>
+	struct type_info<float> {
+		constexpr static const char *name = "float";
+	};
+
+	template <>
+	struct type_info<double> {
+		constexpr static const char *name = "double";
+	};
+
 	/// Trait describing specific float and double floating types
 	template <typename FT>
 	struct float_traits {
 		const static bool is_float = false;
 		const static bool is_double = false;
-		constexpr const static char * name = "unknown";
 	};
 
 	template <>
-	struct float_traits<float> {
+	struct float_traits<float> : type_info<float> {
 		const static bool is_float = true;
 		const static bool is_double = false;
-		constexpr const static char * name = "float";
 	};
 
 	template <>
-	struct float_traits<double> {
+	struct float_traits<double> : type_info<double> {
 		const static bool is_float = false;
 		const static bool is_double = true;
-		constexpr const static char * name = "double";
 	};
+
+	/**
+	 * SIMD instruction sets choosers can choose from
+	 */
+	enum simd_instruction_set {
+		/// Automatically choose the best available SIMD instruction set
+		AUTO = 0,
+		/// No SIMD instruction set
+		NONE,
+		/// The SSE2 instruction set
+		SSE2,
+		/// The AVX instruction set
+		AVX
+	};
+
+	template <typename T, typename CharT>
+	std::basic_ostream<T, CharT> &operator<<(std::basic_ostream<T, CharT> &os, simd_instruction_set instruction_set) {
+		if (instruction_set == AUTO) {
+			os << "AUTO";
+		}
+		else if (instruction_set == NONE) {
+			os << "NONE";
+		}
+		else if (instruction_set == SSE2) {
+			os << "SSE2";
+		}
+		else if (instruction_set == AVX) {
+			os << "AVX";
+		}
+		else {
+			os << "unknown";
+		}
+		return os;
+	}
 
 }
 

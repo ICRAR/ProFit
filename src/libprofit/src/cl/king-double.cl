@@ -1,4 +1,3 @@
-R"===(
 /**
  * Double-precision King profile OpenCL kernel implementation for libprofit
  *
@@ -114,4 +113,3 @@ kernel void king_subsample_double(
 	}
 
 }
-)==="

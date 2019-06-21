@@ -37,5 +37,6 @@
 #include "profit/model.h"
 #include "profit/opencl.h"
 #include "profit/profile.h"
+#include "profit/utils.h"
 
 #endif /* PROFIT_PROFIT_H */

@@ -1,4 +1,3 @@
-R"===(
 /**
  * Single-precision King profile OpenCL kernel implementation for libprofit
  *
@@ -120,5 +119,3 @@ kernel void king_subsample_float(
 	}
 
 }
-
-)==="

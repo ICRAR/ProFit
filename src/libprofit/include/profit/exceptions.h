@@ -36,15 +36,14 @@ namespace profit
 {
 
 /**
- * Exception class thrown when an invalid parameter has been supplied to either
- * a model or a specific profile.
+ * Parent exception for all libprofit-related errors
  */
-class PROFIT_API invalid_parameter : public std::exception
+class PROFIT_API exception : public std::exception
 {
 
 public:
-	invalid_parameter(const std::string &what);
-	~invalid_parameter() throw();
+	explicit exception(const std::string &what);
+	~exception() throw();
 	const char *what() const throw();
 
 private:
@@ -53,36 +52,56 @@ private:
 };
 
 /**
- * Exception class thrown when an error occurs while dealing with OpenCL.
+ * Exception class thrown when an invalid parameter has been supplied to either
+ * a model or a specific profile.
  */
-class PROFIT_API opencl_error : public std::exception
+class PROFIT_API invalid_parameter : public exception
 {
 
 public:
-	opencl_error(const std::string &what);
+	explicit invalid_parameter(const std::string &what);
+	~invalid_parameter() throw();
+};
+
+/**
+ * Exception thrown by the Profile class when a user gives a parameter that the
+ * profile doesn't understand.
+ */
+class PROFIT_API unknown_parameter : public invalid_parameter
+{
+public:
+	explicit unknown_parameter(const std::string &what);
+	~unknown_parameter() throw();
+};
+
+/**
+ * Exception class thrown when an error occurs while dealing with OpenCL.
+ */
+class PROFIT_API opencl_error : public exception
+{
+
+public:
+	explicit opencl_error(const std::string &what);
 	~opencl_error() throw();
-	const char *what() const throw();
-
-private:
-	std::string m_what;
-
 };
 
 
 /**
  * Exception class thrown when an error occurs while dealing with FFT.
  */
-class PROFIT_API fft_error : public std::exception
+class PROFIT_API fft_error : public exception
 {
 
 public:
-	fft_error(const std::string &what);
+	explicit fft_error(const std::string &what);
 	~fft_error() throw();
-	const char *what() const throw();
+};
 
-private:
-	std::string m_what;
-
+class fs_error: public exception
+{
+public:
+	explicit fs_error(const std::string &what);
+	~fs_error() throw();
 };
 
 } /* namespace profit */

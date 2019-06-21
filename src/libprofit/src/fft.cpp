@@ -23,20 +23,25 @@
 //
 
 #include <algorithm>
+#include <complex>
+#include <cstring>
 #include <iterator>
+#include <sstream>
 #include <string>
 #include <stdexcept>
 
-#include "profit/common.h"
 #include "profit/exceptions.h"
 #include "profit/fft_impl.h"
+#include "profit/image.h"
 
 #ifdef PROFIT_FFTW
 
 namespace profit {
 
+std::mutex fftw_mutex;
+
 template <typename T>
-void check_size(const std::vector<T> &data, unsigned int size)
+void check_size(const T &data, unsigned int size)
 {
 	if (data.size() != size) {
 		std::ostringstream os;
@@ -45,16 +50,8 @@ void check_size(const std::vector<T> &data, unsigned int size)
 	}
 }
 
-FFTTransformer::dcomplex_vec as_dcomplex_vec(const fftw_complex *cdata, unsigned int size)
-{
-	FFTTransformer::dcomplex_vec ret(size);
-	std::transform(cdata, cdata + size, ret.begin(), [](const fftw_complex &c) {
-		return FFTTransformer::dcomplex {c[0], c[1]};
-	});
-	return ret;
-}
-
-int FFTTransformer::get_fftw_effort() const
+static
+int get_fftw_effort(effort_t effort)
 {
 	switch (effort) {
 	case ESTIMATE:
@@ -70,197 +67,99 @@ int FFTTransformer::get_fftw_effort() const
 	}
 }
 
+template <typename T>
+static inline
+T *_fftw_buf(std::size_t size)
+{
+	T *buf = static_cast<T *>(fftw_malloc(sizeof(T) * size));
+	if (!buf) {
+		throw std::bad_alloc();
+	}
+	return buf;
+}
+
 
 FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsigned int omp_threads) :
-	FFTTransformer(size, effort),
-	hermitian_size(size / 2 + 1),
-	real_buf(), complex_buf(),
+	size(0), hermitian_size(0), effort(effort),
+	real_buf(nullptr), complex_buf(nullptr),
 	forward_plan(nullptr),
 	backward_plan(nullptr)
 {
-
-	double *real_tmp = fftw_alloc_real(size);
-	if (!real_tmp) {
-		throw std::bad_alloc();
-	}
-
-	fftw_complex *complex_tmp = fftw_alloc_complex(hermitian_size);
-	if (!complex_tmp) {
-		throw std::bad_alloc();
-	}
-
-	real_buf.reset(real_tmp);
-	complex_buf.reset(complex_tmp);
-
-#ifdef PROFIT_FFTW_OPENMP
-	fftw_plan_with_nthreads(omp_threads);
-#else
-	UNUSED(omp_threads);
-#endif /* PROFIT_FFTW_OPENMP */
-
-	int fftw_effort = get_fftw_effort();
-	forward_plan = fftw_plan_dft_r2c_1d(size, real_tmp, complex_tmp, FFTW_DESTROY_INPUT | fftw_effort);
-	if (!forward_plan) {
-		throw fft_error("Error creating forward plan");
-	}
-	backward_plan = fftw_plan_dft_c2r_1d(size, complex_tmp, real_tmp, FFTW_DESTROY_INPUT | fftw_effort);
-	if (!backward_plan) {
-		throw fft_error("Error creating backward plan");
-	}
-
-}
-
-FFTRealTransformer::~FFTRealTransformer()
-{
-	if (real_buf) {
-		fftw_free(real_buf.release());
-	}
-	if (complex_buf) {
-		fftw_free(complex_buf.release());
-	}
-	if (forward_plan) {
-		fftw_destroy_plan(forward_plan);
-		forward_plan = nullptr;
-	}
-	if (backward_plan) {
-		fftw_destroy_plan(backward_plan);
-		backward_plan = nullptr;
-	}
-}
-
-FFTTransformer::dcomplex_vec FFTRealTransformer::forward(const std::vector<double> &data) const
-{
-	check_size(data, get_size());
-
-	// Copy image data into input array, transform,
-	// and copy output of transformation into returned vector
-	std::copy(data.begin(), data.end(), real_buf.get());
-
-	fftw_execute(forward_plan);
-
-	return as_dcomplex_vec(complex_buf.get(), hermitian_size);
-}
-
-std::vector<double> FFTRealTransformer::backward(const dcomplex_vec &cdata) const
-{
-	check_size(cdata, hermitian_size);
-
-	// Copy input data into complex buffer, execute plan,
-	// and copy data out of the real buffer into the returned Image
-	fftw_complex *in_it = complex_buf.get();
-	for(auto &c: cdata) {
-		(*in_it)[0] = c.real();
-		(*in_it)[1] = c.imag();
-		in_it++;
-	}
-
-	fftw_execute(backward_plan);
-
-	auto size = get_size();
-	std::vector<double> ret(size);
-	auto *out_it = real_buf.get();
-	std::copy(out_it, out_it + size, ret.begin());
-
-	return ret;
-}
-
-
-#if 0
-FFTComplexTransformer::FFTComplexTransformer(unsigned int size, effort_t effort, unsigned int omp_threads) :
-	FFTTransformer(size, effort, omp_threads),
-	in(), out(),
-	forward_plan(NULL),
-	backward_plan(NULL)
-{
-	fftw_complex *in_tmp = fftw_alloc_complex(size);
-	if (!in_tmp) {
-		throw std::bad_alloc();
-	}
-
-	fftw_complex *out_tmp = fftw_alloc_complex(size);
-	if (!out_tmp) {
-		throw std::bad_alloc();
-	}
-
-	in.reset(in_tmp);
-	out.reset(out_tmp);
-
+	std::lock_guard<std::mutex> guard(fftw_mutex);
 #ifdef PROFIT_FFTW_OPENMP
 	fftw_plan_with_nthreads(omp_threads);
 #endif /* PROFIT_FFTW_OPENMP */
+	resize_impl(size);
+}
 
-	int fftw_effort = get_fftw_effort();
-	forward_plan = fftw_plan_dft_1d(size, in_tmp, out_tmp, FFTW_FORWARD, FFTW_DESTROY_INPUT | fftw_effort);
-	if (!forward_plan) {
+FFTRealTransformer::FFTRealTransformer(effort_t effort, unsigned int omp_threads) :
+	size(0), hermitian_size(0), effort(effort),
+	real_buf(nullptr), complex_buf(nullptr),
+	forward_plan(nullptr),
+	backward_plan(nullptr)
+{
+	std::lock_guard<std::mutex> guard(fftw_mutex);
+#ifdef PROFIT_FFTW_OPENMP
+	fftw_plan_with_nthreads(omp_threads);
+#endif /* PROFIT_FFTW_OPENMP */
+}
+
+void FFTRealTransformer::resize(unsigned int input_size)
+{
+	std::lock_guard<std::mutex> guard(fftw_mutex);
+	resize_impl(input_size);
+}
+
+void FFTRealTransformer::resize_impl(unsigned int input_size)
+{
+	if (input_size == 0) {
+		throw invalid_parameter("cannot resize fft transformer to size 0");
+	}
+	if (size == input_size) {
+		return;
+	}
+	size = input_size;
+	hermitian_size = input_size / 2 + 1;
+	real_buf.reset(_fftw_buf<double>(size));
+	complex_buf.reset(_fftw_buf<fftw_complex>(hermitian_size));
+	int fftw_effort = get_fftw_effort(effort);
+	auto fwd_plan = fftw_plan_dft_r2c_1d(size, real_buf.get(), complex_buf.get(), FFTW_DESTROY_INPUT | fftw_effort);
+	if (!fwd_plan) {
 		throw fft_error("Error creating forward plan");
 	}
-	backward_plan = fftw_plan_dft_1d(size, in_tmp, out_tmp, FFTW_BACKWARD, FFTW_DESTROY_INPUT | fftw_effort);
-	if (!backward_plan) {
+	auto bwd_plan = fftw_plan_dft_c2r_1d(size, complex_buf.get(), real_buf.get(), FFTW_DESTROY_INPUT | fftw_effort);
+	if (!bwd_plan) {
 		throw fft_error("Error creating backward plan");
 	}
-
+	forward_plan.reset(fwd_plan);
+	backward_plan.reset(bwd_plan);
 }
 
-FFTComplexTransformer::~FFTComplexTransformer()
+template <typename T>
+void FFTRealTransformer::forward(const T &input, std::vector<std::complex<double>> &output) const
 {
-	if (out) {
-		fftw_free(out.release());
-	}
-	if (in) {
-		fftw_free(in.release());
-	}
-	if (backward_plan) {
-		fftw_destroy_plan(backward_plan);
-		backward_plan = NULL;
-	}
-	if (forward_plan) {
-		fftw_destroy_plan(forward_plan);
-		forward_plan = NULL;
-	}
+	check_size(input, size);
+	check_size(output, hermitian_size);
+	std::copy(input.begin(), input.end(), real_buf.get());
+	fftw_execute(forward_plan.get());
+	// This cast is required to work since C++11 according to the standard
+	auto *as_double = reinterpret_cast<double *>(output.data());
+	std::memcpy(as_double, complex_buf.get(), sizeof(fftw_complex) * hermitian_size);
 }
 
-
-FFTTransformer::dcomplex_vec FFTComplexTransformer::forward(const std::vector<double> &data) const
+template <typename T>
+void FFTRealTransformer::backward(const std::vector<std::complex<double>> &input, T &output) const
 {
-	check_size(data);
-
-	fftw_complex *in_it = in.get();
-	for(auto &d: data) {
-		(*in_it)[0] = d;
-		(*in_it)[1] = 0;
-		in_it++;
-	}
-
-	fftw_execute(forward_plan);
-
-	return as_dcomplex_vec(out.get());
+	check_size(input, hermitian_size);
+	check_size(output, size);
+	std::memcpy(complex_buf.get(), input.data(), sizeof(fftw_complex) * hermitian_size);
+	fftw_execute(backward_plan.get());
+	std::copy(real_buf.get(), real_buf.get() + size, output.begin());
 }
 
-std::vector<double> FFTComplexTransformer::backward(const dcomplex_vec &cdata) const
-{
-	check_size(cdata);
-
-	fftw_complex *in_it = in.get();
-	for(auto &c: cdata) {
-		(*in_it)[0] = c.real();
-		(*in_it)[1] = c.imag();
-		in_it++;
-	}
-
-	fftw_execute(backward_plan);
-
-	auto size = get_size();
-	std::vector<double> ret;
-	ret.reserve(size);
-	fftw_complex *out_it = out.get();
-	for(unsigned int i = 0; i < size; i++) {
-		ret.push_back((*out_it)[0]);
-		out_it++;
-	}
-
-	return ret;
-}
-#endif // 0
+// Specializations for the Image type
+template void FFTRealTransformer::forward<Image>(const Image &input, std::vector<std::complex<double>> &output) const;
+template void FFTRealTransformer::backward<Image>(const std::vector<std::complex<double>> &input, Image &output) const;
 
 }  // namespace profit
 

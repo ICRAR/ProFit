@@ -49,11 +49,9 @@ namespace profit
  */
 double FerrerProfile::evaluate_at(double x, double y) const {
 
-	using std::abs;
 	using std::pow;
 
-	double box = this->box + 2.;
-	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
+	double r = boxy_r(x, y);
 	double r_factor = r/rscale;
 	if( r_factor < 1 ) {
 		return pow(1 - pow(r_factor, 2 - b), a);
@@ -77,7 +75,7 @@ void FerrerProfile::validate() {
 
 }
 
-double FerrerProfile::get_lumtot(double r_box) {
+double FerrerProfile::get_lumtot() {
 
 	using std::pow;
 
@@ -99,7 +97,7 @@ double FerrerProfile::get_lumtot(double r_box) {
 	 * but still converges using beta.
 	 */
 	double g_factor = a * beta(a, 1 + 2/(2-b));
-	return pow(rout, 2) * M_PI * g_factor * axrat/r_box;
+	return pow(rout, 2) * M_PI * g_factor;
 }
 
 double FerrerProfile::adjust_rscale_switch() {
@@ -114,32 +112,16 @@ double FerrerProfile::get_rscale() {
 	return this->rout;
 }
 
-double FerrerProfile::adjust_acc() {
-	return this->acc;
-}
-
 FerrerProfile::FerrerProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	rout(3), a(1), b(1)
 {
 	// this profile defaults to a different accuracy
 	this->acc = 1;
-}
 
-bool FerrerProfile::parameter_impl(const std::string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "rout" )   { rout = val; }
-	else if( name == "a" ) { a = val; }
-	else if( name == "b" ) { b = val; }
-	else {
-		return false;
-	}
-
-	return true;
+	register_parameter("rout", rout);
+	register_parameter("a", a);
+	register_parameter("b", b);
 }
 
 #ifdef PROFIT_OPENCL
@@ -153,8 +135,8 @@ void FerrerProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel 
 
 template <typename FT>
 void FerrerProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
-	kernel.setArg(index++, static_cast<FT>(a));
-	kernel.setArg(index++, static_cast<FT>(b));
+	kernel.setArg((index++), FT(a));
+	kernel.setArg((index++), FT(b));
 }
 
 #endif /* PROFIT_OPENCL */

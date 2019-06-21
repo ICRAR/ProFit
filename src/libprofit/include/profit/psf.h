@@ -55,16 +55,10 @@ public:
 	 * ---------------------------------------------
 	 */
 	void validate() override;
-	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) override;
+	void evaluate(Image &image, const Mask &mask, const PixelScale &scale,
+	    const Point &offset, double magzero) override;
 
-protected:
-
-	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double value) override;
+private:
 
 	/*
 	 * -------------------------

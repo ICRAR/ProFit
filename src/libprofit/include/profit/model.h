@@ -43,9 +43,6 @@
 namespace profit
 {
 
-/* Forward declaration */
-struct ProfileStats;
-
 /**
  * A pair of double values that specify a the scale of a pixel in a particular image
  * with respect to that image's coordinate space.
@@ -71,6 +68,9 @@ public:
 	 * used to calculate an image.
 	 */
 	Model(unsigned int width = 0, unsigned int height = 0);
+
+	/// Like Model(unsigned int, unsigned int), but accepting a Dimensions object
+	explicit Model(Dimensions dimensions);
 
 	/**
 	 * Creates a new profile for the given name and adds it to the given model.
@@ -153,7 +153,7 @@ public:
 	 * @see set_psf(const Image &psf)
 	 */
 	void set_psf(Image &&psf) {
-		this->psf = psf;
+		this->psf = std::move(psf);
 	}
 
 	/**
@@ -223,7 +223,24 @@ public:
 	 * @see set_mask(const Mask &mask)
 	 */
 	void set_mask(Mask &&mask) {
-		this->mask = mask;
+		this->mask = std::move(mask);
+	}
+
+	/**
+	 * Sets whether the mask given by the user should be automatically adjusted
+	 * in order to preserve flux during convolution or not. By default masks are
+	 * adjusted as necessary, but if users have a pre-adjusted Mask (obtained
+	 * via adjust(Mask &, const Dimensions &, const Image &, unsigned int))
+	 * and pass that to the Model, then they need to indicate that no further
+	 * adjustment in necessary
+	 *
+	 * @param adjust_mask Whether this model should internally adjust the mask
+	 * given by the user or not.
+	 * @see adjust(Mask &, const Dimensions &, const Image &, unsigned int)
+	 */
+	void set_adjust_mask(bool adjust_mask)
+	{
+		this->adjust_mask = adjust_mask;
 	}
 
 	/**
@@ -312,6 +329,20 @@ public:
 	}
 
 	/**
+	 * Modifies @p mask in the same way that it would be modified internally
+	 * by a Model object in order to preserve flux during the convolution step
+	 * of the Model evaluation.
+	 *
+	 * @param mask The mask to be modified.
+	 * @param dims The dimensions of the Model
+	 * @param psf The PSF to be used during Model convolution
+	 * @param finesampling The finesampling factor to be used by the Model
+	 * @see set_adjust_mask(bool)
+	 */
+	static void adjust(Mask &mask, const Dimensions &dims,
+	    const Image &psf, unsigned int finesampling=1);
+
+	/**
 	 * The Point object that indicates that users don't want to retrieve back
 	 * the potential image offset when calling @ref evaluate(Point &)
 	 */
@@ -327,12 +358,49 @@ private:
 	PixelScale psf_scale;
 	Mask mask;
 	ConvolverPtr convolver;
+	bool adjust_mask;
 	bool crop;
 	bool dry_run;
 	bool return_finesampled;
 	OpenCLEnvPtr opencl_env;
 	unsigned int omp_threads;
 	std::vector<ProfilePtr> profiles;
+
+	// The result of analysing the model inputs, it contains all the necessary
+	// information needed to actually proceed with the rest of the tasks
+	struct input_analysis {
+		Dimensions drawing_dims;
+		Dimensions psf_padding;
+		bool convolution_required;
+		bool mask_needs_psf_padding;
+		bool mask_needs_convolution;
+		bool mask_needs_adjustment;
+	};
+
+	template <typename P>
+	ProfilePtr make_profile(const std::string &name);
+
+	// Actually produce the image from the profiles and convolve it against the psf
+	Image produce_image(const Mask &mask, const input_analysis &analysis, Point &offset);
+
+	// Analyze the model's inputs and produce information needed by other steps
+	input_analysis analyze_inputs() const;
+
+	// Fill the analysis with model/mask expansion-related information
+	static void analyze_expansion_requirements(const Dimensions &dimensions,
+	    const Mask &mask, const Image &psf, unsigned int finesampling,
+	    input_analysis& analysis, bool adjust_mask);
+
+	// See adjust(Mask &mask, const Dimensions &, const Image &, unsigned int)
+	static void adjust(Mask &mask, const Image &psf, unsigned int finesampling,
+	    const input_analysis &analysis);
+
+	// Whether mask needs any type of adjustments given the analysis and finesampling
+	static bool needs_adjustment(const Mask &mask, unsigned int finesampling,
+	    const input_analysis &analysis);
+
+	// Make sure we have a convolver and return it
+	ConvolverPtr &ensure_convolver();
 
 	friend class PsfProfile;
 	friend class RadialProfile;
