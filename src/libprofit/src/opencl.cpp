@@ -364,7 +364,7 @@ void KernelCache::to_cache(const std::string &cache_entry_name, const SourceInfo
 	auto binaries = program.getInfo<CL_PROGRAM_BINARIES>();
 	auto nbinaries = binaries.size();
 	output.write(reinterpret_cast<char *>(&nbinaries), sizeof(nbinaries));
-	for(auto binary: binaries) {
+	for(const auto &binary: binaries) {
 		auto bsize = binary.size();
 		output.write(reinterpret_cast<char *>(&bsize), sizeof(bsize));
 		output.write(reinterpret_cast<const char *>(binary.data()), bsize);
