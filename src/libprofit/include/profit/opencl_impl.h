@@ -37,6 +37,11 @@
 #  error "libprofit requires at minimum OpenCL >= 1.1"
 # endif
 
+/* MacOS 10.14 (Mojave) started deprecating OpenCL entirely */
+#if defined(__APPLE__) || defined(__MACOSX)
+# define CL_SILENCE_DEPRECATION
+#endif
+
 /* We use exceptions in our code */
 # define CL_HPP_ENABLE_EXCEPTIONS
 
