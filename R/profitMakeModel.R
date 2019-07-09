@@ -8,15 +8,15 @@ profitMakeModel = function(modellist,
                            convopt=NULL, psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
 
-	profitCheckIsPositiveInteger(finesample)
+  checkInteger(finesample,lower=1L)
 
 	if (length(dim) == 1) {
 		dim = rep(dim,2)
 	}
 
 	# Some defaults...
-	rough = rough == TRUE
-	stopifnot(is.logical(rough) && length(rough) == 1)
+	#rough = rough == TRUE
+	checkLogical(rough, len=1)
 	profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
 	componentnames = c(profilenames,"pointsource")
 	for(wcname in componentnames) {
@@ -151,7 +151,7 @@ profitMakeModel = function(modellist,
 						# Create the new profile with proper values
 						new_profiles = submodel[[comp]]
 						compmag = new_profiles[['mag']]
-						stopifnot(!is.null(compmag))
+						checkNumeric(compmag,null.ok = FALSE)
 						n_profiles = length(new_profiles[['mag']])
 						xcen = modellist$pointsource$xcen[[i]]
 						ycen = modellist$pointsource$ycen[[i]]
@@ -250,7 +250,7 @@ profitMakeModel = function(modellist,
 		}
 	}
 	if (!is.null(omp_threads)) {
-		profitCheckIsPositiveInteger(omp_threads)
+	  checkInteger(omp_threads,lower=1L)
 		model[['omp_threads']] = omp_threads
 	}
 

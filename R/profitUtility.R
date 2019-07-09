@@ -87,6 +87,7 @@ profitAddMats=function(matbase, matadd, addloc=c(1,1), plot=FALSE, ...){
 .profitIsPositiveInteger <- function(x)
 {
   if(!is.numeric(x) || !is.finite(x)) return(FALSE)
+  if(x<0) return(FALSE)
   return(identical(x %% 1,0))
 }
 
