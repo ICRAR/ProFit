@@ -322,69 +322,47 @@ Image Model::evaluate(Point &offset_out)
 Image Model::produce_image(const Mask &mask, const input_analysis &analysis,
     Point &offset)
 {
-	const Dimensions &image_dims = analysis.drawing_dims;
-	Image image(image_dims);
-
-	/*
-	 * Generate a separate image for each profile.
-	 */
-	std::vector<Image> profile_images;
-	for(auto &profile: this->profiles) {
-		profile->adjust_for_finesampling(finesampling);
-		profile_images.emplace_back(image_dims);
-		auto &profile_image = profile_images.back();
-		profile->evaluate(profile_image, mask,
-		    {scale.first / finesampling, scale.second / finesampling},
-		    analysis.psf_padding, magzero);
+	// Avoiding memory allocation if no convolution is needed
+	Image model_image{analysis.drawing_dims};
+	Image to_convolve;
+	if (analysis.convolution_required) {
+		to_convolve = Image{analysis.drawing_dims};
 	}
 
-	/*
-	 * Sum up all results
-	 */
-
-	// We first sum up all images that need convolving
-	auto it = profile_images.begin();
-	for(auto &profile: this->profiles) {
-		if( profile->do_convolve() ) {
-			image += *it;
+	// Capturing as a lambda to destroy "scratch" quickly
+	[this, &model_image, &to_convolve, &analysis, &mask]() {
+		Image scratch{analysis.drawing_dims};
+		for(auto &profile: this->profiles) {
+			profile->adjust_for_finesampling(finesampling);
+			std::fill(scratch.begin(), scratch.end(), 0);
+			profile->evaluate(scratch, mask,
+				{scale.first / finesampling, scale.second / finesampling},
+				analysis.psf_padding, magzero);
+			if (profile->do_convolve()) {
+				to_convolve += scratch;
+			}
+			else {
+				model_image += scratch;
+			}
 		}
-		it++;
-	}
+	}();
 
-	// Now perform convolution on these images
-	// The convolution process might produce a larger image, and
-	// thus we keep track of this bigger size, and the offset
-	// of the original image with respect to the new, larger one
-	Dimensions conv_dims = image.getDimensions();
+	// Perform convolution if needed, then add back to the model image
 	offset = {0, 0};
 	if (analysis.convolution_required) {
 		Image psf_img(psf);
 		psf_img.normalize();
-		image = ensure_convolver()->convolve(image, psf_img, mask, crop, offset);
-		conv_dims = image.getDimensions();
-	}
-
-	// Sum images of profiles that do not require convolution
-	Image no_convolved_images(image_dims);
-	it = profile_images.begin();
-	for(auto &profile: this->profiles) {
-		if( !profile->do_convolve() ) {
-			no_convolved_images += *it;
+		to_convolve = ensure_convolver()->convolve(to_convolve, psf_img, mask, crop, offset);
+		// The result of the convolution might be bigger that the original,
+		// dependingo on user settings, so we need to account for that
+		if (to_convolve.getDimensions() != analysis.drawing_dims) {
+			model_image = model_image.extend(to_convolve.getDimensions(), offset);
 		}
-		it++;
-	}
-
-	// Add non-convolved images on top of the convolved ones
-	// taking into account the convolution extension/offset, if any
-	if (conv_dims != image_dims) {
-		image += no_convolved_images.extend(conv_dims, offset);
-	}
-	else {
-		image += no_convolved_images;
+		model_image += to_convolve;
 	}
 
 	/* Done! Good job :-) */
-	return image;
+	return model_image;
 }
 
 std::map<std::string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
