@@ -223,8 +223,8 @@ void SersicProfile::init_eval_function() {
 }
 
 void SersicProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale,
-    const Point &offset, double magzero) {
-
+    const Point &offset, double magzero)
+{
 	// inv_exponent is exactly what is yield by the templated _invexp function
 	// later on during each individual evaluation
 	// We need to calculate it here though to decide which template to choose

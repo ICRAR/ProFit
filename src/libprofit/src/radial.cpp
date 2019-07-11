@@ -237,8 +237,8 @@ void RadialProfile::subsampling_params(double  /*x*/, double  /*y*/,
  * The main profile evaluation function
  */
 void RadialProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale,
-    const Point &offset, double magzero) {
-
+    const Point &offset, double magzero)
+{
 	this->magzero = magzero;
 
 	/*
@@ -288,8 +288,8 @@ void RadialProfile::evaluate(Image &image, const Mask &mask, const PixelScale &s
 
 }
 
-void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScale &scale) {
-
+void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScale &scale)
+{
 	double half_xbin = scale.first/2.;
 	double half_ybin = scale.second/2.;
 
@@ -338,7 +338,7 @@ void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScal
 			                                   0, ss_max_recursions, ss_resolution);
 		}
 
-		image[i + j * width] = flux_scale * pixel_val;
+		image[i + j * width] += flux_scale * pixel_val;
 	});
 
 }

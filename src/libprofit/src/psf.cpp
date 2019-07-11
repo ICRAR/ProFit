@@ -63,7 +63,6 @@ void PsfProfile::evaluate(Image &image, const Mask & /*mask*/, const PixelScale 
 	using std::max;
 	using std::pow;
 
-	double total = 0;
 	double scale = pow(10, -0.4*(this->mag - magzero));
 
 	/* Making the code more readable */
@@ -139,17 +138,9 @@ void PsfProfile::evaluate(Image &image, const Mask & /*mask*/, const PixelScale 
 			}
 
 			/* Finally, write down the final value into our pixel */
-			image[pix_x + pix_y*width] = val;
-			total += val;
+			image[pix_x + pix_y*width] += val * scale;
 		}
 	}
-
-	/* We're done applying the ps, now normalize and scale */
-	double multiplier = scale;
-	if( total != 0 ) {
-		multiplier = scale / total;
-	}
-	image *= multiplier;
 
 }
 

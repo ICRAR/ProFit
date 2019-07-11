@@ -146,7 +146,7 @@ public:
 	 * @param psf The PSF image that this Model should use
 	 */
 	void set_psf(const Image &psf) {
-		this->psf = psf;
+		this->psf = psf.normalize();
 	}
 
 	/**
@@ -154,6 +154,7 @@ public:
 	 */
 	void set_psf(Image &&psf) {
 		this->psf = std::move(psf);
+		this->psf.normalize();
 	}
 
 	/**

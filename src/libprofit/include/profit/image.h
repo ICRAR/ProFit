@@ -238,7 +238,7 @@ public:
 	}
 
 	/// Whether this object represents an empty box
-	bool empty() {
+	bool empty() const {
 		return first == second;
 	}
 
@@ -262,7 +262,9 @@ class surface_base {
 
 public:
 
-	explicit surface_base(Dimensions dimensions = Dimensions()) :
+	surface_base() = default;
+
+	explicit surface_base(Dimensions dimensions) :
 		dimensions(dimensions)
 	{
 		// no-op
@@ -351,7 +353,9 @@ public:
 	typedef typename std::vector<T>::iterator iterator;
 	typedef typename std::vector<T>::const_iterator const_iterator;
 
-	explicit surface(Dimensions dimensions = Dimensions()) :
+	surface() = default;
+
+	explicit surface(Dimensions dimensions) :
 		surface_base(dimensions),
 		_data(dimensions.x * dimensions.y)
 	{
@@ -621,10 +625,11 @@ class PROFIT_API Mask : public surface<bool, Mask> {
 public:
 
 	// Constructors that look like those from _surface
+	Mask() = default;
 	Mask(unsigned int width, unsigned int height);
 	Mask(bool value, unsigned int width, unsigned int height);
 	Mask(bool value, Dimensions dimensions);
-	explicit Mask(Dimensions dimensions = Dimensions());
+	explicit Mask(Dimensions dimensions);
 	Mask(const std::vector<bool> &data, unsigned int width, unsigned int height);
 	Mask(const std::vector<bool> &data, Dimensions dimensions);
 	Mask(std::vector<bool> &&data, unsigned int width, unsigned int height);
@@ -666,10 +671,11 @@ class PROFIT_API Image : public surface<double, Image> {
 public:
 
 	// Constructors that look like those from _surface
+	Image() = default;
 	Image(unsigned int width, unsigned int height);
 	Image(double value, Dimensions dimensions);
 	Image(double value, unsigned int width, unsigned int height);
-	explicit Image(Dimensions dimensions = Dimensions());
+	explicit Image(Dimensions dimensions);
 	Image(const std::vector<double> &data, unsigned int width, unsigned int height);
 	Image(const std::vector<double> &data, Dimensions dimensions);
 	Image(std::vector<double> &&data, unsigned int width, unsigned int height);

@@ -329,30 +329,24 @@ Image Model::produce_image(const Mask &mask, const input_analysis &analysis,
 		to_convolve = Image{analysis.drawing_dims};
 	}
 
-	// Capturing as a lambda to destroy "scratch" quickly
-	[this, &model_image, &to_convolve, &analysis, &mask]() {
-		Image scratch{analysis.drawing_dims};
-		for(auto &profile: this->profiles) {
-			profile->adjust_for_finesampling(finesampling);
-			std::fill(scratch.begin(), scratch.end(), 0);
-			profile->evaluate(scratch, mask,
+	for(auto &profile: this->profiles) {
+		profile->adjust_for_finesampling(finesampling);
+		if (profile->do_convolve()) {
+			profile->evaluate(to_convolve, mask,
 				{scale.first / finesampling, scale.second / finesampling},
 				analysis.psf_padding, magzero);
-			if (profile->do_convolve()) {
-				to_convolve += scratch;
-			}
-			else {
-				model_image += scratch;
-			}
 		}
-	}();
+		else {
+			profile->evaluate(model_image, mask,
+				{scale.first / finesampling, scale.second / finesampling},
+				analysis.psf_padding, magzero);
+		}
+	}
 
 	// Perform convolution if needed, then add back to the model image
 	offset = {0, 0};
 	if (analysis.convolution_required) {
-		Image psf_img(psf);
-		psf_img.normalize();
-		to_convolve = ensure_convolver()->convolve(to_convolve, psf_img, mask, crop, offset);
+		to_convolve = ensure_convolver()->convolve(to_convolve, psf, mask, crop, offset);
 		// The result of the convolution might be bigger that the original,
 		// dependingo on user settings, so we need to account for that
 		if (to_convolve.getDimensions() != analysis.drawing_dims) {
