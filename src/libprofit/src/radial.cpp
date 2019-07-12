@@ -493,19 +493,15 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask & /*mask*/, const P
 	// If FT is double we directly store the result in the profile image
 	// Otherwise we have to copy element by element to convert from float to double
 	cl::vector<cl::Event> read_waiting_evts{kernel_evt};
-	if( float_traits<FT>::is_double ) {
-		read_evt = env->queue_read(image_buffer, image.data(), &read_waiting_evts);
-		read_evt.wait();
-		t_opencl = system_clock::now();
-	}
-	else {
-		std::vector<FT> image_from_kernel(image.size());
-		read_evt = env->queue_read(image_buffer, image_from_kernel.data(), &read_waiting_evts);
-		read_evt.wait();
-		t_opencl = system_clock::now();
-		std::copy(image_from_kernel.begin(), image_from_kernel.end(), image.begin());
-		stats->final_image += to_nsecs(system_clock::now() - t_opencl);
-	}
+	std::vector<FT> image_from_kernel(image.size());
+	read_evt = env->queue_read(image_buffer, image_from_kernel.data(), &read_waiting_evts);
+	read_evt.wait();
+	t_opencl = system_clock::now();
+	FT flux_scale = FT(this->get_pixel_scale(scale));
+	std::transform(image.begin(), image.end(), image_from_kernel.begin(), image.begin(), [flux_scale](double ipixel, double kpixel) {
+		return ipixel + kpixel * flux_scale;
+	});
+	stats->final_image += to_nsecs(system_clock::now() - t_opencl);
 
 	/* These are the OpenCL-related timings so far */
 	cl_times0.kernel_prep = to_nsecs(t_kprep - t0);
@@ -678,18 +674,14 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask & /*mask*/, const P
 
 	t_loopend = system_clock::now();
 
-	std::for_each(subimages_results.begin(), subimages_results.end(), [&image, &scale](const im_result_t &res) {
+	std::for_each(subimages_results.begin(), subimages_results.end(), [&image, &scale, &flux_scale](const im_result_t &res) {
 		FT x = FT(res.point.x / scale.first);
 		FT y = FT(res.point.y / scale.second);
 		unsigned int idx = static_cast<unsigned int>(floor(x)) + static_cast<unsigned int>(floor(y)) * image.getWidth();
-		image[idx] += res.value;
+		image[idx] += res.value * flux_scale;
 	});
 
 	// the image needs to be multiplied by the pixel scale
-	double flux_scale = this->get_pixel_scale(scale);
-	std::transform(image.begin(), image.end(), image.begin(), [flux_scale](double pixel) {
-		return pixel * flux_scale;
-	});
 	t_imgtrans = system_clock::now();
 
 	stats->subsampling.pre_subsampling = to_nsecs(t_loopstart - t_opencl);
