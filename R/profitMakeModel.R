@@ -7,7 +7,6 @@ profitMakeModel = function(modellist,
                            magmu=FALSE, remax, rescaleflux=FALSE,
                            convopt=NULL, psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
-
   checkInteger(finesample,lower=1L)
 
 	if (length(dim) == 1) {
@@ -49,7 +48,7 @@ profitMakeModel = function(modellist,
 		# If there are ANY extended sources, make a PSF
 		# Otherwise, you don't actually need a PSF image for anything and there's no need to
 		# add any padding to the model
-		if(all(names(modellist) %in% c("pointsource", "psf","sky"))) {
+		if(all(names(modellist) %in% c("pointsource", "psf", "sky"))) {
 			psf = matrix(1,1,1)
 		} else {
 
@@ -118,7 +117,7 @@ profitMakeModel = function(modellist,
 	    }
 	  }
 	}
-
+	
 	# pointsource profiles are generated in two different ways:
 	#
 	#  * If a PSF image was given, then we consider each of the
