@@ -36,7 +36,7 @@ Rodrigo Tobar & Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitOpenCLEnvInfo}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
+\code{\link{profitOpenCLEnvInfo}}, \code{\link{profitClearCache}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
 modellist = list(
@@ -63,6 +63,7 @@ modellist = list(
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 
 \dontrun{
+profitClearCache()
 tempCL=profitOpenCLEnv()
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
 }

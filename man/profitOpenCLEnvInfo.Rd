@@ -32,7 +32,7 @@ An example running on a MacBook pro might look like:
 Rodrigo Tobar & Aaron Robotham
 }
 \seealso{
-\code{\link{profitOpenCLEnv}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
+\code{\link{profitOpenCLEnv}}, \code{\link{profitClearCache}} \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
 profitOpenCLEnvInfo()
