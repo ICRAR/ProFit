@@ -82,37 +82,37 @@ inline double _r_factor(double b, double invexp)
   return std::pow(b, 1/invexp);
 }
 
-template<> inline double _r_factor<true, SersicProfile::pointfive>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::pointfive>(double b, double  /*invexp*/)
 {
 	return b*b;
 }
 
-template<> inline double _r_factor<true, SersicProfile::one>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::one>(double b, double  /*invexp*/)
 {
 	return b;
 }
 
-template<> inline double _r_factor<true, SersicProfile::two>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::two>(double b, double  /*invexp*/)
 {
 	return std::sqrt(b);
 }
 
-template<> inline double _r_factor<true, SersicProfile::three>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::three>(double b, double  /*invexp*/)
 {
 	return std::cbrt(b);
 }
 
-template<> inline double _r_factor<true, SersicProfile::four>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::four>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(b));
 }
 
-template<> inline double _r_factor<true, SersicProfile::eight>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::eight>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(std::sqrt(b)));
 }
 
-template<> inline double _r_factor<true, SersicProfile::sixteen>(double b, double invexp)
+template<> inline double _r_factor<true, SersicProfile::sixteen>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(std::sqrt(std::sqrt(b))));
 }
@@ -123,37 +123,37 @@ template<> inline double _r_factor<false, SersicProfile::general>(double b, doub
 	return std::pow(std::sqrt(b), 1/invexp);
 }
 
-template<> inline double _r_factor<false, SersicProfile::pointfive>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::pointfive>(double b, double  /*invexp*/)
 {
 	return b;
 }
 
-template<> inline double _r_factor<false, SersicProfile::one>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::one>(double b, double  /*invexp*/)
 {
 	return std::sqrt(b);
 }
 
-template<> inline double _r_factor<false, SersicProfile::two>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::two>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(b));
 }
 
-template<> inline double _r_factor<false, SersicProfile::three>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::three>(double b, double  /*invexp*/)
 {
 	return std::cbrt(std::sqrt(b));
 }
 
-template<> inline double _r_factor<false, SersicProfile::four>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::four>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(std::sqrt(b)));
 }
 
-template<> inline double _r_factor<false, SersicProfile::eight>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::eight>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(std::sqrt(std::sqrt(b))));
 }
 
-template<> inline double _r_factor<false, SersicProfile::sixteen>(double b, double invexp)
+template<> inline double _r_factor<false, SersicProfile::sixteen>(double b, double  /*invexp*/)
 {
 	return std::sqrt(std::sqrt(std::sqrt(std::sqrt(std::sqrt(b)))));
 }
@@ -168,7 +168,7 @@ inline double _base(double x, double y, double re, double exponent)
 }
 
 template<>
-inline double _base<false>(double x, double y, double re, double exponent)
+inline double _base<false>(double x, double y, double re, double  /*exponent*/)
 {
 	return (x*x + y*y)/(re * re);
 }
@@ -183,7 +183,7 @@ inline double _invexp(const double nser, const double exponent)
 }
 
 template<>
-inline double _invexp<false>(const double nser, const double exponent)
+inline double _invexp<false>(const double nser, const double  /*exponent*/)
 {
   return nser;
 }
@@ -222,8 +222,9 @@ void SersicProfile::init_eval_function() {
 	m_eval_function = eval_function<boxy, t>;
 }
 
-void SersicProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) {
-
+void SersicProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale,
+    const Point &offset, double magzero)
+{
 	// inv_exponent is exactly what is yield by the templated _invexp function
 	// later on during each individual evaluation
 	// We need to calculate it here though to decide which template to choose
@@ -250,7 +251,7 @@ void SersicProfile::evaluate(Image &image, const Mask &mask, const PixelScale &s
 		else                                       init_eval_function<false, general>();
 	}
 
-	return RadialProfile::evaluate(image, mask, scale, magzero);
+	return RadialProfile::evaluate(image, mask, scale, offset, magzero);
 }
 
 double SersicProfile::fluxfrac(double fraction) const {
@@ -274,17 +275,17 @@ double SersicProfile::adjust_rscale_max() {
 	return std::ceil(std::max(fluxfrac(0.9999), 2.) / re);
 }
 
-double SersicProfile::adjust_acc() {
-	double acc = this->acc / std::sqrt(nser);
+double SersicProfile::adjust_acc(double acc) {
+	acc /= std::sqrt(nser);
 	return std::max(0.1, acc) / this->axrat;
 }
 
-double SersicProfile::get_lumtot(double r_box) {
+double SersicProfile::get_lumtot() {
 	using std::exp;
 	using std::pow;
 	double g_factor = gammafn(2*this->nser);
 	return pow(this->re, 2) * 2 * M_PI * this->nser * g_factor *
-	       this->axrat/r_box * exp(this->_bn)/pow(this->_bn, 2*this->nser);
+	       exp(this->_bn)/pow(this->_bn, 2*this->nser);
 }
 
 void SersicProfile::initial_calculations() {
@@ -336,8 +337,8 @@ void SersicProfile::subsampling_params(double x, double y,
 	RadialProfile::subsampling_params(x, y, resolution, max_recursions);
 
 	/* Higher subsampling params for central pixel if nser > 1 (only when auto-adjusting) */
-	bool center_pixel = abs(x - xcen) < model.get_image_pixel_scale().first &&
-	                    abs(y - ycen) < model.get_image_pixel_scale().second;
+	bool center_pixel = abs(x - _xcen) < model.get_image_pixel_scale().first &&
+	                    abs(y - _ycen) < model.get_image_pixel_scale().second;
 	if( adjust && center_pixel && nser > 1 ) {
 		resolution = 8;
 		max_recursions = 10;
@@ -353,36 +354,9 @@ SersicProfile::SersicProfile(const Model &model, const std::string &name) :
 	re(1), nser(1),
 	rescale_flux(false)
 {
-	// no-op
-}
-
-bool SersicProfile::parameter_impl(const std::string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "re" )        { re = val; }
-	else if( name == "nser" ) { nser = val; }
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-bool SersicProfile::parameter_impl(const std::string &name, bool val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "rescale_flux" ) {
-		rescale_flux = val;
-		return true;
-	}
-
-	return false;
+	register_parameter("re", re);
+	register_parameter("nser", nser);
+	register_parameter("rescale_flux", rescale_flux);
 }
 
 #ifdef PROFIT_OPENCL
@@ -396,8 +370,8 @@ void SersicProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel 
 
 template <typename FT>
 void SersicProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
-	kernel.setArg(index++, (FT)nser);
-	kernel.setArg(index++, (FT)_bn);
+	kernel.setArg((index++), FT(nser));
+	kernel.setArg((index++), FT(_bn));
 }
 
 #endif /* PROFIT_OPENCL */

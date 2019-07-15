@@ -65,6 +65,8 @@ enum ConvolverType {
 class PROFIT_API Convolver {
 
 public:
+	static Point NO_OFFSET;
+
 	virtual ~Convolver();
 
 	/**
@@ -96,18 +98,33 @@ public:
 	Image convolve(const Image &src, const Image &krn, const Mask &mask,
 	               bool crop = true, Point &offset_out = NO_OFFSET);
 
+	/**
+	 * Returns the amount of padding that would be introduced by this convolver
+	 * when convolving an image and a kernel of sizes @p src_dims and @p
+	 * krn_dims, respectively. The padding is returned as a pair of points (or
+	 * dimensions) representing the padding in two dimensions at the bottom and
+	 * top ends of the result, respectively.
+	 *
+	 * This method does @b not perform any convolution; it simply calculates
+	 * what @em would be the padding of the image with respect to the
+	 * convolution result.
+	 *
+	 * @param src_dims The dimensions of the source image
+	 * @param krn_dims The dimensions of the kernel
+	 * @return The padding that the convolution process would introduce to the
+	 * returned image
+	 */
+	virtual PointPair padding(const Dimensions &src_dims, const Dimensions &krn_dims) const;
+
+protected:
 	// Implemented by subclasses and called by convolve
 	virtual
 	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask,
 	                    bool crop = true, Point &offset_out = NO_OFFSET) = 0;
 
-protected:
-
 	Image mask_and_crop(Image &img, const Mask &mask, bool crop,
-	                    const Dimensions orig_dims, const Dimensions &ext_dims,
+	                    const Dimensions &orig_dims, const Dimensions &ext_dims,
 	                    const Point &ext_offset, Point &offset_out);
-
-	static Point NO_OFFSET;
 };
 
 ///
@@ -122,18 +139,21 @@ public:
 		omp_threads(1),
 		opencl_env(),
 		effort(effort_t::ESTIMATE),
-		reuse_krn_fft(false)
+		reuse_krn_fft(false),
+		instruction_set(simd_instruction_set::AUTO)
 	{};
 
 	ConvolverCreationPreferences(
 	    Dimensions src_dims, Dimensions krn_dims, unsigned int omp_threads,
-	    OpenCLEnvPtr opencl_env, effort_t effort, bool reuse_krn_fft) :
+	    OpenCLEnvPtr opencl_env, effort_t effort, bool reuse_krn_fft,
+	    simd_instruction_set instruction_set) :
 		src_dims(src_dims),
 		krn_dims(krn_dims),
 		omp_threads(omp_threads),
 		opencl_env(opencl_env),
 		effort(effort),
-		reuse_krn_fft(reuse_krn_fft)
+		reuse_krn_fft(reuse_krn_fft),
+		instruction_set(instruction_set)
 	{};
 
 
@@ -148,15 +168,17 @@ public:
 	/// using OpenMP, when available) and the brute-force convolvers.
 	unsigned int omp_threads;
 
-	/// A pointer to an OpenCL environment. Used by the ConvolverType::OPENCL convolvers.
+	/// A pointer to an OpenCL environment. Used by the OPENCL convolvers.
 	OpenCLEnvPtr opencl_env;
 
-	/// The amount of effort to put into the plan creation. Used by the @ref ConvolverType::FFT convolver.
+	/// The amount of effort to put into the plan creation. Used by the @ref FFT convolver.
 	effort_t effort;
 
-	/// Whether to reuse or not the FFT'd kernel or not. Used by the @ref ConvolverType::FFT convolver.
+	/// Whether to reuse or not the FFT'd kernel or not. Used by the @ref FFT convolver.
 	bool reuse_krn_fft;
 
+	/// The extended instruction set to use. Used by the @ref BRUTE convolver
+	simd_instruction_set instruction_set;
 };
 
 /// Handy typedef for shared pointers to Convolver objects

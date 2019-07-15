@@ -87,6 +87,7 @@ profitAddMats=function(matbase, matadd, addloc=c(1,1), plot=FALSE, ...){
 .profitIsPositiveInteger <- function(x)
 {
   if(!is.numeric(x) || !is.finite(x)) return(FALSE)
+  if(x<0) return(FALSE)
   return(identical(x %% 1,0))
 }
 
@@ -238,17 +239,19 @@ profitGetOpenCLEnvs <- function(name="opencl",make.envs=FALSE)
       for(envi in 1:length(openclinfo))
       {
         openclenv = openclinfo[[envi]]
-        devices = do.call(rbind, lapply(openclenv$devices,
-                                        data.frame, stringsAsFactors=FALSE))
-        names(devices)[names(devices) == "name"] = "dev_name"
-        devices$name = name
-        devices$env_i = envi
-        devices$env_name = openclenv$name
-        devices$version = openclenv$opencl_version
-        devices$dev_i = 1:nrow(devices)
-        devices = devices[,c(3:ncol(devices),1:2)]
-        devices$supports_single = TRUE
-        openclenvs = rbind(openclenvs,devices)
+        if(length(openclenv$devices)>0){
+          devices = do.call(rbind, lapply(openclenv$devices,
+                                          data.frame, stringsAsFactors=FALSE))
+          names(devices)[names(devices) == "name"] = "dev_name"
+          devices$name = name
+          devices$env_i = envi
+          devices$env_name = openclenv$name
+          devices$version = openclenv$opencl_version
+          devices$dev_i = 1:nrow(devices)
+          devices = devices[,c(3:ncol(devices),1:2)]
+          devices$supports_single = TRUE
+          openclenvs = rbind(openclenvs,devices)
+        }
       }
       if(make.envs)
       {

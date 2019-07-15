@@ -1,4 +1,3 @@
-R"===(
 /**
  * Single-precision Moffat profile OpenCL kernel implementation for libprofit
  *
@@ -117,5 +116,3 @@ kernel void moffat_subsample_float(
 	}
 
 }
-
-)==="

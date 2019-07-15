@@ -1,4 +1,3 @@
-R"===(
 /**
  * Common double-precision OpenCL routines for libprofit
  *
@@ -46,4 +45,3 @@ inline void d_image_to_profile_coordiates(double x, double y, double *x_prof, do
 	*x_prof =   x * cos_ang + y * sin_ang;
 	*y_prof = (-x * sin_ang + y * cos_ang)/axrat;
 }
-)==="

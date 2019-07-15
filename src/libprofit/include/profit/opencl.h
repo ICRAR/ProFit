@@ -47,9 +47,10 @@ typedef unsigned int cl_ver_t;
  * A structure holding two times associated with OpenCL commands:
  * submission and execution
  */
-struct PROFIT_API OpenCL_command_times {
-	OpenCL_command_times();
+class PROFIT_API OpenCL_command_times {
+public:
 	nsecs_t submit;
+	nsecs_t wait;
 	nsecs_t exec;
 	OpenCL_command_times &operator+=(const OpenCL_command_times &other);
 	const OpenCL_command_times operator+(const OpenCL_command_times &other) const;
@@ -60,9 +61,8 @@ struct PROFIT_API OpenCL_command_times {
  * kernel and reading) plus other OpenCL-related times.
  */
 struct PROFIT_API OpenCL_times {
-	OpenCL_times();
 	nsecs_t kernel_prep;
-	unsigned int nwork_items;
+	size_t nwork_items;
 	OpenCL_command_times writing_times;
 	OpenCL_command_times reading_times;
 	OpenCL_command_times filling_times;

@@ -53,6 +53,10 @@ namespace profit
  */
 class RadialProfile : public Profile {
 
+	friend class FerrerProfile;
+	friend class MoffatProfile;
+	friend class SersicProfile;
+
 public:
 
 	/**
@@ -69,7 +73,8 @@ public:
 	 * ---------------------------------------------
 	 */
 	void validate() override;
-	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) override;
+	void evaluate(Image &image, const Mask &mask, const PixelScale &scale,
+	    const Point &offset, double magzero) override;
 
 #ifdef PROFIT_DEBUG
 	std::map<int,int> get_integrations();
@@ -77,14 +82,24 @@ public:
 
 protected:
 
-	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
+	/**
+	 * Calculates a *boxy radius* using the boxiness parameter `box` of this
+	 * profile.
+	 *
+	 * @param x `x` coordinate
+	 * @param y `y` coordinate
+	 * @return The *boxy* radius `r` for the coordinate (`x`, `y`).
 	 */
-	virtual bool parameter_impl(const std::string &name, bool value) override;
-	virtual bool parameter_impl(const std::string &name, double value) override;
-	virtual bool parameter_impl(const std::string &name, unsigned int value) override;
+	double boxy_r(double x, double y) const
+	{
+		if (box == 0) {
+			return std::sqrt(x * x + y * y);
+		}
+		double box_plus_2 = box + 2.;
+		return std::pow(std::pow(std::abs(x), box_plus_2) +
+		                    std::pow(std::abs(y), box_plus_2),
+		                1. / box_plus_2);
+	}
 
 	/**
 	 * Calculates the profile value at profile coordinates ``x``/``y``.
@@ -126,10 +141,9 @@ protected:
 	 */
 
 	/**
-	 * Returns the total luminosity of this profile for the given ``r_box``
-	 * factor.
+	 * Returns the total luminosity of this profile.
 	 */
-	virtual double get_lumtot(double r_box) = 0;
+	virtual double get_lumtot() = 0;
 
 	/**
 	 * Returns the value used as ``rscale`` by the radial profile.
@@ -140,8 +154,10 @@ protected:
 	 * Returns an automatically adjusted value for the subsampling accuracy,
 	 * which will replace the default or user-given value if users decide to
 	 * let the code self-adjust.
+	 * The default implementation leaves the accuracy untouched, but subclasses
+	 * can override this method.
 	 */
-	virtual double adjust_acc() = 0;
+	virtual double adjust_acc(double acc);
 
 	/**
 	 * Returns an automatically adjusted value for the rscale_switch flag,
@@ -157,6 +173,7 @@ protected:
 	 */
 	virtual double adjust_rscale_max() = 0;
 
+private:
 	/*
 	 * -------------------------
 	 * Profile parameters follow
@@ -257,9 +274,9 @@ protected:
 	double _ie;
 	double _cos_ang;
 	double _sin_ang;
+	double _xcen;
+	double _ycen;
 	double magzero;
-
-private:
 
 	void evaluate_cpu(Image &image, const Mask &mask, const PixelScale &scale);
 
@@ -278,7 +295,6 @@ private:
 #endif /* PROFIT_DEBUG */
 
 #ifdef PROFIT_OPENCL
-private:
 
 	/**
 	 * Indicates whether this profile supports OpenCL evaluation or not

@@ -39,9 +39,21 @@ namespace profit
  */
 class NullProfile : public Profile {
 public:
-	NullProfile(const Model &model, const std::string &name) : Profile(model, name) {}
-	void validate() override {};
-	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) {};
+	NullProfile(const Model &model, const std::string &name) : Profile(model, name)
+	{
+		// no-op
+	}
+
+	void validate() override
+	{
+		// no-op
+	};
+
+	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, const Point &offset,
+	    double magzero)
+	{
+		// no-op
+	};
 };
 
 } /* namespace profit */

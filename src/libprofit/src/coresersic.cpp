@@ -48,14 +48,12 @@ namespace profit
  *           r = (x^{2+B} + y^{2+B})^{1/(2+B)}
  *           B = box parameter
  */
-double CoreSersicProfile::evaluate_at(double x, double y) const {
-
-	using std::abs;
+double CoreSersicProfile::evaluate_at(double x, double y) const
+{
 	using std::exp;
 	using std::pow;
 
-	double box = this->box + 2.;
-	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
+	double r = boxy_r(x, y);
 	return pow(1 + pow(r/rb,-a), b/a) *
 	       exp(-_bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
 }
@@ -91,18 +89,18 @@ double CoreSersicProfile::integrate_at(double r) const {
 	       exp(-_bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
 }
 
-double CoreSersicProfile::get_lumtot(double r_box) {
+double CoreSersicProfile::get_lumtot() {
 
 	/*
 	 * We numerically integrate r from 0 to infinity
 	 * to get the total luminosity
 	 */
 	auto int_f = [](double r, void *ctx){
-		CoreSersicProfile *p = static_cast<CoreSersicProfile *>(ctx);
+		auto *p = static_cast<CoreSersicProfile *>(ctx);
 		return p->integrate_at(r);
 	};
 	double magtot = integrate_qagi(int_f, 0, this);
-	return 2 * M_PI * axrat * magtot/r_box;
+	return 2 * M_PI * magtot;
 }
 
 void CoreSersicProfile::initial_calculations() {
@@ -130,32 +128,15 @@ double CoreSersicProfile::get_rscale() {
 	return this->re;
 }
 
-double CoreSersicProfile::adjust_acc() {
-	return this->acc;
-}
-
 CoreSersicProfile::CoreSersicProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	re(1), rb(1), nser(4), a(1), b(1)
 {
-	// no-op
-}
-bool CoreSersicProfile::parameter_impl(const std::string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "re" )        { re = val; }
-	else if( name == "rb" )   { rb = val; }
-	else if( name == "nser" ) { nser = val; }
-	else if( name == "a" )    { a = val; }
-	else if( name == "b" )    { b = val; }
-	else {
-		return false;
-	}
-
-	return true;
+	register_parameter("re", re);
+	register_parameter("rb", rb);
+	register_parameter("nser", nser);
+	register_parameter("a", a);
+	register_parameter("b", b);
 }
 
 #ifdef PROFIT_OPENCL
@@ -169,12 +150,12 @@ void CoreSersicProfile::add_kernel_parameters_double(unsigned int index, cl::Ker
 
 template <typename FT>
 void CoreSersicProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
-	kernel.setArg(index++, static_cast<FT>(re));
-	kernel.setArg(index++, static_cast<FT>(rb));
-	kernel.setArg(index++, static_cast<FT>(nser));
-	kernel.setArg(index++, static_cast<FT>(a));
-	kernel.setArg(index++, static_cast<FT>(b));
-	kernel.setArg(index++, static_cast<FT>(_bn));
+	kernel.setArg((index++), FT(re));
+	kernel.setArg((index++), FT(rb));
+	kernel.setArg((index++), FT(nser));
+	kernel.setArg((index++), FT(a));
+	kernel.setArg((index++), FT(b));
+	kernel.setArg((index++), FT(_bn));
 }
 
 #endif /* PROFIT_OPENCL */

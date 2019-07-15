@@ -49,13 +49,10 @@ namespace profit
  * Reducing:
  *  r_factor = ((x/rscale)^{2+b} + (y/rscale)^{2+b})^{1/(2+b)}
  */
-double MoffatProfile::evaluate_at(double x, double y) const {
-
+double MoffatProfile::evaluate_at(double x, double y) const
+{
 	using std::pow;
-	using std::abs;
-
-	double box = 2 + this->box;
-	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./(box));
+	double r = boxy_r(x, y);
 	double r_factor = r/rscale;
 	return pow(1 + r_factor*r_factor, -con);
 }
@@ -77,9 +74,8 @@ double MoffatProfile::fluxfrac(double fraction) const {
 	return rscale * std::sqrt(std::pow(1 - fraction, 1/ (1 - con)) - 1);
 }
 
-double MoffatProfile::get_lumtot(double r_box) {
-	double con = this->con;
-	return std::pow(this->rscale, 2) * M_PI * axrat/(con-1)/r_box;
+double MoffatProfile::get_lumtot() {
+	return std::pow(this->rscale, 2) * M_PI / (con - 1);
 }
 
 double MoffatProfile::get_rscale() {
@@ -98,31 +94,16 @@ double MoffatProfile::adjust_rscale_max() {
 	return std::ceil(std::max(fluxfrac(0.9999), 2.) / rscale);
 }
 
-double MoffatProfile::adjust_acc() {
+double MoffatProfile::adjust_acc(double  /*acc*/) {
 	return 0.1/axrat;
 }
-
 
 MoffatProfile::MoffatProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	fwhm(3), con(2)
 {
-	// no-op
-}
-
-bool MoffatProfile::parameter_impl(const std::string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "fwhm" )     { fwhm = val; }
-	else if( name == "con" ) { con = val; }
-	else {
-		return false;
-	}
-
-	return true;
+	register_parameter("fwhm", fwhm);
+	register_parameter("con", con);
 }
 
 #ifdef PROFIT_OPENCL
@@ -136,7 +117,7 @@ void MoffatProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel 
 
 template <typename FT>
 void MoffatProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
-	kernel.setArg(index++, static_cast<FT>(con));
+	kernel.setArg((index++), FT(con));
 }
 
 #endif /* PROFIT_OPENCL */

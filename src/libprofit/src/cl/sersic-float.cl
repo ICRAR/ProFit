@@ -1,4 +1,3 @@
-R"===(
 /**
  * Single-precision Sersic profile OpenCL kernel implementation for libprofit
  *
@@ -118,5 +117,3 @@ kernel void sersic_subsample_float(
 	}
 
 }
-
-)==="

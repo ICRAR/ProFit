@@ -50,16 +50,11 @@ namespace profit
  */
 double KingProfile::evaluate_at(double x, double y) const {
 
-	using std::abs;
 	using std::pow;
-
-	double box = this->box + 2.;
-	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
-
+	double r = boxy_r(x, y);
 	if( r < rt ) {
 		return pow(1/pow(1 + pow(r/rc, 2), 1/a) - 1/pow(1 + pow(rt/rc, 2), 1/a), a);
 	}
-
 	return 0;
 }
 
@@ -89,16 +84,16 @@ double KingProfile::integrate_at(double r) const {
 	return 0;
 }
 
-double KingProfile::get_lumtot(double r_box) {
+double KingProfile::get_lumtot() {
 	/*
 	 * We numerically integrate r from 0 to rt
 	 * to get the total luminosity
 	 */
-	double magtot = integrate_qags([](double r, void *ctx) -> double {
+	double magtot = integrate_qags([](double r, void *ctx) {
 		auto kp = static_cast<KingProfile *>(ctx);
 		return kp->integrate_at(r);
 	}, 0, this->rt, this);
-	return 2*M_PI * axrat * magtot/r_box;
+	return 2 * M_PI * magtot;
 }
 
 double KingProfile::adjust_rscale_switch() {
@@ -113,31 +108,13 @@ double KingProfile::get_rscale() {
 	return this->rt;
 }
 
-double KingProfile::adjust_acc() {
-	return this->acc;
-}
-
 KingProfile::KingProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	rc(1), rt(3), a(2)
 {
-	// no-op
-}
-
-bool KingProfile::parameter_impl(const std::string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "rc" )      { rc = val; }
-	else if( name == "rt" ) { rt = val; }
-	else if( name == "a" )  { a = val; }
-	else {
-		return false;
-	}
-
-	return true;
+	register_parameter("rc", rc);
+	register_parameter("rt", rt);
+	register_parameter("a", a);
 }
 
 #ifdef PROFIT_OPENCL
@@ -151,9 +128,9 @@ void KingProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel &k
 
 template <typename FT>
 void KingProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
-	kernel.setArg(index++, static_cast<FT>(rc));
-	kernel.setArg(index++, static_cast<FT>(rt));
-	kernel.setArg(index++, static_cast<FT>(a));
+	kernel.setArg((index++), FT(rc));
+	kernel.setArg((index++), FT(rt));
+	kernel.setArg((index++), FT(a));
 }
 
 #endif /* PROFIT_OPENCL */

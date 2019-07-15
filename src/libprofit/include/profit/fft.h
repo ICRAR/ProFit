@@ -30,7 +30,7 @@ namespace profit {
 /**
  * Different efforts that can be used when creating FFT-related objects
  */
-enum effort_t {
+enum effort_t : char {
 	ESTIMATE = 0,
 	MEASURE,
 	PATIENT,

@@ -27,6 +27,7 @@
 #ifndef PROFIT_PROFILE_H
 #define PROFIT_PROFILE_H
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -42,23 +43,32 @@ namespace profit
 /* Forward declaration */
 class Model;
 
-struct PROFIT_API ProfileStats {
-	ProfileStats();
-	virtual ~ProfileStats();
+/// Statistics for profile evaluations
+class PROFIT_API ProfileStats {
+public:
+	// We need at least one virtual function so we create a polymorphic hierarchy
+	// rooted at this class. Otherwise we cannot distinguish at runtime between
+	// this and inherited classes via dynamic_cast, which we do in profit-cli.
+	// An alternative would be to add a tag or enumeration here and have
+	// inheriting subclasses use different values (a la C)
+	virtual ~ProfileStats() {};
 	nsecs_t total;
 };
 
-struct PROFIT_API RadialProfileStats : ProfileStats {
-	RadialProfileStats();
+/// Subsampling statistics for radial profile evaluations
+struct PROFIT_API radial_subsampling_stats {
+	nsecs_t pre_subsampling;
+	nsecs_t new_subsampling;
+	nsecs_t inital_transform;
 	OpenCL_times cl_times;
-	struct radial_subsampling_stats {
-		nsecs_t pre_subsampling;
-		nsecs_t new_subsampling;
-		nsecs_t inital_transform;
-		OpenCL_times cl_times;
-		nsecs_t final_transform;
-		nsecs_t total;
-	} subsampling;
+	nsecs_t final_transform;
+	nsecs_t total;
+};
+
+/// Statistics for radial profile evaluations
+struct PROFIT_API RadialProfileStats : ProfileStats {
+	OpenCL_times cl_times;
+	radial_subsampling_stats subsampling;
 	nsecs_t final_image;
 };
 
@@ -68,6 +78,14 @@ struct PROFIT_API RadialProfileStats : ProfileStats {
 class PROFIT_API Profile {
 
 public:
+
+#if __cpp_alias_templates == 200704
+	template <typename T>
+	using parameter_holder = std::map<std::string, std::reference_wrapper<T>>;
+#else
+	template <typename T>
+	class parameter_holder : public std::map<std::string, std::reference_wrapper<T>> { };
+#endif
 
 	/**
 	 * Constructor
@@ -97,7 +115,7 @@ public:
 	 *
 	 * @param finesampling The finesampling factor.
 	 */
-	virtual void adjust_for_finesampling(unsigned int finesampling) {};
+	virtual void adjust_for_finesampling(unsigned int finesampling);
 
 	/**
 	 * Performs the profile evaluation and saves the resulting image into
@@ -112,9 +130,23 @@ public:
 	 * @param image The Image object where values need to be stored.
 	 * @param mask The mask to apply during profile calculation.
 	 * @param scale The pixel scale of the image.
+	 * @param offset The offset of the profile's origin with respect to the
+	 * the image's origin
 	 * @param magzero The profile's zero magnitude value.
 	 */
-	virtual void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) = 0;
+	virtual void evaluate(Image &image, const Mask &mask, const PixelScale &scale,
+	    const Point &offset, double magzero) = 0;
+
+	/**
+	 * Parses @p parameter_spec, which should look like `name = value`, and
+	 * sets that parameter value on the profile.
+	 * @param parameter_spec The parameter name
+	 * @throws invalid_parameter if @p parameter_spec fails to parse, or the
+	 * parameter's value cannot be parsed correctly
+	 * @throws unknown_parameter if @p parameter_spec refers to a parameter not
+	 * supported by this profile
+	 */
+	void parameter(const std::string &parameter_spec);
 
 	/**
 	 * Sets the parameter `name` to `value`.
@@ -167,25 +199,34 @@ public:
 protected:
 
 	/**
-	 * Sets the parameter `name` to `value`. This method is meant to be
-	 * overwritten by classes, and therefore care should be taken to check
-	 * the return value from the parent class's implementation.
+	 * Registers a boolean variable as a profile parameter. It is meant to be
+	 * called from the different profiles' constructors to register their
+	 * private members holding boolean parameter values.
 	 *
-	 * @param name The parameter name
-	 * @param value The parameter value
-	 * @return Whether the parameter was set or not.
+	 * @param name The name of the boolean parameter
+	 * @param variable The boolean variable holding the parameter
 	 */
-	virtual bool parameter_impl(const std::string &name, bool value);
+	void register_parameter(const char *name, bool &variable);
 
 	/**
-	 * @see parameter_impl(const std::string, bool)
+	 * Like register_parameter(const char *, bool), but for `unsigned int`
+	 * parameters
+	 *
+	 * @param name The name of the unsigned int parameter
+	 * @param variable The unsigned int variable holding the parameter
+	 * @see register_parameter(const char *, bool)
 	 */
-	virtual bool parameter_impl(const std::string &name, double value);
+	void register_parameter(const char *name, unsigned int &variable);
 
 	/**
-	 * @see parameter_impl(const std::string, bool)
+	 * Like register_parameter(const char *, bool), but for `double`
+	 * parameters
+	 *
+	 * @param name The name of the double parameter
+	 * @param variable The double variable holding the parameter
+	 * @see register_parameter(const char *, bool)
 	 */
-	virtual bool parameter_impl(const std::string &name, unsigned int value);
+	void register_parameter(const char *name, double &variable);
 
 	/**
 	 * A (constant) reference to the model this profile belongs to
@@ -197,7 +238,7 @@ protected:
 	 */
 	const std::string name;
 
-	std::shared_ptr<ProfileStats> stats;
+private:
 
 	/** @name Profile Parameters */
 	// @{
@@ -207,11 +248,15 @@ protected:
 	bool convolve;
 	// @}
 
-private:
+	parameter_holder<bool> bool_parameters;
+	parameter_holder<unsigned int> uint_parameters;
+	parameter_holder<double> double_parameters;
 
-	template <typename T>
-	void set_parameter(const std::string &name, T value);
+	std::shared_ptr<ProfileStats> stats;
 
+	// RadialProfile sets a different type of stats, and until we have a more
+	// generic stats API we simply let it use our private member
+	friend class RadialProfile;
 };
 
 /// A pointer to a Profile object

@@ -34,6 +34,7 @@
 
 #include "profit/common.h"
 #include "profit/exceptions.h"
+#include "profit/omp_utils.h"
 #include "profit/opencl.h"
 #include "profit/model.h"
 #include "profit/radial.h"
@@ -44,8 +45,8 @@ namespace profit
 
 inline
 void RadialProfile::_image_to_profile_coordinates(double x, double y, double &x_prof, double &y_prof) {
-	x -= this->xcen;
-	y -= this->ycen;
+	x -= this->_xcen;
+	y -= this->_ycen;
 	x_prof =  x * this->_cos_ang + y * this->_sin_ang;
 	y_prof = -x * this->_sin_ang + y * this->_cos_ang;
 	y_prof /= this->axrat;
@@ -61,9 +62,9 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 	double ybin = (y1-y0) / resolution;
 	double half_xbin = xbin/2.;
 	double half_ybin = ybin/2.;
-	double total = 0, subval, testval;
-	double x , y, x_prof, y_prof;
-	unsigned int i, j;
+	double total = 0;
+	double x_prof;
+	double y_prof;
 
 	bool recurse = resolution > 1 && recur_level < max_recursions;
 
@@ -79,23 +80,23 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 
 	/* The middle X/Y value is used for each pixel */
 	std::vector<std::tuple<double, double>> subsample_points;
-	x = x0;
+	double x = x0;
 
 	std::vector<unsigned int> idxs(resolution * resolution);
 	if( recurse ) {
-		for(i=0; i < resolution; i++) {
+		for (unsigned int i = 0; i < resolution; i++) {
 			x += half_xbin;
-			y = y0;
-			for(j=0; j < resolution; j++) {
+			double y = y0;
+			for (unsigned int j = 0; j < resolution; j++) {
 				y += half_ybin;
 
 				this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
-				subval = this->evaluate_at(x_prof, y_prof);
+				double subval = this->evaluate_at(x_prof, y_prof);
 
 				double delta_y_prof = (-xbin*this->_sin_ang + ybin*this->_cos_ang)/this->axrat;
-				testval = this->evaluate_at(abs(x_prof), abs(y_prof) + abs(delta_y_prof));
+				double testval = this->evaluate_at(abs(x_prof), abs(y_prof) + abs(delta_y_prof));
 				if( abs(testval/subval - 1.0) > this->acc ) {
-					subsample_points.push_back(std::make_tuple(x, y));
+					subsample_points.emplace_back(std::make_tuple(x, y));
 				}
 				else {
 					total += subval;
@@ -107,10 +108,10 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 		}
 	}
 	else {
-		for(i=0; i < resolution; i++) {
+		for (unsigned int i = 0; i < resolution; i++) {
 			x += half_xbin;
-			y = y0;
-			for(j=0; j < resolution; j++) {
+			double y = y0;
+			for (unsigned int j = 0; j < resolution; j++) {
 				y += half_ybin;
 				this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
 				total += this->evaluate_at(x_prof, y_prof);
@@ -146,9 +147,9 @@ void RadialProfile::initial_calculations() {
 	 * Calculate the total luminosity used by this profile, used
 	 * later to calculate the exact contribution of each pixel.
 	 */
-	double box = this->box + 2;
-	double r_box = M_PI * box / (2*beta(1/box, 1/box));
-	double lumtot = this->get_lumtot(r_box);
+	double b2 = this->box + 2;
+	double r_box = M_PI * b2 / (2 * beta(1/b2, 1/b2));
+	double lumtot = this->get_lumtot() * axrat / r_box;
 	this->_ie = std::pow(10, -0.4*(this->mag - magzero))/lumtot;
 
 	/*
@@ -166,11 +167,10 @@ void RadialProfile::initial_calculations() {
 		/*
 		 * Calculate a bound, adaptive upscale
 		 */
-		unsigned int resolution;
-		resolution = (unsigned int)std::ceil(160 / (this->rscale_switch * this->rscale));
-		resolution += resolution % 2;
-		resolution = std::max(4,std:: min(16, (int)resolution));
-		this->resolution = resolution;
+		auto res = static_cast<unsigned int>(std::ceil(160 / (rscale_switch * rscale)));
+		res += res % 2;
+		res = std::max(4U, std::min(16U, res));
+		this->resolution = res;
 
 		/*
 		 * If the user didn't give a rscale_max we calculate one that covers
@@ -181,7 +181,7 @@ void RadialProfile::initial_calculations() {
 		}
 
 		/* Adjust the accuracy we'll use for sub-pixel integration */
-		this->acc = this->adjust_acc();
+		acc = adjust_acc(acc);
 
 	}
 
@@ -221,7 +221,12 @@ double RadialProfile::get_pixel_scale(const PixelScale &scale) {
 	return pixel_area * this->_ie;
 }
 
-void RadialProfile::subsampling_params(double x, double y,
+double RadialProfile::adjust_acc(double acc)
+{
+	return acc;
+}
+
+void RadialProfile::subsampling_params(double  /*x*/, double  /*y*/,
                                        unsigned int &resolution,
                                        unsigned int &max_recursions) {
 	resolution = this->resolution;
@@ -231,8 +236,9 @@ void RadialProfile::subsampling_params(double x, double y,
 /**
  * The main profile evaluation function
  */
-void RadialProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) {
-
+void RadialProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale,
+    const Point &offset, double magzero)
+{
 	this->magzero = magzero;
 
 	/*
@@ -243,6 +249,10 @@ void RadialProfile::evaluate(Image &image, const Mask &mask, const PixelScale &s
 	 * list of values around every method call.
 	 */
 	this->initial_calculations();
+
+	// Adjust the center of our profile for the given offset of the image origin
+	_xcen = xcen + offset.x * scale.first;
+	_ycen = ycen + offset.y * scale.second;
 
 	stats = std::make_shared<RadialProfileStats>();
 #ifdef PROFIT_DEBUG
@@ -278,8 +288,8 @@ void RadialProfile::evaluate(Image &image, const Mask &mask, const PixelScale &s
 
 }
 
-void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScale &scale) {
-
+void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScale &scale)
+{
 	double half_xbin = scale.first/2.;
 	double half_ybin = scale.second/2.;
 
@@ -288,53 +298,48 @@ void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScal
 	double flux_scale = this->get_pixel_scale(scale);
 
 	/*
-	 * If compiled with OpenMP support, and if the user requests so,
-	 * we parallelize the following two "for" loops
+	 * Evaluate the profile at each pixel independently
 	 */
-#ifdef PROFIT_OPENMP
-	bool use_omp = model.omp_threads > 1;
-	#pragma omp parallel for collapse(2) schedule(dynamic, 10) if(use_omp) num_threads(model.omp_threads)
-#endif /* PROFIT_OPENMP */
-	for(unsigned int j=0; j < height; j++) {
-		for(unsigned int i=0; i < width; i++) {
+	omp_2d_for(model.omp_threads, width, height, [&](unsigned int i, unsigned int j) {
 
-			/* We were instructed to ignore this pixel */
-			if( mask && !mask[i + j * width] ) {
-				continue;
-			}
-
-			double x_prof, y_prof, r_prof;
-			double y = half_ybin + j * scale.second;
-			double x = half_xbin + i * scale.first;
-			this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
-
-			/*
-			 * Check whether we need further refinement.
-			 * TODO: the radius calculation doesn't take into account boxing
-			 */
-			r_prof = std::sqrt(x_prof*x_prof + y_prof*y_prof);
-			double pixel_val;
-			if( this->rscale_max > 0 && r_prof/this->rscale > this->rscale_max ) {
-				pixel_val = 0.;
-			}
-			else if( this->rough || r_prof/this->rscale > this->rscale_switch ) {
-				pixel_val = this->evaluate_at(x_prof, y_prof);
-			}
-			else {
-
-				unsigned int resolution;
-				unsigned int max_recursions;
-				this->subsampling_params(x, y, resolution, max_recursions);
-
-				/* Subsample and integrate */
-				pixel_val =  this->subsample_pixel(x - half_xbin, x + half_xbin,
-				                                   y - half_ybin, y + half_ybin,
-				                                   0, max_recursions, resolution);
-			}
-
-			image[i + j * width] = flux_scale * pixel_val;
+		/* We were instructed to ignore this pixel */
+		if( mask && !mask[i + j * width] ) {
+			return;
 		}
-	}
+
+		double x_prof;
+		double y_prof;
+		double r_prof;
+		double y = half_ybin + j * scale.second;
+		double x = half_xbin + i * scale.first;
+		this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
+
+		/*
+		 * Check whether we need further refinement.
+		 * TODO: the radius calculation doesn't take into account boxing
+		 */
+		r_prof = std::sqrt(x_prof*x_prof + y_prof*y_prof);
+		double pixel_val;
+		if( this->rscale_max > 0 && r_prof/this->rscale > this->rscale_max ) {
+			pixel_val = 0.;
+		}
+		else if( this->rough || r_prof/this->rscale > this->rscale_switch ) {
+			pixel_val = this->evaluate_at(x_prof, y_prof);
+		}
+		else {
+
+			unsigned int ss_resolution;
+			unsigned int ss_max_recursions;
+			this->subsampling_params(x, y, ss_resolution, ss_max_recursions);
+
+			/* Subsample and integrate */
+			pixel_val =  this->subsample_pixel(x - half_xbin, x + half_xbin,
+			                                   y - half_ybin, y + half_ybin,
+			                                   0, ss_max_recursions, ss_resolution);
+		}
+
+		image[i + j * width] += flux_scale * pixel_val;
+	});
 
 }
 
@@ -354,7 +359,8 @@ struct point_t {
  * on a specific point
  */
 template <typename FT>
-struct ss_info_t {
+class ss_info_t {
+public:
 	ss_info_t() {};
 	ss_info_t(point_t<FT> point, FT xbin, FT ybin, unsigned int resolution, unsigned int max_recursion) :
 		point(point), xbin(xbin), ybin(ybin), resolution(resolution), max_recursion(max_recursion) {};
@@ -370,7 +376,8 @@ struct ss_info_t {
  * This is used as input and output of the subsampling kernel.
  */
 template <typename FT>
-struct ss_kinfo_t {
+class ss_kinfo_t {
+public:
 	ss_kinfo_t() {};
 	point_t<FT> point;
 	FT xbin;
@@ -400,8 +407,8 @@ unsigned int new_subsampling_points(const std::vector<ss_info_t<FT>> &prev_ss_in
 		// and contains res*res subsampling points
 		FT x0 = x - info.xbin / 2;
 		FT y0 = y - info.ybin / 2;
-		FT ss_xbin = info.xbin / res;
-		FT ss_ybin = info.ybin / res;
+		FT ss_xbin = info.xbin / FT(res);
+		FT ss_ybin = info.ybin / FT(res);
 
 		// we can't cope with more subsampling, sorry
 		if( ss_xbin == 0 || ss_ybin == 0 ) {
@@ -410,9 +417,9 @@ unsigned int new_subsampling_points(const std::vector<ss_info_t<FT>> &prev_ss_in
 
 		subsampled_pixels++;
 		for(unsigned int j=0; j!=res; j++) {
-			FT y_diff = (j + 0.5) * ss_ybin;
+			FT y_diff = (FT(j) + FT(0.5)) * ss_ybin;
 			for(unsigned int i=0; i!=res; i++) {
-				FT x_diff = (i + 0.5) * ss_xbin;
+				FT x_diff = (FT(i) + FT(0.5)) * ss_xbin;
 				ss_info.push_back({
 					{x0 + x_diff, y0 + y_diff},
 					ss_xbin, ss_ybin,
@@ -431,9 +438,7 @@ std::chrono::nanoseconds::rep to_nsecs(const std::chrono::system_clock::duration
 }
 
 template <typename FT>
-void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelScale &scale, OpenCLEnvImplPtr &env) {
-
-#define AS_FT(x) static_cast<FT>(x)
+void RadialProfile::evaluate_opencl(Image &image, const Mask & /*mask*/, const PixelScale &scale, OpenCLEnvImplPtr &env) {
 
 	using std::chrono::system_clock;
 	typedef point_t<FT> point_t;
@@ -442,8 +447,9 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 
 	unsigned int imsize = image.size();
 
-	OpenCL_times cl_times0, ss_cl_times;
-	RadialProfileStats* stats = static_cast<RadialProfileStats *>(this->stats.get());
+	OpenCL_times cl_times0 {};
+	OpenCL_times ss_cl_times {};
+	auto* stats = static_cast<RadialProfileStats *>(this->stats.get());
 
 	/* Points in time we want to measure */
 	system_clock::time_point t0, t_kprep, t_opencl, t_loopstart, t_loopend, t_imgtrans;
@@ -455,17 +461,19 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 	cl::Buffer image_buffer = env->get_buffer<FT>(CL_MEM_WRITE_ONLY, imsize);
 	cl::Buffer subsampling_points_buffer = env->get_buffer<point_t>(CL_MEM_WRITE_ONLY, imsize);
 	cl::Kernel kernel = env->get_kernel(kname);
-	kernel.setArg(arg++, image_buffer);
-	kernel.setArg(arg++, subsampling_points_buffer);
-	kernel.setArg(arg++, image.getWidth());
-	kernel.setArg(arg++, image.getHeight());
-	kernel.setArg(arg++, (int)rough);
-	kernel.setArg(arg++, AS_FT(scale.first));
-	kernel.setArg(arg++, AS_FT(scale.second));
+	kernel.setArg((arg++), image_buffer);
+	kernel.setArg((arg++), subsampling_points_buffer);
+	kernel.setArg((arg++), image.getWidth());
+	kernel.setArg((arg++), image.getHeight());
+	kernel.setArg((arg++), (int)rough);
+	kernel.setArg((arg++), FT(scale.first));
+	kernel.setArg((arg++), FT(scale.second));
 	add_common_kernel_parameters<FT>(arg, kernel);
 	t_kprep = system_clock::now();
 
-	cl::Event fill_im_evt, fill_ss_points_evt, read_evt;
+	cl::Event fill_im_evt;
+	cl::Event fill_ss_points_evt;
+	cl::Event read_evt;
 
 	// OpenCL 1.2 allows to do this; otherwise the work has to be done in the kernel
 	// (which we do)
@@ -485,19 +493,15 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 	// If FT is double we directly store the result in the profile image
 	// Otherwise we have to copy element by element to convert from float to double
 	cl::vector<cl::Event> read_waiting_evts{kernel_evt};
-	if( float_traits<FT>::is_double ) {
-		read_evt = env->queue_read(image_buffer, image.data(), &read_waiting_evts);
-		read_evt.wait();
-		t_opencl = system_clock::now();
-	}
-	else {
-		std::vector<FT> image_from_kernel(image.size());
-		read_evt = env->queue_read(image_buffer, image_from_kernel.data(), &read_waiting_evts);
-		read_evt.wait();
-		t_opencl = system_clock::now();
-		std::copy(image_from_kernel.begin(), image_from_kernel.end(), image.begin());
-		stats->final_image += to_nsecs(system_clock::now() - t_opencl);
-	}
+	std::vector<FT> image_from_kernel(image.size());
+	read_evt = env->queue_read(image_buffer, image_from_kernel.data(), &read_waiting_evts);
+	read_evt.wait();
+	t_opencl = system_clock::now();
+	FT flux_scale = FT(this->get_pixel_scale(scale));
+	std::transform(image.begin(), image.end(), image_from_kernel.begin(), image.begin(), [flux_scale](double ipixel, double kpixel) {
+		return ipixel + kpixel * flux_scale;
+	});
+	stats->final_image += to_nsecs(system_clock::now() - t_opencl);
 
 	/* These are the OpenCL-related timings so far */
 	cl_times0.kernel_prep = to_nsecs(t_kprep - t0);
@@ -535,16 +539,18 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 		if( point.x == -1 ) {
 			continue;
 		}
-		unsigned int resolution, max_recursions;
+		unsigned int resolution;
+		unsigned int max_recursions;
 		subsampling_params(point.x, point.y, resolution, max_recursions);
 		top_recursions = std::max(top_recursions, max_recursions);
-		last_ss_info.push_back({point, AS_FT(scale.first), AS_FT(scale.second), resolution, max_recursions});
+		last_ss_info.push_back({point, FT(scale.first), FT(scale.second), resolution, max_recursions});
 	}
 
 	auto ss_kname = name + "_subsample_" + float_traits<FT>::name;
 	cl::Kernel subsample_kernel = env->get_kernel(ss_kname);
 
-	struct im_result_t {
+	class im_result_t {
+	public:
 		im_result_t() {};
 		point_t point;
 		FT value;
@@ -592,8 +598,8 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 			cl::Buffer ss_kinfo_buf = env->get_buffer<ss_kinfo_t>(CL_MEM_READ_WRITE, subsamples);
 
 			arg = 0;
-			subsample_kernel.setArg(arg++, ss_kinfo_buf);
-			subsample_kernel.setArg(arg++, AS_FT(acc));
+			subsample_kernel.setArg((arg++), ss_kinfo_buf);
+			subsample_kernel.setArg((arg++), FT(acc));
 			add_common_kernel_parameters<FT>(arg, subsample_kernel);
 
 			t_kprep = system_clock::now();
@@ -632,7 +638,7 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 
 				FT val = kinfo.val;
 				for(unsigned int i=0; i<=recur_level; i++) {
-					val /= (ss_info_it->resolution * ss_info_it->resolution);
+					val /= FT(ss_info_it->resolution * ss_info_it->resolution);
 				}
 
 				subimages_results[subimage_idx].point = std::move(ss_info_it->point);
@@ -668,18 +674,14 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 
 	t_loopend = system_clock::now();
 
-	std::for_each(subimages_results.begin(), subimages_results.end(), [&image, &scale](const im_result_t &res) {
-		FT x = res.point.x / scale.first;
-		FT y = res.point.y / scale.second;
+	std::for_each(subimages_results.begin(), subimages_results.end(), [&image, &scale, &flux_scale](const im_result_t &res) {
+		FT x = FT(res.point.x / scale.first);
+		FT y = FT(res.point.y / scale.second);
 		unsigned int idx = static_cast<unsigned int>(floor(x)) + static_cast<unsigned int>(floor(y)) * image.getWidth();
-		image[idx] += res.value;
+		image[idx] += res.value * flux_scale;
 	});
 
 	// the image needs to be multiplied by the pixel scale
-	double flux_scale = this->get_pixel_scale(scale);
-	std::transform(image.begin(), image.end(), image.begin(), [flux_scale](double pixel) {
-		return pixel * flux_scale;
-	});
 	t_imgtrans = system_clock::now();
 
 	stats->subsampling.pre_subsampling = to_nsecs(t_loopstart - t_opencl);
@@ -693,15 +695,15 @@ void RadialProfile::evaluate_opencl(Image &image, const Mask &mask, const PixelS
 
 template <typename FT>
 void RadialProfile::add_common_kernel_parameters(unsigned int arg, cl::Kernel &kernel) const {
-	kernel.setArg(arg++, static_cast<FT>(xcen));
-	kernel.setArg(arg++, static_cast<FT>(ycen));
-	kernel.setArg(arg++, static_cast<FT>(_cos_ang));
-	kernel.setArg(arg++, static_cast<FT>(_sin_ang));
-	kernel.setArg(arg++, static_cast<FT>(axrat));
-	kernel.setArg(arg++, static_cast<FT>(rscale));
-	kernel.setArg(arg++, static_cast<FT>(rscale_switch));
-	kernel.setArg(arg++, static_cast<FT>(rscale_max));
-	kernel.setArg(arg++, static_cast<FT>(box));
+	kernel.setArg((arg++), FT(_xcen));
+	kernel.setArg((arg++), FT(_ycen));
+	kernel.setArg((arg++), FT(_cos_ang));
+	kernel.setArg((arg++), FT(_sin_ang));
+	kernel.setArg((arg++), FT(axrat));
+	kernel.setArg((arg++), FT(rscale));
+	kernel.setArg((arg++), FT(rscale_switch));
+	kernel.setArg((arg++), FT(rscale_max));
+	kernel.setArg((arg++), FT(box));
 	if( float_traits<FT>::is_float ) {
 		add_kernel_parameters_float(arg, kernel);
 	}
@@ -733,7 +735,20 @@ RadialProfile::RadialProfile(const Model &model, const std::string &name) :
 	_cos_ang(0), _sin_ang(0),
 	magzero(0)
 {
-	// no-op
+	register_parameter("rough", rough);
+	register_parameter("adjust", adjust);
+	register_parameter("force_cpu", force_cpu);
+	register_parameter("xcen", xcen);
+	register_parameter("ycen", ycen);
+	register_parameter("mag", mag);
+	register_parameter("ang", ang);
+	register_parameter("axrat", axrat);
+	register_parameter("box", box);
+	register_parameter("acc", acc);
+	register_parameter("rscale_switch", rscale_switch);
+	register_parameter("rscale_max", rscale_max);
+	register_parameter("max_recursions", max_recursions);
+	register_parameter("resolution", resolution);
 }
 
 #ifdef PROFIT_DEBUG
@@ -742,66 +757,13 @@ std::map<int,int> RadialProfile::get_integrations() {
 }
 #endif
 
-bool RadialProfile::parameter_impl(const std::string &name, bool value) {
-
-	if( Profile::parameter_impl(name, value) ) {
-		return true;
-	}
-
-	if( name == "rough" )              { rough = value; }
-	else if( name == "adjust" )        { adjust = value; }
-	else if( name == "force_cpu" )     { force_cpu = value; }
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-bool RadialProfile::parameter_impl(const std::string &name, double value) {
-
-	if( Profile::parameter_impl(name, value) ) {
-		return true;
-	}
-
-	if( name == "xcen" )               { xcen = value; }
-	else if( name == "ycen" )          { ycen = value; }
-	else if( name == "mag" )           { mag = value; }
-	else if( name == "ang" )           { ang = value; }
-	else if( name == "axrat" )         { axrat = value; }
-	else if( name == "box" )           { box = value; }
-	else if( name == "acc" )           { acc = value; }
-	else if( name == "rscale_switch" ) { rscale_switch = value; }
-	else if( name == "rscale_max" )    { rscale_max = value; }
-	else {
-		return false;
-	}
-
-	return true;
-}
-
-bool RadialProfile::parameter_impl(const std::string &name, unsigned int value) {
-
-	if( Profile::parameter_impl(name, value) ) {
-		return true;
-	}
-
-	if( name == "max_recursions" )  { max_recursions = value; }
-	else if( name == "resolution" ) { resolution = value; }
-	else {
-		return false;
-	}
-
-	return true;
-}
-
 #ifdef PROFIT_OPENCL
 void RadialProfile::add_kernel_parameters_float(unsigned int index, cl::Kernel &kernel) const {
-	return;
+	// subclasses may add more kernel parameters
 }
 
 void RadialProfile::add_kernel_parameters_double(unsigned int index, cl::Kernel &kernel) const {
-	return;
+	// subclasses may add more kernel parameters
 }
 #endif /* PROFIT_OPENCL */
 

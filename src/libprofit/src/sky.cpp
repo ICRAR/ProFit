@@ -33,9 +33,9 @@
 
 namespace profit {
 
-void SkyProfile::validate() {
+void SkyProfile::validate()
+{
 	/* no-op for the time being, probably check value in range, etc */
-	return;
 }
 
 
@@ -44,8 +44,9 @@ void SkyProfile::adjust_for_finesampling(unsigned int finesampling)
 	bg = requested_bg / (finesampling * finesampling);
 }
 
-void SkyProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) {
-
+void SkyProfile::evaluate(Image &image, const Mask &mask, const PixelScale & /*scale*/,
+    const Point &/*offset*/, double  /*magzero*/)
+{
 	/* In case we need to mask some pixels out */
 	auto mask_it = mask.begin();
 
@@ -57,7 +58,7 @@ void SkyProfile::evaluate(Image &image, const Mask &mask, const PixelScale &scal
 			continue;
 		}
 
-		pixel = this->bg;
+		pixel += this->bg;
 	}
 }
 
@@ -66,21 +67,7 @@ SkyProfile::SkyProfile(const Model &model, const std::string &name) :
 	bg(0.),
 	requested_bg(0.)
 {
-	// no-op
-}
-
-bool SkyProfile::parameter_impl(const std::string &name, double val) {
-
-	if( Profile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "bg" ) {
-		this->requested_bg = val;
-		return true;
-	}
-
-	return false;
+	register_parameter("bg", requested_bg);
 }
 
 } /* namespace profit */

@@ -78,30 +78,24 @@ public:
 protected:
 
 	/*
-	 * ----------------------
-	 * Inherited from Profile
-	 * ----------------------
-	 */
-	bool parameter_impl(const std::string &name, double val) override;
-	bool parameter_impl(const std::string &name, bool val) override;
-
-	/*
 	 * ----------------------------
 	 * Inherited from RadialProfile
 	 * ----------------------------
 	 */
-	void evaluate(Image &image, const Mask &mask, const PixelScale &scale, double magzero) override;
+	void evaluate(Image &image, const Mask &mask, const PixelScale &scale,
+	    const Point &offset, double magzero) override;
 	void initial_calculations() override;
 	void subsampling_params(double x, double y, unsigned int &res, unsigned int &max_rec) override;
 	double get_pixel_scale(const PixelScale &scale) override;
 
-	double get_lumtot(double r_box) override;
+	double get_lumtot() override;
 	double get_rscale() override;
-	double adjust_acc() override;
+	double adjust_acc(double acc) override;
 	double adjust_rscale_switch() override;
 	double adjust_rscale_max() override;
 	double evaluate_at(double x, double y) const override;
 
+private:
 
 	/*
 	 * -------------------------
@@ -130,8 +124,6 @@ protected:
 	/* these are internally calculated when the profile is evaluated */
 	double _bn;
 	double _rescale_factor;
-
-private:
 
 	double (*m_eval_function)(double x, double y, double box, double re, double nser, double bn);
 

@@ -23,7 +23,7 @@ Logical; use double precision arithmetic. Double precision will re-create CPU ca
 }
 }
 \details{
-Some computers might have multiple platforms and devices available for GPU computation. The indexes used refer to device number N on platform number M. If you have multiple cards then you might have more than one card device on a single platform, or single devices across multiple platforms.
+Some computers might have multiple platforms and devices available for GPU computation. The indices used refer to device number N on platform number M. If you have multiple cards then you might have more than one card device on a single platform, or single devices across multiple platforms.
 
 If your computer has a single card (or you do not know what platforms and devices means with regards to GPUs) you probably want to leave the values as their defaults.
 }
@@ -36,7 +36,7 @@ Rodrigo Tobar & Aaron Robotham
 }
 
 \seealso{
-\code{\link{profitOpenCLEnvInfo}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
+\code{\link{profitOpenCLEnvInfo}}, \code{\link{profitClearCache}}, \code{\link{profitMakeModel}}, \code{\link{profitSetupData}}
 }
 \examples{
 modellist = list(
@@ -63,6 +63,7 @@ modellist = list(
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200)))
 
 \dontrun{
+profitClearCache()
 tempCL=profitOpenCLEnv()
 magimage(profitMakeModel(modellist=modellist, dim=c(200,200), openclenv=tempCL))
 }

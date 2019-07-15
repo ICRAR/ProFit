@@ -3,20 +3,19 @@ profitMakeModel = function(modellist,
                            whichcomponents=list(sersic="all", moffat="all", ferrer="all", ferrers="all", coresersic="all", king="all", brokenexp="all", pointsource="all"),
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
-                           calcregion, docalcregion=FALSE,
+                           calcregion, docalcregion=FALSE, adjust_calcregion=TRUE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
                            convopt=NULL, psfdim=c(25,25),
                            openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
-
-	profitCheckIsPositiveInteger(finesample)
+  checkInteger(finesample,lower=1L)
 
 	if (length(dim) == 1) {
 		dim = rep(dim,2)
 	}
 
 	# Some defaults...
-	rough = rough == TRUE
-	stopifnot(is.logical(rough) && length(rough) == 1)
+	#rough = rough == TRUE
+	checkLogical(rough, len=1)
 	profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
 	componentnames = c(profilenames,"pointsource")
 	for(wcname in componentnames) {
@@ -49,7 +48,7 @@ profitMakeModel = function(modellist,
 		# If there are ANY extended sources, make a PSF
 		# Otherwise, you don't actually need a PSF image for anything and there's no need to
 		# add any padding to the model
-		if(all(names(modellist) %in% c("pointsource", "psf","sky"))) {
+		if(all(names(modellist) %in% c("pointsource", "psf", "sky"))) {
 			psf = matrix(1,1,1)
 		} else {
 
@@ -68,17 +67,6 @@ profitMakeModel = function(modellist,
 				"please adjust your PSF model or psf dimensions until it is properly normalized."))
 			}
 			psf = psf/sumpsf
-		}
-	}
-
-	# Wrong calcregion dimensions, should be the same as the model's
-	if( docalcregion ) {
-		if( missing(calcregion) ) {
-			stop("calcregion is missing")
-		}
-		if (all(dim(calcregion) == dim) == FALSE) {
-			stop(paste("calcregion dimensions are ",dim(calcregion)[1],":",dim(calcregion)[2],
-			           " and they must be ",dim[1],":",dim[2],"!",sep=""))
 		}
 	}
 
@@ -129,7 +117,7 @@ profitMakeModel = function(modellist,
 	    }
 	  }
 	}
-
+	
 	# pointsource profiles are generated in two different ways:
 	#
 	#  * If a PSF image was given, then we consider each of the
@@ -162,7 +150,7 @@ profitMakeModel = function(modellist,
 						# Create the new profile with proper values
 						new_profiles = submodel[[comp]]
 						compmag = new_profiles[['mag']]
-						stopifnot(!is.null(compmag))
+						checkNumeric(compmag,null.ok = FALSE)
 						n_profiles = length(new_profiles[['mag']])
 						xcen = modellist$pointsource$xcen[[i]]
 						ycen = modellist$pointsource$ycen[[i]]
@@ -250,6 +238,7 @@ profitMakeModel = function(modellist,
 	)
 	if( docalcregion ) {
 		model[['calcregion']] = calcregion
+		model[['adjust_calcregion']] = adjust_calcregion
 	}
 	if (!is.null(openclenv)) {
 		if (class(openclenv) == 'externalptr') {
@@ -260,7 +249,7 @@ profitMakeModel = function(modellist,
 		}
 	}
 	if (!is.null(omp_threads)) {
-		profitCheckIsPositiveInteger(omp_threads)
+	  checkInteger(omp_threads,lower=1L)
 		model[['omp_threads']] = omp_threads
 	}
 

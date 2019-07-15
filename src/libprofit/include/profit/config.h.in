@@ -78,4 +78,16 @@
  */
 #define PROFIT_OPENCL_TARGET_VERSION @PROFIT_OPENCL_TARGET_VERSION@
 
+/**
+ * Whether libprofit was compiled against a target CPU that supports the
+ * SSE2 instructions extension
+ */
+#cmakedefine PROFIT_HAS_SSE2
+
+/**
+ * Whether libprofit was compiled against a target CPU that supports the
+ * AVX instructions extension
+ */
+#cmakedefine PROFIT_HAS_AVX
+
 #endif /* PROFIT_CONFIG_H */

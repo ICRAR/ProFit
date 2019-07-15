@@ -28,6 +28,8 @@
 #ifndef PROFIT_IMAGE_H
 #define PROFIT_IMAGE_H
 
+#include <algorithm>
+#include <ostream>
 #include <stdexcept>
 #include <vector>
 
@@ -35,16 +37,49 @@
 
 namespace profit {
 
-/// An (x, y) pair in a 2-dimensional discrete surface
-struct PROFIT_API _2dcoordinate {
+/** An (x, y) pair in a 2-dimensional discrete surface
+ *
+ * Comparison between these objects can be done with the <, <=, ==, !=, > and >=
+ * operators, but users should not that there is no way to order values based
+ * on these operators (that is, objects of this type are by themselves
+ * non-sortable).
+ */
+class PROFIT_API _2dcoordinate {
+
+public:
 
 	_2dcoordinate() : x(0), y(0) {}
 	_2dcoordinate(unsigned int x, unsigned int y) : x(x), y(y) {}
 	_2dcoordinate(const _2dcoordinate &other) : x(other.x), y(other.y) {}
 	_2dcoordinate(_2dcoordinate &&other) : x(other.x), y(other.y) { other.x = 0; other.y = 0; }
+	~_2dcoordinate() = default;
 
 	unsigned int x;
 	unsigned int y;
+
+	/// greater or equal comparison across both dimensions
+	bool operator>=(const _2dcoordinate &other) const
+	{
+		return x >= other.x && y >= other.y;
+	}
+
+	/// greater than comparison across both dimensions
+	bool operator>(const _2dcoordinate &other) const
+	{
+		return x > other.x && y > other.y;
+	}
+
+	/// less or equal comparison across both dimensions
+	bool operator<=(const _2dcoordinate &other) const
+	{
+		return x <= other.x && y <= other.y;
+	}
+
+	/// less than comparison across both dimensions
+	bool operator<(const _2dcoordinate &other) const
+	{
+		return x < other.x && y < other.y;
+	}
 
 	bool operator==(const _2dcoordinate &other) const {
 		return x == other.x && y == other.y;
@@ -59,8 +94,10 @@ struct PROFIT_API _2dcoordinate {
 	}
 
 	_2dcoordinate &operator=(const _2dcoordinate &other) {
-		x = other.x;
-		y = other.y;
+		if (&other != this) {
+			x = other.x;
+			y = other.y;
+		}
 		return *this;
 	}
 
@@ -78,9 +115,21 @@ struct PROFIT_API _2dcoordinate {
 		return *this;
 	}
 
+	_2dcoordinate &operator+=(unsigned int n) {
+		x += n;
+		y += n;
+		return *this;
+	}
+
 	_2dcoordinate operator+(const _2dcoordinate &other) const {
 		_2dcoordinate sum(*this);
 		sum += other;
+		return sum;
+	}
+
+	_2dcoordinate operator+(unsigned int n) const {
+		_2dcoordinate sum(*this);
+		sum += n;
 		return sum;
 	}
 
@@ -134,9 +183,21 @@ struct PROFIT_API _2dcoordinate {
 
 };
 
+template <typename CharT>
+std::basic_ostream<CharT> &operator<<(std::basic_ostream<CharT> &os, const _2dcoordinate &coord)
+{
+	os << '[' << coord.x << ", " << coord.y << ']';
+	return os;
+}
+
 inline
 _2dcoordinate operator-(int x, const _2dcoordinate &other) {
 	return _2dcoordinate(x, x) - other;
+}
+
+inline
+_2dcoordinate operator-(const _2dcoordinate &other, int x) {
+	return other - _2dcoordinate(x, x);
 }
 
 /// Element-wise max() function for _2dcoordinate objects
@@ -145,11 +206,54 @@ inline _2dcoordinate max(const _2dcoordinate a, const _2dcoordinate b)
 	return _2dcoordinate {std::max(a.x, b.x), std::max(a.x, b.x)};
 }
 
-/// A point in a 2-dimensional surface
+/// @typedef A point in a 2-dimensional surface
 typedef _2dcoordinate Point;
 
-/// A 2-dimensional dimension definition
+/// @typedef A 2-dimensional dimension definition
 typedef _2dcoordinate Dimensions;
+
+/// A pair of points
+typedef std::pair<Point, Point> PointPair;
+
+/// A box defined by the lowest (inclusive) and highest (exclusive) 2D points
+/// that contain it.
+class Box : public PointPair {
+public:
+
+	/// Creates an empty box
+	Box() : PointPair({0, 0}, {0, 0})
+	{ }
+
+	/**
+	 * Creates a box starting at @p lb (inclusive) and ending at @p ub
+	 * (exclusive).
+	 * @param lb The lower boundaries of the box
+	 * @param ub The upper boundaries (exclusive in both dimensions) of the box
+	 */
+	Box(Point lb, Point ub) : PointPair(lb, ub)
+	{
+		if (!(first <=second)) {
+			throw std::invalid_argument("box's lower boundary must be <= than high boundary");
+		}
+	}
+
+	/// Whether this object represents an empty box
+	bool empty() const {
+		return first == second;
+	}
+
+	Box operator*(unsigned int n)
+	{
+		return {first * n, second * n};
+	}
+};
+
+template <typename CharT>
+std::basic_ostream<CharT> &operator<<(std::basic_ostream<CharT> &os, const Box &box)
+{
+	os << '[' << box.first << ", " << box.second << ']';
+	return os;
+}
 
 ///
 /// Non-templated code common to 2D surface classes
@@ -158,21 +262,12 @@ class surface_base {
 
 public:
 
-	surface_base(Dimensions dimensions = Dimensions()) :
+	surface_base() = default;
+
+	explicit surface_base(Dimensions dimensions) :
 		dimensions(dimensions)
 	{
 		// no-op
-	}
-
-	surface_base(const surface_base &other) :
-		dimensions(other.dimensions)
-	{
-		// no-op
-	}
-
-	surface_base(surface_base &&other) :
-		dimensions(std::move(other.dimensions))
-	{
 	}
 
 	unsigned int getHeight() const {
@@ -196,27 +291,13 @@ public:
 	}
 
 	/// Surfaces are true if they have a dimension
-	operator bool() const {
+	explicit operator bool() const {
 		return dimensions.x > 0 && dimensions.y > 0;
 	}
 
 	/// Comparison operator
 	bool operator==(const surface_base &other) const {
 		return dimensions == other.dimensions;
-	}
-
-	/// Move assignment
-	surface_base &operator=(surface_base &&rhs)
-	{
-		dimensions = std::move(rhs.dimensions);
-		return *this;
-	}
-
-	/// Copy assignment
-	surface_base &operator=(const surface_base &rhs)
-	{
-		dimensions = rhs.dimensions;
-		return *this;
 	}
 
 protected:
@@ -272,7 +353,9 @@ public:
 	typedef typename std::vector<T>::iterator iterator;
 	typedef typename std::vector<T>::const_iterator const_iterator;
 
-	surface(Dimensions dimensions = Dimensions()) :
+	surface() = default;
+
+	explicit surface(Dimensions dimensions) :
 		surface_base(dimensions),
 		_data(dimensions.x * dimensions.y)
 	{
@@ -297,32 +380,17 @@ public:
 	}
 
 	/**
-	 * Copy constructor
-	 * @param other A different image
+	 * Assigns zero to all elements of this Image.
 	 */
-	surface(const surface &other) :
-		surface_base(other),
-		_data(other._data)
-	{
-		check_size();
-	}
-
-	/**
-	 * Move constructor
-	 * @param other A different image
-	 */
-	surface(surface &&other) :
-		surface_base(std::move(other)),
-		_data(std::move(other._data))
-	{
-		// no-op
+	void zero() {
+		_data.assign(_data.size(), 0);
 	}
 
 	/**
 	 * Creates a new surface that is an extension of this object. The new
 	 * dimensions must be greater or equal to the current dimensions.
 	 * The current contents of this surface are placed at @p start, relative to
-	 * the new surface's dimension;
+	 * the new surface's dimension.
 	 *
 	 * @param dimensions The dimensions of the new extended surface.
 	 * @param start The starting point of the original surface relative to the new one
@@ -332,12 +400,29 @@ public:
 	{
 		_extension_is_possible(dimensions, start);
 		D extended(dimensions);
+		extend(extended, start);
+		return extended;
+	}
+
+	/**
+	 * Extends this object into the given surface. The new surface's
+	 * dimensions must be greater or equal to the current dimensions.
+	 * The current contents of this surface are placed at @p start, relative to
+	 * the new surface's dimension.
+	 *
+	 * @param extended The new surface to hold the extended version of this image.
+	 * Its dimensions mandate how much the current image should extend.
+	 * @param start The starting point of the original surface relative to the new one
+	 */
+	void extend(D &extended, Point start = Point()) const
+	{
+		auto dimensions = extended.getDimensions();
+		_extension_is_possible(dimensions, start);
 		for(unsigned int j = 0; j < getHeight(); j++) {
 			for(unsigned int i = 0; i < getWidth(); i++) {
 				extended[(i+start.x) + (j+start.y)*dimensions.x] = _data[i + j*getWidth()];
 			}
 		}
-		return extended;
 	}
 
 	/**
@@ -358,30 +443,67 @@ public:
 			for(unsigned int i = 0; i < dimensions.x; i++) {
 				crop[i + j * dimensions.x] = _data[(i + start.x) + (j + start.y) * getWidth()];
 			}
-		};
+		}
 		return crop;
+	}
+
+	/**
+	 * Returns a copy of this surface with its underlying values in the reversed
+	 * order, such that the top-right corner is now that bottom-left corner and
+	 * vice-versa.
+	 *
+	 * @return A new object with reversed values
+	 */
+	D reverse() const
+	{
+		D reversed(static_cast<const D &>(*this));
+		std::reverse(reversed.begin(), reversed.end());
+		return reversed;
+	}
+
+	/**
+	 * Returns a "value-interesting" bounding box for this surface; that is,
+	 * the subset of this surface inside which all values are different from
+	 * zero.
+	 *
+	 * @return The minimum bounding box within which all non-zero values of this
+	 * surface are contained.
+	 */
+	Box bounding_box() const
+	{
+		Point lb = getDimensions();
+		Point ub;
+		bool only_zeros = true;
+		for(unsigned int j = 0; j < getHeight(); j++) {
+			for(unsigned int i = 0; i < getWidth(); i++) {
+				if (_data[i + j * getWidth()] == 0) {
+					continue;
+				}
+				if (i < lb.x) {
+					lb.x = i;
+				}
+				if (j < lb.y) {
+					lb.y = j;
+				}
+				if ((i + 1) > ub.x) {
+					ub.x = i + 1;
+				}
+				if ((j + 1) > ub.y) {
+					ub.y = j + 1;
+				}
+				only_zeros = false;
+			}
+		}
+		if (only_zeros) {
+			return {};
+		}
+		return {lb, ub};
 	}
 
 	/// Comparison operator
 	bool operator==(const surface &other) const {
 		return surface_base::operator==(other) &&
 		       _data == other._data;
-	}
-
-	/// Move assignment
-	surface &operator=(surface &&rhs)
-	{
-		surface_base::operator=(std::move(rhs));
-		_data = std::move(rhs._data);
-		return *this;
-	}
-
-	/// Copy assignment
-	surface &operator=(const surface &rhs)
-	{
-		surface_base::operator=(rhs);
-		_data = rhs._data;
-		return *this;
 	}
 
 	/// subscript operator
@@ -418,7 +540,7 @@ public:
 	const_iterator cend() const { return _data.cend(); }
 
 	/// type casting to std::vector<T>
-	operator std::vector<T>() const {
+	explicit operator std::vector<T>() const {
 		return std::vector<T>(_data);
 	}
 
@@ -442,6 +564,59 @@ private:
 	}
 };
 
+namespace detail {
+
+	template <typename ValueT>
+	struct printing_return {
+		typedef ValueT type;
+	};
+
+	template <>
+	struct printing_return<bool> {
+		typedef char type;
+	};
+
+	template <typename ValueT>
+	inline
+	typename printing_return<ValueT>::type surface_value_for_printing(ValueT value)
+	{
+		return value;
+	}
+
+	template <>
+	inline
+	char surface_value_for_printing<bool>(bool value)
+	{
+		if (value) {
+			return 'T';
+		}
+		return 'F';
+	}
+} // namespace detail
+
+template <typename CharT, typename ValueT, typename Derived>
+std::basic_ostream<CharT> &operator<<(std::basic_ostream<CharT> &os, const surface<ValueT, Derived> &s)
+{
+	os << '[';
+	auto width = s.getWidth();
+	auto height = s.getHeight();
+	for (unsigned int j = 0; j != height; j++) {
+		os << '[';
+		for (unsigned int i = 0; i != width; i++) {
+			os << detail::surface_value_for_printing(s[Point{i, j}]);
+			if (i < width - 1) {
+				os << ", ";
+			}
+		}
+		os << ']';
+		if (j < height - 1) {
+			os << ", ";
+		}
+	}
+	os << ']';
+	return os;
+}
+
 /**
  * A mask is surface of bools
  */
@@ -450,31 +625,41 @@ class PROFIT_API Mask : public surface<bool, Mask> {
 public:
 
 	// Constructors that look like those from _surface
+	Mask() = default;
 	Mask(unsigned int width, unsigned int height);
-	Mask(Dimensions dimensions = Dimensions());
+	Mask(bool value, unsigned int width, unsigned int height);
+	Mask(bool value, Dimensions dimensions);
+	explicit Mask(Dimensions dimensions);
 	Mask(const std::vector<bool> &data, unsigned int width, unsigned int height);
 	Mask(const std::vector<bool> &data, Dimensions dimensions);
 	Mask(std::vector<bool> &&data, unsigned int width, unsigned int height);
 	Mask(std::vector<bool> &&data, Dimensions dimensions);
-	Mask(const Mask& other);
-	Mask(Mask &&other);
 
-	// Move and copy assignment need to be declared because we explicitly
-	// declare constructors for this class
+	/**
+	 * Returns a new Mask where the area covered by the new mask (i.e., where
+	 * the new mask's value is @p true) is an "expanded" version of this mask.
+	 * This is similar in nature to a convolution, but simpler as it is a
+	 * simpler boolean operation that requires no additions or further scaling.
+	 *
+	 * @param pad the amount of cells to expand each input pixel on each dimension.
+	 * @param threads threads to use to perform computation. Only valid if
+	 * compiled with OpenMP support
+	 */
+	Mask expand_by(Dimensions pad, int threads=1) const;
 
-	/// Move assignment
-	Mask &operator=(Mask &&rhs)
-	{
-		surface::operator=(std::move(rhs));
-		return *this;
-	}
-
-	/// Copy assignment
-	Mask &operator=(const Mask &rhs)
-	{
-		surface::operator=(rhs);
-		return *this;
-	}
+	/**
+	 * Upsamples this mask by the given factor.
+	 *
+	 * The resulting mask's dimensions will be the original mask's times the
+	 * upsampling factor. The original mask's values are copied on the
+	 * corresponding <pre>factor * factor</pre> cells of the upsampled
+	 * mask.
+	 *
+	 * @param factor The upsampling factor. Must be greater than 0. If equals to
+	 * 1, the upsampled mask is equals to the original mask.
+	 * @return The upsampled mask
+	 */
+	Mask upsample(unsigned int factor) const;
 
 };
 
@@ -486,14 +671,15 @@ class PROFIT_API Image : public surface<double, Image> {
 public:
 
 	// Constructors that look like those from _surface
+	Image() = default;
 	Image(unsigned int width, unsigned int height);
-	Image(Dimensions dimensions = Dimensions());
+	Image(double value, Dimensions dimensions);
+	Image(double value, unsigned int width, unsigned int height);
+	explicit Image(Dimensions dimensions);
 	Image(const std::vector<double> &data, unsigned int width, unsigned int height);
 	Image(const std::vector<double> &data, Dimensions dimensions);
 	Image(std::vector<double> &&data, unsigned int width, unsigned int height);
 	Image(std::vector<double> &&data, Dimensions dimensions);
-	Image(const Image& other);
-	Image(Image &&other);
 
 	/** Available image upsampling modes */
 	enum UpsamplingMode {
@@ -538,11 +724,11 @@ public:
 	};
 
 	/**
-	 * Returns the sum of the image pixel's values
+	 * Returns the sum of the image pixel's values (or "total flux").
 	 *
 	 * @return The sum of the image pixel's values
 	 */
-	double getTotal() const;
+	double total() const;
 
 	/**
 	 * Upsamples this image by the given factor.
@@ -603,23 +789,6 @@ public:
 	 */
 	const value_type *data() const {
 		return _get().data();
-	}
-
-	// Move and copy assignment need to be declared because we explicitly
-	// declare constructors for this class
-
-	/// Move assignment
-	Image &operator=(Image &&rhs)
-	{
-		surface::operator=(std::move(rhs));
-		return *this;
-	}
-
-	/// Copy assignment
-	Image &operator=(const Image &rhs)
-	{
-		surface::operator=(rhs);
-		return *this;
 	}
 
 	/// Addition assignment of another Image

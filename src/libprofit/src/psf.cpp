@@ -51,21 +51,18 @@ unsigned int bind(double value, unsigned int max) {
 	if( intval < 0 ) {
 		return 0;
 	}
-	unsigned int uintval = static_cast<unsigned int>(intval);
+	auto uintval = static_cast<unsigned int>(intval);
 	return std::min(uintval, max);
 }
 
-void PsfProfile::evaluate(Image &image, const Mask &mask, const PixelScale &pixel_scale, double magzero) {
-
+void PsfProfile::evaluate(Image &image, const Mask & /*mask*/, const PixelScale &pixel_scale,
+    const Point &offset, double magzero)
+{
 	using std::floor;
 	using std::min;
 	using std::max;
 	using std::pow;
 
-	int psf_pix_x, psf_pix_y;
-	unsigned int pix_x, pix_y;
-	double x, y, psf_x, psf_y;
-	double total = 0;
 	double scale = pow(10, -0.4*(this->mag - magzero));
 
 	/* Making the code more readable */
@@ -79,10 +76,10 @@ void PsfProfile::evaluate(Image &image, const Mask &mask, const PixelScale &pixe
 	unsigned int psf_height = model.psf.getHeight();
 
 	/* Where we start/end applying the psf into the target image */
-	double origin_x = this->xcen - psf_width*psf_scale_x/2.;
-	double end_x    = this->xcen + psf_width*psf_scale_x/2.;
-	double origin_y = this->ycen - psf_height*psf_scale_y/2.;
-	double end_y    = this->ycen + psf_height*psf_scale_y/2.;
+	double origin_x = this->xcen + offset.x * scale_x - psf_width * psf_scale_x / 2;
+	double end_x    = this->xcen + offset.y * scale_y + psf_width * psf_scale_x / 2;
+	double origin_y = this->ycen + offset.x * scale_x - psf_height * psf_scale_y / 2;
+	double end_y    = this->ycen + offset.y * scale_y + psf_height * psf_scale_y / 2;
 
 	/*
 	 * We first loop over the pixels of the image, making sure we don't go
@@ -93,13 +90,13 @@ void PsfProfile::evaluate(Image &image, const Mask &mask, const PixelScale &pixe
 	unsigned int x1 = bind(end_x/scale_x, width - 1);
 	unsigned int y1 = bind(end_y/scale_y, height - 1);
 
-	for(pix_y=y0; pix_y <= y1; pix_y++) {
+	for(unsigned int pix_y = y0; pix_y <= y1; pix_y++) {
 
-		y = pix_y * scale_y;
+		double y = pix_y * scale_y;
 
-		for(pix_x=x0; pix_x <= x1; pix_x++) {
+		for(unsigned int pix_x = x0; pix_x <= x1; pix_x++) {
 
-			x = pix_x * scale_x;
+			double x = pix_x * scale_x;
 
 			/*
 			 * Image pixel (pix_x,pix_y) covers [x:x+scale_x; y:y+scale_y]
@@ -112,13 +109,13 @@ void PsfProfile::evaluate(Image &image, const Mask &mask, const PixelScale &pixe
 
 			/* Accumulate the proportional values from the PSF */
 			double val = 0;
-			for(psf_pix_y = psf_pix_y0; psf_pix_y <= psf_pix_y1; psf_pix_y++) {
+			for(int psf_pix_y = psf_pix_y0; psf_pix_y <= psf_pix_y1; psf_pix_y++) {
 
-				psf_y = psf_pix_y * psf_scale_y + origin_y;
+				double psf_y = psf_pix_y * psf_scale_y + origin_y;
 
-				for(psf_pix_x = psf_pix_x0; psf_pix_x <= psf_pix_x1; psf_pix_x++) {
+				for(int psf_pix_x = psf_pix_x0; psf_pix_x <= psf_pix_x1; psf_pix_x++) {
 
-					psf_x = psf_pix_x * psf_scale_x + origin_x;
+					double psf_x = psf_pix_x * psf_scale_x + origin_x;
 
 					/*
 					 * PSF pixel (psf_pix_x,psf_pix_y) covers [psf_x:psf_x+psf_scale_x; psf_y:psf_y+psf_scale_y]
@@ -141,17 +138,9 @@ void PsfProfile::evaluate(Image &image, const Mask &mask, const PixelScale &pixe
 			}
 
 			/* Finally, write down the final value into our pixel */
-			image[pix_x + pix_y*width] = val;
-			total += val;
+			image[pix_x + pix_y*width] += val * scale;
 		}
 	}
-
-	/* We're done applying the ps, now normalize and scale */
-	double multiplier = scale;
-	if( total != 0 ) {
-		multiplier = scale / total;
-	}
-	image *= multiplier;
 
 }
 
@@ -161,23 +150,9 @@ PsfProfile::PsfProfile(const Model &model, const std::string &name) :
 	ycen(0),
 	mag(0)
 {
-	// no-op
-}
-
-bool PsfProfile::parameter_impl(const std::string &name, double val) {
-
-	if( Profile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "xcen" )      { xcen = val; }
-	else if( name == "ycen" ) { ycen = val; }
-	else if( name == "mag" )  { mag = val; }
-	else {
-		return false;
-	}
-
-	return true;
+	register_parameter("xcen", xcen);
+	register_parameter("ycen", ycen);
+	register_parameter("mag", mag);
 }
 
 } /* namespace profit */

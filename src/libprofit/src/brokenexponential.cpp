@@ -88,14 +88,9 @@ double _broken_exponential(double r, double h1, double h2, double rb, double a) 
  *       r = (x^{2+B} + y^{2+B})^{1/(2+B)}
  *       B = box parameter
  */
-double BrokenExponentialProfile::evaluate_at(double x, double y) const {
-
-	using std::abs;
-	using std::pow;
-
-	double box = this->box + 2.;
-	double r = pow( pow(abs(x), box) + pow(abs(y), box), 1./box);
-	return _broken_exponential(r, h1, h2, rb, a);
+double BrokenExponentialProfile::evaluate_at(double x, double y) const
+{
+	return _broken_exponential(boxy_r(x, y), h1, h2, rb, a);
 }
 
 void BrokenExponentialProfile::validate() {
@@ -117,18 +112,18 @@ double BrokenExponentialProfile::integrate_at(double r) const {
 	return r * _broken_exponential(r, h1, h2, rb, a);
 }
 
-double BrokenExponentialProfile::get_lumtot(double r_box) {
+double BrokenExponentialProfile::get_lumtot() {
 	/*
 	 * We numerically integrate r from 0 to infinity
 	 * to get the total luminosity
 	 */
 	double magtot = integrate_qagi(
-		[](double r, void *ctx) -> double {
-			BrokenExponentialProfile *p = static_cast<BrokenExponentialProfile *>(ctx);
+		[](double r, void *ctx) {
+			auto *p = static_cast<BrokenExponentialProfile *>(ctx);
 			return p->integrate_at(r);
 		},
 		0, this);
-	return 2*M_PI * axrat * magtot/r_box;
+	return 2 * M_PI * magtot;
 }
 
 double BrokenExponentialProfile::adjust_rscale_switch() {
@@ -143,32 +138,14 @@ double BrokenExponentialProfile::get_rscale() {
 	return this->h1*4;
 }
 
-double BrokenExponentialProfile::adjust_acc() {
-	return this->acc;
-}
-
 BrokenExponentialProfile::BrokenExponentialProfile(const Model &model, const std::string &name) :
 	RadialProfile(model, name),
 	h1(1), h2(1), rb(1), a(1)
 {
-	// no-op
-}
-
-bool BrokenExponentialProfile::parameter_impl(const std::string &name, double val) {
-
-	if( RadialProfile::parameter_impl(name, val) ) {
-		return true;
-	}
-
-	if( name == "h1" )      { h1 = val; }
-	else if( name == "h2" ) { h2 = val; }
-	else if( name == "rb" ) { rb = val; }
-	else if( name == "a" )  { a = val; }
-	else {
-		return false;
-	}
-
-	return true;
+	register_parameter("h1", h1);
+	register_parameter("h2", h2);
+	register_parameter("rb", rb);
+	register_parameter("a", a);
 }
 
 #ifdef PROFIT_OPENCL
@@ -182,10 +159,10 @@ void BrokenExponentialProfile::add_kernel_parameters_double(unsigned int index, 
 
 template <typename FT>
 void BrokenExponentialProfile::add_kernel_parameters(unsigned int index, cl::Kernel &kernel) const {
-	kernel.setArg(index++, static_cast<FT>(h1));
-	kernel.setArg(index++, static_cast<FT>(h2));
-	kernel.setArg(index++, static_cast<FT>(rb));
-	kernel.setArg(index++, static_cast<FT>(a));
+	kernel.setArg((index++), FT(h1));
+	kernel.setArg((index++), FT(h2));
+	kernel.setArg((index++), FT(rb));
+	kernel.setArg((index++), FT(a));
 }
 
 #endif /* PROFIT_OPENCL */

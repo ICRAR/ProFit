@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <sstream>
@@ -17,6 +18,10 @@ using namespace std;
 
 static
 Image _read_image(SEXP r_image) {
+
+	if (r_image == R_NilValue) {
+		return Image{};
+	}
 
 	unsigned int im_width = Rf_nrows(r_image);
 	unsigned int im_height = Rf_ncols(r_image);
@@ -289,7 +294,7 @@ SEXP _R_profit_openclenv_info() {
 	map<int, OpenCL_plat_info> clinfo;
 	try {
 		clinfo = get_opencl_info();
-	} catch (const exception &e) {
+	} catch (const std::exception &e) {
 		ostringstream os;
 		os << "Error while querying OpenCL environment: " << e.what();
 		Rf_error(os.str().c_str());
@@ -575,11 +580,8 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	SEXP r_calcregion = _get_list_element(model_list, "calcregion");
 	if( r_calcregion != R_NilValue ) {
 		auto mask = _read_mask(r_calcregion);
-		if (mask.getDimensions() != Dimensions{img_w, img_h}) {
-			Rf_error("Calc region has different dimensions than the image");
-			return R_NilValue;
-		}
 		m.set_mask(std::move(mask));
+		m.set_adjust_mask(bool(Rf_asLogical(_get_list_element(model_list, "adjust_calcregion"))));
 	}
 
 	/* A convolver, if any */
@@ -730,19 +732,23 @@ SEXP _R_profit_upsample(SEXP img, SEXP factor)
 	return r_image;
 }
 
-// TODO: to be moved down to libprofit at some point
-namespace detail {
-
-int setenv(const char *name, const char *value)
+static
+SEXP _R_profit_adjust_mask(SEXP r_mask, SEXP r_img_dims, SEXP r_psf, SEXP r_finesampling)
 {
-#ifdef _WIN32
-	return ::_putenv_s(name, value);
-#else
-	return ::setenv(name, value, 1);
-#endif
+	auto mask = _read_mask(r_mask);
+	auto psf = _read_image(r_psf);
+	auto img_dims = Dimensions{
+	    static_cast<unsigned int>(INTEGER(r_img_dims)[0]),
+	    static_cast<unsigned int>(INTEGER(r_img_dims)[1])
+	};
+	auto finesampling = static_cast<unsigned int>(Rf_asInteger(r_finesampling));
+	Model::adjust(mask, img_dims, psf, finesampling);
+	SEXP r_modified_mask = PROTECT(Rf_allocMatrix(LGLSXP, mask.getWidth(), mask.getHeight()));
+	int *modified_mask = LOGICAL(r_modified_mask);
+	std::copy(mask.begin(), mask.end(), modified_mask);
+	UNPROTECT(1);
+	return r_modified_mask;
 }
-
-} // namespace detail
 
 extern "C" {
 	SEXP R_profit_make_model(SEXP model_list) {
@@ -788,6 +794,10 @@ extern "C" {
 		return _R_profit_upsample(img, factor);
 	}
 
+	SEXP R_profit_adjust_mask(SEXP mask, SEXP img_dims, SEXP psf, SEXP finesampling) {
+		return _R_profit_adjust_mask(mask, img_dims, psf, finesampling);
+	}
+
 	SEXP R_profit_clear_cache() {
 		profit::clear_cache();
 		return R_NilValue;
@@ -811,6 +821,7 @@ extern "C" {
 		{"R_profit_openclenv",      (DL_FUNC) &R_profit_openclenv,      3},
 		{"R_profit_downsample",     (DL_FUNC) &R_profit_downsample,     2},
 		{"R_profit_upsample",       (DL_FUNC) &R_profit_upsample,       2},
+		{"R_profit_adjust_mask",    (DL_FUNC) &R_profit_adjust_mask,    4},
 		{"R_profit_clear_cache",    (DL_FUNC) &R_profit_clear_cache,    0},
 
 		/* Sentinel */
@@ -846,7 +857,7 @@ extern "C" {
 		PROTECT(tempdir_func = Rf_lang1(Rf_install("tempdir")));
 		PROTECT(r_session_tmpdir = Rf_eval(tempdir_func, R_GlobalEnv));
 		auto tmpdir = R_tmpnam("profit", CHAR(STRING_ELT(r_session_tmpdir, 0)));
-		detail::setenv("PROFIT_HOME", tmpdir);
+		profit::setenv("PROFIT_HOME", tmpdir);
 		free(tmpdir);
 		UNPROTECT(2);
 
