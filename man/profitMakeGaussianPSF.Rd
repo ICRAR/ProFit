@@ -50,4 +50,6 @@ magimage(profitMakeGaussianPSF(fwhm=5), stretch='lin')
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ PSF, gaussian, normal }
+\concept{ PSF }
+\concept{ gaussian }
+\concept{ normal }

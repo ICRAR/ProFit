@@ -85,6 +85,6 @@ magimage(profitConvolvePSF(model.image, psf, options=list(method='FFTWconv', fft
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ PSF}
-\keyword{ convolve }
-\keyword{ convolution }% __ONLY ONE__ keyword per line
+\concept{ PSF}
+\concept{ convolve }
+\concept{ convolution }% __ONLY ONE__ keyword per line

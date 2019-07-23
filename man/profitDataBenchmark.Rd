@@ -218,4 +218,5 @@ system.time(profitLikeModel(parm=Data$init, Data=Data))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ benchmark, data }
+\concept{ benchmark}
+\concept{ data }

@@ -39,5 +39,5 @@ profitOpenCLEnvInfo()
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ GPU }% use one of  RShowDoc("KEYWORDS")
-\keyword{ OpenCL }% __ONLY ONE__ keyword per line
+\concept{ GPU }% use one of  RShowDoc("KEYWORDS")
+\concept{ OpenCL }% __ONLY ONE__ keyword per line

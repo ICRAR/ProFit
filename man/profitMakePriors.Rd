@@ -82,4 +82,4 @@ stopifnot(abs(priors(modellist,modellist) - sum(dnorm(0,0,unlist(sigmas),log=TRU
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ prior }% use one of  RShowDoc("KEYWORDS")
+\concept{ prior }% use one of  RShowDoc("KEYWORDS")

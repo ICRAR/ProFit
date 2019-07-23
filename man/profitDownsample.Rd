@@ -36,5 +36,5 @@ Dan Taranu
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ downsample }
-\keyword{ upsample }
+\concept{ downsample }
+\concept{ upsample }

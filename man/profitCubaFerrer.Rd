@@ -97,5 +97,5 @@ magimage(profitCubaFerrer(axrat=0.7, ang=30))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ cubature }% use one of  RShowDoc("KEYWORDS")
-\keyword{ moffat }% __ONLY ONE__ keyword per line
+\concept{ cubature }% use one of  RShowDoc("KEYWORDS")
+\concept{ moffat }% __ONLY ONE__ keyword per line

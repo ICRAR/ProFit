@@ -56,7 +56,7 @@ magimage(log10(deproj$img), zlim=c(-15,-7.5),magmap=FALSE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{deproject}
-\keyword{ellipse}
-\keyword{disk}
-\keyword{disc}
+\concept{deproject}
+\concept{ellipse}
+\concept{disk}
+\concept{disc}

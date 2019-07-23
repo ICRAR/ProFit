@@ -191,4 +191,4 @@ profitEllipsePlot(Data, Data$modellist, pixscale=1, SBlim=26-5*log10(0.2))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ellipse }
+\concept{ ellipse }

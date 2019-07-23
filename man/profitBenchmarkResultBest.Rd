@@ -52,4 +52,4 @@ print(paste('Name:',best$name,'time:',best$time))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ data }
+\concept{ data }

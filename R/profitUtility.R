@@ -221,9 +221,7 @@ profitDeprojectImageEllipse <- function(image, xcen, ycen, axrat, ang, upsample=
 
 profitPoissonMonteCarlo <- function(x)
 {
-  dimx = dim(x)
-  x = rpois(length(x), x)
-  dim(x) = dimx
+  x[] = rpois(length(x), x)
   return(x)
 }
 

@@ -97,4 +97,4 @@ profitMakePointSource(xcen=7,ycen=7,mag=0,psf=psf,image=image,modellist=NULL, pl
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ PSF }
+\concept{ PSF }

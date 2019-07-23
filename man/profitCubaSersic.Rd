@@ -116,5 +116,5 @@ hist((tempExact-tempProFit)/tempExact)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ cubature }
-\keyword{ sersic }% __ONLY ONE__ keyword per line
+\concept{ cubature }
+\concept{ sersic }% __ONLY ONE__ keyword per line

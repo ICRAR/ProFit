@@ -102,5 +102,5 @@ magimage(profitCubaBrokenExp(axrat=0.7, ang=30, h1=6, h2=3, rb=4, a=1))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ cubature }% use one of  RShowDoc("KEYWORDS")
-\keyword{ broken-exponential }% __ONLY ONE__ keyword per line
+\concept{ cubature }% use one of  RShowDoc("KEYWORDS")
+\concept{ broken-exponential }% __ONLY ONE__ keyword per line

@@ -289,5 +289,5 @@ system.time(for(i in 1:100){profitMakeModel(modellist=modellist, dim=c(200,200),
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ Model }
-\keyword{ Sersic }% __ONLY ONE__ keyword per line
+\concept{ Model }
+\concept{ Sersic }% __ONLY ONE__ keyword per line

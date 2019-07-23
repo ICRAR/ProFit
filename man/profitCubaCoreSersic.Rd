@@ -105,5 +105,5 @@ magimage(profitCubaCoreSersic(axrat=0.7, ang=30))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ cubature }% use one of  RShowDoc("KEYWORDS")
-\keyword{ core-sersic }% __ONLY ONE__ keyword per line
+\concept{ cubature }% use one of  RShowDoc("KEYWORDS")
+\concept{ core-sersic }% __ONLY ONE__ keyword per line

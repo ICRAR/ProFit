@@ -78,4 +78,4 @@ magimage(profitMakeModel(profitRemakeModellist(parm, modellist, tofit)$modellist
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ relist }
+\concept{ relist }

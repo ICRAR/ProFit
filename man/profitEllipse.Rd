@@ -108,4 +108,4 @@ magplot(temp2, type='l', log='y', xlim=c(0,50), ylim=c(1e-12,2e-9), xlab='Pixels
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ellipse }
+\concept{ ellipse }

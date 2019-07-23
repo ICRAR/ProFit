@@ -31,5 +31,5 @@ Dan Taranu
 profitAvailableConvolvers()
 }
 % R documentation directory.
-\keyword{ convolve }
-\keyword{ convolution }% __ONLY ONE__ keyword per line
+\concept{ convolve }
+\concept{ convolution }% __ONLY ONE__ keyword per line

@@ -40,4 +40,4 @@ profitParseLikefunc("cash")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ likelihood }% use one of  RShowDoc("KEYWORDS")
+\concept{ likelihood }% use one of  RShowDoc("KEYWORDS")

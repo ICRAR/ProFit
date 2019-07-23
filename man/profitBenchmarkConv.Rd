@@ -151,4 +151,4 @@ profitBenchmarkConv(imagedim=c(400,400), psfdim=c(25,25), nbench=1)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ data }
+\concept{ data }

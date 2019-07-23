@@ -35,4 +35,6 @@ magimage(profitPoissonMonteCarlo(disk*gain))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ monte, carlo, random, Poisson }
+\concept{ monte-carlo }
+\concept{ random }
+\concept{ Poisson }
