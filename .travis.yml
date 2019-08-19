@@ -27,6 +27,8 @@
 # This should do it, there's no need to specify anything else
 language: r
 cache: packages
+dist: xenial
+services: [xvfb]
 
 # Build matrix
 # We try at least one Linux and one MacOS environment
@@ -47,9 +49,6 @@ matrix:
 
 # To build the vignettes we need rmarkdown
 r_packages: rmarkdown
-
-before_install:
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then sh -e /etc/init.d/xvfb start; sleep 3; export DISPLAY=:99.0; fi
 
 # The pracma binary uploaded to CRAN is for R 3.4.3 (a pre-release as of this writing),
 # and therefore we fail with WARNINGs about the package being compiled for a different R version
