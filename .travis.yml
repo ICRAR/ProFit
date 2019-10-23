@@ -72,4 +72,5 @@ addons:
   packages:
    - libfftw3-dev
    - libnlopt-dev
+   - devscripts
 brew_packages: fftw
