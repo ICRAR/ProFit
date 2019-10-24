@@ -161,7 +161,7 @@ OMP
 
 has_fftw_headers() {
 	has_headers=no
-	echo "#include <fftw3.h>\nint main(){return 0;}" > $tmpdir/fftw_headers.c
+	printf "#include <fftw3.h>\nint main(){return 0;}" > $tmpdir/fftw_headers.c
 	$CC $CFLAGS -c $tmpdir/fftw_headers.c -o $tmpdir/fftw_headers.o 2> /dev/null
 	if [ $? -eq 0 ]; then
 		has_headers=yes
@@ -341,7 +341,7 @@ else
 		# In OSX 10.8 (Darwin 12.0) the Apple OpenCL platform was already 1.2,
 		# and trying to compile with a target version of 1.1
 		# (depending on the compiler) generates lots of deprecation warnings
-		if [ "$OS" = "Darwin" -a "`uname -r`" \> "12" ]; then
+		if [ "$OS" = "Darwin" ] && [ "`uname -r`" \> "12" ]; then
 			PROFIT_OPENCL_TARGET_VERSION=120
 		fi
 
