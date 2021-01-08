@@ -53,18 +53,20 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   if(!missing(intervals)){
     #New approach, to deal with partial interval limits:
     if(length(intervals)>0){
-      compnames=names(intervals)
+      compnames = unique(names(intervals))
       for(i in compnames){
         #For the more typical non-PSF case
         if(i != "psf"){
-          subnames=names(intervals[[i]])
-          for(j in subnames){
-            subsublength=length(modellistnew[[i]][[j]])
-            for(k in 1:subsublength){
-              intervalmin=intervals[[i]][[j]][[k]][1]
-              intervalmax=intervals[[i]][[j]][[k]][2]
-              currentval=modellistnew[[i]][[j]][k]
-              modellistnew[[i]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = TRUE), na.rm = TRUE)
+          for(m in which(names(intervals) == i)){
+            subnames=names(intervals[[m]])
+            for(j in subnames){
+              subsublength=length(modellistnew[[m]][[j]])
+              for(k in 1:subsublength){
+                intervalmin=intervals[[m]][[j]][[k]][1]
+                intervalmax=intervals[[m]][[j]][[k]][2]
+                currentval=modellistnew[[m]][[j]][k]
+                modellistnew[[m]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = TRUE), na.rm = TRUE)
+              }
             }
           }
         }else{

@@ -12,6 +12,26 @@ profitMakeModel = function(modellist,
 	if (length(dim) == 1) {
 		dim = rep(dim,2)
 	}
+  
+  #Looks complicated (!) but this allows you to have multiple lists of a certain profile that are separated to ease user book-keeping, but internally all Sersic etc profile must be in exactly one list (or only the first one is processed).
+  if(any(duplicated(names(modellist)))){
+    check = table(names(modellist))
+    combine = names(check)[check>1]
+    if(length(combine) > 0){
+      for(i in 1:length(combine)){
+        loc = which(names(modellist)==combine[i])
+        replace = modellist[[loc[1]]]
+        for(j in 1:(length(loc) - 1)){
+          replace = Map(c, replace, modellist[[loc[j+1]]])
+        }
+        for(j in rev(loc)){
+          modellist[[j]] = NULL
+        }
+        modellist = c(list(replace), modellist)
+        names(modellist)[1] = combine[i]
+      }
+    }
+  }
 
 	# Some defaults...
 	#rough = rough == TRUE

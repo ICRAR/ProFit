@@ -31,6 +31,10 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       psf = Data$psf
     }
     
+    if(!is.null(Data$rough)){
+      rough = Data$rough
+    }
+    
     openclenv=Data$openclenv
     if(identical(openclenv,new("externalptr"))) openclenv = NULL
     if(Data$usecalcregion){

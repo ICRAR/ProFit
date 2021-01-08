@@ -9,15 +9,15 @@ This is a utility function to get the user inputs in the format required for mod
 }
 \usage{
 profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, priors,
-intervals, constraints, psf=NULL, psfdim=dim(psf), finesample=1L, psffinesampled=FALSE,
-magzero=0, algo.func='LA', like.func="norm", magmu=FALSE, verbose=FALSE,
-omp_threads = NULL, openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
-nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
-benchintmethods=c("brute"), benchconvmethods = c("brute","fftw"),
-benchprecisions="double", benchconvprecisions=benchprecisions,
-benchintprecisions=benchprecisions,
+intervals, constraints, psf = NULL, psfdim = dim(psf), rough = FALSE, finesample = 1L,
+psffinesampled = FALSE, magzero = 0, algo.func = 'LA', like.func = "norm", magmu = FALSE,
+verbose = FALSE, omp_threads = NULL, openclenv = NULL, openclenv_int = openclenv,
+openclenv_conv = openclenv, nbenchmark = 0L, nbenchint = nbenchmark,
+nbenchconv = nbenchmark, benchintmethods = "brute", benchconvmethods = c("brute","fftw"),
+benchprecisions = "double", benchconvprecisions = benchprecisions,
+benchintprecisions = benchprecisions,
 benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
-printbenchmark=FALSE, printbenchint=printbenchmark, printbenchconv=printbenchmark)
+printbenchmark = FALSE, printbenchint = printbenchmark, printbenchconv = printbenchmark)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
