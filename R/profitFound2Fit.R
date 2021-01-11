@@ -14,6 +14,7 @@ profitFound2Fit = function(image,
                            sing_nser_fit = TRUE,
                            bulge_nser_fit = TRUE,
                            disk_nser_fit = TRUE,
+                           bulge_circ = TRUE,
                            rough = FALSE,
                            ...) {
   cutim = magicaxis::magcutout(image, loc = loc, box = cutbox)
@@ -108,7 +109,7 @@ profitFound2Fit = function(image,
         mag = rep(mini_profound$segstats[loc_tar, 'mag'], 2) + 0.752575,
         re = mini_profound$segstats[loc_tar, 'R50'] * c(0.5, 1.5),
         nser = c(bulge_nser, disk_nser),
-        ang = c(0, mini_profound$segstats[loc_tar, 'ang']),
+        ang = c(mini_profound$segstats[loc_tar, 'ang'], mini_profound$segstats[loc_tar, 'ang']),
         axrat = c(1, mini_profound$segstats[loc_tar, 'axrat'])
       )
     )
@@ -151,8 +152,8 @@ profitFound2Fit = function(image,
       mag = rep(TRUE, 2),
       re = rep(TRUE, 2),
       nser = c(bulge_nser_fit, disk_nser_fit),
-      ang = c(FALSE, TRUE),
-      axrat = c(FALSE, TRUE)
+      ang = c(!bulge_circ, TRUE),
+      axrat = c(!bulge_circ, TRUE)
     ))
     constraints = NULL
   } else if (Ncomp == 1.5) {
@@ -339,7 +340,7 @@ profitDoFit = function(image,
                        magdiff = 2.5,
                        magzero = 0,
                        rough = FALSE,
-                       plot = TRUE,
+                       plot = FALSE,
                        ...) {
   message('Running Found2Fit')
   found2fit = profitFound2Fit(

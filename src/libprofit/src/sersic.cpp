@@ -343,7 +343,7 @@ void SersicProfile::subsampling_params(double x, double y,
 		resolution = 8;
 		max_recursions = 10;
 	}
-	if(nser < 1 ) {
+	if(nser < 0.55 ) { // this appears to be the Sesic n where the recursions start to blow up
 	  resolution = 3;
 	  max_recursions = 1;
 	}
