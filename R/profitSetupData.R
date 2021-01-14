@@ -150,11 +150,11 @@ profitDataSetOptionsFromBenchmarks <- function(Data, benchmarks)
 
 profitSetupData=function(image, region, sigma, segim, mask, modellist,
   tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf),
-  finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
+  rough=FALSE, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
   like.func="norm", magmu=FALSE, verbose=FALSE, omp_threads = NULL,
   openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
   nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
-  benchintmethods=c("brute"), benchconvmethods = c("brute","fftw"),
+  benchintmethods="brute", benchconvmethods = c("brute","fftw"),
   benchprecisions="double", benchconvprecisions=benchprecisions,
   benchintprecisions=benchprecisions,
   benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
@@ -298,9 +298,9 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     psf=psf, psftype=psftype, fitpsf=fitpsf,
     algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))),
     region=region, calcregion=calcregion, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints,
-    like.func = like.func, magzero=magzero, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu,
+    like.func = like.func, magzero=magzero, rough=rough, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu,
     openclenv=openclenv, omp_threads=omp_threads)
   class(profit.data)="profit.data"
   profit.data = profitDataSetOptionsFromBenchmarks(profit.data, benchmarks)
-  return=profit.data
+  return(invisible(profit.data))
 }
