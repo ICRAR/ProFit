@@ -3,7 +3,7 @@ profitFound2Fit = function(image,
                            loc = cutbox / 2,
                            Ncomp = 1,
                            cutbox = dim(image),
-                           psf,
+                           psf = NULL,
                            magdiff = 2.5,
                            magzero = 0,
                            loc_use = FALSE,
@@ -15,8 +15,14 @@ profitFound2Fit = function(image,
                            bulge_nser_fit = TRUE,
                            disk_nser_fit = TRUE,
                            bulge_circ = TRUE,
+                           star_con = 2,
+                           star_con_fit = TRUE,
+                           star_circ = TRUE,
                            rough = FALSE,
                            ...) {
+  if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
+  if(Ncomp == 0.5){psf = NULL}
+  
   cutim = magicaxis::magcutout(image, loc = loc, box = cutbox)
   if (!missing(rms)) {
     cutrms = magicaxis::magcutout(rms, loc = loc, box = cutbox)$image
@@ -89,7 +95,19 @@ profitFound2Fit = function(image,
     ycen = mini_profound$segstats[loc_tar, 'ycen'] - ylo + 1L
   }
   
-  if (Ncomp == 1) {
+  if (Ncomp == 0.5) {
+    modellist = list(
+      moffat = list(
+          xcen = xcen,
+          ycen = ycen,
+          mag = mini_profound$segstats[loc_tar, 'mag'],
+          fwhm = mini_profound$segstats[loc_tar, 'R50'] * 2,
+          con = star_con,
+          ang = mini_profound$segstats[loc_tar, 'ang'],
+          axrat = mini_profound$segstats[loc_tar, 'axrat']
+      )
+    )
+  } else if (Ncomp == 1) {
     modellist = list(
       sersic = list(
         xcen = xcen,
@@ -132,7 +150,20 @@ profitFound2Fit = function(image,
     )
   }
   
-  if (Ncomp == 1) {
+  if (Ncomp == 0.5) {
+    tofit = list(
+      moffat = list(
+        xcen = loc_fit,
+        ycen = loc_fit,
+        mag = TRUE,
+        fwhm = TRUE,
+        con = star_con_fit,
+        ang = !star_circ,
+        axrat = !star_circ
+      )
+    )
+    constraints = NULL
+  }else if (Ncomp == 1) {
     tofit = list(
       sersic = list(
         xcen = loc_fit,
@@ -180,7 +211,21 @@ profitFound2Fit = function(image,
     }
   }
   
-  if (Ncomp == 1 | Ncomp == 2) {
+  if (Ncomp == 0.5) {
+    tolog = list(
+      moffat = list(
+        xcen = rep(FALSE, Ncomp),
+        ycen = rep(FALSE, Ncomp),
+        mag = rep(FALSE, Ncomp),
+        fwhm = rep(TRUE, Ncomp),
+        #fwhm is best fit in log space
+        con = rep(TRUE, Ncomp),
+        #con is best fit in log space
+        ang = rep(FALSE, Ncomp),
+        axrat = rep(TRUE, Ncomp) #axrat is best fit in log space
+      )
+    )
+  } else if (Ncomp == 1 | Ncomp == 2) {
     tolog = list(
       sersic = list(
         xcen = rep(FALSE, Ncomp),
@@ -215,7 +260,17 @@ profitFound2Fit = function(image,
     )
   }
   
-  if (Ncomp == 1) {
+  if (Ncomp == 0.5) {
+    intervals = list(moffat = list(
+      xcen = list(c(0, dim(cutim)[1])),
+      ycen = list(c(0, dim(cutim)[2])),
+      mag = list(c(10, 40)),
+      fwhm = list(c(0.5, 10)),
+      con = list(c(1, 10)),
+      ang = list(c(-180, 360)),
+      axrat = list(c(0.5, 1))
+    ))
+  } else if (Ncomp == 1) {
     intervals = list(sersic = list(
       xcen = list(c(0, dim(cutim)[1])),
       ycen = list(c(0, dim(cutim)[2])),
@@ -336,9 +391,10 @@ profitDoFit = function(image,
                        loc = cutbox / 2,
                        Ncomp = 1,
                        cutbox = dim(image),
-                       psf,
+                       psf = NULL,
                        magdiff = 2.5,
                        magzero = 0,
+                       psf_dim = c(51,51),
                        rough = FALSE,
                        plot = FALSE,
                        ...) {
@@ -401,5 +457,23 @@ profitDoFit = function(image,
                          MARGIN = 2,
                          FUN = 'sd')
   
+  if(Ncomp == 0.5){
+    if(psf_dim[1] %% 2 == 0){psf_dim[1] = psf_dim[1] + 1}
+    if(psf_dim[2] %% 2 == 0){psf_dim[2] = psf_dim[2] + 1}
+    temp_modellist = highfit$finalmodel$modellist
+    temp_modellist$moffat$mag = 0
+    temp_modellist$moffat$xcen = psf_dim[1]/2
+    temp_modellist$moffat$ycen = psf_dim[2]/2
+    highfit$psf = profitMakeModel(temp_modellist, dim=psf_dim)
+    
+    if(sum(highfit$psf$z) < 0.95){
+      message('WARNING: psf output image contains less than 95% of the total model flux! Consider increasing the size of psf_dim.')
+    }
+    
+    if(sum(highfit$psf$z) > 0.999){
+      message('WARNING: psf output image contains more than 99.9% of the total model flux! Consider decreasing the size of psf_dim.')
+    }
+    highfit$psf$z = highfit$psf$z / sum(highfit$psf$z)
+  }
   return(highfit)
 }

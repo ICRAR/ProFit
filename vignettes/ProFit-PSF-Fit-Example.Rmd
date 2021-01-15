@@ -54,7 +54,7 @@ psf=psf/sum(psf)
 psfsigma=sqrt(abs(psf))/200 #To get reasonable PSF errors
 ```
 
-We can check the image of the PSF wiht magimage:
+We can check the image of the PSF with magimage:
 
 ```{r, fig.width=5, fig.height=5, eval=FALSE}
 temp=magimage(psf,lo=0,hi=1)
