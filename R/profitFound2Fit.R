@@ -473,7 +473,7 @@ profitDoFit = function(image,
     if(sum(highfit$psf$z) > 0.999){
       message('WARNING: psf output image contains more than 99.9% of the total model flux! Consider decreasing the size of psf_dim.')
     }
-    highfit$psf$z = highfit$psf$z / sum(highfit$psf$z)
+    highfit$psf = highfit$psf$z / sum(highfit$psf$z)
   }
   return(highfit)
 }
