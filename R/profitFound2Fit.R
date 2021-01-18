@@ -49,7 +49,7 @@ profitFound2Fit = function(image,
   if (is.null(cutrms)) {
     gain = ProFound::profoundGainEst(cutim, objects = mini_profound$objects, sky = 0)
     cutrms = ProFound::profoundMakeSigma(
-      cutim,
+      image = cutim,
       objects = mini_profound$objects,
       gain = gain,
       sky = 0,
@@ -75,8 +75,7 @@ profitFound2Fit = function(image,
     N_ext = 0
   }
   
-  region = mini_profound$segim %in% c(segID_tar, segID_ext)
-  region = matrix(region, nrow = cutbox[1], ncol = cutbox[2])
+  region = matrix(mini_profound$segim %in% c(segID_tar, segID_ext), nrow=cutbox[1], ncol=cutbox[2])
   regionlim = which(region, arr.ind=TRUE)
   xlo = min(regionlim[,1])
   xhi = max(regionlim[,1])
@@ -96,6 +95,14 @@ profitFound2Fit = function(image,
   }
   
   if (Ncomp == 0.5) {
+    if(star_circ){
+      ang = 0
+      axrat = 1
+    }else{
+      ang = mini_profound$segstats[loc_tar, 'ang']
+      axrat = mini_profound$segstats[loc_tar, 'axrat']
+    }
+    
     modellist = list(
       moffat = list(
           xcen = xcen,
@@ -103,8 +110,8 @@ profitFound2Fit = function(image,
           mag = mini_profound$segstats[loc_tar, 'mag'],
           fwhm = mini_profound$segstats[loc_tar, 'R50'] * 2,
           con = star_con,
-          ang = mini_profound$segstats[loc_tar, 'ang'],
-          axrat = mini_profound$segstats[loc_tar, 'axrat']
+          ang = ang,
+          axrat = axrat
       )
     )
   } else if (Ncomp == 1) {
@@ -323,7 +330,8 @@ profitFound2Fit = function(image,
                       ang = mini_profound$segstats[loc_ext, 'ang'],
                       axrat = mini_profound$segstats[loc_ext, 'axrat']
                     )
-                  ))
+                  )
+                )
     
     tofit = c(tofit,
               list(
@@ -336,7 +344,8 @@ profitFound2Fit = function(image,
                   ang = rep(FALSE, N_ext),
                   axrat = rep(TRUE, N_ext)
                 )
-              ))
+              )
+            )
     
     tolog = c(tolog,
               list(
@@ -351,7 +360,8 @@ profitFound2Fit = function(image,
                   ang = rep(FALSE, N_ext),
                   axrat = rep(TRUE, N_ext) #axrat is best fit in log space
                 )
-              ))
+              )
+            )
     
     intervals = c(intervals,
                   list(
@@ -364,7 +374,8 @@ profitFound2Fit = function(image,
                       ang = rep(list(c(-180, 360)), N_ext),
                       axrat = rep(list(c(0.1, 1)), N_ext)
                     )
-                  ))
+                  )
+                )
   }
   
   Data = profitSetupData(
@@ -460,20 +471,23 @@ profitDoFit = function(image,
   if(Ncomp == 0.5){
     if(psf_dim[1] %% 2 == 0){psf_dim[1] = psf_dim[1] + 1}
     if(psf_dim[2] %% 2 == 0){psf_dim[2] = psf_dim[2] + 1}
-    temp_modellist = highfit$finalmodel$modellist
+    temp_modellist = highfit$finalmodel$modellist[[1]]
     temp_modellist$moffat$mag = 0
     temp_modellist$moffat$xcen = psf_dim[1]/2
     temp_modellist$moffat$ycen = psf_dim[2]/2
     highfit$psf = profitMakeModel(temp_modellist, dim=psf_dim)
     
-    if(sum(highfit$psf$z) < 0.95){
+    psf_fluxcheck = sum(highfit$psf$z)
+    
+    if(psf_fluxcheck < 0.95){
       message('WARNING: psf output image contains less than 95% of the total model flux! Consider increasing the size of psf_dim.')
     }
     
-    if(sum(highfit$psf$z) > 0.999){
+    if(psf_fluxcheck > 0.999){
       message('WARNING: psf output image contains more than 99.9% of the total model flux! Consider decreasing the size of psf_dim.')
     }
     highfit$psf = highfit$psf$z / sum(highfit$psf$z)
+    highfit$psf_fluxcheck
   }
   return(highfit)
 }

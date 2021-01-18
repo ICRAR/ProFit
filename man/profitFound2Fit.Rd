@@ -1,6 +1,8 @@
 \name{profitFound2Fit}
 \alias{profitFound2Fit}
 \alias{profitDoFit}
+\alias{profitAllStarFound2Fit}
+\alias{profitAllStarDoFit}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 ProFound to ProFit Profile Fitting
@@ -17,6 +19,13 @@ profitFound2Fit(image, rms, loc = cutbox/2, Ncomp = 1, cutbox = dim(image), psf,
 
 profitDoFit(image, rms, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE, ...)
+  
+profitAllStarFound2Fit(image, rms, locs, Ncomp = 1, magdiff = 2.5, magzero = 0,
+  loc_use = FALSE, loc_fit = TRUE, star_con = 2, star_con_fit = TRUE, star_circ = TRUE,
+  rough = FALSE, ...)
+  
+profitAllStarDoFit(image, rms, locs, magzero = 0, psf_dim = c(51,51), rough = FALSE,
+  plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -28,6 +37,9 @@ Image matrix; optional, the RMS map of the \option{image} data we want to fit a 
 }
   \item{loc}{
 Numeric vector; optional, the [X,Y] location of our target galaxy on the original \option{image}. The default is to use the centre of the provided \option{image}.
+}
+  \item{locs}{
+Numeric matrix; required, the [X,Y] locations of our target galaxy on the original \option{image} for \code{AllStar} fitting. The idea is we pass in a list of multiple potential stars, and internally this is limited to just those star segments that do not touch another source or hit the \option{image} border.
 }
   \item{Ncomp}{
 Integer scalar; optional, number of components to fit to galaxy. Options for galaxies are "1" (single Sersic profile), "1.5" (single Sersic profile with a central PSF to model the bulge) and "2" (double Sersic profile), and in this case an input \option{psf} should be supplied. To fit a star with a Moffat profile set Ncomp to "0.5", and in this case no input \option{psf} should be supplied.
@@ -99,12 +111,12 @@ Further arguments to pass to \code{profoundProFound} for making the segmentation
 \code{profitDoFit} also carries out the optimisation, using the default settings of \code{Highlander}. For the typical user this might be all they need to get the results they want. Additional neighbouring sources that are detected during the \code{ProFound} stage are modelled as single Sersic profiles in a separate model list, which is usually reasonable enough to get a good solution for the target source of interest. To fit a single star with a Moffat profile you can use the \option{Ncomp} = 0.5 option, but in this case the model image will not be convolved with a target PSF image (because that is what we are trying to estimate). As such, if there are any other objects close by the Moffat profile might be compromised by the imperfect light profiling of these non-convolved single Sersic sources.
 }
 \value{
-The output of \code{profitFound2Fit} is:
+The output of \code{profitFound2Fit} and \code{profitAllStarFound2Fit} is:
 
 \item{profound}{Output from the initial \code{profoundProFound} run. See \code{profoundProFound}.}
 \item{Data}{The input Data structure created by \code{\link{profitSetupData}}.}
 
-The output of \code{profitDoFit} is:
+The output of \code{profitDoFit} and \code{profitAllStarDoFit} is:
 
 \item{parm}{Best fit raw parameters being optimised (so various terms will be logged etc). See \code{Highlander}.}
 \item{LP}{The log posterior of the best fit. See \code{Highlander}.}
@@ -121,7 +133,8 @@ The output of \code{profitDoFit} is:
 \item{initmodel}{The full initial model (all terms are in linear space).}
 \item{finalmodel}{The full final model (all terms are in linear space).}
 \item{error}{Fitting errors for all terms in \option{parm}. The errors are in the same raw units as \option{parm} (i.e. for logged units the errors are in dex).}
-\item{psf}{The model Moffat image of the PSF estimated from fitting a target star with \option{Ncomp} = 0.5 (only present in this scenario) with dimensions \option{psf_dim}. The sum of the image is forced to exactly equal 1, even if the Moffat profile extends outside of the image domain. This at least ensures flux conservation during any convolution routines.}
+\item{psf}{The model Moffat image of the PSF estimated from fitting a target star with \option{Ncomp} = 0.5 (only present in this scenario) or multiple stars when using \code{profitAllStarDoFIt}. This will be created with dimensions \option{psf_dim}. The sum of the image is forced to exactly equal 1, even if the Moffat profile extends outside of the image domain. This at least ensures flux conservation during any convolution routines.}
+\item{psf_fluxcheck}{The sum of the original PSF image flux. If far from 1 (say less than 0.95) then it implies the \option{psf_dim} is too small. If very close to 1 (say less than 0.999) then \option{psf_dim} is probably larger than it needs to be.}
 }
 \author{
 Aaron Robotham
@@ -158,9 +171,21 @@ profitLikeModel(example_f2f$Data$init, Data=example_f2f$Data, makeplots=TRUE
 
 example_fit = profitDoFit(image=image, psf=psf, magzero=30, SBdilate=2, plot=TRUE)
 
-#Example PSF/star fit:
+#Example single PSF/star fit:
 
 star = profitDoFit(image, loc=c(149,73), Ncomp=0.5, plot=TRUE, magzero=30, SBdilate=2)
+magimage(star$psf)
+
+#Example All PSF/star fit:
+
+profound = profoundProFound(image, magzero=30)
+sel = which(profound$segstats$mag < 22 & profound$segstats$R50 < 5)
+
+#Even though we pass in 21 possible star positions, only 6 meet our criteria of not
+#touching another source segment or the image border
+
+stars = profitAllStarDoFit(image, loc=profound$segstats[sel,c('xcen','ycen')], plot=TRUE,
+  magzero=30, SBdilate=2)
 magimage(star$psf)
 }
 }
