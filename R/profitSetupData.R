@@ -228,7 +228,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   
   if(missing(region)){
     segimkeep = segim[ceiling(imagedim[1]/2),ceiling(imagedim[2]/2)]
-    region = segim==segimkeep & mask!=1
+    region = segim==segimkeep & mask==0
   }else{
     region=region==TRUE
   }
