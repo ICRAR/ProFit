@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-In this vignette we will demonstrate fitting in the most automated mode available in \code{ProFit}.
+In this vignette we will demonstrate fitting in the most automated mode available in **ProFit**. This is very high level, but hopefully usefully so in many cases. Users who need finer level control should look at some of the other vignettes that break various phases we do automatically here into more manual and explicit steps.
 
 Get the latest version of **ProFound** and **ProFit**:
 
