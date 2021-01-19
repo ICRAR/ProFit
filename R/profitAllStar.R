@@ -166,6 +166,7 @@ profitAllStarDoFit = function(image,
                        psf_dim = c(51,51),
                        rough = FALSE,
                        plot = FALSE,
+                       seed = 666,
                        ...) {
   message('Running Found2Fit')
   found2fit = profitAllStarFound2Fit(
@@ -195,9 +196,10 @@ profitAllStarDoFit = function(image,
   message('Running Highander')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The Highander package is required to run this function!')}
   highfit = Highlander::Highlander(
-    Data$init,
+    parm = Data$init,
     Data = Data,
-    profitLikeModel,
+    likefunc = profitLikeModel,
+    seed = seed,
     lower = lowers,
     upper = uppers,
     applyintervals = FALSE,

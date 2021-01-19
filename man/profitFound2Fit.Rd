@@ -18,19 +18,20 @@ profitFound2Fit(image, rms, loc = cutbox/2, Ncomp = 1, cutbox = dim(image), psf,
   star_circ = TRUE, rough = FALSE, ...)
 
 profitDoFit(image, rms, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
-  magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE, ...)
+  magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
+  seed = 666, ...)
   
 profitAllStarFound2Fit(image, rms, locs, Ncomp = 1, magdiff = 2.5, magzero = 0,
   loc_use = FALSE, loc_fit = TRUE, star_con = 2, star_con_fit = TRUE, star_circ = TRUE,
   rough = FALSE, star_dom_mag = NULL, Nstar = 6, ...)
   
 profitAllStarDoFit(image, rms, locs, magzero = 0, psf_dim = c(51,51), rough = FALSE,
-  plot = FALSE, ...)
+  plot = FALSE, seed = 666, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Image matrix; required, the galaxy image we want to fit a model to. The galaxy should be approximately central within this image. For convenience this can also be an Rfits_pointer object for very large on disk images.
+Image matrix; required, the galaxy image we want to fit a galaxy of PSF/star model to. For convenience this can also be an Rfits_pointer object for very large on disk images. Critically, this input \option{image} needs to be well background subtracted (this is not done again internally).
 }
   \item{rms}{
 Image matrix; optional, the RMS map of the \option{image} data we want to fit a model to. If not provided this will be estimated by running \code{profoundProFound}, \code{profoundGainEst} and \code{profoundMakeSigma} to make a decent effort and creating an appropriate RMS map. Users should usually try to provide this themselves for critical fitting, but the automatic RMS map is usually good enough for testing purposes. For convenience this can also be an Rfits_pointer object for very large on disk RMS maps.
@@ -100,6 +101,9 @@ Logical; optional, should ProFit be run using an approximate fit? This is less a
 }
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.
+}
+  \item{seed}{
+Integer scalar; random seed to start the \code{Highlander} function with. 
 }
   \item{star_dom_mag}{
 Numeric scalar; optional, specify at what magnitude (and brighter) stars start to dominate source counts. This helps the code to guess which objects are stars if \option{locs} is not provided. If not provided then it will just use the median magitude of all sources (which is rarely correct, but at least it sits in the domain of the data). Sensible values are usually between mag 20-22 (for AB mag and optical bands).
@@ -196,8 +200,7 @@ magimage(stars_man$psf)
 
 #We can run again, letting it figure out automatically which objects are stars:
 
-stars_auto = profitAllStarDoFit(image, loc=profound$segstats[sel,c('xcen','ycen')],
-  plot=TRUE, magzero=30, SBdilate=2)
+stars_auto = profitAllStarDoFit(image, plot=TRUE, magzero=30, SBdilate=2)
 magimage(stars_auto$psf)
 }
 }
