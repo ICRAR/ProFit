@@ -22,7 +22,7 @@ profitDoFit(image, rms, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
   
 profitAllStarFound2Fit(image, rms, locs, Ncomp = 1, magdiff = 2.5, magzero = 0,
   loc_use = FALSE, loc_fit = TRUE, star_con = 2, star_con_fit = TRUE, star_circ = TRUE,
-  rough = FALSE, ...)
+  rough = FALSE, star_dom_mag = NULL, Nstar = 6, ...)
   
 profitAllStarDoFit(image, rms, locs, magzero = 0, psf_dim = c(51,51), rough = FALSE,
   plot = FALSE, ...)
@@ -39,7 +39,7 @@ Image matrix; optional, the RMS map of the \option{image} data we want to fit a 
 Numeric vector; optional, the [X,Y] location of our target galaxy on the original \option{image}. The default is to use the centre of the provided \option{image}.
 }
   \item{locs}{
-Numeric matrix; required, the [X,Y] locations of our target galaxy on the original \option{image} for \code{AllStar} fitting. The idea is we pass in a list of multiple potential stars, and internally this is limited to just those star segments that do not touch another source or hit the \option{image} border.
+Numeric matrix; optional, the [X,Y] locations of target stars on the original \option{image} for \code{AllStar} fitting to create out PSF model. The idea is we pass in a list of multiple potential stars, and internally this is limited to just those star segments that do not touch another source or hit the \option{image} border. If this is not provided then \code{profitAllStarFound2Fit} will attempt to guess which objects might be good stars for modelling (but this should not be relied on generally).
 }
   \item{Ncomp}{
 Integer scalar; optional, number of components to fit to galaxy. Options for galaxies are "1" (single Sersic profile), "1.5" (single Sersic profile with a central PSF to model the bulge) and "2" (double Sersic profile), and in this case an input \option{psf} should be supplied. To fit a star with a Moffat profile set Ncomp to "0.5", and in this case no input \option{psf} should be supplied.
@@ -101,6 +101,12 @@ Logical; optional, should ProFit be run using an approximate fit? This is less a
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.
 }
+  \item{star_dom_mag}{
+Numeric scalar; optional, specify at what magnitude (and brighter) stars start to dominate source counts. This helps the code to guess which objects are stars if \option{locs} is not provided. If not provided then it will just use the median magitude of all sources (which is rarely correct, but at least it sits in the domain of the data). Sensible values are usually between mag 20-22 (for AB mag and optical bands).
+}
+  \item{Nstar}{
+Integer scalar; optional, maximum number of fitting stars to generate in \code{profitAllStarFound2Fit}, and therefore to fit in \code{profitAllStarDoFit}.
+}
   \item{\dots}{
 Further arguments to pass to \code{profoundProFound} for making the segmentation maps. \option{tolerance} and \option{SBdilate} are two options that are usually worth experimenting with the get ideal segmentation results for fitting purposes.
 }
@@ -134,6 +140,7 @@ The output of \code{profitDoFit} and \code{profitAllStarDoFit} is:
 \item{finalmodel}{The full final model (all terms are in linear space).}
 \item{error}{Fitting errors for all terms in \option{parm}. The errors are in the same raw units as \option{parm} (i.e. for logged units the errors are in dex).}
 \item{psf}{The model Moffat image of the PSF estimated from fitting a target star with \option{Ncomp} = 0.5 (only present in this scenario) or multiple stars when using \code{profitAllStarDoFIt}. This will be created with dimensions \option{psf_dim}. The sum of the image is forced to exactly equal 1, even if the Moffat profile extends outside of the image domain. This at least ensures flux conservation during any convolution routines.}
+\item{psf_modellist}{The model list for the PSF created in \option{psf}.}
 \item{psf_fluxcheck}{The sum of the original PSF image flux. If far from 1 (say less than 0.95) then it implies the \option{psf_dim} is too small. If very close to 1 (say less than 0.999) then \option{psf_dim} is probably larger than it needs to be.}
 }
 \author{
@@ -179,14 +186,19 @@ magimage(star$psf)
 #Example All PSF/star fit:
 
 profound = profoundProFound(image, magzero=30)
-sel = which(profound$segstats$mag < 22 & profound$segstats$R50 < 5)
+sel = which(profound$segstats$mag < 23 & profound$segstats$R50 < 3.5)
 
-#Even though we pass in 21 possible star positions, only 6 meet our criteria of not
-#touching another source segment or the image border
+#We pass in 21 possible star positions, choosing the best 6:
 
-stars = profitAllStarDoFit(image, loc=profound$segstats[sel,c('xcen','ycen')], plot=TRUE,
-  magzero=30, SBdilate=2)
-magimage(star$psf)
+stars_man = profitAllStarDoFit(image, loc=profound$segstats[sel,c('xcen','ycen')],
+  plot=TRUE, magzero=30, SBdilate=2)
+magimage(stars_man$psf)
+
+#We can run again, letting it figure out automatically which objects are stars:
+
+stars_auto = profitAllStarDoFit(image, loc=profound$segstats[sel,c('xcen','ycen')],
+  plot=TRUE, magzero=30, SBdilate=2)
+magimage(stars_auto$psf)
 }
 }
 \concept{ fit }

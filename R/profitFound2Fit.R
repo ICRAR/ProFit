@@ -475,7 +475,9 @@ profitDoFit = function(image,
     temp_modellist$moffat$mag = 0
     temp_modellist$moffat$xcen = psf_dim[1]/2
     temp_modellist$moffat$ycen = psf_dim[2]/2
+    
     highfit$psf = profitMakeModel(temp_modellist, dim=psf_dim)
+    highfit$psf_modellist = temp_modellist
     
     psf_fluxcheck = sum(highfit$psf$z)
     

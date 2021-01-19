@@ -10,8 +10,9 @@ profitAllStarFound2Fit = function(image,
                            star_con_fit = TRUE,
                            star_circ = TRUE,
                            rough = FALSE,
+                           star_dom_mag = NULL,
+                           Nstar = 6,
                            ...) {
-  locs = as.matrix(rbind(locs))
   
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
@@ -38,6 +39,15 @@ profitAllStarFound2Fit = function(image,
     )
   }
   
+  if(missing(locs)){
+    if(is.null(star_dom_mag)){
+      star_dom_mag = median(mini_profound$segstats$mag, na.rm=TRUE)
+    }
+    cut_R50 = median(mini_profound$segstats[mini_profound$segstats$mag < star_dom_mag,'R50'], na.rm=TRUE)
+    locs = mini_profound$segstats[mini_profound$segstats$mag < star_dom_mag & mini_profound$segstats$R50 < cut_R50,c("xcen","ycen")]
+  }
+  locs = as.matrix(rbind(locs))
+  
   segID_tar = unique(mini_profound$segim[locs])
   segID_tar[segID_tar > 0]
   
@@ -48,7 +58,15 @@ profitAllStarFound2Fit = function(image,
   
   segID_tar = mini_profound$segstats[mini_profound$segstats$segID %in% segID_tar & mini_profound$segstats$Nobject==0 & mini_profound$segstats$Nborder==0 & mini_profound$segstats$Nmask==0,'segID']
   
-  Nstar = length(segID_tar)
+  if(length(segID_tar) < Nstar){
+    segID_tar = mini_profound$segstats[mini_profound$segstats$segID %in% segID_tar & mini_profound$segstats$Nobject==0,'segID']
+  }
+  
+  if(length(segID_tar) > Nstar){
+    segID_tar = segID_tar[1:Nstar]
+  }else{
+    Nstar = length(segID_tar)
+  }
   
   if(Nstar == 0){
     message('All stars too nearby other objects!')
@@ -114,8 +132,8 @@ profitAllStarFound2Fit = function(image,
   )
   
   intervals = list(moffat = list(
-    xcen = rep(list(c(0, dim(image)[1])), Nstar),
-    ycen = rep(list(c(0, dim(image)[2])), Nstar),
+    xcen = rep(list(c(-50, dim(image)[1] + 50)), Nstar),
+    ycen = rep(list(c(-50, dim(image)[2] + 50)), Nstar),
     mag = rep(list(c(10, 40)), Nstar),
     fwhm = rep(list(c(0.5, 10)), Nstar),
     con = rep(list(c(1, 10)), Nstar),
@@ -220,6 +238,8 @@ profitAllStarDoFit = function(image,
   )
   
   highfit$psf = profitMakeModel(temp_modellist, dim=psf_dim)
+  highfit$psf_modellist = temp_modellist
+  
   psf_fluxcheck = sum(highfit$psf$z)
   
   if(psf_fluxcheck < 0.95){
