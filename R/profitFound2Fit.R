@@ -69,6 +69,7 @@ profitFound2Fit = function(image,
   if (length(segID_ext) > 0) {
     loc_ext = match(segID_ext, mini_profound$segstats$segID)
     loc_ext = loc_ext[mini_profound$segstats[loc_ext, "mag"] < magID_tar + magdiff]
+    segID_ext = mini_profound$segstats[loc_ext, 'segID']
     N_ext = length(loc_ext)
   } else{
     N_ext = 0
@@ -266,12 +267,14 @@ profitFound2Fit = function(image,
     )
   }
   
+  maxsize = sqrt(dim(cutim)[1]^2 + dim(cutim)[2]^2)
+    
   if (Ncomp == 0.5) {
     intervals = list(moffat = list(
       xcen = list(c(0, dim(cutim)[1])),
       ycen = list(c(0, dim(cutim)[2])),
       mag = list(c(0, 40)),
-      fwhm = list(c(0.5, 10)),
+      fwhm = list(c(0.5, maxsize)),
       con = list(c(1, 10)),
       ang = list(c(-180, 360)),
       axrat = list(c(0.5, 1))
@@ -281,10 +284,10 @@ profitFound2Fit = function(image,
       xcen = list(c(0, dim(cutim)[1])),
       ycen = list(c(0, dim(cutim)[2])),
       mag = list(c(0, 40)),
-      re = list(c(1, 100)),
+      re = list(c(1, maxsize)),
       nser = list(c(0.5, 5.3)),
       ang = list(c(-180, 360)),
-      axrat = list(c(0.1, 1))
+      axrat = list(c(0.01, 1))
     ))
   } else if (Ncomp == 2) {
     intervals = list(
@@ -292,10 +295,10 @@ profitFound2Fit = function(image,
         xcen = list(c(0, dim(cutim)[1]), c(0, dim(cutim)[1])),
         ycen = list(c(0, dim(cutim)[2]), c(0, dim(cutim)[2])),
         mag = list(c(0, 40), c(0, 40)),
-        re = list(c(1, 100), c(1, 100)),
+        re = list(c(1, maxsize), c(1, maxsize)),
         nser = list(c(2, 5.3), c(0.5, 2)),
         ang = list(c(-180, 360), c(-180, 360)),
-        axrat = list(c(0.1, 1), c(0.1, 1))
+        axrat = list(c(0.01, 1), c(0.01, 1))
       )
     )
   } else if (Ncomp == 1.5) {
@@ -304,10 +307,10 @@ profitFound2Fit = function(image,
         xcen = list(c(0, dim(cutim)[1])),
         ycen = list(c(0, dim(cutim)[2])),
         mag = list(c(0, 40)),
-        re = list(c(1, 100)),
+        re = list(c(1, maxsize)),
         nser = list(c(0.5, 5.3)),
         ang = list(c(-180, 360)),
-        axrat = list(c(0.1, 1))
+        axrat = list(c(0.01, 1))
       ),
       pointsource = list(
         xcen = list(c(0, dim(cutim)[1])),
@@ -368,10 +371,10 @@ profitFound2Fit = function(image,
                       xcen = rep(list(c(0, dim(cutim)[1])), N_ext),
                       ycen = rep(list(c(0, dim(cutim)[2])), N_ext),
                       mag = rep(list(c(0, 40)), N_ext),
-                      re = rep(list(c(1, 100)), N_ext),
+                      re = rep(list(c(1, maxsize)), N_ext),
                       nser = rep(list(c(0.5, 5.3)), N_ext),
                       ang = rep(list(c(-180, 360)), N_ext),
-                      axrat = rep(list(c(0.1, 1)), N_ext)
+                      axrat = rep(list(c(0.01, 1)), N_ext)
                     )
                   )
                 )
