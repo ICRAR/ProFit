@@ -87,9 +87,9 @@ profitAllStarFound2Fit = function(image,
     image_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(image, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
     rms_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(rms, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
     region_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(region, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
-    
   }
   
+  region_psf[is.na(region_psf)] = 0
   
   if(star_circ){
     ang = 0
