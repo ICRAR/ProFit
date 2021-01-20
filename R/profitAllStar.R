@@ -80,11 +80,14 @@ profitAllStarFound2Fit = function(image,
   region = matrix(mini_profound$segim %in% segID_tar, nrow=dim(image)[1], ncol=dim(image)[2])
   
   image_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
+  rms_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
   region_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
   
   for(i in 1:Nstar){
     image_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(image, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    rms_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(rms, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
     region_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(region, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    
   }
   
   
@@ -147,7 +150,7 @@ profitAllStarFound2Fit = function(image,
   Data = profitSetupData(
     image = image_psf,
     region = region_psf,
-    sigma = rms,
+    sigma = rms_psf,
     psf = NULL,
     modellist = modellist,
     tofit = tofit,
