@@ -22,8 +22,8 @@ profitDoFit(image, rms, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
   seed = 666, ...)
   
 profitAllStarFound2Fit(image, rms, locs, Ncomp = 1, magdiff = 2.5, magzero = 0,
-  loc_use = FALSE, loc_fit = TRUE, star_con = 2, star_con_fit = TRUE, star_circ = TRUE,
-  rough = FALSE, star_dom_mag = NULL, Nstar = 6, ...)
+  psf_dim = c(51, 51), star_con = 2, star_con_fit = TRUE, star_circ = TRUE, rough = FALSE,
+  star_dom_mag = NULL, Nstar = 6, ...)
   
 profitAllStarDoFit(image, rms, locs, magzero = 0, psf_dim = c(51,51), rough = FALSE,
   plot = FALSE, seed = 666, ...)

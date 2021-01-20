@@ -4,8 +4,7 @@ profitAllStarFound2Fit = function(image,
                            Ncomp = 1,
                            magdiff = 2.5,
                            magzero = 0,
-                           loc_use = FALSE,
-                           loc_fit = TRUE,
+                           psf_dim = c(51,51),
                            star_con = 2,
                            star_con_fit = TRUE,
                            star_circ = TRUE,
@@ -75,15 +74,19 @@ profitAllStarFound2Fit = function(image,
   
   loc_tar = which(mini_profound$segstats$segID %in% segID_tar)
   
+  xcen = mini_profound$segstats[loc_tar, 'xcen']
+  ycen = mini_profound$segstats[loc_tar, 'ycen']
+  
   region = matrix(mini_profound$segim %in% segID_tar, nrow=dim(image)[1], ncol=dim(image)[2])
   
-  if(loc_use){
-    xcen = locs[,1]
-    ycen = locs[,2]
-  }else{
-    xcen = mini_profound$segstats[loc_tar, 'xcen']
-    ycen = mini_profound$segstats[loc_tar, 'ycen']
+  image_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
+  region_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
+  
+  for(i in 1:Nstar){
+    image_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(image, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    region_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(region, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
   }
+  
   
   if(star_circ){
     ang = 0
@@ -95,8 +98,8 @@ profitAllStarFound2Fit = function(image,
   
   modellist = list(
     moffat = list(
-      xcen = xcen,
-      ycen = ycen,
+      xcen = seq(psf_dim[1]/2, psf_dim[1]*Nstar, by=psf_dim[1]),
+      ycen = rep(psf_dim[2]/2, Nstar),
       mag = mini_profound$segstats[loc_tar, 'mag'],
       fwhm = rep(median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE)*2, Nstar),
       con = rep(star_con, Nstar),
@@ -107,8 +110,8 @@ profitAllStarFound2Fit = function(image,
   
   tofit = list(
     moffat = list(
-      xcen = rep(loc_fit,Nstar),
-      ycen = rep(loc_fit,Nstar),
+      xcen = rep(TRUE,Nstar),
+      ycen = rep(TRUE,Nstar),
       mag = rep(TRUE,Nstar),
       fwhm = c(TRUE, rep(NA, Nstar-1)),
       con = c(star_con_fit, rep(NA, Nstar-1)),
@@ -134,7 +137,7 @@ profitAllStarFound2Fit = function(image,
   intervals = list(moffat = list(
     xcen = rep(list(c(-50, dim(image)[1] + 50)), Nstar),
     ycen = rep(list(c(-50, dim(image)[2] + 50)), Nstar),
-    mag = rep(list(c(10, 40)), Nstar),
+    mag = rep(list(c(0, 40)), Nstar),
     fwhm = rep(list(c(0.5, 10)), Nstar),
     con = rep(list(c(1, 10)), Nstar),
     ang = rep(list(c(-180, 360)), Nstar),
@@ -142,8 +145,8 @@ profitAllStarFound2Fit = function(image,
   ))
   
   Data = profitSetupData(
-    image = image,
-    region = region,
+    image = image_psf,
+    region = region_psf,
     sigma = rms,
     psf = NULL,
     modellist = modellist,
@@ -174,6 +177,7 @@ profitAllStarDoFit = function(image,
     rms = rms,
     locs = locs,
     magzero = magzero,
+    psf_dim = psf_dim,
     rough = rough,
     ...
   )

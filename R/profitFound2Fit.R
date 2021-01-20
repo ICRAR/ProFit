@@ -41,7 +41,6 @@ profitFound2Fit = function(image,
     nearstats = TRUE,
     groupby = 'segim',
     magzero = magzero,
-    box = 50,
     verbose = FALSE,
     ...
   )
@@ -271,7 +270,7 @@ profitFound2Fit = function(image,
     intervals = list(moffat = list(
       xcen = list(c(0, dim(cutim)[1])),
       ycen = list(c(0, dim(cutim)[2])),
-      mag = list(c(10, 40)),
+      mag = list(c(0, 40)),
       fwhm = list(c(0.5, 10)),
       con = list(c(1, 10)),
       ang = list(c(-180, 360)),
@@ -281,7 +280,7 @@ profitFound2Fit = function(image,
     intervals = list(sersic = list(
       xcen = list(c(0, dim(cutim)[1])),
       ycen = list(c(0, dim(cutim)[2])),
-      mag = list(c(10, 40)),
+      mag = list(c(0, 40)),
       re = list(c(1, 100)),
       nser = list(c(0.5, 5.3)),
       ang = list(c(-180, 360)),
@@ -292,7 +291,7 @@ profitFound2Fit = function(image,
       sersic = list(
         xcen = list(c(0, dim(cutim)[1]), c(0, dim(cutim)[1])),
         ycen = list(c(0, dim(cutim)[2]), c(0, dim(cutim)[2])),
-        mag = list(c(10, 40), c(10, 40)),
+        mag = list(c(0, 40), c(0, 40)),
         re = list(c(1, 100), c(1, 100)),
         nser = list(c(2, 5.3), c(0.5, 2)),
         ang = list(c(-180, 360), c(-180, 360)),
@@ -304,7 +303,7 @@ profitFound2Fit = function(image,
       sersic = list(
         xcen = list(c(0, dim(cutim)[1])),
         ycen = list(c(0, dim(cutim)[2])),
-        mag = list(c(10, 40)),
+        mag = list(c(0, 40)),
         re = list(c(1, 100)),
         nser = list(c(0.5, 5.3)),
         ang = list(c(-180, 360)),
@@ -313,7 +312,7 @@ profitFound2Fit = function(image,
       pointsource = list(
         xcen = list(c(0, dim(cutim)[1])),
         ycen = list(c(0, dim(cutim)[2])),
-        mag = list(c(10, 40))
+        mag = list(c(0, 40))
       )
     )
   }
@@ -368,7 +367,7 @@ profitFound2Fit = function(image,
                     sersic = list(
                       xcen = rep(list(c(0, dim(cutim)[1])), N_ext),
                       ycen = rep(list(c(0, dim(cutim)[2])), N_ext),
-                      mag = rep(list(c(10, 40)), N_ext),
+                      mag = rep(list(c(0, 40)), N_ext),
                       re = rep(list(c(1, 100)), N_ext),
                       nser = rep(list(c(0.5, 5.3)), N_ext),
                       ang = rep(list(c(-180, 360)), N_ext),
