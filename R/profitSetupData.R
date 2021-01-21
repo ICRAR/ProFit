@@ -293,13 +293,41 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   parm.names=names(init)
   mon.names=c("LL","LP","time")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
+  
+  region_which = which(as.logical(region))
+  
   profit.data=list(
-    init=init, image=image, mask=mask, sigma=sigma, segim=segim, modellist=modellist,
-    psf=psf, psftype=psftype, fitpsf=fitpsf,
-    algo.func=algo.func, mon.names=mon.names, parm.names=parm.names, N=length(which(as.logical(region))),
-    region=region, calcregion=calcregion, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals, constraints=constraints,
-    like.func = like.func, magzero=magzero, rough=rough, finesample=finesample, imagedim=imagedim, verbose=verbose, magmu=magmu,
-    openclenv=openclenv, omp_threads=omp_threads)
+    init=init,
+    image=image,
+    mask=mask,
+    sigma=sigma,
+    segim=segim,
+    modellist=modellist,
+    psf=psf,
+    psftype=psftype,
+    fitpsf=fitpsf,
+    algo.func=algo.func,
+    mon.names=mon.names,
+    parm.names=parm.names,
+    N=length(region_which),
+    region=region,
+    region_which=region_which,
+    calcregion=calcregion,
+    tofit=tofit, 
+    tolog=tolog, 
+    priors=priors, 
+    intervals=intervals, 
+    constraints=constraints,
+    like.func = like.func, 
+    magzero=magzero, 
+    rough=rough, 
+    finesample=finesample, 
+    imagedim=imagedim, 
+    verbose=verbose, 
+    magmu=magmu,
+    openclenv=openclenv, 
+    omp_threads=omp_threads
+  )
   class(profit.data)="profit.data"
   profit.data = profitDataSetOptionsFromBenchmarks(profit.data, benchmarks)
   return(invisible(profit.data))

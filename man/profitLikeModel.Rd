@@ -12,8 +12,7 @@ profitLikeModel(parm, Data, makeplots = FALSE,
 whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"),
 rough = FALSE, cmap = rev(colorRampPalette(brewer.pal(9,"RdYlBu"))(100)),
 errcmap = cmap, plotchisq = FALSE, maxsigma = 5,
-model=NULL, image=Data$image, sigma=Data$sigma, region=Data$region,
-like.func=Data$like.func, algo.func=Data$algo.func, verbose=Data$verbose)
+model=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -46,24 +45,6 @@ The maximum range of sigma deviations displayed. Only relevant if \option{makepl
 }
   \item{model}{
 Matrix, optional; a model image. This will compute the likelihood for the supplied model image instead of generating a model from \option{parm} and \option{Data}, although the prior (if any) will still be computed using \option{parm}.
-}
-  \item{image}{
-Matrix; the image data to compare to. Defaults to \option{Data}$image but can be overridden.
-}
-  \item{sigma}{
-Matrix; the error map. Defaults to \option{Data}$sigma but can be overridden.
-}
-  \item{region}{
-Matrix; a map of good pixels to evaluate likelihoods for. Defaults to \option{Data}$region but can be overridden.
-}
-  \item{like.func}{
-Characters; the name of the likelihood function. Defaults to \option{Data}$like.func but can be overridden.
-}
-  \item{algo.func}{
-Characters; the name of the optimization function used (if any). Defaults to \option{Data}$algo.func but can be overridden. This changes the return values of the function.
-}
-  \item{verbose}{
-Logical; verbosity setting for output from other ProFit functions. Defaults to \option{Data}$verbose but can be overridden.
 }
 }
 \details{
