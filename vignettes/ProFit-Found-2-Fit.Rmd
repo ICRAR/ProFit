@@ -22,8 +22,9 @@ Get the latest version of **ProFound** and **ProFit**:
 
 ```{r, eval=FALSE}
 library(devtools)
-install_github('asgr/ProFound')
 install_github('ICRAR/ProFit')
+install_github('asgr/ProFound')
+install_github('asgr_Highlander')
 ```
 
 Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
@@ -38,6 +39,7 @@ First load the libraries we need:
 library(ProFit)
 library(ProFound)
 library(magicaxis)
+library(Highlander)
 ```
 
 Load the data:
