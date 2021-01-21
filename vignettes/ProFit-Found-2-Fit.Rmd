@@ -29,7 +29,7 @@ install_github('ICRAR/ProFit')
 Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
 
 ```{r}
-evalglobal=FALSE
+evalglobal = FALSE
 ```
 
 First load the libraries we need:
@@ -58,17 +58,31 @@ It is Z-band data from the VIKING survey, and in the second image it is possible
 
 If we do not have a good model for the PSF, we can use the high level fairly automated function **profitAllStarDoFit** to find multiple reasonable stars within the frame (6 by default) and fit them all with a common Moffat model for our PSF. This takes about 7 minutes to run on a modern single CPU.
 
-```{r eval=evalglobal}
-stars_auto = profitAllStarDoFit(image, plot=TRUE, magzero=30, SBdilate=2)
+```{r eval=evalglobal, fig.width=8, fig.height=3, dpi=40}
+stars_auto = profitAllStarDoFit(image, magzero=30, SBdilate=2)
 ```
+
+And check the resulting fit:
+
+```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
+profitLikeModel(stars_auto$parm, stars_auto$Data, makeplots = TRUE, plotchisq = TRUE)
+```
+
+And we can look at the model PSF too:
 
 ```{r eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
 magimage(stars_auto$psf)
 ```
 
+And look at the model parameters too (if you are interested):
+
+```{r eval=evalglobal}
+stars_auto$psf_modellist
+```
+
 ## Fit a Galaxy
 
-We can now attempt a fit of our target galaxy near the middle of the image. By default this is what is targetted by **profitDoFit**, but we will specify the *loc* explicitly to make the process clear. FOr the first example we will fit just a single Sersic component (the default). The function automatically det3ects nearby sources and models them a Single sersic profiles to reduce the contamination in our target source.
+We can now attempt a fit of our target galaxy near the middle of the image. By default this is what is targeted by **profitDoFit**, but we will specify the *loc* explicitly to make the process clear. For the first example we will fit just a single Sersic component (the default). The function automatically detects nearby sources and models them a single Sersic profiles to reduce the contamination in our target source.
 
 ```{r eval=evalglobal}
 example_SS = profitDoFit(image=image, loc=c(178,178), psf=stars_auto$psf, magzero=30,
@@ -84,8 +98,8 @@ profitLikeModel(example_SS$parm, example_SS$Data, makeplots = TRUE, plotchisq = 
 We can try to improve the fit by doing a 2 component fit. By setting **Ncomp**=1.5 we will fit the bulge as an unresolved PSF:
 
 ```{r eval=evalglobal}
-example_Bpsf = profitDoFit(image=image, loc=c(178,178), Ncomp=1.5, psf=stars_auto$psf, magzero=30, 
-                           SBdilate=2)
+example_Bpsf = profitDoFit(image=image, loc=c(178,178), Ncomp=1.5, psf=stars_auto$psf,
+                           magzero=30, SBdilate=2)
 ```
 
 And check the resulting fit:
@@ -98,7 +112,7 @@ We can try to improve the fit by doing a 2 component fit with a fixed Sersic n=4
 
 ```{r eval=evalglobal}
 example_B4 = profitDoFit(image=image, loc=c(178,178), Ncomp=2, psf=stars_auto$psf, magzero=30, 
-                         SBdilate=2, bulge_nser_fit=FALSE, seed=1)
+                         SBdilate=2, bulge_nser_fit=FALSE)
 ```
 
 And check the resulting fit:
