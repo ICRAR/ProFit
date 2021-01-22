@@ -20,7 +20,6 @@ profitAllStarFound2Fit = function(image,
     sky = 0,
     redosky = FALSE,
     magzero = magzero,
-    box = 50,
     verbose = FALSE,
     boundstats = TRUE,
     ...
@@ -58,6 +57,8 @@ profitAllStarFound2Fit = function(image,
   segID_tar = mini_profound$segstats[mini_profound$segstats$segID %in% segID_tar & mini_profound$segstats$Nobject==0 & mini_profound$segstats$Nborder==0 & mini_profound$segstats$Nmask==0,'segID']
   
   if(length(segID_tar) < Nstar){
+    segID_tar = unique(mini_profound$segim[locs])
+    segID_tar[segID_tar > 0]
     segID_tar = mini_profound$segstats[mini_profound$segstats$segID %in% segID_tar & mini_profound$segstats$Nobject==0,'segID']
   }
   
@@ -79,14 +80,21 @@ profitAllStarFound2Fit = function(image,
   
   region = matrix(mini_profound$segim %in% segID_tar, nrow=dim(image)[1], ncol=dim(image)[2])
   
-  image_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
-  rms_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
-  region_psf = matrix(0, nrow=psf_dim[1]*Nstar, ncol=psf_dim[2])
+  gridNy = ceiling(sqrt(Nstar))
+  gridNx = ceiling(Nstar/gridNy)
+  
+  grid = expand.grid((1:gridNx - 0.5) * psf_dim[1], (1:gridNy - 0.5) * psf_dim[2])
+  
+  image_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
+  rms_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
+  region_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
   
   for(i in 1:Nstar){
-    image_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(image, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
-    rms_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(rms, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
-    region_psf[1:psf_dim[1] + (i - 1)*psf_dim[1],1:psf_dim[2]] = magcutout(region, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    subx = 1:psf_dim[1] + grid[i,1] - psf_dim[1]/2
+    suby = 1:psf_dim[2] + grid[i,2] - psf_dim[2]/2
+    image_psf[subx,suby] = magcutout(image, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    rms_psf[subx,suby] = magcutout(rms, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    region_psf[subx,suby] = magcutout(region, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
   }
   
   region_psf[is.na(region_psf)] = 0
@@ -101,10 +109,10 @@ profitAllStarFound2Fit = function(image,
   
   modellist = list(
     moffat = list(
-      xcen = seq(psf_dim[1]/2, psf_dim[1]*Nstar, by=psf_dim[1]),
-      ycen = rep(psf_dim[2]/2, Nstar),
+      xcen = grid[1:Nstar,1],
+      ycen = grid[1:Nstar,2],
       mag = mini_profound$segstats[loc_tar, 'mag'],
-      fwhm = rep(median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE)*2, Nstar),
+      fwhm = rep(median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE), Nstar),
       con = rep(star_con, Nstar),
       ang = rep(ang, Nstar),
       axrat = rep(axrat, Nstar)
