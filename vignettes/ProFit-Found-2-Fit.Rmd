@@ -50,7 +50,7 @@ image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="P
 
 And take a look at what we have got:
 
-```{r, fig.width=5, fig.height=5, dpi=40}
+```{r, fig.width=5, fig.height=5, dpi=100}
 magimage(image, hicut=1)
 ```
 
@@ -60,19 +60,19 @@ It is Z-band data from the VIKING survey, and in the second image it is possible
 
 If we do not have a good model for the PSF, we can use the high level fairly automated function **profitAllStarDoFit** to find multiple reasonable stars within the frame (6 by default) and fit them all with a common Moffat model for our PSF. This takes about 7 minutes to run on a modern single CPU.
 
-```{r eval=evalglobal, fig.width=8, fig.height=3, dpi=40}
+```{r eval=evalglobal, fig.width=8, fig.height=3, dpi=100}
 stars_auto = profitAllStarDoFit(image, magzero=30, SBdilate=2)
 ```
 
 And check the resulting fit:
 
-```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
+```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=100}
 profitLikeModel(stars_auto$parm, stars_auto$Data, makeplots = TRUE, plotchisq = TRUE)
 ```
 
 And we can look at the model PSF too:
 
-```{r eval=evalglobal, fig.width=5, fig.height=5, dpi=40}
+```{r eval=evalglobal, fig.width=5, fig.height=5, dpi=100}
 magimage(stars_auto$psf)
 ```
 
@@ -93,7 +93,7 @@ example_SS = profitDoFit(image=image, loc=c(178,178), psf=stars_auto$psf, magzer
 
 And check the resulting fit:
 
-```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
+```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=100}
 profitLikeModel(example_SS$parm, example_SS$Data, makeplots = TRUE, plotchisq = TRUE)
 ```
 
@@ -106,7 +106,7 @@ example_Bpsf = profitDoFit(image=image, loc=c(178,178), Ncomp=1.5, psf=stars_aut
 
 And check the resulting fit:
 
-```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
+```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=100}
 profitLikeModel(example_Bpsf$parm, example_Bpsf$Data, makeplots = TRUE, plotchisq = TRUE)
 ```
 
@@ -119,6 +119,6 @@ example_B4 = profitDoFit(image=image, loc=c(178,178), Ncomp=2, psf=stars_auto$ps
 
 And check the resulting fit:
 
-```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=40}
+```{r eval=evalglobal, fig.width=8, fig.height=5, dpi=100}
 profitLikeModel(example_B4$parm, example_B4$Data, makeplots = TRUE, plotchisq = TRUE)
 ```
