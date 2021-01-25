@@ -11,33 +11,36 @@ ProFound to ProFit Profile Fitting
 Functions to easily take users from image pixel data all the way to fully fitted profiles.
 }
 \usage{
-profitFound2Fit(image, rms, loc = cutbox/2, Ncomp = 1, cutbox = dim(image), psf,
-  magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE, sing_nser = 2,
-  bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE, bulge_nser_fit = TRUE,
-  disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2, star_con_fit = TRUE,
-  star_circ = TRUE, rough = FALSE, ...)
+profitFound2Fit(image, rms = NULL, loc = cutbox/2, segim = NULL, Ncomp = 1,
+  cutbox = dim(image), psf, magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE,
+  sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
+  bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2,
+  star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, ...)
 
-profitDoFit(image, rms, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
+profitDoFit(image, rms = NULL, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
   seed = 666, ...)
   
-profitAllStarFound2Fit(image, rms, locs, Ncomp = 1, magdiff = 2.5, magzero = 0,
-  psf_dim = c(51, 51), star_con = 2, star_con_fit = TRUE, star_circ = TRUE, rough = FALSE,
-  star_dom_mag = NULL, Nstar = 6, ...)
+profitAllStarFound2Fit(image, rms = NULL, locs = NULL, segim = NULL, Ncomp = 1,
+  magdiff = 2.5, magzero = 0, psf_dim = c(51, 51), star_con = 2, star_con_fit = TRUE,
+  star_circ = TRUE, rough = FALSE, star_dom_mag = NULL, Nstar = 4, ...)
   
-profitAllStarDoFit(image, rms, locs, magzero = 0, psf_dim = c(51,51), rough = FALSE,
-  plot = FALSE, seed = 666, ...)
+profitAllStarDoFit(image, rms = NULL, locs = NULL, magzero = 0, psf_dim = c(51,51),
+  rough = FALSE, plot = FALSE, seed = 666, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-Image matrix; required, the galaxy image we want to fit a galaxy of PSF/star model to. For convenience this can also be an Rfits_pointer object for very large on disk images. Critically, this input \option{image} needs to be well background subtracted (this is not done again internally).
+Numeric matrix; required, the galaxy image we want to fit a galaxy of PSF/star model to. For convenience this can also be an Rfits_pointer object for very large on disk images. Critically, this input \option{image} needs to be well background subtracted (this is not done again internally).
 }
   \item{rms}{
-Image matrix; optional, the RMS map of the \option{image} data we want to fit a model to. If not provided this will be estimated by running \code{profoundProFound}, \code{profoundGainEst} and \code{profoundMakeSigma} to make a decent effort and creating an appropriate RMS map. Users should usually try to provide this themselves for critical fitting, but the automatic RMS map is usually good enough for testing purposes. For convenience this can also be an Rfits_pointer object for very large on disk RMS maps.
+Numeric matrix; optional, the RMS map of the \option{image} data we want to fit a model to. If not provided this will be estimated by running \code{profoundProFound}, \code{profoundGainEst} and \code{profoundMakeSigma} to make a decent effort and creating an appropriate RMS map. Users should usually try to provide this themselves for critical fitting, but the automatic RMS map is usually good enough for testing purposes. For convenience this can also be an Rfits_pointer object for very large on disk RMS maps.
 }
   \item{loc}{
 Numeric vector; optional, the [X,Y] location of our target galaxy on the original \option{image}. The default is to use the centre of the provided \option{image}.
+}
+  \item{segim}{
+Integer matrix; optional, users can pass in their own segmentation maps, which should be pixel matched to the input \option{image}. This will be used instead of the internal \code{ProFound} run, although the segmentation statistics will still be recomputed.
 }
   \item{locs}{
 Numeric matrix; optional, the [X,Y] locations of target stars on the original \option{image} for \code{AllStar} fitting to create out PSF model. The idea is we pass in a list of multiple potential stars, and internally this is limited to just those star segments that do not touch another source or hit the \option{image} border. If this is not provided then \code{profitAllStarFound2Fit} will attempt to guess which objects might be good stars for modelling (but this should not be relied on generally).
@@ -194,7 +197,7 @@ magimage(star$psf)
 profound = profoundProFound(image, magzero=30)
 sel = which(profound$segstats$mag < 23 & profound$segstats$R50 < 3.5)
 
-#We pass in 21 possible star positions, choosing the best 6:
+#We pass in 21 possible star positions, choosing the best 4 by default:
 
 stars_man = profitAllStarDoFit(image, loc=profound$segstats[sel,c('xcen','ycen')],
   plot=TRUE, magzero=30, SBdilate=2)

@@ -1,6 +1,7 @@
 profitAllStarFound2Fit = function(image,
-                           rms,
-                           locs,
+                           rms = NULL,
+                           locs = NULL,
+                           segim = NULL,
                            Ncomp = 1,
                            magdiff = 2.5,
                            magzero = 0,
@@ -10,22 +11,40 @@ profitAllStarFound2Fit = function(image,
                            star_circ = TRUE,
                            rough = FALSE,
                            star_dom_mag = NULL,
-                           Nstar = 6,
+                           Nstar = 4,
                            ...) {
   
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
-  mini_profound = ProFound::profoundProFound(
-    image = image,
-    sky = 0,
-    redosky = FALSE,
-    magzero = magzero,
-    verbose = FALSE,
-    boundstats = TRUE,
-    ...
-  )
   
-  if (missing(rms)) {
+  if(!is.null(segim)){
+    mini_profound = ProFound::profoundProFound(
+      image = image,
+      sky = 0,
+      redosky = FALSE,
+      boundstats = TRUE,
+      magzero = magzero,
+      verbose = FALSE,
+      boundstats = TRUE,
+      ...
+    )
+  }else{
+    mini_profound = ProFound::profoundProFound(
+      image = image,
+      segim = segim,
+      sky = 0,
+      redosky = FALSE,
+      boundstats = TRUE,
+      magzero = magzero,
+      verbose = FALSE,
+      boundstats = TRUE,
+      iters = 0,
+      ...
+    )
+  }
+  
+  
+  if(is.null(rms)){
     gain = ProFound::profoundGainEst(image, objects = mini_profound$objects, sky = 0)
     rms = ProFound::profoundMakeSigma(
       image = image,
@@ -37,7 +56,7 @@ profitAllStarFound2Fit = function(image,
     )
   }
   
-  if(missing(locs)){
+  if(is.null(locs)){
     if(is.null(star_dom_mag)){
       star_dom_mag = median(mini_profound$segstats$mag, na.rm=TRUE)
     }
@@ -174,8 +193,8 @@ profitAllStarFound2Fit = function(image,
 }
 
 profitAllStarDoFit = function(image,
-                       rms,
-                       locs,
+                       rms = NULL,
+                       locs = NULL,
                        magzero = 0,
                        psf_dim = c(51,51),
                        rough = FALSE,

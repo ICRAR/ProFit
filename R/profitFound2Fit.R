@@ -1,6 +1,7 @@
 profitFound2Fit = function(image,
-                           rms,
+                           rms = NULL,
                            loc = cutbox / 2,
+                           segim = NULL,
                            Ncomp = 1,
                            cutbox = dim(image),
                            psf = NULL,
@@ -24,26 +25,49 @@ profitFound2Fit = function(image,
   if(Ncomp == 0.5){psf = NULL}
   
   cutim = magicaxis::magcutout(image, loc = loc, box = cutbox)
-  if (!missing(rms)) {
+  loc = cutim$loc
+  cutim = cutim$image
+  
+  if (!is.null(rms)) {
     cutrms = magicaxis::magcutout(rms, loc = loc, box = cutbox)$image
   } else{
     cutrms = NULL
   }
-  loc = cutim$loc
-  cutim = cutim$image
+  
+  if (!missing(segim)) {
+    cutseg = magicaxis::magcutout(segim, loc = loc, box = cutbox)$image
+  } else{
+    cutseg = NULL
+  }
   
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
-  mini_profound = ProFound::profoundProFound(
-    image = cutim,
-    sky = 0,
-    redosky = FALSE,
-    nearstats = TRUE,
-    groupby = 'segim',
-    magzero = magzero,
-    verbose = FALSE,
-    ...
-  )
+  
+  if(!is.null(cutseg)){
+    mini_profound = ProFound::profoundProFound(
+      image = cutim,
+      sky = 0,
+      redosky = FALSE,
+      nearstats = TRUE,
+      groupby = 'segim',
+      magzero = magzero,
+      verbose = FALSE,
+      ...
+    )
+  }else{
+    mini_profound = ProFound::profoundProFound(
+      image = cutim,
+      segim = cutseg,
+      sky = 0,
+      redosky = FALSE,
+      nearstats = TRUE,
+      groupby = 'segim',
+      magzero = magzero,
+      verbose = FALSE,
+      iters = 0,
+      ...
+    )
+  }
   
   if (is.null(cutrms)) {
     gain = ProFound::profoundGainEst(cutim, objects = mini_profound$objects, sky = 0)
@@ -400,7 +424,7 @@ profitFound2Fit = function(image,
 }
 
 profitDoFit = function(image,
-                       rms,
+                       rms = NULL,
                        loc = cutbox / 2,
                        Ncomp = 1,
                        cutbox = dim(image),
