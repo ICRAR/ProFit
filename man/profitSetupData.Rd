@@ -9,13 +9,13 @@ This is a utility function to get the user inputs in the format required for mod
 }
 \usage{
 profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, priors,
-intervals, constraints, psf = NULL, psfdim = dim(psf), rough = FALSE, finesample = 1L,
-psffinesampled = FALSE, magzero = 0, algo.func = 'LA', like.func = "norm", magmu = FALSE,
-verbose = FALSE, omp_threads = NULL, openclenv = NULL, openclenv_int = openclenv,
-openclenv_conv = openclenv, nbenchmark = 0L, nbenchint = nbenchmark,
-nbenchconv = nbenchmark, benchintmethods = "brute", benchconvmethods = c("brute","fftw"),
-benchprecisions = "double", benchconvprecisions = benchprecisions,
-benchintprecisions = benchprecisions,
+intervals, constraints, psf = NULL, psfdim = dim(psf), offset = NULL, rough = FALSE,
+finesample = 1L, psffinesampled = FALSE, magzero = 0, algo.func = 'LA',
+like.func = "norm", magmu = FALSE, verbose = FALSE, omp_threads = NULL, openclenv = NULL,
+openclenv_int = openclenv, openclenv_conv = openclenv, nbenchmark = 0L,
+nbenchint = nbenchmark, nbenchconv = nbenchmark, benchintmethods = "brute",
+benchconvmethods = c("brute","fftw"), benchprecisions = "double",
+benchconvprecisions = benchprecisions, benchintprecisions = benchprecisions,
 benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
 printbenchmark = FALSE, printbenchint = printbenchmark, printbenchconv = printbenchmark)
 }
@@ -57,7 +57,11 @@ Function; optional, takes the new trial \option{modellist} and returns a list wi
   \item{psf}{
 Matrix; optional. An empirical point spread function (PSF) image matrix that ProFit will use to convolve the image, as an alternative to defining an analytical PSF in \option{modellist}. This should have odd sizes in each dimension. If the dimension has an even size then the function will internally interpolate it onto an odd sized grid 1 element larger. \code{profitSetupData} forces negative values to equal 0. During any convolution \code{\link{profitConvolvePSF}} will force the sum of the pixels to equal 1 to ensure flux conservation during convolution of the model image.
 }
- \item{psfdim}{Numeric; optional. Dimensions of the PSF image to generate when fitting an analytic PSF and convolving extended sources. Defaults to the dimensions of \option{psf}. Ignored if there are no extended sources or analytic PSF.
+ \item{psfdim}{
+Integer vector; optional. Dimensions of the PSF image to generate when fitting an analytic PSF and convolving extended sources. Defaults to the dimensions of \option{psf}. Ignored if there are no extended sources or analytic PSF.
+}
+  \item{offset}{
+Numeric vector; optional. Additive fffset to be applied to all xcen and ycen positions in the model list. This is useful if you are fitting one object on multiple images with different WCS- you should then specify the input \option{modellist} in a common manner for all Data objects (say using the coordinate system of the first \option{image} in the list), but supply different \option{offset} for each image, where [X,Y] (image N) = [X,Y] (image 1) + [X,Y] (offset N).
 }
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evaluation of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values. See \code{\link{profitMakeModel}}.

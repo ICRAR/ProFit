@@ -149,7 +149,7 @@ profitDataSetOptionsFromBenchmarks <- function(Data, benchmarks)
 }
 
 profitSetupData=function(image, region, sigma, segim, mask, modellist,
-  tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf),
+  tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), offset=NULL,
   rough=FALSE, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
   like.func="norm", magmu=FALSE, verbose=FALSE, omp_threads = NULL,
   openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
@@ -321,6 +321,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     like.func = like.func, 
     magzero=magzero, 
     rough=rough, 
+    offset=offset,
     finesample=finesample, 
     imagedim=imagedim, 
     verbose=verbose, 

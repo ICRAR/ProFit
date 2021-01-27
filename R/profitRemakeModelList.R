@@ -1,4 +1,4 @@
-profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constraints, Data){
+profitRemakeModellist=function(parm, modellist, tofit, tolog=NULL, intervals=NULL, constraints=NULL, offset=NULL, Data){
   if(!missing(Data) & missing(parm)){
     parm=Data$init
   }
@@ -17,14 +17,28 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   if(!missing(Data) & missing(constraints)){
     constraints=Data$constraints
   }
+  if(!missing(Data) & missing(offset)){
+    offset=Data$offset
+  }
+  
   fitIDs=which(unlist(tofit))
   if(length(fitIDs)>=1){
     if(length(parm)!=length(fitIDs)){
       stop('Length of parm (i.e. number of parameters being updated) mismatches tofit list!')
     }
+    
     parmnew=unlist(modellist)
     parmnew[fitIDs]=parm
-    if(!missing(tolog)){
+    
+  if(!is.null(offset)){
+    xsel = grep('xcen',names(parmnew))
+    parmnew[xsel] = parmnew[xsel] + offset[1]
+    
+    ysel = grep('ycen',names(parmnew))
+    parmnew[ysel] = parmnew[ysel] + offset[2]
+  }
+    
+    if(!is.null(tolog)){
       if(length(tolog)>0){
         tounlogIDs=which(unlist(tolog) & unlist(tofit))
         parmnew[tounlogIDs]=10^parmnew[tounlogIDs]
@@ -43,14 +57,14 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog, intervals, constra
   modellistnew = relist(parmnew, modellist)
   # Apply constraints to the new linear modellist
   
-  if(!missing(constraints)){
+  if(!is.null(constraints)){
     if(length(constraints)>0){
       modellistnew=constraints(modellistnew)
     }
   }
   
   # Specify interval limits on the now linear data
-  if(!missing(intervals)){
+  if(!is.null(intervals)){
     #New approach, to deal with partial interval limits:
     if(length(intervals)>0){
       compnames = unique(names(intervals))
