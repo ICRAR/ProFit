@@ -6,36 +6,39 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
     temp = {}
     for(i in 1:length(Data)){
-      out = profitLikeModel(
-        parm = parm,
-        Data = Data[[i]],
-        makeplots = makeplots,
-        whichcomponents = whichcomponents,
-        rough = rough,
-        cmap = cmap,
-        errcmap = errcmap,
-        plotchisq = plotchisq,
-        maxsigma = maxsigma,
-        model = model
-      )
-      temp = c(temp, list(out))
-      
-      if(Data[[1]]$algo.func=='optim' | Data[[1]]$algo.func=='CMA'){
-        output = sum(unlist(temp))
-      }
-      
-      if(Data[[1]]$algo.func=='LA' | Data[[1]]$algo.func=='LD'){
-        output = temp[[1]]
-        output$LP = 0
-        output$Dev = 0
-        output$Monitor = 0
-        for(i in 1:length(temp)){
-          output$LP = output$LP + temp[[i]]$LP
-          output$Dev = output$Dev + temp[[i]]$Dev
-          output$Monitor = output$Monitor + temp[[i]]$Monitor
-        }
+      if(inherits(Data[[i]], 'profit.data')){
+        out = profitLikeModel(
+          parm = parm,
+          Data = Data[[i]],
+          makeplots = makeplots,
+          whichcomponents = whichcomponents,
+          rough = rough,
+          cmap = cmap,
+          errcmap = errcmap,
+          plotchisq = plotchisq,
+          maxsigma = maxsigma,
+          model = model
+        )
+        temp = c(temp, list(out))
       }
     }
+    
+    if(Data[[1]]$algo.func=='optim' | Data[[1]]$algo.func=='CMA'){
+      output = sum(unlist(temp))
+    }
+    
+    if(Data[[1]]$algo.func=='LA' | Data[[1]]$algo.func=='LD'){
+      output = temp[[1]]
+      output$LP = 0
+      output$Dev = 0
+      output$Monitor = 0
+      for(i in 1:length(temp)){
+        output$LP = output$LP + temp[[i]]$LP
+        output$Dev = output$Dev + temp[[i]]$Dev
+        output$Monitor = output$Monitor + temp[[i]]$Monitor
+      }
+    }
+    
     return(output)
   }
   
