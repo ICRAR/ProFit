@@ -43,7 +43,7 @@ profitFound2Fit = function(image,
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
   
-  if(!is.null(cutseg)){
+  if(is.null(cutseg)){
     mini_profound = ProFound::profoundProFound(
       image = cutim,
       sky = 0,
@@ -54,6 +54,7 @@ profitFound2Fit = function(image,
       verbose = FALSE,
       ...
     )
+    cutseg = mini_profound$segim
   }else{
     mini_profound = ProFound::profoundProFound(
       image = cutim,
@@ -408,6 +409,7 @@ profitFound2Fit = function(image,
     image = cutim,
     region = region,
     sigma = cutrms,
+    segim = cutseg,
     psf = psf,
     modellist = modellist,
     tofit = tofit,

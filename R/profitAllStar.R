@@ -17,24 +17,23 @@ profitAllStarFound2Fit = function(image,
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
   
-  if(!is.null(segim)){
+  if(is.null(segim)){
     mini_profound = ProFound::profoundProFound(
       image = image,
       sky = 0,
       redosky = FALSE,
-      boundstats = TRUE,
       magzero = magzero,
       verbose = FALSE,
       boundstats = TRUE,
       ...
     )
+    segim = mini_profound$segim
   }else{
     mini_profound = ProFound::profoundProFound(
       image = image,
       segim = segim,
       sky = 0,
       redosky = FALSE,
-      boundstats = TRUE,
       magzero = magzero,
       verbose = FALSE,
       boundstats = TRUE,
@@ -178,6 +177,7 @@ profitAllStarFound2Fit = function(image,
     image = image_psf,
     region = region_psf,
     sigma = rms_psf,
+    segim = segim,
     psf = NULL,
     modellist = modellist,
     tofit = tofit,

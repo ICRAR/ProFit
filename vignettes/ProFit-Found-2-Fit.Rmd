@@ -24,7 +24,7 @@ Get the latest version of **ProFound** and **ProFit**:
 library(devtools)
 install_github('ICRAR/ProFit')
 install_github('asgr/ProFound')
-install_github('asgr_Highlander')
+install_github('asgr/Highlander')
 ```
 
 Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
@@ -54,7 +54,7 @@ And take a look at what we have got:
 magimage(image, hicut=1)
 ```
 
-It is Z-band data from the VIKING survey, and in the second image it is possible to see that the bright source close to our spiral galaxy of interest in the centre is in fact two very bright stars.
+It is Z-band data from the VIKING survey. You can see that there are two very bright stars next to our galaxy of interest. At least the nearer of the two is producing enough extended flux that you profiling might be compromised unless we account for it.
 
 ## Making an Automatic PSF
 
