@@ -1,0 +1,120 @@
+---
+title: "ProFit: Offset Images"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProFit: Offset Images}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Load our useful libraries:
+
+```{r}
+library(ProFit)
+library(ProFound)
+library(magicaxis)
+library(Highlander)
+library(Rfits)
+```
+
+Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
+
+```{r}
+evalglobal = FALSE
+```
+
+Here we look at co-fitting images with offset positions.
+
+```{r}
+im1 = Rfits_read_image(system.file("extdata/Offset/Zim1.fits",package="ProFit"), ext=2)$imDat
+im2 = Rfits_read_image(system.file("extdata/Offset/Zim2.fits",package="ProFit"), ext=2)$imDat
+```
+
+Here we have two similar Z-band frames taken at slightly offset positions of the same primary source. With **ProFit** it is possible to fit these simultaneously without resorting to stacking.
+
+```{r fig.width=5, fig.height=5, dpi=100}
+magimage(im1)
+magimage(im2)
+```
+
+First we should extract the PSFs using the **profitAllStarDoFit** function (this will take about 5 minutes):
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+PSF1 = profitAllStarDoFit(im1, magzero=30, plot=TRUE)
+```
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+PSF2 = profitAllStarDoFit(im2, magzero=30, plot=TRUE)
+```
+
+We can compare the models:
+
+```{r eval=evalglobal}
+PSF1$psf_modellist
+PSF2$psf_modellist
+```
+
+The seeing in our second image is clearly quite a bit better (FWHM 2.3 versus 2.8). This is also why we should get a better solution by fitting both images simultaneously rather than stacking.
+
+To get most of the way to the correct Datalist stucture we need we can use **profitFound2Fit**:
+
+```{r eval=evalglobal}
+F2F1 = profitFound2Fit(im1, loc=c(450,500), psf=PSF1$psf, cutbox=c(300,300), Ncomp=2,
+                       magzero=30, SBdilate=2, tightcrop=FALSE)
+F2F2 = profitFound2Fit(im2, loc=c(450,500), psf=PSF2$psf, cutbox=c(300,300), Ncomp=2,
+                       magzero=30, SBdilate=2, tightcrop=FALSE)
+```
+
+The main adjustment we need to make it to tell **ProFit** what the offset is between the frames and put this into the *Data* object contained. From the original WCSs the offset from *im1* to *im2* is know to be [-23.112,-9.697] pixels:
+
+```{r eval=evalglobal}
+F2F2$Data$offset = c(-23.112,-9.697)
+```
+
+We can now check this using the **profitLikeModel** function, where the same initial parameters get shifted for the second *Data* object:
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+profitLikeModel(F2F1$Data$init, Data=F2F1$Data, makeplots=TRUE)
+profitLikeModel(F2F1$Data$init, Data=F2F2$Data, makeplots=TRUE)
+```
+The solutions look pretty similar now! To simplify things we want to create a *Datalist* structure that contains the two lists:
+
+```{r eval=evalglobal}
+Datalist = c(list(F2F1$Data), list(F2F2$Data))
+```
+
+You can now run **profitLikeModel** more directly:
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+profitLikeModel(F2F1$Data$init, Data=Datalist, makeplots=TRUE)
+```
+The final thing we need to do is add a couple of elements to the *Datalist* to make it compatible with **LaplacesDemon**:
+
+```{r eval=evalglobal}
+Datalist$mon.names = F2F1$Data$mon.names
+Datalist$parm.names = F2F1$Data$parm.names
+Datalist$N = F2F1$Data$N
+```
+
+Now we can finally run **Highlander** to find the best common solution for the two frames (this will take about 5  mminutes):
+
+```{r eval=evalglobal}
+HighFit = Highlander(F2F1$Data$init, Data=Datalist, likefunc=profitLikeModel, ablim=0.5)
+```
+
+And now we can check the results:
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+profitLikeModel(HighFit$parm, Data=Datalist, makeplots=TRUE)
+```
+
+A similar methodology will work on any number of images, as long as they fit within memory. They should strictly all be the same band and pixel scale however, since currently (as of Jan 2021) **ProFit** does not allow the main model parameters to vary between images (other than the [X,Y] offset as shown above). Longer term the plan is to allow such functionality.

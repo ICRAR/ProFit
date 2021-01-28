@@ -11,13 +11,13 @@ ProFound to ProFit Profile Fitting
 Functions to easily take users from image pixel data all the way to fully fitted profiles.
 }
 \usage{
-profitFound2Fit(image, rms = NULL, loc = cutbox/2, segim = NULL, Ncomp = 1,
+profitFound2Fit(image, rms = NULL, loc = dim(image)/2, segim = NULL, Ncomp = 1,
   cutbox = dim(image), psf, magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE,
   sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
   bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2,
-  star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, ...)
+  star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, tightcrop = TRUE, ...)
 
-profitDoFit(image, rms = NULL, loc = cutbox / 2, Ncomp = 1, cutbox = dim(image), psf,
+profitDoFit(image, rms = NULL, loc = dim(image)/2, Ncomp = 1, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
   seed = 666, ...)
   
@@ -101,6 +101,9 @@ Integer vector; optional, the dimensions of the output PSF generated when fittin
 }
   \item{rough}{
 Logical; optional, should ProFit be run using an approximate fit? This is less accurate, and potentially much less for compact sources, but it also runs much faster. Potentially if the target object is very extended then this will be accurate enough and speed up fitting by a factor of a few usually. It is also useful for quick testing. For publishable results this should usually be left as the default of FALSE.
+}
+  \item{tightcrop}{
+Logical; optional, should the image be cut down to the tightest fitting box that fully contains the segmentation map? This might be a good idea if the parent image is very large (cuts down on memory allocation etc), but might be a bad idea if you want to know the exact position of your source with the frame, e.g. \option{xcen} and \option{ycen} in the \option{modellist} are relative to the new tightly cropped image not the original cropped image.
 }
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.

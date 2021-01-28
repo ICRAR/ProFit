@@ -1,6 +1,6 @@
 profitFound2Fit = function(image,
                            rms = NULL,
-                           loc = cutbox / 2,
+                           loc = dim(image) / 2,
                            segim = NULL,
                            Ncomp = 1,
                            cutbox = dim(image),
@@ -20,6 +20,7 @@ profitFound2Fit = function(image,
                            star_con_fit = TRUE,
                            star_circ = TRUE,
                            rough = FALSE,
+                           tightcrop = TRUE,
                            ...) {
   if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
   if(Ncomp == 0.5){psf = NULL}
@@ -102,21 +103,27 @@ profitFound2Fit = function(image,
   
   region = matrix(mini_profound$segim %in% c(segID_tar, segID_ext), nrow=cutbox[1], ncol=cutbox[2])
   regionlim = which(region, arr.ind=TRUE)
-  xlo = min(regionlim[,1])
-  xhi = max(regionlim[,1])
-  ylo = min(regionlim[,2])
-  yhi = max(regionlim[,2])
   
-  cutim = cutim[xlo:xhi, ylo:yhi]
-  region = region[xlo:xhi, ylo:yhi]
-  cutrms = cutrms[xlo:xhi, ylo:yhi]
-  
-  if(loc_use){
-    xcen = loc[1] - xlo + 1L
-    ycen = loc[2] - ylo + 1L
+  if(tightcrop){
+    xlo = min(regionlim[,1])
+    xhi = max(regionlim[,1])
+    ylo = min(regionlim[,2])
+    yhi = max(regionlim[,2])
+    
+    cutim = cutim[xlo:xhi, ylo:yhi]
+    region = region[xlo:xhi, ylo:yhi]
+    cutrms = cutrms[xlo:xhi, ylo:yhi]
+    
+    if(loc_use){
+      xcen = loc[1] - xlo + 1
+      ycen = loc[2] - ylo + 1
+    }else{
+      xcen = mini_profound$segstats[loc_tar, 'xcen'] - xlo + 1
+      ycen = mini_profound$segstats[loc_tar, 'ycen'] - ylo + 1
+    }
   }else{
-    xcen = mini_profound$segstats[loc_tar, 'xcen'] - xlo + 1L
-    ycen = mini_profound$segstats[loc_tar, 'ycen'] - ylo + 1L
+    xcen = mini_profound$segstats[loc_tar, 'xcen'] + 1
+    ycen = mini_profound$segstats[loc_tar, 'ycen'] + 1
   }
   
   if (Ncomp == 0.5) {
@@ -427,7 +434,7 @@ profitFound2Fit = function(image,
 
 profitDoFit = function(image,
                        rms = NULL,
-                       loc = cutbox / 2,
+                       loc = dim(image) / 2,
                        Ncomp = 1,
                        cutbox = dim(image),
                        psf = NULL,
