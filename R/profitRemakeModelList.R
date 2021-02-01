@@ -1,65 +1,73 @@
-profitRemakeModellist=function(parm, modellist, tofit, tolog=NULL, intervals=NULL, constraints=NULL, offset=NULL, Data){
+profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=NULL, constraints=NULL, offset=NULL, parmuse=NULL, Data){
   if(!missing(Data) & missing(parm)){
-    parm=Data$init
+    parm = Data$init
   }
   if(!missing(Data) & missing(modellist)){
-    modellist=Data$modellist
+    modellist = Data$modellist
   }
   if(!missing(Data) & missing(tofit)){
-    tofit=Data$tofit
+    tofit = Data$tofit
   }
   if(!missing(Data) & missing(tolog)){
-    tolog=Data$tolog
+    tolog = Data$tolog
   }
   if(!missing(Data) & missing(intervals)){
-    intervals=Data$intervals
+    intervals = Data$intervals
   }
   if(!missing(Data) & missing(constraints)){
-    constraints=Data$constraints
+    constraints = Data$constraints
   }
   if(!missing(Data) & missing(offset)){
-    offset=Data$offset
+    offset = Data$offset
+  }
+  if(!missing(Data) & missing(parmuse)){
+    parmuse = Data$parmuse
   }
   
   fitIDs=which(unlist(tofit))
   if(length(fitIDs)>=1){
-    if(length(parm)!=length(fitIDs)){
+    if(length(parm) != length(fitIDs)){
       stop('Length of parm (i.e. number of parameters being updated) mismatches tofit list!')
     }
     
-    parmnew=unlist(modellist)
-    parmnew[fitIDs]=parm
+    if(is.null(parmuse)){
+      parmin = unlist(modellist)
+      parmin[fitIDs] = parm
+    }else{
+      parmin = unlist(modellist)
+      parmin[fitIDs] = parm[parmuse]
+    }
     
   if(!is.null(offset)){
-    xsel = grep('xcen',names(parmnew))
-    parmnew[xsel] = parmnew[xsel] + offset[1]
+    xsel = grep('xcen',names(parmin))
+    parmin[xsel] = parmin[xsel] + offset[1]
     
-    ysel = grep('ycen',names(parmnew))
-    parmnew[ysel] = parmnew[ysel] + offset[2]
+    ysel = grep('ycen',names(parmin))
+    parmin[ysel] = parmin[ysel] + offset[2]
   }
     
     if(!is.null(tolog)){
       if(length(tolog)>0){
-        tounlogIDs=which(unlist(tolog) & unlist(tofit))
-        parmnew[tounlogIDs]=10^parmnew[tounlogIDs]
+        tounlogIDs = which(unlist(tolog) & unlist(tofit))
+        parmin[tounlogIDs] = 10^parmin[tounlogIDs]
       }
     }else{
-      tounlogIDs={}
+      tounlogIDs = {}
     }
     # Inherit values for NA flags
-    inheritIDs=which(is.na(unlist(tofit)))
+    inheritIDs = which(is.na(unlist(tofit)))
     for(i in inheritIDs){
-      parmnew[i]=parmnew[i-1]
+      parmin[i] = parmin[i-1]
     }
   }else{
-    parmnew=parm
+    parmin = parm
   }
-  modellistnew = relist(parmnew, modellist)
+  modellistnew = relist(parmin, modellist)
   # Apply constraints to the new linear modellist
   
   if(!is.null(constraints)){
     if(length(constraints)>0){
-      modellistnew=constraints(modellistnew)
+      modellistnew = constraints(modellistnew)
     }
   }
   
@@ -72,29 +80,29 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog=NULL, intervals=NUL
         #For the more typical non-PSF case
         if(i != "psf"){
           for(m in which(names(intervals) == i)){
-            subnames=names(intervals[[m]])
+            subnames = names(intervals[[m]])
             for(j in subnames){
-              subsublength=length(modellistnew[[m]][[j]])
+              subsublength = length(modellistnew[[m]][[j]])
               for(k in 1:subsublength){
-                intervalmin=intervals[[m]][[j]][[k]][1]
-                intervalmax=intervals[[m]][[j]][[k]][2]
-                currentval=modellistnew[[m]][[j]][k]
-                modellistnew[[m]][[j]][k]=max(intervalmin, min(intervalmax, currentval, na.rm = TRUE), na.rm = TRUE)
+                intervalmin = intervals[[m]][[j]][[k]][1]
+                intervalmax = intervals[[m]][[j]][[k]][2]
+                currentval = modellistnew[[m]][[j]][k]
+                modellistnew[[m]][[j]][k] = max(intervalmin, min(intervalmax, currentval, na.rm=TRUE), na.rm=TRUE)
               }
             }
           }
         }else{
           #For the deeper PSF case:
-          subnames=names(intervals[[i]])
+          subnames = names(intervals[[i]])
           for(j in subnames){
-            subsubnames=names(intervals[[i]][[j]])
+            subsubnames = names(intervals[[i]][[j]])
             for(k in subsubnames){
-              subsubsublength=length(modellistnew[[i]][[j]][[k]])
+              subsubsublength = length(modellistnew[[i]][[j]][[k]])
               for(l in 1:subsubsublength){
-                intervalmin=intervals[[i]][[j]][[k]][[l]][1]
-                intervalmax=intervals[[i]][[j]][[k]][[l]][2]
-                currentval=modellistnew[[i]][[j]][[k]][l]
-                modellistnew[[i]][[j]][[k]][l]=max(intervalmin, min(intervalmax, currentval, na.rm = FALSE), na.rm = FALSE)
+                intervalmin = intervals[[i]][[j]][[k]][[l]][1]
+                intervalmax = intervals[[i]][[j]][[k]][[l]][2]
+                currentval = modellistnew[[i]][[j]][[k]][l]
+                modellistnew[[i]][[j]][[k]][l] = max(intervalmin, min(intervalmax, currentval, na.rm=FALSE), na.rm=FALSE)
               }
             }
           }
@@ -104,11 +112,16 @@ profitRemakeModellist=function(parm, modellist, tofit, tolog=NULL, intervals=NUL
   }
   
   # Unlist and extract the tolog elements and log where required
-  parmnew=unlist(modellistnew)
-  parmnew[tounlogIDs]=log10(parmnew[tounlogIDs])
+  parmmod = unlist(modellistnew)
+  parmmod[tounlogIDs] = log10(parmmod[tounlogIDs])
 
   # Specify the new parm to be parsed back to the external optimisation function
-  parmnew=parmnew[fitIDs]
+  if(is.null(parmuse)){
+    parmout = parmmod[fitIDs]
+  }else{
+    parmout = parm
+    parmout[parmuse] = parmmod[fitIDs]
+  }
   
-  return=list(parm=parmnew, modellist=modellistnew)
+  return(list(parm=parmout, modellist=modellistnew))
 }
