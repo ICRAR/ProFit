@@ -61,7 +61,7 @@ Matrix; optional. An empirical point spread function (PSF) image matrix that Pro
 Integer vector; optional. Dimensions of the PSF image to generate when fitting an analytic PSF and convolving extended sources. Defaults to the dimensions of \option{psf}. Ignored if there are no extended sources or analytic PSF.
 }
   \item{offset}{
-Numeric vector; optional. Additive fffset to be applied to all xcen and ycen positions in the model list. This is useful if you are fitting one object on multiple images with different WCS- you should then specify the input \option{modellist} in a common manner for all Data objects (say using the coordinate system of the first \option{image} in the list), but supply different \option{offset} for each image, where [X,Y] (image N) = [X,Y] (image 1) + [X,Y] (offset N).
+Numeric vector; optional. Additive offset to be applied to all xcen and ycen positions in the model list. This is useful if you are fitting one object on multiple images with different WCS- you should then specify the input \option{modellist} in a common manner for all Data objects (say using the coordinate system of the first \option{image} in the list), but supply different \option{offset} for each image, where [X,Y] (image N) = [X,Y] (image 1) + [X,Y] (offset N). If the \option{offset} vector is length 3, the third element is treated as the position angle, and this can also be given a rotational offset in degrees additively with respect to the first image in the list.
 }
   \item{rough}{
 Logical; should an approximate model image be created. If TRUE only one evaluation of the Sersic model is made at the centre of each pixel. If FALSE then accurate upsampling is used to create more precise pixel values. See \code{\link{profitMakeModel}}.

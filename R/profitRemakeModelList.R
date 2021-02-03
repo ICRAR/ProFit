@@ -44,6 +44,11 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
     
     ysel = grep('ycen',names(parmin))
     parmin[ysel] = parmin[ysel] + offset[2]
+    
+    if(!is.na(offset[3])){
+      angsel = grep('ang',names(parmin))
+      parmin[angsel] = parmin[angsel] + offset[3]
+    }
   }
     
     if(!is.null(tolog)){
