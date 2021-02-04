@@ -45,7 +45,7 @@ library(Highlander)
 Load the data:
 
 ```{r}
-image=readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFound"))$imDat
+image = readFITS(system.file("extdata", 'VIKING/mystery_VIKING_Z.fits', package="ProFound"))$imDat
 ```
 
 And take a look at what we have got:
