@@ -26,30 +26,33 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   
   fitIDs=which(unlist(tofit))
   if(length(fitIDs)>=1){
-    if(length(parm) != length(fitIDs)){
-      stop('Length of parm (i.e. number of parameters being updated) mismatches tofit list!')
-    }
     
     if(is.null(parmuse)){
+      if(length(parm) != length(fitIDs)){
+        stop('Length of parm (i.e. number of parameters being updated) mismatches tofit list!')
+      }
       parmin = unlist(modellist)
       parmin[fitIDs] = parm
     }else{
+      if(length(parmuse) != length(fitIDs)){
+        stop('Length of parm (i.e. number of parameters being updated) mismatches tofit list!')
+      }
       parmin = unlist(modellist)
       parmin[fitIDs] = parm[parmuse]
     }
     
-  if(!is.null(offset)){
-    xsel = grep('xcen',names(parmin))
-    parmin[xsel] = parmin[xsel] + offset[1]
-    
-    ysel = grep('ycen',names(parmin))
-    parmin[ysel] = parmin[ysel] + offset[2]
-    
-    if(!is.na(offset[3])){
-      angsel = grep('ang',names(parmin))
-      parmin[angsel] = parmin[angsel] + offset[3]
+    if(!is.null(offset)){
+      xsel = grep('xcen',names(parmin))
+      parmin[xsel] = parmin[xsel] + offset[1]
+      
+      ysel = grep('ycen',names(parmin))
+      parmin[ysel] = parmin[ysel] + offset[2]
+      
+      if(!is.na(offset[3])){
+        angsel = grep('ang',names(parmin))
+        parmin[angsel] = parmin[angsel] + offset[3]
+      }
     }
-  }
     
     if(!is.null(tolog)){
       if(length(tolog)>0){
