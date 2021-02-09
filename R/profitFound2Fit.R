@@ -26,8 +26,6 @@ profitFound2Fit = function(image,
   if(Ncomp == 0.5){psf = NULL}
   
   cutim = magicaxis::magcutout(image, loc = loc, box = cutbox)
-  loc = cutim$loc
-  cutim = cutim$image
   
   if (!is.null(rms)) {
     cutrms = magicaxis::magcutout(rms, loc = loc, box = cutbox)$image
@@ -35,11 +33,17 @@ profitFound2Fit = function(image,
     cutrms = NULL
   }
   
-  if (!missing(segim)) {
+  if (!missing(segim) & dim(segim)[1] == dim(image)[1] & dim(segim)[2] == dim(image)[2]) {
     cutseg = magicaxis::magcutout(segim, loc = loc, box = cutbox)$image
-  } else{
+  }else if(!missing(segim) & dim(segim)[1] == dim(cutim$image)[1] & dim(segim)[2] == dim(cutim$image)[2]){
+    cutseg = segim
+  }else{
+    message('No input segim that matches the input image- will create one using ProFound!')
     cutseg = NULL
   }
+  
+  loc = cutim$loc
+  cutim = cutim$image
   
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
