@@ -21,6 +21,7 @@ profitFound2Fit = function(image,
                            star_circ = TRUE,
                            rough = FALSE,
                            tightcrop = TRUE,
+                           fit_extra = TRUE,
                            ...) {
   if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
   if(Ncomp == 0.5){psf = NULL}
@@ -98,7 +99,7 @@ profitFound2Fit = function(image,
   segID_ext = unlist(mini_profound$near$nearID[mini_profound$near$segID == segID_tar])
   if (length(segID_ext) > 0) {
     loc_ext = match(segID_ext, mini_profound$segstats$segID)
-    loc_ext = loc_ext[mini_profound$segstats[loc_ext, "mag"] < magID_tar + magdiff]
+    loc_ext = loc_ext[which(mini_profound$segstats[loc_ext, "mag"] < magID_tar + magdiff)]
     segID_ext = mini_profound$segstats[loc_ext, 'segID']
     N_ext = length(loc_ext)
   } else{
@@ -126,8 +127,10 @@ profitFound2Fit = function(image,
       ycen = mini_profound$segstats[loc_tar, 'ycen'] - ylo + 1
     }
   }else{
-    xcen = mini_profound$segstats[loc_tar, 'xcen'] + 1
-    ycen = mini_profound$segstats[loc_tar, 'ycen'] + 1
+    xlo = 1
+    ylo = 1
+    xcen = mini_profound$segstats[loc_tar, 'xcen']
+    ycen = mini_profound$segstats[loc_tar, 'ycen']
   }
   
   if (Ncomp == 0.5) {
@@ -356,7 +359,7 @@ profitFound2Fit = function(image,
     )
   }
   
-  if (N_ext > 0) {
+  if (fit_extra & N_ext > 0) {
     modellist = c(modellist,
                   list(
                     sersic = list(

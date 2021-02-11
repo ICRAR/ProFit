@@ -15,7 +15,8 @@ profitFound2Fit(image, rms = NULL, loc = dim(image)/2, segim = NULL, Ncomp = 1,
   cutbox = dim(image), psf, magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE,
   sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
   bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2,
-  star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, tightcrop = TRUE, ...)
+  star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, tightcrop = TRUE,
+  fit_extra = TRUE, ...)
 
 profitDoFit(image, rms = NULL, loc = dim(image)/2, Ncomp = 1, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
@@ -55,7 +56,7 @@ Numeric vector; optional, the dimensions of the box to cut out from \option{imag
 Image matrix; required, an empirical point spread function (PSF) image matrix that ProFit will use to convolve the image
 }
   \item{magdiff}{
-Numeric scalar; optional, the maximum magnitude difference for modelling nearby objects that have a segment touching the object of interest. The default of 2.5 means objects have to have at least 10\% the flux of our target object to be modelled. Dropping this too low might mean a lot of time is spent modelling with ProFit for little gain in the fiddelity of the measurement. 
+Numeric scalar; optional, the maximum magnitude difference for modelling nearby objects (if \option{fit_extra} = TRUE) that have a segment touching the object of interest. The default of 2.5 means objects have to have at least 10\% the flux of our target object to be modelled. Dropping this too low might mean a lot of time is spent modelling with ProFit for little gain in the fiddelity of the measurement. 
 }
   \item{magzero}{
 Numeric scalar; optional, the magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
@@ -104,6 +105,9 @@ Logical; optional, should ProFit be run using an approximate fit? This is less a
 }
   \item{tightcrop}{
 Logical; optional, should the image be cut down to the tightest fitting box that fully contains the segmentation map? This might be a good idea if the parent image is very large (cuts down on memory allocation etc), but might be a bad idea if you want to know the exact position of your source with the frame, e.g. \option{xcen} and \option{ycen} in the \option{modellist} are relative to the new tightly cropped image not the original cropped image.
+}
+  \item{fit_extra}{
+Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is TRUE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multiband mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated.  
 }
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.
