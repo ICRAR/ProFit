@@ -1,6 +1,6 @@
 profitFound2Fit = function(image,
-                           rms = NULL,
-                           loc = dim(image) / 2,
+                           sigma = NULL,
+                           loc = NULL,
                            segim = NULL,
                            Ncomp = 1,
                            cutbox = dim(image),
@@ -26,25 +26,32 @@ profitFound2Fit = function(image,
   if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
   if(Ncomp == 0.5){psf = NULL}
   
-  cutim = magicaxis::magcutout(image, loc = loc, box = cutbox)
-  
-  if (!is.null(rms)) {
-    cutrms = magicaxis::magcutout(rms, loc = loc, box = cutbox)$image
-  } else{
-    cutrms = NULL
+  if(!is.null(loc)){
+    cutim = magicaxis::magcutout(image, loc = loc, box = cutbox)
+    loc_cut = cutim$loc
+    cutim = cutim$image
+  }else{
+    loc_cut = dim(image) / 2
+    cutim = image
+    
   }
   
-  if (!missing(segim) & dim(segim)[1] == dim(image)[1] & dim(segim)[2] == dim(image)[2]) {
+  if (!is.null(sigma) & !is.null(loc)) {
+    cutsigma = magicaxis::magcutout(sigma, loc = loc, box = cutbox)$image
+  } else{
+    cutsigma = NULL
+  }
+  
+  if (!missing(segim) & dim(segim)[1] == dim(image)[1] & dim(segim)[2] == dim(image)[2] & !is.null(loc)) {
     cutseg = magicaxis::magcutout(segim, loc = loc, box = cutbox)$image
-  }else if(!missing(segim) & dim(segim)[1] == dim(cutim$image)[1] & dim(segim)[2] == dim(cutim$image)[2]){
+  }else if(!missing(segim) & dim(segim)[1] == dim(cutim)[1] & dim(segim)[2] == dim(cutim)[2]){
     cutseg = segim
   }else{
     message('No input segim that matches the input image- will create one using ProFound!')
     cutseg = NULL
   }
   
-  loc = cutim$loc
-  cutim = cutim$image
+  loc = loc_cut
   
   message('    Running ProFound')
   if(!requireNamespace("ProFound", quietly = TRUE)){stop('The ProFound package is required to run this function!')}
@@ -76,9 +83,9 @@ profitFound2Fit = function(image,
     )
   }
   
-  if (is.null(cutrms)) {
+  if (is.null(cutsigma)) {
     gain = ProFound::profoundGainEst(cutim, objects = mini_profound$objects, sky = 0)
-    cutrms = ProFound::profoundMakeSigma(
+    cutsigma = ProFound::profoundMakeSigma(
       image = cutim,
       objects = mini_profound$objects,
       gain = gain,
@@ -96,13 +103,18 @@ profitFound2Fit = function(image,
   loc_tar = which(mini_profound$segstats$segID == segID_tar)
   magID_tar = mini_profound$segstats[mini_profound$segstats$segID == segID_tar, 'mag']
   
-  segID_ext = unlist(mini_profound$near$nearID[mini_profound$near$segID == segID_tar])
-  if (length(segID_ext) > 0) {
-    loc_ext = match(segID_ext, mini_profound$segstats$segID)
-    loc_ext = loc_ext[which(mini_profound$segstats[loc_ext, "mag"] < magID_tar + magdiff)]
-    segID_ext = mini_profound$segstats[loc_ext, 'segID']
-    N_ext = length(loc_ext)
-  } else{
+  if(fit_extra){
+    segID_ext = unlist(mini_profound$near$nearID[mini_profound$near$segID == segID_tar])
+    if (length(segID_ext) > 0) {
+      loc_ext = match(segID_ext, mini_profound$segstats$segID)
+      loc_ext = loc_ext[which(mini_profound$segstats[loc_ext, "mag"] < magID_tar + magdiff)]
+      segID_ext = mini_profound$segstats[loc_ext, 'segID']
+      N_ext = length(loc_ext)
+    } else{
+      N_ext = 0
+    }
+  }else{
+    segID_ext = {}
     N_ext = 0
   }
   
@@ -117,7 +129,7 @@ profitFound2Fit = function(image,
     
     cutim = cutim[xlo:xhi, ylo:yhi]
     region = region[xlo:xhi, ylo:yhi]
-    cutrms = cutrms[xlo:xhi, ylo:yhi]
+    cutsigma = cutsigma[xlo:xhi, ylo:yhi]
     
     if(loc_use){
       xcen = loc[1] - xlo + 1
@@ -306,7 +318,8 @@ profitFound2Fit = function(image,
     )
   }
   
-  maxsize = sqrt(dim(cutim)[1]^2 + dim(cutim)[2]^2)
+  #maxsize = sqrt(dim(cutim)[1]^2 + dim(cutim)[2]^2)
+  maxsize = mini_profound$segstats[loc_tar, 'R50'] * 4
     
   if (Ncomp == 0.5) {
     intervals = list(moffat = list(
@@ -404,6 +417,8 @@ profitFound2Fit = function(image,
               )
             )
     
+    maxsize = max(mini_profound$segstats[loc_ext, 'R50']*4, na.rm=TRUE)
+    
     intervals = c(intervals,
                   list(
                     sersic = list(
@@ -422,7 +437,7 @@ profitFound2Fit = function(image,
   Data = profitSetupData(
     image = cutim,
     region = region,
-    sigma = cutrms,
+    sigma = cutsigma,
     segim = cutseg,
     psf = psf,
     modellist = modellist,
@@ -440,8 +455,8 @@ profitFound2Fit = function(image,
 }
 
 profitDoFit = function(image,
-                       rms = NULL,
-                       loc = dim(image) / 2,
+                       sigma = NULL,
+                       loc = NULL,
                        Ncomp = 1,
                        cutbox = dim(image),
                        psf = NULL,
@@ -455,7 +470,7 @@ profitDoFit = function(image,
   message('Running Found2Fit')
   found2fit = profitFound2Fit(
     image = image,
-    rms = rms,
+    sigma = sigma,
     loc = loc,
     Ncomp = Ncomp,
     cutbox = cutbox,
@@ -536,4 +551,149 @@ profitDoFit = function(image,
     highfit$psf_fluxcheck
   }
   return(highfit)
+}
+
+profitMultiBandFound2Fit = function(image_list,
+                            sky_list = NULL,
+                            skyRMS_list = NULL,
+                            loc = NULL,
+                            parm_global = NULL,
+                            Ncomp = 1,
+                            cutbox = dim(image),
+                            psf_list = NULL,
+                            magdiff = 2.5,
+                            magzero = rep(0,length(image_list)),
+                            sing_nser = 2,
+                            bulge_nser = 4,
+                            disk_nser = 1,
+                            sing_nser_fit = TRUE,
+                            bulge_nser_fit = TRUE,
+                            disk_nser_fit = TRUE,
+                            bulge_circ =  TRUE,
+                            rough = FALSE,
+                            psf_dim = c(51, 51),
+                            star_circ = FALSE,
+                            seed = 666,
+                            ...){
+  
+  for(i in 1:length(image_list)){
+    if(is.null(sky_list[i][[1]]) | is.null(skyRMS_list[i][[1]])){
+      message("Image ",i,": running initial ProFound")
+      profound = ProFound::profoundProFound(image=image_list[i][[1]],
+                                            sky=sky_list[i][[1]],
+                                            skyRMS=skyRMS_list[i][[1]],
+                                            magzero=magzero[i],
+                                            ...)
+      image_list[[i]] = image_list[[i]] - profound$sky
+      skyRMS_list[[i]] = profound$skyRMS
+    }
+    
+    if(is.null(psf_list[i][[1]])){
+      message("Image ",i,": running AllStarDoFit")
+      psf_list[[i]] = profitAllStarDoFit(image=image_list[i][[1]],
+                                         psf_dim=psf_dim,
+                                         star_circ=star_circ,
+                                         magzero=magzero[i],
+                                         skycut=2, #works well for stars
+                                         SBdilate=2)$psf #works well for stars
+    }
+  }
+  
+  message("Making image stack")
+  
+  multi_stack = ProFound::profoundMakeStack(
+    image_list = image_list,
+    skyRMS_list = skyRMS_list,
+    magzero_in = magzero,
+    magzero_out = 0
+  )
+  
+  message("Running ProFound on stack")
+  
+  multi_stack_pro = ProFound::profoundProFound(multi_stack$image,
+                                               sky=0,
+                                               skyRMS=multi_stack$skyRMS,
+                                               redosky=FALSE,
+                                               ...)
+  
+  message("Running Found2Fit on stack")
+  
+  F2Fstack = profitFound2Fit(image=multi_stack$image,
+                             sigma=multi_stack$skyRMS, #not quite a sigma map, but doesn't matter for the stack F2F
+                             loc=loc,
+                             segim=multi_stack_pro$segim,
+                             Ncomp=Ncomp,
+                             psf=psf_list[[1]],
+                             magzero=0,
+                             sing_nser = 2,
+                             bulge_nser = 4,
+                             disk_nser = 1,
+                             sing_nser_fit = sing_nser_fit,
+                             bulge_nser_fit = bulge_nser_fit,
+                             disk_nser_fit = disk_nser_fit,
+                             bulge_circ =  bulge_circ,
+                             tightcrop = FALSE,
+                             fit_extra = FALSE,
+                             rough=rough
+                             )
+
+  Data_list=list()
+  
+  for(i in 1:length(image_list)){
+    gain = ProFound::profoundGainEst(image_list[[i]], objects=multi_stack_pro$objects, sky = 0)
+    sigma = ProFound::profoundMakeSigma(
+      image = image_list[[i]],
+      objects = multi_stack_pro$objects,
+      gain = gain,
+      sky = 0,
+      skyRMS = skyRMS_list[[i]],
+      plot = FALSE
+    )
+    
+    message("Image ",i,": running Found2Fit")
+    Data_list[[i]] = profitSetupData(
+      image = image_list[[i]],
+      region = F2Fstack$Data$region,
+      sigma = sigma,
+      segim = F2Fstack$Data$segim,
+      psf = psf_list[[i]],
+      modellist = F2Fstack$Data$modellist,
+      tofit = F2Fstack$Data$tofit,
+      tolog = F2Fstack$Data$tolog,
+      intervals = F2Fstack$Data$intervals,
+      constraints = F2Fstack$Data$constraints,
+      magzero = magzero[i],
+      algo.func = 'LD',
+      verbose = FALSE,
+      rough = rough
+    )
+  }
+  
+  if(is.null(parm_global)){
+    parm = F2Fstack$Data$init
+    for(i in 1:length(image_list)){
+      Data_list[[i]]$parmuse = 1:length(parm)
+    }
+  }else{
+    parm = F2Fstack$Data$init[parm_global]
+    Nparm = length(F2Fstack$Data$init)
+    parm_local = 1:Nparm
+    parm_local = parm_local[-parm_global]
+    for(i in 1:length(image_list)){
+      parm_temp = F2Fstack$Data$init[parm_local]
+      names(parm_temp) = paste0(names(parm_temp),'_',i)
+      parm = c(parm, parm_temp)
+      parmuse = 1:Nparm
+      parmuse[parm_global] = 1:length(parm_global)
+      parmuse[parm_local] = length(parm_global) + 1:length(parm_local) + (i-1)*length(parm_local)
+      Data_list[[i]]$parmuse = parmuse
+    }
+  }
+  
+  Data_list$init = parm
+  Data_list$parm.names = names(parm)
+  Data_list$mon.names = F2Fstack$Data$mon.names
+  Data_list$N = F2Fstack$Data$N
+  
+  return(Data_list)
 }

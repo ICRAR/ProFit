@@ -3,6 +3,8 @@
 \alias{profitDoFit}
 \alias{profitAllStarFound2Fit}
 \alias{profitAllStarDoFit}
+\alias{profitMultiBandFound2Fit}
+
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 ProFound to ProFit Profile Fitting
@@ -11,34 +13,40 @@ ProFound to ProFit Profile Fitting
 Functions to easily take users from image pixel data all the way to fully fitted profiles.
 }
 \usage{
-profitFound2Fit(image, rms = NULL, loc = dim(image)/2, segim = NULL, Ncomp = 1,
+profitFound2Fit(image, sigma = NULL, loc = NULL, segim = NULL, Ncomp = 1,
   cutbox = dim(image), psf, magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE,
   sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
   bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2,
   star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, tightcrop = TRUE,
   fit_extra = TRUE, ...)
 
-profitDoFit(image, rms = NULL, loc = dim(image)/2, Ncomp = 1, cutbox = dim(image), psf,
+profitDoFit(image, sigma = NULL, loc = NULL, Ncomp = 1, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
   seed = 666, ...)
   
-profitAllStarFound2Fit(image, rms = NULL, locs = NULL, segim = NULL, Ncomp = 1,
+profitAllStarFound2Fit(image, sigma = NULL, locs = NULL, segim = NULL, Ncomp = 1,
   magdiff = 2.5, magzero = 0, psf_dim = c(51, 51), star_con = 2, star_con_fit = TRUE,
   star_circ = TRUE, rough = FALSE, star_dom_mag = NULL, Nstar = 4, ...)
   
-profitAllStarDoFit(image, rms = NULL, locs = NULL, magzero = 0, psf_dim = c(51,51),
+profitAllStarDoFit(image, sigma = NULL, locs = NULL, magzero = 0, psf_dim = c(51,51),
   rough = FALSE, plot = FALSE, seed = 666, ...)
+  
+profitMultiBandFound2Fit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL,
+  parm_global = NULL, Ncomp = 1, cutbox = dim(image), psf_list = NULL, magdiff = 2.5,
+  magzero = rep(0,length(image_list)), sing_nser = 2, bulge_nser = 4, disk_nser = 1,
+  sing_nser_fit = TRUE, bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE,
+  rough = FALSE, psf_dim = c(51, 51), star_circ = FALSE, seed = 666, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
 Numeric matrix; required, the galaxy image we want to fit a galaxy of PSF/star model to. For convenience this can also be an Rfits_pointer object for very large on disk images. Critically, this input \option{image} needs to be well background subtracted (this is not done again internally).
 }
-  \item{rms}{
-Numeric matrix; optional, the RMS map of the \option{image} data we want to fit a model to. If not provided this will be estimated by running \code{profoundProFound}, \code{profoundGainEst} and \code{profoundMakeSigma} to make a decent effort and creating an appropriate RMS map. Users should usually try to provide this themselves for critical fitting, but the automatic RMS map is usually good enough for testing purposes. For convenience this can also be an Rfits_pointer object for very large on disk RMS maps.
+  \item{sigma}{
+Numeric matrix; optional, the sigma map of the \option{image} data we want to fit a model to. If not provided this will be estimated by running \code{profoundProFound} (to find the sky and skyRMS), \code{profoundGainEst} (to find the gain) and \code{profoundMakeSigma} to make a decent effort at creating an appropriate sigma map. Users should usually try to provide this themselves for critical fitting, but the automatic sigma map is usually good enough for testing purposes. For convenience this can also be an Rfits_pointer object for very large on disk sigma maps.
 }
   \item{loc}{
-Numeric vector; optional, the [X,Y] location of our target galaxy on the original \option{image}. The default is to use the centre of the provided \option{image}.
+Numeric vector; optional, the [X,Y] location of our target galaxy on the original \option{image} which will be cut out. The default is NULL, which does no cutout at all.
 }
   \item{segim}{
 Integer matrix; optional, users can pass in their own segmentation maps, which should be pixel matched to the input \option{image}. This will be used instead of the internal \code{ProFound} run, although the segmentation statistics will still be recomputed.
@@ -50,16 +58,31 @@ Numeric matrix; optional, the [X,Y] locations of target stars on the original \o
 Integer scalar; optional, number of components to fit to galaxy. Options for galaxies are "1" (single Sersic profile), "1.5" (single Sersic profile with a central PSF to model the bulge) and "2" (double Sersic profile), and in this case an input \option{psf} should be supplied. To fit a star with a Moffat profile set Ncomp to "0.5", and in this case no input \option{psf} should be supplied.
 }
   \item{cutbox}{
-Numeric vector; optional, the dimensions of the box to cut out from \option{image} centred on \option{loc}. This can be useful if the target \option{image} is very large since a part of this process is to run \code{profoundProFound}, where we only really care about the solution near our object of interest. The default is the dimensions of the \option{image}.
+Numeric vector; optional, the dimensions of the box to cut out from \option{image} centred on \option{loc}. This is ignored if \option{loc} is NULL (default). This can be useful if the target \option{image} is very large since a part of this process is to run \code{profoundProFound}, where we only really care about the solution near our object of interest.
 }
   \item{psf}{
 Image matrix; required, an empirical point spread function (PSF) image matrix that ProFit will use to convolve the image
+}
+  \item{image_list}{
+List; required, a list a numeric matrices (one image per target band). This list should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{psf_list}, \option{magzero} if these are supplied.
+}
+  \item{sky_list}{
+List; optional, a list a numeric matrices (one sky per target band). This list should exactly match the length of \option{image_list}, \option{skyRMS_list}, \option{psf_list}, \option{magzero} if these are supplied. If not present \code{profoundProFound} will be run to estimate the per band sky.
+}
+  \item{skyRMS_list}{
+List; optional, a list a numeric matrices (one sky per target band). This list should exactly match the length of \option{image_list}, \option{sky_list}, \option{psf_list}, \option{magzero} if these are supplied. If not present \code{profoundProFound} will be run to estimate the per band sky.
+}
+  \item{parm_global}{
+Vector; optional, a vector specifying the positions of parameters that should be considered global. These are still optimised over, but the optimised values are shared across all bands. This is usually appropriate for parameters related to xcen, ycen, axrat and ang, since these should be common between images in most cases.
+}
+  \item{psf_list}{
+List; optional, a list of numeric matrices (one PSF per target band). This list should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{image_list}, \option{magzero} if these are supplied. If not present \code{profitAllStarDoFit} will be run to estimate the per band PSF.
 }
   \item{magdiff}{
 Numeric scalar; optional, the maximum magnitude difference for modelling nearby objects (if \option{fit_extra} = TRUE) that have a segment touching the object of interest. The default of 2.5 means objects have to have at least 10\% the flux of our target object to be modelled. Dropping this too low might mean a lot of time is spent modelling with ProFit for little gain in the fiddelity of the measurement. 
 }
   \item{magzero}{
-Numeric scalar; optional, the magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)).
+Numeric scalar/vector; optional, the magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)). For \option{profoundMultiBandFound2Fit} this vector should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{image_list}, \option{psf_list} if these are supplied.
 }
   \item{loc_use}{
 Logical; optional, should the provided \option{loc} be used to represent the starting [X,Y] coordinates of the model? If FALSE (default) then the \option{xcen} and \option{ycen} provided by \code{profoundProFound} is used instead. If users are very certain that the centre of the object should be precisely at \option{loc} then \option{loc_use} should be TRUE.

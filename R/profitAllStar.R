@@ -1,5 +1,5 @@
 profitAllStarFound2Fit = function(image,
-                           rms = NULL,
+                           sigma = NULL,
                            locs = NULL,
                            segim = NULL,
                            Ncomp = 1,
@@ -43,9 +43,9 @@ profitAllStarFound2Fit = function(image,
   }
   
   
-  if(is.null(rms)){
+  if(is.null(sigma)){
     gain = ProFound::profoundGainEst(image, objects = mini_profound$objects, sky = 0)
-    rms = ProFound::profoundMakeSigma(
+    sigma = ProFound::profoundMakeSigma(
       image = image,
       objects = mini_profound$objects,
       gain = gain,
@@ -104,14 +104,14 @@ profitAllStarFound2Fit = function(image,
   grid = expand.grid((1:gridNx - 0.5) * psf_dim[1], (1:gridNy - 0.5) * psf_dim[2])
   
   image_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
-  rms_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
+  sigma_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
   region_psf = matrix(0, nrow=psf_dim[1]*gridNx, ncol=psf_dim[2]*gridNy)
   
   for(i in 1:Nstar){
     subx = 1:psf_dim[1] + grid[i,1] - psf_dim[1]/2
     suby = 1:psf_dim[2] + grid[i,2] - psf_dim[2]/2
     image_psf[subx,suby] = magcutout(image, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
-    rms_psf[subx,suby] = magcutout(rms, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
+    sigma_psf[subx,suby] = magcutout(sigma, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
     region_psf[subx,suby] = magcutout(region, loc=c(xcen[i],ycen[i]), box=psf_dim)$image
   }
   
@@ -176,7 +176,7 @@ profitAllStarFound2Fit = function(image,
   Data = profitSetupData(
     image = image_psf,
     region = region_psf,
-    sigma = rms_psf,
+    sigma = sigma_psf,
     segim = segim,
     psf = NULL,
     modellist = modellist,
@@ -193,7 +193,7 @@ profitAllStarFound2Fit = function(image,
 }
 
 profitAllStarDoFit = function(image,
-                       rms = NULL,
+                       sigma = NULL,
                        locs = NULL,
                        magzero = 0,
                        psf_dim = c(51,51),
@@ -204,7 +204,7 @@ profitAllStarDoFit = function(image,
   message('Running Found2Fit')
   found2fit = profitAllStarFound2Fit(
     image = image,
-    rms = rms,
+    sigma = sigma,
     locs = locs,
     magzero = magzero,
     psf_dim = psf_dim,
