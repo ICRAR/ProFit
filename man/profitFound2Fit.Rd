@@ -4,6 +4,7 @@
 \alias{profitAllStarFound2Fit}
 \alias{profitAllStarDoFit}
 \alias{profitMultiBandFound2Fit}
+\alias{profitMultiBandDoFit}
 
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
@@ -17,7 +18,7 @@ profitFound2Fit(image, sigma = NULL, loc = NULL, segim = NULL, Ncomp = 1,
   cutbox = dim(image), psf, magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE,
   sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
   bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2,
-  star_con_fit = TRUE, star_circ = TRUE, rough = FALSE, tightcrop = TRUE,
+  star_con_fit = TRUE, star_circ = TRUE, offset = NULL, rough = FALSE, tightcrop = TRUE,
   fit_extra = TRUE, ...)
 
 profitDoFit(image, sigma = NULL, loc = NULL, Ncomp = 1, cutbox = dim(image), psf,
@@ -35,7 +36,13 @@ profitMultiBandFound2Fit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = 
   parm_global = NULL, Ncomp = 1, cutbox = dim(image), psf_list = NULL, magdiff = 2.5,
   magzero = rep(0,length(image_list)), sing_nser = 2, bulge_nser = 4, disk_nser = 1,
   sing_nser_fit = TRUE, bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE,
-  rough = FALSE, psf_dim = c(51, 51), star_circ = FALSE, seed = 666, ...)
+  rough = FALSE, psf_dim = c(51, 51), star_circ = FALSE, wave = NULL,
+  smooth.parm = NULL, ...)
+  
+profitMultiBandDoFit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL, 
+  parm_global = NULL, Ncomp = 1, cutbox = dim(image), psf_list = NULL, 
+  magzero = rep(0, length(image_list)), psf_dim = c(51, 51), rough = FALSE, seed = 666,
+  ...) 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -123,6 +130,15 @@ Logical; optional, should the star be forced to be circular? If TRUE this means 
   \item{psf_dim}{
 Integer vector; optional, the dimensions of the output PSF generated when fitting a star with \option{Ncomp} = 0.5. The PSF will be centrally located in the image. The dimensions will be forced to be odd (adding 1 if required) to ensure the PSF mode is at the centre of the middle pixel.
 }
+  \item{wave}{
+Numeric vector; optional. This is only relevant if you are providing smoothing functions via \option{smooth.parm}. If provided it should be the wavelength of each image in \option{image_list}, where \option{image_list} then needs to be in ascending (blue to red) wavelength order.
+}
+  \item{smooth.parm}{
+List; optional. List containing named per band features (e.g. 'mag1', 'mag2', 're1', 're2') that you wish to smooth over to stop sharp discontinuities as a function of wavelength. For most purposes setting each of these to \code{\link{smooth.spline}} usually works pretty well, e.g. smooth.parm = list(mag1 = smooth.spline, re1 = smooth.spline). 
+}
+  \item{offset}{
+Numeric vector; optional. Offset argument to be passed to \code{\link{profitSetupData}} (see description there).
+}
   \item{rough}{
 Logical; optional, should ProFit be run using an approximate fit? This is less accurate, and potentially much less for compact sources, but it also runs much faster. Potentially if the target object is very extended then this will be accurate enough and speed up fitting by a factor of a few usually. It is also useful for quick testing. For publishable results this should usually be left as the default of FALSE.
 }
@@ -153,7 +169,15 @@ Further arguments to pass to \code{profoundProFound} for making the segmentation
 
 \code{profitDoFit} also carries out the optimisation, using the default settings of \code{Highlander}. For the typical user this might be all they need to get the results they want. Additional neighbouring sources that are detected during the \code{ProFound} stage are modelled as single Sersic profiles in a separate model list, which is usually reasonable enough to get a good solution for the target source of interest. To fit a single star with a Moffat profile you can use the \option{Ncomp} = 0.5 option, but in this case the model image will not be convolved with a target PSF image (because that is what we are trying to estimate). As such, if there are any other objects close by the Moffat profile might be compromised by the imperfect light profiling of these non-convolved single Sersic sources.
 
-If you are doing more complex fitting (er.g. potentially using a different optimiser than \code{Highlander}, or wanting to make use of parameters priors) then you should probably use \code{profitFound2Fit} to create an intermediary version of the \option{Date} structure, which you can then edit and add to as required. 
+\code{profitAllStarFound2Fit} is a high-level and simplified PSF focussed version of \code{profitFound2Fit}. For many users who wish to fit stars to find the PSF this is probably the easiest entry point unless you really need to lower level control provided by \code{profitFound2Fit}.
+
+\code{profitAllStarDoFit} is a high-level and simplified PSF focussed version of \code{profitDoFit}. For many users who wish to fit stars to find the PSF,this is probably the easiest entry point unless you really need to lower level control provided by \code{profitDoFit}.
+
+\code{profitMultiBandFound2Fit} is a high-level and simplified multi-band focussed version of \code{profitFound2Fit}. For many users who wish to fit across multiple bands of data this is probably the easiest entry point unless you really need to lower level control provided by \code{profitFound2Fit}.
+
+\code{profitMultiBandDoFit} is a high-level and simplified multi-band focussed version of \code{profitDoFit}. For many users who wish to fit across multiple bands of data this is probably the easiest entry point unless you really need to lower level control provided by \code{profitFound2Fit}.
+
+If you are doing more complex fitting (e.g. potentially using a different optimiser than \code{Highlander}, or wanting to make use of parameters priors) then you should probably use \code{profitFound2Fit} to create an intermediary version of the \option{Data} structure, which you can then edit and add to as required. 
 }
 \value{
 The output of \code{profitFound2Fit} and \code{profitAllStarFound2Fit} is:

@@ -19,6 +19,7 @@ profitFound2Fit = function(image,
                            star_con = 2,
                            star_con_fit = TRUE,
                            star_circ = TRUE,
+                           offset = NULL,
                            rough = FALSE,
                            tightcrop = TRUE,
                            fit_extra = TRUE,
@@ -448,6 +449,7 @@ profitFound2Fit = function(image,
     magzero = magzero,
     algo.func = 'LD',
     verbose = FALSE,
+    offset = offset,
     rough = rough
   )
   Data$Nmod = Ncomp + N_ext
@@ -573,7 +575,8 @@ profitMultiBandFound2Fit = function(image_list,
                             rough = FALSE,
                             psf_dim = c(51, 51),
                             star_circ = FALSE,
-                            seed = 666,
+                            wave = NULL,
+                            smooth.parm = NULL,
                             ...){
   
   for(i in 1:length(image_list)){
@@ -634,7 +637,7 @@ profitMultiBandFound2Fit = function(image_list,
                              bulge_circ =  bulge_circ,
                              tightcrop = FALSE,
                              fit_extra = FALSE,
-                             rough=rough
+                             rough = rough
                              )
 
   Data_list=list()
@@ -650,7 +653,7 @@ profitMultiBandFound2Fit = function(image_list,
       plot = FALSE
     )
     
-    message("Image ",i,": running Found2Fit")
+    message("Image ",i,": running SetupData")
     Data_list[[i]] = profitSetupData(
       image = image_list[[i]],
       region = F2Fstack$Data$region,
@@ -694,6 +697,58 @@ profitMultiBandFound2Fit = function(image_list,
   Data_list$parm.names = names(parm)
   Data_list$mon.names = F2Fstack$Data$mon.names
   Data_list$N = F2Fstack$Data$N
+  Data_list$wave = wave
+  Data_list$smooth.parm = smooth.parm
   
   return(Data_list)
+}
+
+profitMultiBandDoFit = function(image_list,
+                       sky_list = NULL,
+                       skyRMS_list = NULL,
+                       loc = NULL,
+                       parm_global = NULL,
+                       Ncomp = 1,
+                       cutbox = dim(image),
+                       psf_list = NULL,
+                       magzero = rep(0, length(image_list)),
+                       psf_dim = c(51,51),
+                       rough = FALSE,
+                       seed = 666,
+                       ...) {
+  
+  message('Running MultiBandFound2Fit')
+  Datalist = profitMultiBandFound2Fit(
+    image_list = image_list,
+    sky_list = sky_list,
+    skyRMS_list = skyRMS_list,
+    loc = loc,
+    parm_global = parm_global,
+    Ncomp = Ncomp,
+    cutbox = cutbox,
+    psf_list = psf_list,
+    magzero = magzero,
+    rough = rough,
+    ...
+  )
+  
+  message('Running Highander')
+  if(!requireNamespace("ProFound", quietly = TRUE)){stop('The Highander package is required to run this function!')}
+  highfit = Highlander::Highlander(
+    parm = Datalist$init,
+    Data = Datalist,
+    likefunc = profitLikeModel,
+    seed = seed,
+    
+    applyintervals = FALSE,
+    applyconstraints = FALSE
+  )
+  
+  highfit$Datalist = Datalist
+  
+  highfit$error = apply(highfit$LD_last$Posterior1,
+                        MARGIN = 2,
+                        FUN = 'sd')
+  
+  return(highfit)
 }

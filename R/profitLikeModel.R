@@ -4,6 +4,14 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   model=NULL) {
   
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
+    
+    if(!is.null(Data$smooth.parm) & !is.null(Data$wave)){
+      namevec = names(Data$smooth.parm)
+      for(i in 1:length(Data$smooth.parm)){
+        parm = .smooth_parm(parm=parm, Data$parm.names, extract=namevec[i], wave=Data$wave, func=Data$smooth.parm[[i]])
+      }
+    }
+    
     temp = {}
     for(i in 1:length(Data)){
       if(inherits(Data[[i]], 'profit.data')){
@@ -32,13 +40,13 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       output$LP = 0
       output$Dev = 0
       output$Monitor = 0
+      output$yhat=1
       for(i in 1:length(temp)){
         output$LP = output$LP + temp[[i]]$LP
         output$Dev = output$Dev + temp[[i]]$Dev
         output$Monitor = output$Monitor + temp[[i]]$Monitor
       }
     }
-    
     return(output)
   }
   
@@ -201,13 +209,18 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     }
     print(toprint,digits = 5)
   }
+  
   if(Data$algo.func=='') {
     out = list(model=model,psf=psf)
     if(fitst) out$skewtparm = skewtparm
+    return(out)
   }
-  if(Data$algo.func=='optim' | Data$algo.func=='CMA'){out=LP}
-  if(Data$algo.func=='LA' | Data$algo.func=='LD')
-  {
+  
+  if(Data$algo.func=='optim' | Data$algo.func=='CMA'){
+    return(LP)
+  }
+  
+  if(Data$algo.func=='LA' | Data$algo.func=='LD'){
     Monitor=c(LL=LL,LP=LP)
     if("time" %in% Data$mon.names){
       Monitor = c(Monitor,tend = proc.time()["elapsed"])
@@ -220,7 +233,14 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       Monitor[which(Data$mon.names=="dof")] = dof
       names(Monitor)[which(Data$mon.names=="dof")]='dof'
     }
-    out=list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm)
+    return(list(LP=LP,Dev=-2*LL,Monitor=Monitor,yhat=1,parm=parm))
   }
-  return=out
+  stop('')
+}
+
+.smooth_parm=function(parm, parm.names, extract='mag1', wave, func=smooth.spline){
+  parm_loc = grep(extract,parm.names)
+  
+  parm[parm_loc] = func(log(wave),parm[parm_loc])$y
+  return(parm)
 }

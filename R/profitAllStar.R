@@ -125,12 +125,14 @@ profitAllStarFound2Fit = function(image,
     axrat = median(mini_profound$segstats[loc_tar, 'axrat'],na.rm=TRUE)
   }
   
+  size = rep(median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE), Nstar)
+  
   modellist = list(
     moffat = list(
       xcen = grid[1:Nstar,1],
       ycen = grid[1:Nstar,2],
       mag = mini_profound$segstats[loc_tar, 'mag'],
-      fwhm = rep(median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE), Nstar),
+      fwhm = size,
       con = rep(star_con, Nstar),
       ang = rep(ang, Nstar),
       axrat = rep(axrat, Nstar)
@@ -154,10 +156,8 @@ profitAllStarFound2Fit = function(image,
       xcen = rep(FALSE, Nstar),
       ycen = rep(FALSE, Nstar),
       mag = rep(FALSE, Nstar),
-      fwhm = rep(TRUE, Nstar),
-      #fwhm is best fit in log space
-      con = rep(TRUE, Nstar),
-      #con is best fit in log space
+      fwhm = rep(TRUE, Nstar), #fwhm is best fit in log space
+      con = rep(TRUE, Nstar), #con is best fit in log space
       ang = rep(FALSE, Nstar),
       axrat = rep(TRUE, Nstar) #axrat is best fit in log space
     )
@@ -167,7 +167,7 @@ profitAllStarFound2Fit = function(image,
     xcen = rep(list(c(-50, dim(image)[1] + 50)), Nstar),
     ycen = rep(list(c(-50, dim(image)[2] + 50)), Nstar),
     mag = rep(list(c(0, 40)), Nstar),
-    fwhm = rep(list(c(0.5, 10)), Nstar),
+    fwhm = rep(list(c(0.5, size*4)), Nstar),
     con = rep(list(c(1, 10)), Nstar),
     ang = rep(list(c(-180, 360)), Nstar),
     axrat = rep(list(c(0.1, 1)), Nstar)
