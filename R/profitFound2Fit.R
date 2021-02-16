@@ -678,6 +678,9 @@ profitMultiBandFound2Fit = function(image_list,
       Data_list[[i]]$parmuse = 1:length(parm)
     }
   }else{
+    if(is.character(parm_global)){
+      parm_global = match(parm_global, names(parm))
+    }
     parm = F2Fstack$Data$init[parm_global]
     Nparm = length(F2Fstack$Data$init)
     parm_local = 1:Nparm
