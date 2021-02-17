@@ -2,8 +2,6 @@ profitAllStarFound2Fit = function(image,
                            sigma = NULL,
                            locs = NULL,
                            segim = NULL,
-                           Ncomp = 1,
-                           magdiff = 2.5,
                            magzero = 0,
                            psf_dim = c(51,51),
                            star_con = 2,
@@ -125,14 +123,14 @@ profitAllStarFound2Fit = function(image,
     axrat = median(mini_profound$segstats[loc_tar, 'axrat'],na.rm=TRUE)
   }
   
-  size = rep(median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE), Nstar)
+  size = median(mini_profound$segstats[loc_tar, 'R50'],na.rm=TRUE)
   
   modellist = list(
     moffat = list(
       xcen = grid[1:Nstar,1],
       ycen = grid[1:Nstar,2],
       mag = mini_profound$segstats[loc_tar, 'mag'],
-      fwhm = size,
+      fwhm = rep(size, Nstar),
       con = rep(star_con, Nstar),
       ang = rep(ang, Nstar),
       axrat = rep(axrat, Nstar)

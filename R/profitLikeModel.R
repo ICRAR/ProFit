@@ -5,6 +5,8 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
     
+    parm_in = parm
+    
     if(!is.null(Data$smooth.parm) & !is.null(Data$wave)){
       namevec = names(Data$smooth.parm)
       for(i in 1:length(Data$smooth.parm)){
@@ -27,6 +29,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           maxsigma = maxsigma,
           model = model
         )
+        if(i==1){out$parm = parm_in}
         temp = c(temp, list(out))
       }
     }

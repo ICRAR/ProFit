@@ -14,33 +14,35 @@ ProFound to ProFit Profile Fitting
 Functions to easily take users from image pixel data all the way to fully fitted profiles.
 }
 \usage{
-profitFound2Fit(image, sigma = NULL, loc = NULL, segim = NULL, Ncomp = 1,
+profitFound2Fit(image, sigma = NULL, loc = NULL, segim = NULL, Ncomp = 2,
   cutbox = dim(image), psf, magdiff = 2.5, magzero = 0, loc_use = FALSE, loc_fit =  TRUE,
   sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
-  bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE, star_con = 2,
+  bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE, star_con = 2,
   star_con_fit = TRUE, star_circ = TRUE, offset = NULL, rough = FALSE, tightcrop = TRUE,
   fit_extra = TRUE, ...)
 
-profitDoFit(image, sigma = NULL, loc = NULL, Ncomp = 1, cutbox = dim(image), psf,
+profitDoFit(image, sigma = NULL, loc = NULL, Ncomp = 2, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
   seed = 666, ...)
   
-profitAllStarFound2Fit(image, sigma = NULL, locs = NULL, segim = NULL, Ncomp = 1,
-  magdiff = 2.5, magzero = 0, psf_dim = c(51, 51), star_con = 2, star_con_fit = TRUE,
-  star_circ = TRUE, rough = FALSE, star_dom_mag = NULL, Nstar = 4, ...)
+profitAllStarFound2Fit(image, sigma = NULL, locs = NULL, segim = NULL, magzero = 0,
+  psf_dim = c(51, 51), star_con = 2, star_con_fit = TRUE, star_circ = TRUE, rough = FALSE,
+  star_dom_mag = NULL, Nstar = 4, ...)
   
 profitAllStarDoFit(image, sigma = NULL, locs = NULL, magzero = 0, psf_dim = c(51,51),
   rough = FALSE, plot = FALSE, seed = 666, ...)
   
 profitMultiBandFound2Fit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL,
-  parm_global = NULL, Ncomp = 1, cutbox = dim(image), psf_list = NULL, magdiff = 2.5,
+  parm_global = c("sersic.xcen1", "sersic.ycen1", "sersic.re1", "sersic.ang2",
+  "sersic.axrat2"), Ncomp = 2, cutbox = dim(image), psf_list = NULL, magdiff = 2.5,
   magzero = rep(0,length(image_list)), sing_nser = 2, bulge_nser = 4, disk_nser = 1,
-  sing_nser_fit = TRUE, bulge_nser_fit = TRUE, disk_nser_fit = TRUE, bulge_circ =  TRUE,
+  sing_nser_fit = TRUE, bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE,
   rough = FALSE, psf_dim = c(51, 51), star_circ = FALSE, wave = NULL,
   smooth.parm = NULL, ...)
   
 profitMultiBandDoFit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL, 
-  parm_global = NULL, Ncomp = 1, cutbox = dim(image), psf_list = NULL, 
+  parm_global = c("sersic.xcen1", "sersic.ycen1", "sersic.re1", "sersic.ang2",
+  "sersic.axrat2"), Ncomp = 2, cutbox = dim(image), psf_list = NULL, 
   magzero = rep(0, length(image_list)), psf_dim = c(51, 51), rough = FALSE, seed = 666,
   ...) 
 }
@@ -62,7 +64,7 @@ Integer matrix; optional, users can pass in their own segmentation maps, which s
 Numeric matrix; optional, the [X,Y] locations of target stars on the original \option{image} for \code{AllStar} fitting to create out PSF model. The idea is we pass in a list of multiple potential stars, and internally this is limited to just those star segments that do not touch another source or hit the \option{image} border. If this is not provided then \code{profitAllStarFound2Fit} will attempt to guess which objects might be good stars for modelling (but this should not be relied on generally).
 }
   \item{Ncomp}{
-Integer scalar; optional, number of components to fit to galaxy. Options for galaxies are "1" (single Sersic profile), "1.5" (single Sersic profile with a central PSF to model the bulge) and "2" (double Sersic profile), and in this case an input \option{psf} should be supplied. To fit a star with a Moffat profile set Ncomp to "0.5", and in this case no input \option{psf} should be supplied.
+Integer scalar; optional, number of components to fit to galaxy. Options for galaxies are "1" (single Sersic profile), "1.5" (single Sersic profile with a central PSF to model the bulge) and "2" (double Sersic profile, the default), and in this case an input \option{psf} should be supplied. To fit a star with a Moffat profile set Ncomp to "0.5", and in this case no input \option{psf} should be supplied.
 }
   \item{cutbox}{
 Numeric vector; optional, the dimensions of the box to cut out from \option{image} centred on \option{loc}. This is ignored if \option{loc} is NULL (default). This can be useful if the target \option{image} is very large since a part of this process is to run \code{profoundProFound}, where we only really care about the solution near our object of interest.
@@ -80,7 +82,7 @@ List; optional, a list a numeric matrices (one sky per target band). This list s
 List; optional, a list a numeric matrices (one sky per target band). This list should exactly match the length of \option{image_list}, \option{sky_list}, \option{psf_list}, \option{magzero} if these are supplied. If not present \code{profoundProFound} will be run to estimate the per band sky.
 }
   \item{parm_global}{
-Vector; optional, a vector specifying the positions of parameters that should be considered global. These are still optimised over, but the optimised values are shared across all bands. This is usually appropriate for parameters related to xcen, ycen, axrat and ang, since these should be common between images in most cases.
+Vector; optional, a vector specifying the positions or names of parameters that should be considered global. These are still optimised over, but the optimised values are shared across all bands. This is usually appropriate for parameters related to xcen, ycen, axrat and ang, since these should be common between images in most cases. The default case is reasonably sensible for a two component fitting problem (the default).
 }
   \item{psf_list}{
 List; optional, a list of numeric matrices (one PSF per target band). This list should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{image_list}, \option{magzero} if these are supplied. If not present \code{profitAllStarDoFit} will be run to estimate the per band PSF.
@@ -107,10 +109,10 @@ Numeric scalar; optional, start value (or fixed value if \option{bulge_nser_fit}
 Numeric scalar; optional, start value (or fixed value if \option{disk_nser_fit} = FALSE) of the double Sersic profile disk index.
 }
   \item{sing_nser_fit}{
-Logical; optional, should the single Sersic profile index be optimised during fitting? If FALSE then is will be fixed at \option{sing_nser}.
+Logical; optional, should the single Sersic profile index be optimised during fitting? If FALSE (default) then is will be fixed at \option{sing_nser}.
 }
   \item{bulge_nser_fit}{
-Logical; optional, should the double Sersic profile bulge index be optimised during fitting? If FALSE then is will be fixed at \option{bulge_nser}.
+Logical; optional, should the double Sersic profile bulge index be optimised during fitting? If FALSE (default) then is will be fixed at \option{bulge_nser}.
 }
   \item{disk_nser_fit}{
 Logical; optional, should the double Sersic profile disk index be optimised during fitting? If FALSE then is will be fixed at \option{disk_nser}.
