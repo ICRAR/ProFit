@@ -29,7 +29,7 @@ library(Rfits)
 Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
 
 ```{r}
-evalglobal = FALSE
+evalglobal = TRUE
 ```
 
 ## Fitting Simple Offset Images
@@ -199,7 +199,7 @@ image_list = list(
 )
 ```
 
-We wish to force some degree of smoothness in the parameters, so we make use of the *smooth.parm* function argument where we limit the smoothness to having 3 degrees of freedom:
+We wish to force some degree of smoothness in certain per-band parameters (bulge mag [mag1] disk mag [mag2] and disk Re [re2]), so we make use of the *smooth.parm* function argument where we limit the smoothness to having 3 degrees of freedom:
 
 ```{r eval=evalglobal}
 smooth.parm = list(
@@ -209,14 +209,16 @@ smooth.parm = list(
 )
 ```
 
+By supplying these functions we optimise the node points in our spline rather than the parameters directly. This hopefully means we reduce unphysical discontinuities, whilst still achieving a good quality fit.
+
 We also need to tell it the wavelength of the images provided, listed in blue to red order:
 
 ```{r eval=evalglobal}
-wave = c(pivwave[grep('VST', pivwave$filter)[1:4],"pivwave"],
-         pivwave[grep('VISTA', pivwave$filter)[1:5],"pivwave"])
+wave = c(pivwave[grep('VST', pivwave$filter)[1:4],"pivwave"], #VST u/g/r/i
+         pivwave[grep('VISTA', pivwave$filter)[1:5],"pivwave"]) #VISTA Z/Y/J/H/Ks
 ```
 
-We can now run a highly automated fit, where the only non default option is to run the stacked image **profoundProFound** run using a tolerance of 20 to stop the large spiral being broken up. This will take about 45 minutes to run:
+We can now run a highly automated fit, where the only significant non-default option is to run the stacked image **profoundProFound** run using a tolerance of 20 to stop the target large spiral galaxy being broken up. This will take about 45 minutes to run (go have a nice coffee break):
 
 ```{r eval=evalglobal}
 MultiFit = profitMultiBandDoFit(image_list=image_list, magzero=c(0,0,0,0,30,30,30,30,30),
