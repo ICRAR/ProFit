@@ -51,11 +51,11 @@ magimage(im2)
 First we should extract the PSFs using the **profitAllStarDoFit** function (this will take about 5 minutes):
 
 ```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
-PSF1 = profitAllStarDoFit(im1, magzero=30, plot=TRUE)
+PSF1 = profitAllStarDoFit(im1, magzero=30, rough=TRUE, plot=TRUE)
 ```
 
 ```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
-PSF2 = profitAllStarDoFit(im2, magzero=30, plot=TRUE)
+PSF2 = profitAllStarDoFit(im2, magzero=30, rough=TRUE, plot=TRUE)
 ```
 
 We can compare the models:
@@ -65,7 +65,7 @@ PSF1$psf_modellist
 PSF2$psf_modellist
 ```
 
-The seeing in our second image is clearly quite a bit better (FWHM 2.3 versus 2.8). This is also why we should get a better solution by fitting both images simultaneously rather than stacking.
+The seeing in our second image is clearly quite a bit better (FWHM 2.4 versus 2.9). This is also why we should get a better solution by fitting both images simultaneously rather than stacking.
 
 To get most of the way to the correct Datalist structure we need we can use **profitFound2Fit**:
 
