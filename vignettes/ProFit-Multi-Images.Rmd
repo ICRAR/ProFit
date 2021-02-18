@@ -110,7 +110,7 @@ Datalist$N = F2F1$Data$N
 Now we can finally run **Highlander** to find the best common solution for the two frames (this will take about 5 minutes):
 
 ```{r eval=evalglobal}
-HighFit = Highlander(F2F1$Data$init, Data=Datalist, likefunc=profitLikeModel, ablim=0.5)
+HighFit = Highlander(F2F1$Data$init, Data=Datalist, likefunc=profitLikeModel, ablim=1)
 ```
 
 And now we can check the results:
@@ -148,8 +148,8 @@ Datalist2$N = F2F1$Data$N
 Datalist2[[1]]$init = init_new
 Datalist2[[2]]$init = init_new
 
-Datalist2[[1]]$parmuse = 1:10 #We use the first arguments for image 1 fitting
-Datalist2[[2]]$parmuse = c(1,2,3,4,5,11,7,8,9,10)
+Datalist2[[1]]$parmuse = 1:8 #We use the first arguments for image 1 fitting
+Datalist2[[2]]$parmuse = c(1,2,3,4,5,9,7,8)
 ```
 
 We can sanity check this by passing through **profitLikeModel** as before:
@@ -161,7 +161,7 @@ profitLikeModel(Datalist2[[1]]$init, Data=Datalist2, makeplots=TRUE)
 Now we can finally run **Highlander** to find the best common solution for the two frames (this will take about 5 minutes) where the disk Re are allowed to differ:
 
 ```{r eval=evalglobal}
-HighFit2 = Highlander(Datalist2[[1]]$init, Data=Datalist2, likefunc=profitLikeModel, ablim=0.5)
+HighFit2 = Highlander(Datalist2[[1]]$init, Data=Datalist2, likefunc=profitLikeModel, ablim=1)
 ```
 
 We still a get a pretty good fit:
@@ -178,7 +178,7 @@ HighFit2$parm
 
 ## Fully Automatic Multi-band Fitting
 
-**ProFit** v2.0.0 and upwards support highly automated multi-band fitting via the **profitMultiBandFound2Fit** and **profitMultiBandDoFit** functions. These require the images provided to be exactly registered and cropped to the desired level (no offset of cutout options here). If this is not the case, then lower level functions probably need to be used instead. These functions will find stars and create per band PSFs automatically, so they might well covere the major use cases for many people.
+**ProFit** v2.0.0 and upwards support highly automated multi-band fitting via the **profitMultiBandFound2Fit** and **profitMultiBandDoFit** functions. These require the images provided to be exactly registered and cropped to the desired level (no offset or cut out options here). If this is not the case, then lower level functions (i.e. those above) probably need to be used instead. These functions will find stars and create per band PSFs automatically, so they might well covere the major use cases for many people.
 
 As an example we can load in 9 bands of data that come included in the **ProFound** package, and cut out around a bright spiral galaxy:
 
