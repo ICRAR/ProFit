@@ -178,12 +178,12 @@ HighFit2$parm
 
 ## Fully Automatic Multi-band Fitting
 
-**ProFit** v2.0.0 and upwards support highly automated multi-band fitting via the **profitMultiBandFound2Fit** and **profitMultiBandDoFit** functions. These require the images provided to be exactly registered and cropped to the desired level. If this is not the case, then lower level functions probably need to be used instead.
+**ProFit** v2.0.0 and upwards support highly automated multi-band fitting via the **profitMultiBandFound2Fit** and **profitMultiBandDoFit** functions. These require the images provided to be exactly registered and cropped to the desired level (no offset of cutout options here). If this is not the case, then lower level functions probably need to be used instead. These functions will find stars and create per band PSFs automatically, so they might well covere the major use cases for many people.
 
-As an example we can load in 9 bands of data that come included in the **ProFound** package, and cutout around a bright disk dominated galaxy:
+As an example we can load in 9 bands of data that come included in the **ProFound** package, and cut out around a bright spiral galaxy:
 
 ```{r eval=evalglobal}
-loc = c(1200, 480)
+loc = c(1200,480)
 cut = -299:300
 
 image_list = list(
@@ -225,16 +225,32 @@ MultiFit = profitMultiBandDoFit(image_list=image_list, magzero=c(0,0,0,0,30,30,3
 
 We can check the transition from disk to bulge dominated galaxy light as we move from bluer to redder bands:
 
-```{r eval=evalglobal}
-magplot(wave,MultiFit$parm_smooth[grep('mag1',names(MultiFit$parm_smooth))], ylim=c(19,15.5), type='l', col='red', log='x', xlab='Wave / Ang', ylab='Mag')
-lines(wave,MultiFit$parm_smooth[grep('mag2',names(MultiFit$parm_smooth))], col='blue')
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+bulge_mag = MultiFit$parm_smooth[grep('mag1',names(MultiFit$parm_smooth))]
+disk_mag = MultiFit$parm_smooth[grep('mag2',names(MultiFit$parm_smooth))]
+
+magplot(wave, bulge_mag, ylim=c(19,15.5), type='l', col='red', log='x', xlab='Wave / Ang', ylab='Mag')
+lines(wave, disk_mag, col='blue')
 legend('bottomright', legend=c('bulge', 'disk'), lty=1, col=c('red','blue'))
+```
+
+It is often instructive to show the above as the evolution of B/T (bulge flux divided by total flux):
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+magplot(wave,10^(-0.4*bulge_mag) / (10^(-0.4*bulge_mag) + 10^(-0.4*disk_mag)), ylim=c(0,1), type='l', log='x', xlab='Wave / Ang', ylab='B/T')
+abline(h=0.5, lty=2)
 ```
 
 We can also compare the disk Re to the bulge. We can see that the disk Re drops as a function of wavelength:
 
-```{r eval=evalglobal}
-magplot(wave,MultiFit$parm_smooth[grep('re2',names(MultiFit$parm_smooth))], ylim=c(0,5), type='l', col='blue', log='x', xlab='Wave / Ang', ylab='Re / px')
-abline(h=MultiFit$parm_smooth["sersic.re1"], col='red')
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+magplot(wave,10^MultiFit$parm_smooth[grep('re2',names(MultiFit$parm_smooth))], ylim=c(0,80), type='l', col='blue', log='x', xlab='Wave / Ang', ylab='Re / px')
+abline(h=10^MultiFit$parm_smooth["sersic.re1"], col='red')
 legend('bottomright', legend=c('bulge', 'disk'), lty=1, col=c('red','blue'))
+```
+
+We can also view all of the individual per-band fits (order blue-red ugriZYJHKs):
+
+```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
+profitLikeModel(MultiFit$parm, MultiFit$Data_list, makeplots=TRUE) #use MultiFit$parm, since profitLikeModel applies the smoothing
 ```

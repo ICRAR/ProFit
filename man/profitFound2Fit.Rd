@@ -154,7 +154,7 @@ Logical; optional, specifies whether the main galaxy fitting using \code{profitD
 Logical; optional, should the image be cut down to the tightest fitting box that fully contains the segmentation map? This might be a good idea if the parent image is very large (cuts down on memory allocation etc), but might be a bad idea if you want to know the exact position of your source with the frame, e.g. \option{xcen} and \option{ycen} in the \option{modellist} are relative to the new tightly cropped image not the original cropped image.
 }
   \item{fit_extra}{
-Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is TRUE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multiband mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated.  
+Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is TRUE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multi-band mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated.  
 }
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.
@@ -196,6 +196,7 @@ The output of \code{profitFound2Fit} and \code{profitAllStarFound2Fit} is:
 The output of \code{profitDoFit}, \code{profitAllStarDoFit} and \code{profitMultiBandDoFit} is subset of:
 
 \item{parm}{Best fit raw parameters being optimised (so various terms will be logged etc). See \code{Highlander}.}
+\item{parm_smooth}{\code{profitMultiBandDoFit} only. Best fit smoothed parameters being optimised (so various terms will be logged etc). This is only relevant if \option{smooth.parm} smoothing functions are being supplied to create continuity between multi-band data. These are the parameters that \code{ProFit} sees internally when constructing model images.}
 \item{LP}{The log posterior of the best fit. See \code{Highlander}.}
 \item{diff}{Numeric scalar; LP difference between current best LP and last best LP. See \code{Highlander}.}
 \item{best}{Character scalar; optimisation type of the best solution found, one of 'CMA' / 'LD_Median' / 'LD_Mean'. See \code{Highlander}.}
