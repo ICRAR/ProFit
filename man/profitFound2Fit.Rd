@@ -37,14 +37,14 @@ profitMultiBandFound2Fit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = 
   "sersic.axrat2"), Ncomp = 2, cutbox = dim(image), psf_list = NULL, magdiff = 2.5,
   magzero = rep(0,length(image_list)), sing_nser = 2, bulge_nser = 4, disk_nser = 1,
   sing_nser_fit = TRUE, bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE,
-  rough = FALSE, psf_dim = c(51, 51), star_circ = FALSE, wave = NULL,
-  smooth.parm = NULL, ...)
+  star_rough = TRUE, fit_rough = FALSE, psf_dim = c(51, 51), star_circ = TRUE,
+  wave = NULL, smooth.parm = NULL, ...)
   
 profitMultiBandDoFit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL, 
   parm_global = c("sersic.xcen1", "sersic.ycen1", "sersic.re1", "sersic.ang2",
   "sersic.axrat2"), Ncomp = 2, cutbox = dim(image), psf_list = NULL, 
-  magzero = rep(0, length(image_list)), psf_dim = c(51, 51), rough = FALSE, seed = 666,
-  ...) 
+  magzero = rep(0, length(image_list)), psf_dim = c(51, 51), star_rough = TRUE,
+  fit_rough = FALSE, seed = 666, ...) 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -142,7 +142,13 @@ List; optional. List containing named per band features (e.g. 'mag1', 'mag2', 'r
 Numeric vector; optional. Offset argument to be passed to \code{\link{profitSetupData}} (see description there).
 }
   \item{rough}{
-Logical; optional, should ProFit be run using an approximate fit? This is less accurate, and potentially much less for compact sources, but it also runs much faster. Potentially if the target object is very extended then this will be accurate enough and speed up fitting by a factor of a few usually. It is also useful for quick testing. For publishable results this should usually be left as the default of FALSE.
+Logical; optional, should ProFit be run using an approximate fit? This is less accurate, and potentially much less for compact sources, but it also runs much faster. Potentially if the target object is very extended then this will be accurate enough and speed up fitting by a factor of a few usually. It is also useful for quick testing. For publishable results this should usually be left as the default of FALSE. For \code{AllStar} setting this to FALSE is perhaps a good option if you do no care about the model parameters themselves (e.g. FWHM) and just want a decent PSF image.
+}
+  \item{star_rough}{
+Logical; optional, specifies whether \code{profitAllStarDoFit} should be run with 'rough' profiles (default TRUE, since we just want to generate PSF images).
+}
+  \item{fit_rough}{
+Logical; optional, specifies whether the main galaxy fitting using \code{profitDoFit} should be run with 'rough' profiles (default FALSE). 
 }
   \item{tightcrop}{
 Logical; optional, should the image be cut down to the tightest fitting box that fully contains the segmentation map? This might be a good idea if the parent image is very large (cuts down on memory allocation etc), but might be a bad idea if you want to know the exact position of your source with the frame, e.g. \option{xcen} and \option{ycen} in the \option{modellist} are relative to the new tightly cropped image not the original cropped image.
@@ -163,7 +169,7 @@ Numeric scalar; optional, specify at what magnitude (and brighter) stars start t
 Integer scalar; optional, maximum number of fitting stars to generate in \code{profitAllStarFound2Fit}, and therefore to fit in \code{profitAllStarDoFit}.
 }
   \item{\dots}{
-Further arguments to pass to \code{profoundProFound} for making the segmentation maps. \option{tolerance} and \option{SBdilate} are two options that are usually worth experimenting with the get ideal segmentation results for fitting purposes.
+For \code{*DoFit} functions dots are passed into the similarly titled \code{*Found2Fit} function. For \code{*Found2Fit} functions, further arguments are passed to \code{profoundProFound} for making the segmentation maps. \option{tolerance} and \option{SBdilate} are two options that are usually worth experimenting with the get ideal segmentation results for fitting purposes.
 }
 }
 \details{
@@ -187,7 +193,7 @@ The output of \code{profitFound2Fit} and \code{profitAllStarFound2Fit} is:
 \item{profound}{Output from the initial \code{profoundProFound} run. See \code{profoundProFound}.}
 \item{Data}{The input Data structure created by \code{\link{profitSetupData}}.}
 
-The output of \code{profitDoFit} and \code{profitAllStarDoFit} is:
+The output of \code{profitDoFit}, \code{profitAllStarDoFit} and \code{profitMultiBandDoFit} is subset of:
 
 \item{parm}{Best fit raw parameters being optimised (so various terms will be logged etc). See \code{Highlander}.}
 \item{LP}{The log posterior of the best fit. See \code{Highlander}.}
@@ -199,6 +205,10 @@ The output of \code{profitDoFit} and \code{profitAllStarDoFit} is:
 \item{call}{List; the full call made to Highlander. See \code{Highlander}.}
 \item{date}{Date item; the date and time of the call. See \code{Highlander}.}
 \item{time}{Numeric scalar; run time in minutes. See \code{Highlander}.}
+\item{ProFit.version}{Version of \code{ProFit} used.}
+\item{ProFound.version}{Version of \code{ProFound} used.}
+\item{Highlander.version}{Version of \code{Highlander} used.}
+\item{R.version}{Version of \code{R} used.}
 \item{profound}{Output from the initial \code{profoundProFound} run. See \code{profoundProFound}.}
 \item{Data}{The input Data structure created by \code{\link{profitSetupData}}.}
 \item{initmodel}{The full initial model (all terms are in linear space).}

@@ -1,10 +1,10 @@
 ---
-title: "ProFit: Offset Images"
+title: "ProFit: Multi-frame and Multi-band Fitting"
 author: "Aaron Robotham"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ProFit: Offset Images}
+  %\VignetteIndexEntry{ProFit: Multi-frame and Multi-band Fitting}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -176,3 +176,65 @@ Now we can take a look at the fit parameters. Note that even though they were fr
 HighFit2$parm
 ```
 
+## Fully Automatic Multi-band Fitting
+
+**ProFit** v2.0.0 and upwards support highly automated multi-band fitting via the **profitMultiBandFound2Fit** and **profitMultiBandDoFit** functions. These require the images provided to be exactly registered and cropped to the desired level. If this is not the case, then lower level functions probably need to be used instead.
+
+As an example we can load in 9 bands of data that come included in the **ProFound** package, and cutout around a bright disk dominated galaxy:
+
+```{r eval=evalglobal}
+loc = c(1200, 480)
+cut = -299:300
+
+image_list = list(
+  u = Rfits_read_image(system.file("extdata", 'MultiBand/u.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  g = Rfits_read_image(system.file("extdata", 'MultiBand/g.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  r = Rfits_read_image(system.file("extdata", 'MultiBand/r.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  i = Rfits_read_image(system.file("extdata", 'MultiBand/i.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  Z = Rfits_read_image(system.file("extdata", 'MultiBand/Z.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  Y = Rfits_read_image(system.file("extdata", 'MultiBand/Y.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  J = Rfits_read_image(system.file("extdata", 'MultiBand/J.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  H = Rfits_read_image(system.file("extdata", 'MultiBand/H.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut],
+  Ks = Rfits_read_image(system.file("extdata", 'MultiBand/Ks.fits', package="ProFound"),ext=2)$imDat[loc[1] + cut, loc[2] + cut]
+)
+```
+
+We wish to force some degree of smoothness in the parameters, so we make use of the *smooth.parm* function argument where we limit the smoothness to having 3 degrees of freedom:
+
+```{r eval=evalglobal}
+smooth.parm = list(
+  mag1=function(x,y){smooth.spline(x,y,df=3)},
+  mag2=function(x,y){smooth.spline(x,y,df=3)},
+  re2=function(x,y){smooth.spline(x,y,df=3)}
+)
+```
+
+We also need to tell it the wavelength of the images provided, listed in blue to red order:
+
+```{r eval=evalglobal}
+wave = c(pivwave[grep('VST', pivwave$filter)[1:4],"pivwave"],
+         pivwave[grep('VISTA', pivwave$filter)[1:5],"pivwave"])
+```
+
+We can now run a highly automated fit, where the only non default option is to run the stacked image **profoundProFound** run using a tolerance of 20 to stop the large spiral being broken up. This will take about 45 minutes to run:
+
+```{r eval=evalglobal}
+MultiFit = profitMultiBandDoFit(image_list=image_list, magzero=c(0,0,0,0,30,30,30,30,30),
+                                smooth.parm=smooth.parm, wave=wave, tolerance=20)
+```
+
+We can check the transition from disk to bulge dominated galaxy light as we move from bluer to redder bands:
+
+```{r eval=evalglobal}
+magplot(wave,MultiFit$parm_smooth[grep('mag1',names(MultiFit$parm_smooth))], ylim=c(19,15.5), type='l', col='red', log='x', xlab='Wave / Ang', ylab='Mag')
+lines(wave,MultiFit$parm_smooth[grep('mag2',names(MultiFit$parm_smooth))], col='blue')
+legend('bottomright', legend=c('bulge', 'disk'), lty=1, col=c('red','blue'))
+```
+
+We can also compare the disk Re to the bulge. We can see that the disk Re drops as a function of wavelength:
+
+```{r eval=evalglobal}
+magplot(wave,MultiFit$parm_smooth[grep('re2',names(MultiFit$parm_smooth))], ylim=c(0,5), type='l', col='blue', log='x', xlab='Wave / Ang', ylab='Re / px')
+abline(h=MultiFit$parm_smooth["sersic.re1"], col='red')
+legend('bottomright', legend=c('bulge', 'disk'), lty=1, col=c('red','blue'))
+```

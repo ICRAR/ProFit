@@ -8,7 +8,7 @@ import("stats")
 import("graphics")
 import("grDevices")
 
-importFrom("utils", "relist", "capture.output")
+importFrom("utils", "relist", "capture.output", "packageVersion")
 importFrom("RColorBrewer", "brewer.pal")
 importFrom("cubature", "hcubature")
 importFrom("LaplacesDemon", "LaplaceApproximation", "LaplacesDemon")

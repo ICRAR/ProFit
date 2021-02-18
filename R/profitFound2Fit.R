@@ -469,6 +469,10 @@ profitDoFit = function(image,
                        plot = FALSE,
                        seed = 666,
                        ...) {
+  
+  timestart = proc.time()[3] # start timer
+  call = match.call(expand.dots=TRUE)
+  
   message('Running Found2Fit')
   found2fit = profitFound2Fit(
     image = image,
@@ -552,6 +556,15 @@ profitDoFit = function(image,
     highfit$psf = highfit$psf$z / sum(highfit$psf$z)
     highfit$psf_fluxcheck
   }
+  
+  highfit$time = (proc.time()[3]-timestart)/60
+  highfit$date = date()
+  highfit$call = call
+  highfit$ProFit.version=packageVersion('ProFit')
+  highfit$ProFound.version=packageVersion('ProFound')
+  highfit$Highlander.version=packageVersion('Highlander')
+  highfit$R.version=R.version
+  
   return(highfit)
 }
 
