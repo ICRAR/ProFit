@@ -61,7 +61,7 @@ It is Z-band data from the VIKING survey. You can see that there are two very br
 If we do not have a good model for the PSF, we can use the high level fairly automated function **profitAllStarDoFit** to find multiple reasonable stars within the frame (6 by default) and fit them all with a common Moffat model for our PSF. This takes about 7 minutes to run on a modern single CPU.
 
 ```{r eval=evalglobal, fig.width=8, fig.height=3, dpi=100}
-stars_auto = profitAllStarDoFit(image, magzero=30, SBdilate=2)
+stars_auto = profitAllStarDoFit(image, magzero=30, SBdilate=2, rough=TRUE)
 ```
 
 And check the resulting fit:

@@ -44,14 +44,14 @@ profitFound2Fit = function(image,
   }
   
   if(is.null(segim)){
-    message('No input segim that matches the input image- will create one using ProFound!')
     cutseg = NULL
   }else if(dim(segim)[1] == dim(cutim)[1] & dim(segim)[2] == dim(cutim)[2]){
     cutseg = segim
   }else if (dim(segim)[1] == dim(image)[1] & dim(segim)[2] == dim(image)[2] & !is.null(loc)) {
     cutseg = magicaxis::magcutout(segim, loc = loc, box = cutbox)$image
   }else{
-    stop('Something has gone wrong with making a segim!')
+    message('No input segim that matches the input image- will create one using ProFound!')
+    cutseg = NULL
   }
   
   loc = loc_cut

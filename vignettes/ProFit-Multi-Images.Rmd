@@ -29,7 +29,7 @@ library(Rfits)
 Set global evaluate (basically TRUE for GitHub version and FALSE for CRAN):
 
 ```{r}
-evalglobal = TRUE
+evalglobal = FALSE
 ```
 
 ## Fitting Simple Offset Images
@@ -211,11 +211,10 @@ smooth.parm = list(
 
 By supplying these functions we optimise the node points in our spline rather than the parameters directly. This hopefully means we reduce unphysical discontinuities, whilst still achieving a good quality fit.
 
-We also need to tell it the wavelength of the images provided, listed in blue to red order:
+We also need to tell it the wavelength of the images provided, listed in blue to red order (ugriZYJHKs):
 
 ```{r eval=evalglobal}
-wave = c(pivwave[grep('VST', pivwave$filter)[1:4],"pivwave"], #VST u/g/r/i
-         pivwave[grep('VISTA', pivwave$filter)[1:5],"pivwave"]) #VISTA Z/Y/J/H/Ks
+wave = c(577.482, 4744.164, 6312.451, 7584.157, 8833.013, 10223.626, 12545.988, 16476.995, 21549.195)
 ```
 
 We can now run a highly automated fit, where the only significant non-default option is to run the stacked image **profoundProFound** run using a tolerance of 20 to stop the target large spiral galaxy being broken up. This will take about 45 minutes to run (go have a nice coffee break):
