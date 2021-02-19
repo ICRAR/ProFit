@@ -188,7 +188,7 @@ profitFound2Fit = function(image,
         mag = rep(mini_profound$segstats[loc_tar, 'mag'], 2) + 0.752575,
         re = mini_profound$segstats[loc_tar, 'R50'] * c(0.5, 1.5),
         nser = c(bulge_nser, disk_nser),
-        ang = c(mini_profound$segstats[loc_tar, 'ang'], mini_profound$segstats[loc_tar, 'ang']),
+        ang = c(ifelse(bulge_circ, 0, mini_profound$segstats[loc_tar, 'ang']), mini_profound$segstats[loc_tar, 'ang']),
         axrat = c(1, mini_profound$segstats[loc_tar, 'axrat'])
       )
     )
@@ -255,7 +255,7 @@ profitFound2Fit = function(image,
         ycen = loc_fit,
         mag = TRUE,
         re = TRUE,
-        nser = sing_nser_fit,
+        nser = disk_nser_fit,
         ang = TRUE,
         axrat = TRUE
       ),

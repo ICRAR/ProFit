@@ -116,6 +116,8 @@ profitMultiBandFound2Fit = function(image_list,
     )
   }
   
+  names(Data_list) = names(image_list)
+  
   if(is.null(parm_global)){
     parm = F2Fstack$Data$init
     for(i in 1:length(image_list)){

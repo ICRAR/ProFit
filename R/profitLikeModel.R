@@ -29,6 +29,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           maxsigma = maxsigma,
           model = model
         )
+        if(makeplots){
+          legend('topright', names(Data)[i])
+        }
         if(i==1){out$parm = parm_in}
         temp = c(temp, list(out))
       }
