@@ -84,7 +84,9 @@ profitMultiBandFound2Fit = function(image_list,
                              fit_extra = FALSE
   )
   
-  Data_list=list()
+  mag_stack = ProFound::profoundFlux2Mag(flux=sum(multi_stack$image[F2Fstack$Data$region], na.rm=TRUE), magzero=0)
+  
+  Data_list = list()
   
   for(i in 1:length(image_list)){
     gain = ProFound::profoundGainEst(image_list[[i]], objects=multi_stack_pro$objects, sky = 0)
@@ -141,6 +143,13 @@ profitMultiBandFound2Fit = function(image_list,
       parmuse[parm_local] = length(parm_global) + 1:length(parm_local) + (i-1)*length(parm_local)
       Data_list[[i]]$parmuse = parmuse
     }
+  }
+  
+  for(i in 1:length(image_list)){
+    mag_image = ProFound::profoundFlux2Mag(flux=sum(image_list[[i]][F2Fstack$Data$region], na.rm=TRUE), magzero=magzero[i])
+    mag_diff = mag_stack - mag_image
+    sel = grep(paste0('.*mag.*\\_',i), names(parm))
+    parm[sel] = parm[sel] - mag_diff
   }
   
   Data_list$init = parm
