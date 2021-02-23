@@ -19,7 +19,7 @@ profitFound2Fit(image, sigma = NULL, loc = NULL, segim = NULL, Ncomp = 2,
   sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
   bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE, star_con = 2,
   star_con_fit = TRUE, star_circ = TRUE, offset = NULL, rough = FALSE, tightcrop = TRUE,
-  fit_extra = TRUE, ...)
+  fit_extra = FALSE, deblend_extra = FALSE, ...)
 
 profitDoFit(image, sigma = NULL, loc = NULL, Ncomp = 2, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
@@ -154,7 +154,10 @@ Logical; optional, specifies whether the main galaxy fitting using \code{profitD
 Logical; optional, should the image be cut down to the tightest fitting box that fully contains the segmentation map? This might be a good idea if the parent image is very large (cuts down on memory allocation etc), but might be a bad idea if you want to know the exact position of your source with the frame, e.g. \option{xcen} and \option{ycen} in the \option{modellist} are relative to the new tightly cropped image not the original cropped image.
 }
   \item{fit_extra}{
-Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is TRUE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multi-band mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated.  
+Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is TRUE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multi-band mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated. Cannot be used in conjunction with \option{deblend_extra} (i.e. if \option{fit_extra} is TRUE then \option{deblend_extra} is treated as FALSE no matter what the user sets it to).
+}
+  \item{deblend_extra}{
+Logical; optional, if TRUE (and \option{fit_extra} is FALSE) then the image will be re-scaled by the weight map relevant to each segment, but only for pixels within that segment. This means that neighbouring object flux is approximately removed within each segment of a group. This obviously does not conserve flux, but it potentially makes the image within a segment more appropriate for \code{ProFit} source fitting without doing full simultaneous fitting via \option{fit_extra}. Whilst not as a good a solution as simultaneous fitting, it is usually better than nothing.
 }
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.

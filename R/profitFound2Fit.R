@@ -22,7 +22,8 @@ profitFound2Fit = function(image,
                            offset = NULL,
                            rough = FALSE,
                            tightcrop = TRUE,
-                           fit_extra = TRUE,
+                           fit_extra = FALSE,
+                           deblend_extra = FALSE,
                            ...) {
   if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
   if(Ncomp == 0.5){psf = NULL}
@@ -96,6 +97,10 @@ profitFound2Fit = function(image,
       skyRMS = mini_profound$skyRMS,
       plot = FALSE
     )
+  }
+  
+  if(deblend_extra & fit_extra==FALSE){
+    cutim = ProFound::profoundFluxDeblend(mini_profound, image_reweight=TRUE)$image
   }
   
   segID_tar = mini_profound$segim[cutbox[1] / 2, cutbox[2] / 2]

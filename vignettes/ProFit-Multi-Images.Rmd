@@ -224,7 +224,7 @@ MultiFit = profitMultiBandDoFit(image_list=image_list, magzero=c(0,0,0,0,30,30,3
                                 smooth.parm=smooth.parm, wave=wave, tolerance=20)
 ```
 
-We can check the transition from disk to bulge dominated galaxy light as we move from bluer to redder bands:
+We can check the transition from disk to bulge dominated galaxy light as we move from bluer to redder bands. Note that because we used the parameter smoothing functions above, we have to use the *parm_smooth* output to see the smoothed version of the relevant parameters. This is what **ProFit** sees when constructing the model image, rather than the spline nodes contained in the raw *parm* that is optimised. If smoothing functions are not being used then you can just analyse the *parm* output directly.
 
 ```{r fig.width=5, fig.height=3, dpi=100, eval=evalglobal}
 bulge_mag = MultiFit$parm_smooth[grep('mag1',names(MultiFit$parm_smooth))]
