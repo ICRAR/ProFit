@@ -100,8 +100,8 @@ profitLikeModel(example_SS$parm, example_SS$Data, makeplots = TRUE, plotchisq = 
 We can try to improve the fit by doing a 2 component fit. By setting **Ncomp**=1.5 we will fit the bulge as an unresolved PSF:
 
 ```{r eval=evalglobal}
-example_Bpsf = profitDoFit(image=image, loc=c(178,178), Ncomp=1.5, psf=stars_auto$psf,
-                           magzero=30, SBdilate=2)
+example_Bpsf = profitDoFit(image=image, loc=c(178,178), psf=stars_auto$psf, magzero=30,
+                           SBdilate=2, Ncomp=1.5)
 ```
 
 And check the resulting fit:
@@ -113,8 +113,8 @@ profitLikeModel(example_Bpsf$parm, example_Bpsf$Data, makeplots = TRUE, plotchis
 We can try to improve the fit by doing a 2 component fit with a fixed Sersic n=4 bulge.
 
 ```{r eval=evalglobal}
-example_B4 = profitDoFit(image=image, loc=c(178,178), Ncomp=2, psf=stars_auto$psf, magzero=30, 
-                         SBdilate=2, bulge_nser_fit=FALSE)
+example_B4 = profitDoFit(image=image, loc=c(178,178), psf=stars_auto$psf, magzero=30, 
+                         SBdilate=2, bulge_nser_fit=FALSE, Ncomp=2)
 ```
 
 And check the resulting fit:
