@@ -22,8 +22,8 @@ profitFound2Fit = function(image,
                            offset = NULL,
                            rough = FALSE,
                            tightcrop = TRUE,
+                           deblend_extra = TRUE,
                            fit_extra = FALSE,
-                           deblend_extra = FALSE,
                            ...) {
   if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
   if(Ncomp == 0.5){psf = NULL}

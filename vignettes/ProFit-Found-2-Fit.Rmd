@@ -88,7 +88,7 @@ We can now attempt a fit of our target galaxy near the middle of the image. By d
 
 ```{r eval=evalglobal}
 example_SS = profitDoFit(image=image, loc=c(178,178), psf=stars_auto$psf, magzero=30,
-                         SBdilate=2)
+                         SBdilate=2, Ncomp=1)
 ```
 
 And check the resulting fit:
