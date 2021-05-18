@@ -43,7 +43,14 @@ get_cl_libflags() {
 has_cl_func() {
 	func=$1
 	has_func="no"
-	echo "int main() { ${func}(); }" > $tmpdir/clfunc_$func.c
+	cat > $tmpdir/clfunc_$func.c <<CL
+#if defined(__APPLE__) || defined(__MACOSX)
+#include <OpenCL/opencl.h>
+#else
+#include <CL/opencl.h>
+#endif // !__APPLE__
+int main() { void *ptr = &${func}; }
+CL
 	$CC $CFLAGS -c $tmpdir/clfunc_$func.c -o $tmpdir/clfunc_$func.o 2> /dev/null
 	if [ $? -eq 0 ]; then
 		$CC $LDFLAGS $tmpdir/clfunc_$func.o -o $tmpdir/clfunc_$func `get_cl_libflags` 2> /dev/null
