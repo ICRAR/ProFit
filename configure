@@ -171,7 +171,7 @@ has_fftw_headers() {
 
 has_fftw_lib() {
 	has_lib=no
-	echo "int main(){ fftw_cleanup(); }" > $tmpdir/fftw_lib.c
+	echo "#include <fftw3.h>\nint main(){ fftw_cleanup(); }" > $tmpdir/fftw_lib.c
 	$CC $CFLAGS -c $tmpdir/fftw_lib.c -o $tmpdir/fftw_lib.o 2> /dev/null
 	if [ $? -eq 0 ]; then
 		$CC $LDFLAGS $tmpdir/fftw_lib.o -o $tmpdir/fftw_lib -lfftw3 2> /dev/null
