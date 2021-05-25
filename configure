@@ -178,7 +178,7 @@ has_fftw_headers() {
 
 has_fftw_lib() {
 	has_lib=no
-	echo "#include <fftw3.h>\nint main(){ fftw_cleanup(); }" > $tmpdir/fftw_lib.c
+	printf "#include <fftw3.h>\nint main(){ fftw_cleanup(); }" > $tmpdir/fftw_lib.c
 	$CC $CFLAGS -c $tmpdir/fftw_lib.c -o $tmpdir/fftw_lib.o 2> /dev/null
 	if [ $? -eq 0 ]; then
 		$CC $LDFLAGS $tmpdir/fftw_lib.o -o $tmpdir/fftw_lib -lfftw3 2> /dev/null
@@ -192,7 +192,7 @@ has_fftw_lib() {
 has_fftw_omp_lib() {
 	has_lib=no
 	if [ "$PROFIT_OPENMP" = "yes" ]; then
-		echo "int main(){ fftw_plan_with_nthreads(); }" > $tmpdir/fftw_omp_lib.c
+		printf "#include <fftw3.h>\nint main(){ void *ptr = &fftw_plan_with_nthreads; }" > $tmpdir/fftw_omp_lib.c
 		$CC $CFLAGS -c $tmpdir/fftw_omp_lib.c -o $tmpdir/fftw_omp_lib.o 2> /dev/null
 		if [ $? -eq 0 ]; then
 			$CC $LDFLAGS $tmpdir/fftw_omp_lib.o -o $tmpdir/fftw_omp_lib -lfftw3 -lfftw3_omp 2> /dev/null
