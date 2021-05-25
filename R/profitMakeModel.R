@@ -298,5 +298,5 @@ profitMakeModel = function(modellist,
 		magimage(rval, ...)
 	}
 
-	return = rval
+	return(invisible(rval))
 }

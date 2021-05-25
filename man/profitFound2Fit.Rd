@@ -88,7 +88,7 @@ Vector; optional, a vector specifying the positions or names of parameters that 
 List; optional, a list of numeric matrices (one PSF per target band). This list should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{image_list}, \option{magzero} if these are supplied. If not present \code{profitAllStarDoFit} will be run to estimate the per band PSF.
 }
   \item{magdiff}{
-Numeric scalar; optional, the maximum magnitude difference for modelling nearby objects (if \option{fit_extra} = TRUE) that have a segment touching the object of interest. The default of 2.5 means objects have to have at least 10\% the flux of our target object to be modelled. Dropping this too low might mean a lot of time is spent modelling with ProFit for little gain in the fiddelity of the measurement. 
+Numeric scalar; optional, the maximum magnitude difference for modelling nearby objects (if \option{} = TRUE) that have a segment touching the object of interest. The default of 2.5 means objects have to have at least 10\% the flux of our target object to be modelled. Dropping this too low might mean a lot of time is spent modelling with ProFit for little gain in the fiddelity of the measurement. 
 }
   \item{magzero}{
 Numeric scalar/vector; optional, the magnitude zero point, where values become scaled by the standard scale=10^(-0.4*(mag-magzero)). For \option{profoundMultiBandFound2Fit} this vector should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{image_list}, \option{psf_list} if these are supplied.
@@ -157,7 +157,7 @@ Logical; optional, should the image be cut down to the tightest fitting box that
 Logical; optional, if TRUE (and \option{fit_extra} is FALSE) then the image will be re-scaled by the weight map relevant to each segment, but only for pixels within that segment. This means that neighbouring object flux is approximately removed within each segment of a group. This obviously does not conserve flux, but it potentially makes the image within a segment more appropriate for \code{ProFit} source fitting without doing full simultaneous fitting via \option{fit_extra}. Whilst not as a good a solution as simultaneous fitting, it is usually better than nothing.
 }
   \item{fit_extra}{
-Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is TRUE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multi-band mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated. Cannot be used in conjunction with \option{deblend_extra} (i.e. if \option{fit_extra} is TRUE then \option{deblend_extra} is treated as FALSE no matter what the user sets it to).
+Logical; optional, should extra objects near to the primary target also be fitted in parallel? Default is FALSE. The other important option if this is TRUE is \option{magdiff}, that controls how bright (relatively speaking) the nearby sources need to be before they are modelled by \code{ProFit}. In multi-band mode you might want to set this to FALSE because it can be hard to predict how many extra objects are found in each band, and therefore constructing the correct \option{parm} input can be very complicated. Cannot be used in conjunction with \option{deblend_extra} (i.e. if \option{fit_extra} is TRUE then \option{deblend_extra} is treated as FALSE no matter what the user sets it to).
 }
   \item{plot}{
 Logical; optional, should a before and after modelling plot be created? This is useful when testing, but should be set to FALSE (default) for big runs.
@@ -252,7 +252,7 @@ psf = profitMakeModel(modellist=psf_modellist, dim=c(75,75))$z
 example_f2f = profitFound2Fit(image=image, psf=psf, magzero=30, SBdilate=2)
 
 plot(example_f2f$profound) #The ProFound output
-profitLikeModel(example_f2f$Data$init, Data=example_f2f$Data, makeplots=TRUE
+profitLikeModel(example_f2f$Data$init, Data=example_f2f$Data, makeplots=TRUE,
   plotchisq=TRUE) #Starting guess for optimisation. Target source is in the top-left.
 
 example_fit = profitDoFit(image=image, psf=psf, magzero=30, SBdilate=2, plot=TRUE)

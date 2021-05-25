@@ -13,8 +13,8 @@
 \tabular{ll}{
 Package: \tab ProFit\cr
 Type: \tab Package\cr
-Version: \tab 2.0.5\cr
-Date: \tab 2021-02-23\cr
+Version: \tab 2.1.0\cr
+Date: \tab 2021-05-18\cr
 License: \tab LGPL-3\cr
 Depends: \tab R (>= 3.0), FITSio, magicaxis (>= 2.0.3)\cr
 Imports: \tab cubature, RColorBrewer, LaplacesDemon, methods, celestial (>= 1.4.1), checkmate\cr

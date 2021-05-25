@@ -216,7 +216,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     print(toprint,digits = 5)
   }
   
-  if(Data$algo.func=='') {
+  if(Data$algo.func=='check') {
     out = list(model=model,psf=psf)
     if(fitst) out$skewtparm = skewtparm
     return(out)

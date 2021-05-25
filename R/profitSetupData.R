@@ -331,5 +331,8 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   )
   class(profit.data)="profit.data"
   profit.data = profitDataSetOptionsFromBenchmarks(profit.data, benchmarks)
+  if(!is.null(calcregion)){
+    profit.data$usecalcregion = TRUE
+  }
   return(invisible(profit.data))
 }
