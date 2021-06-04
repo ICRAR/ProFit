@@ -1,5 +1,5 @@
 profitMakeModel = function(modellist,
-                           magzero=0, psf=NULL, dim=c(100,100),
+                           magzero=0, psf=NULL, dim=c(100,100), model_image_buff=matrix(0, 1, 1),
                            whichcomponents=list(sersic="all", moffat="all", ferrer="all", ferrers="all", coresersic="all", king="all", brokenexp="all", pointsource="all"),
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
@@ -280,7 +280,7 @@ profitMakeModel = function(modellist,
 	}
 
 	# Go, go, go!
-	result = .Call("R_profit_make_model", model)
+	result = .Call("R_profit_make_model", model, model_image_buff)
 	if( is.null(result) ) {
 		return(NULL)
 	}

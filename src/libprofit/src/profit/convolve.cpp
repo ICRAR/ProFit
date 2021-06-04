@@ -518,6 +518,11 @@ Image OpenCLLocalConvolver::_clpadded_convolve(const Image &src, const Image &kr
 
 #endif // PROFIT_OPENCL
 
+Image NullConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
+{
+	return src;
+}
+
 ConvolverPtr create_convolver(const ConvolverType type, const ConvolverCreationPreferences &prefs)
 {
 	switch(type) {
@@ -553,6 +558,8 @@ ConvolverPtr create_convolver(const ConvolverType type, const ConvolverCreationP
 			                                      prefs.effort, prefs.omp_threads,
 			                                      prefs.reuse_krn_fft);
 #endif // PROFIT_FFTW
+		case NO_OP:
+			return std::make_shared<NullConvolver>();
 		default:
 			// Shouldn't happen
 			throw invalid_parameter("Unsupported convolver type: " + std::to_string(type));
@@ -577,6 +584,9 @@ ConvolverPtr create_convolver(const std::string &type, const ConvolverCreationPr
 		return create_convolver(FFT, prefs);
 	}
 #endif // PROFIT_FFTW
+	else if (type == "null") {
+		return create_convolver(NO_OP, prefs);
+	}
 
 	std::ostringstream os;
 	os << "Convolver of type " << type << " is not supported";

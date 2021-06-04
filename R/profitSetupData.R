@@ -327,7 +327,8 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     verbose=verbose, 
     magmu=magmu,
     openclenv=openclenv, 
-    omp_threads=omp_threads
+    omp_threads=omp_threads,
+    model_image_buff=matrix(0, 1, 1)
   )
   class(profit.data)="profit.data"
   profit.data = profitDataSetOptionsFromBenchmarks(profit.data, benchmarks)

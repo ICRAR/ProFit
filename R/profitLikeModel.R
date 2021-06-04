@@ -206,13 +206,16 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
         whichcomponents = whichcomponents, rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
         magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=openclenv, omp_threads=Data$omp_threads,
-        adjust_calcregion = FALSE)
+        adjust_calcregion = FALSE, model_image_buff=Data$model_image_buff)
     }else{
       model = profitMakeModel(modellist=modellistnew, magzero = Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
         whichcomponents = whichcomponents, rough=rough,
         magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=openclenv, omp_threads=Data$omp_threads,
-        adjust_calcregion = FALSE)
+        adjust_calcregion = FALSE, model_image_buff=Data$model_image_buff)
     }
+
+    # Use the obtained image as the buffer for the next iteration
+    Data$model_image_buff = model$z
   } else {
     stopifnot(is.list(model) && !is.null(model$z))
     stopifnot(identical(dim(Data$image),dim(model$z)))
