@@ -337,15 +337,11 @@ void SersicProfile::subsampling_params(double x, double y,
 	RadialProfile::subsampling_params(x, y, resolution, max_recursions);
 
 	/* Higher subsampling params for central pixel if nser > 1 (only when auto-adjusting) */
-	bool center_pixel = abs(x - _xcen) < model.get_image_pixel_scale().first &&
-	                    abs(y - _ycen) < model.get_image_pixel_scale().second;
+	bool center_pixel = abs(x - _xcen) < model.get_image_pixel_scale().x &&
+	                    abs(y - _ycen) < model.get_image_pixel_scale().y;
 	if( adjust && center_pixel && nser > 1 ) {
 		resolution = 8;
 		max_recursions = 10;
-	}
-	if(nser < 0.55 ) { // this appears to be the Sesic n where the recursions start to blow up
-	  resolution = 3;
-	  max_recursions = 1;
 	}
 
 }

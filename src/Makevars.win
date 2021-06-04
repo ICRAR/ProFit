@@ -1,30 +1,30 @@
 CXX_STD = CXX11
 
-PKG_CPPFLAGS = -Ilibprofit/include -Dprofit_EXPORTS
+PKG_CPPFLAGS = -Ilibprofit/src -Dprofit_EXPORTS
 PKG_LIBS =
 
-OBJECTS = libprofit/src/brokenexponential.o \
-          libprofit/src/convolve.o \
-          libprofit/src/coresersic.o \
-          libprofit/src/crc.o \
-          libprofit/src/exceptions.o \
-          libprofit/src/ferrer.o \
-          libprofit/src/fft.o \
-          libprofit/src/image.o \
-          libprofit/src/king.o \
-          libprofit/src/library.o \
-          libprofit/src/model.o \
-          libprofit/src/moffat.o \
-          libprofit/src/opencl.o \
-          libprofit/src/profile.o \
-          libprofit/src/psf.o \
-          libprofit/src/radial.o \
-          libprofit/src/sersic.o \
-          libprofit/src/sky.o \
-          libprofit/src/utils.o \
+OBJECTS = libprofit/src/profit/brokenexponential.o \
+          libprofit/src/profit/convolve.o \
+          libprofit/src/profit/coresersic.o \
+          libprofit/src/profit/crc.o \
+          libprofit/src/profit/exceptions.o \
+          libprofit/src/profit/ferrer.o \
+          libprofit/src/profit/fft.o \
+          libprofit/src/profit/image.o \
+          libprofit/src/profit/king.o \
+          libprofit/src/profit/library.o \
+          libprofit/src/profit/model.o \
+          libprofit/src/profit/moffat.o \
+          libprofit/src/profit/opencl.o \
+          libprofit/src/profit/profile.o \
+          libprofit/src/profit/psf.o \
+          libprofit/src/profit/radial.o \
+          libprofit/src/profit/sersic.o \
+          libprofit/src/profit/sky.o \
+          libprofit/src/profit/utils.o \
           r_profit.o
 
 all: config_h ProFit.dll
 
 config_h:
-	sed 's/@PROFIT_VERSION_MAJOR@/1/; s/@PROFIT_VERSION_MINOR@/7/; s/@PROFIT_VERSION_PATCH@/3/; s/@PROFIT_VERSION_SUFFIX@//; s/#cmakedefine PROFIT_USES_R/#define PROFIT_USES_R/; s/#cmakedefine PROFIT_USES_GSL/#undef PROFIT_USES_GSL/; s/#cmakedefine PROFIT_DEBUG/#undef PROFIT_DEBUG/; s/#cmakedefine PROFIT_OPENCL/#undef PROFIT_OPENCL/; s/#cmakedefine PROFIT_OPENMP/#undef PROFIT_OPENMP/; s/#cmakedefine PROFIT_FFTW/#undef PROFIT_FFTW/; s/#cmakedefine PROFIT_FFTW_OPENMP/#undef PROFIT_FFTW_OPENMP/; s/#cmakedefine PROFIT_HAS_SSE2/#undef PROFIT_HAS_SSE2/; s/#cmakedefine PROFIT_HAS_AVX/#undef PROFIT_HAS_AVX/; s/@PROFIT_OPENCL_MAJOR@//; s/@PROFIT_OPENCL_MINOR@//; s/@PROFIT_OPENCL_TARGET_VERSION@//' libprofit/include/profit/config.h.in > libprofit/include/profit/config.h
+	sed 's/@PROFIT_VERSION_MAJOR@/1/; s/@PROFIT_VERSION_MINOR@/7/; s/@PROFIT_VERSION_PATCH@/3/; s/@PROFIT_VERSION_SUFFIX@//; s/#cmakedefine PROFIT_USES_R/#define PROFIT_USES_R/; s/#cmakedefine PROFIT_USES_GSL/#undef PROFIT_USES_GSL/; s/#cmakedefine PROFIT_DEBUG/#undef PROFIT_DEBUG/; s/#cmakedefine PROFIT_OPENCL/#undef PROFIT_OPENCL/; s/#cmakedefine PROFIT_OPENMP/#undef PROFIT_OPENMP/; s/#cmakedefine PROFIT_FFTW/#undef PROFIT_FFTW/; s/#cmakedefine PROFIT_FFTW_OPENMP/#undef PROFIT_FFTW_OPENMP/; s/#cmakedefine PROFIT_HAS_SSE2/#undef PROFIT_HAS_SSE2/; s/#cmakedefine PROFIT_HAS_AVX/#undef PROFIT_HAS_AVX/; s/@PROFIT_OPENCL_MAJOR@//; s/@PROFIT_OPENCL_MINOR@//; s/@PROFIT_OPENCL_TARGET_VERSION@//' libprofit/src/profit/config.h.in > libprofit/src/profit/config.h

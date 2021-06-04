@@ -274,6 +274,8 @@ private:
 	double _ie;
 	double _cos_ang;
 	double _sin_ang;
+	double _cos_ang_over_axrat;
+	double _sin_ang_over_axrat;
 	double _xcen;
 	double _ycen;
 	double magzero;

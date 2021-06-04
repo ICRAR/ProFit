@@ -112,8 +112,8 @@ CLVER
 generate_cl_kernel_code_header() {
 	name=$1
 	varname=$2
-	source=src/libprofit/src/cl/${name}.cl
-	header_name=src/libprofit/include/profit/cl/${name}.h
+	source=src/libprofit/src/profit/cl/${name}.cl
+	header_name=src/libprofit/src/profit/cl/${name}.h
 
 	cat > ${header_name} <<CLHEADER
 /**
@@ -295,7 +295,7 @@ generate_config_h() {
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MAJOR`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_MINOR`"
 	sexpr="$sexpr; `at_sed_replacement PROFIT_OPENCL_TARGET_VERSION`"
-	generate_file src/libprofit/include/profit/config.h "$sexpr"
+	generate_file src/libprofit/src/profit/config.h "$sexpr"
 }
 
 #
@@ -437,12 +437,12 @@ fi
 #
 # config.h.in in particular might not contain a newline at the end of the file,
 # which is a problem for some sed implementations, it seems. Let's make them happy
-cp src/libprofit/include/profit/config.h.in $tmpdir
-echo "" >> src/libprofit/include/profit/config.h.in
+cp src/libprofit/src/profit/config.h.in $tmpdir
+echo "" >> src/libprofit/src/profit/config.h.in
 profit_CXXFLAGS="$omp_cflags"
 profit_LIBS="$cl_libflags $omp_libflags $fftw_libflags"
 generate_makevars
 generate_config_h
-mv $tmpdir/config.h.in src/libprofit/include/profit/
+mv $tmpdir/config.h.in src/libprofit/src/profit/
 
 rm -rf $tmpdir

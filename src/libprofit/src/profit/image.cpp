@@ -48,10 +48,10 @@ static bool upsample_value(const bool value)
 
 template <typename Surface, typename ... Ts>
 static inline
-Surface upsample_surface(const Surface &surface, unsigned int factor, Ts &&... ts)
+void upsample_surface(const Surface &surface, Surface &upsampled, unsigned int factor, Ts &&... ts)
 {
 	auto up_dims = surface.getDimensions() * factor;
-	Surface upsampled(up_dims);
+	assert(upsampled.getDimensions() == up_dims);
 
 	// Each pixel from this surface is repeated `factor x factor` times
 	for (unsigned int row_u = 0; row_u != up_dims.y; row_u++) {
@@ -61,7 +61,6 @@ Surface upsample_surface(const Surface &surface, unsigned int factor, Ts &&... t
 			upsampled[col_u + row_u * up_dims.x] = upsample_value(surface[Point{col, row}], ts...);
 		}
 	}
-	return upsampled;
 }
 
 Mask::Mask(unsigned int width, unsigned int height) :
@@ -91,7 +90,9 @@ Mask::Mask(const std::vector<bool>& data, unsigned int width, unsigned int heigh
 
 Mask Mask::upsample(unsigned int factor) const
 {
-	return upsample_surface(*this, factor);
+	Mask upsampled{getDimensions() * factor};
+	upsample_surface(*this, upsampled, factor);
+	return upsampled;
 }
 
 Mask::Mask(const std::vector<bool>& data, Dimensions dimensions) :
@@ -115,7 +116,6 @@ Mask Mask::expand_by(Dimensions pad, int threads) const
 	auto width = getWidth();
 	auto height = getHeight();
 	const size_t src_krn_offset = pad.x + pad.y * width;
-	const auto &mask_data = _get();
 	omp_2d_for(threads, width, height, [&](unsigned int i, unsigned int j) {
 		// Quickly skip those that are set already
 		auto output_idx = i + j * width;
@@ -149,7 +149,7 @@ Mask Mask::expand_by(Dimensions pad, int threads) const
 		// Loop throught each of the rows of the src/krn surfaces
 		// and compute the dot product of each of them, then sum up
 		for (size_t l = 0; l < l_max - l_min; l++) {
-			auto first = mask_data.begin() + input_idx;
+			auto first = begin() + input_idx;
 			if (std::any_of(first, first + k_max - k_min,
 			                [](bool mask_value) { return mask_value; })) {
 				output[output_idx] = true;
@@ -168,6 +168,11 @@ Image::Image(unsigned int width, unsigned int height) :
 
 Image::Image(double value, Dimensions dimensions) :
 	surface(std::vector<double>(dimensions.x * dimensions.y, value), dimensions)
+{
+}
+
+Image::Image(double *values, Dimensions dimensions) :
+	surface(values, dimensions)
 {
 }
 
@@ -201,6 +206,24 @@ Image::Image(std::vector<double>&& data, Dimensions dimensions) :
 {
 }
 
+Image::Image(const Image &other)
+ : surface(nullptr, other.getDimensions())
+{
+	auto &managed_data = _get_managed_data();
+	managed_data.resize(other.size());
+	std::copy(other.begin(), other.end(), managed_data.begin());
+}
+
+Image &Image::operator=(const Image &other)
+{
+	static_cast<surface_base &>(*this).operator=(other);
+	auto &managed_data = _get_managed_data();
+	managed_data.resize(other.size());
+	std::copy(other.begin(), other.end(), managed_data.begin());
+	_set_external_data(nullptr);
+	return *this;
+}
+
 double Image::total() const {
 	return std::accumulate(begin(), end(), 0.);
 }
@@ -220,16 +243,27 @@ Image Image::normalize() const
 	return normalized;
 }
 
-Image Image::upsample(unsigned int factor, UpsamplingMode mode) const
+void Image::upsample(Image &target, unsigned int factor, UpsamplingMode mode) const
 {
 	if (factor == 0) {
 		throw std::invalid_argument("upsampling factor is 0");
 	}
 	if (factor == 1) {
-		return Image(*this);
+		target = *this;
+		return;
 	}
 	double divide_factor = mode == SCALE ? (factor * factor) : 1;
-	return upsample_surface(*this, factor, divide_factor);
+	return upsample_surface(*this, target, factor, divide_factor);
+}
+
+Image Image::upsample(unsigned int factor, UpsamplingMode mode) const
+{
+	if (factor == 0) {
+		throw std::invalid_argument("upsampling factor is 0");
+	}
+	Image upsampled{getDimensions() * factor};
+	upsample(upsampled, factor, mode);
+	return upsampled;
 }
 
 static inline
@@ -293,18 +327,19 @@ void _downsample_avg(const Dimensions &down_dims, unsigned int factor, const Ima
 	}
 }
 
-Image Image::downsample(unsigned int factor, DownsamplingMode mode) const
+void Image::downsample(Image &downsampled, unsigned int factor, DownsamplingMode mode) const
 {
 	if (factor == 0) {
 		throw std::invalid_argument("downsampling factor is 0");
 	}
 	if (factor == 1) {
-		return Image(*this);
+		downsampled = *this;
+		return;
 	}
 
 	auto dims = getDimensions();
 	auto down_dims = Dimensions{ceil_div(dims.x, factor), ceil_div(dims.y, factor)};
-	Image downsampled(down_dims);
+	assert(downsampled.getDimensions() == down_dims);
 
 	// The following implementations might not be ideal, but our images are not
 	// that big usually.
@@ -317,10 +352,19 @@ Image Image::downsample(unsigned int factor, DownsamplingMode mode) const
 	else { // mode == AVERAGE
 		_downsample_avg(down_dims, factor, *this, downsampled);
 	}
-
-	return downsampled;
 }
 
+Image Image::downsample(unsigned int factor, DownsamplingMode mode) const
+{
+	if (factor == 0) {
+		throw std::invalid_argument("downsampling factor is 0");
+	}
+	auto dims = getDimensions();
+	auto down_dims = Dimensions{ceil_div(dims.x, factor), ceil_div(dims.y, factor)};
+	Image downsampled(down_dims);
+	downsample(downsampled, factor, mode);
+	return downsampled;
+}
 
 Image &Image::operator&=(const Mask &mask)
 {

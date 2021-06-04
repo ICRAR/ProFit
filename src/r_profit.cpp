@@ -34,8 +34,7 @@ Image _read_image(SEXP r_image) {
 
 		case REALSXP:
 			image_real_ptr = REAL(r_image);
-			image = vector<double>(image_real_ptr, image_real_ptr + size);
-			break;
+			return Image(image_real_ptr, {im_width, im_height});
 
 		case INTSXP:
 			image_int_ptr = INTEGER(r_image);
@@ -538,7 +537,7 @@ SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
  * ----------------------------------------------------------------------------
  */
 static
-SEXP _R_profit_make_model(SEXP model_list) {
+SEXP _R_profit_make_model(SEXP model_list, SEXP previous_image) {
 
 	unsigned int img_w, img_h;
 	double scale_x = 1, scale_y = 1;
@@ -638,10 +637,11 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	}
 
 	/* Go, go, go! */
-	Image image;
+	Image image = _read_image(previous_image);
+	auto original_data = image.data();
 	Point offset;
 	try {
-		image = m.evaluate(offset);
+		m.evaluate(image, offset);
 	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while calculating model: " << e.what() << endl;
@@ -650,11 +650,23 @@ SEXP _R_profit_make_model(SEXP model_list) {
 	}
 
 	/* Copy the image into a matrix, pack together with the offset, and bye */
-	SEXP r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
+	SEXP r_image = nullptr;
+	int protections = 0;
+	if (image.data() == original_data) {
+		// Lucky! The model didn't need to re-allocate, so we can simply
+		// return the original R matrix that was given to us, as its contents
+		// have been directly altered in place
+		r_image = previous_image;
+	}
+	else {
+		r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
+		memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
+		protections++;
+	}
 	SEXP r_offset = PROTECT(Rf_list2(Rf_ScalarInteger(offset.x), Rf_ScalarInteger(offset.y)));
-	memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
 	SEXP ret = PROTECT(Rf_list2(r_image, r_offset));
-	UNPROTECT(3);
+	protections += 2;
+	UNPROTECT(protections);
 	return ret;
 }
 
@@ -715,21 +727,20 @@ SEXP _R_profit_upsample(SEXP img, SEXP factor)
 		return R_NilValue;
 	}
 
+	auto uint_factor = static_cast<unsigned int>(Rf_asInteger(factor));
+	SEXP upsampled = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth() * uint_factor, image.getHeight() * uint_factor));
+	Image upsampled_img{REAL(upsampled), image.getDimensions() * uint_factor};
 	try {
-		image = image.upsample((unsigned int)Rf_asInteger(factor), Image::UpsamplingMode::COPY);
+		image.upsample(upsampled_img, uint_factor, Image::UpsamplingMode::COPY);
 	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while downsampling image: " << e.what() << endl;
 		Rf_error(ss.str().c_str());
-		return R_NilValue;
+		upsampled = R_NilValue;
 	}
 
-	/* Copy the image, clean up, and good bye */
-	SEXP r_image = PROTECT(Rf_allocMatrix(REALSXP, image.getWidth(), image.getHeight()));
-	memcpy(REAL(r_image), image.data(), sizeof(double) * image.size());
-
 	UNPROTECT(1);
-	return r_image;
+	return upsampled;
 }
 
 static
@@ -751,8 +762,8 @@ SEXP _R_profit_adjust_mask(SEXP r_mask, SEXP r_img_dims, SEXP r_psf, SEXP r_fine
 }
 
 extern "C" {
-	SEXP R_profit_make_model(SEXP model_list) {
-		return _R_profit_make_model(model_list);
+	SEXP R_profit_make_model(SEXP model_list, SEXP previous_image) {
+		return _R_profit_make_model(model_list, previous_image);
 	}
 
 	SEXP R_profit_convolvers() {
@@ -811,7 +822,7 @@ extern "C" {
 	static const R_CallMethodDef callMethods[]  = {
 
 		/* Defined in this module */
-		{"R_profit_make_model",     (DL_FUNC) &R_profit_make_model,     1},
+		{"R_profit_make_model",     (DL_FUNC) &R_profit_make_model,     2},
 		{"R_profit_convolvers",     (DL_FUNC) &R_profit_convolvers,     0},
 		{"R_profit_make_convolver", (DL_FUNC) &R_profit_make_convolver, 7},
 		{"R_profit_convolve",       (DL_FUNC) &R_profit_convolve,       4},

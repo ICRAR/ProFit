@@ -44,11 +44,6 @@ Profile::Profile(const Model &model, const std::string &name) :
 	register_parameter("convolve", convolve);
 }
 
-Profile::~Profile()
-{
-	// no-op
-}
-
 void Profile::adjust_for_finesampling(unsigned int finesampling)
 {
 	// no-op

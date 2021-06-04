@@ -1,8 +1,8 @@
 /**
- * Header file with public definitions to use libprofit
+ * Point classes definitions
  *
  * ICRAR - International Centre for Radio Astronomy Research
- * (c) UWA - The University of Western Australia, 2016
+ * (c) UWA - The University of Western Australia, 2021
  * Copyright by UWA (in the framework of the ICRAR)
  * All rights reserved
  *
@@ -24,19 +24,28 @@
  * along with libprofit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PROFIT_PROFIT_H
-#define PROFIT_PROFIT_H
 
-#include "profit/config.h"
-#include "profit/common.h"
-#include "profit/convolve.h"
-#include "profit/exceptions.h"
-#include "profit/fft.h"
-#include "profit/image.h"
-#include "profit/library.h"
-#include "profit/model.h"
-#include "profit/opencl.h"
-#include "profit/profile.h"
-#include "profit/utils.h"
+#ifndef PROFIT_POINT_H
+#define PROFIT_POINT_H
 
-#endif /* PROFIT_PROFIT_H */
+#include "profit/coordinates.h"
+
+namespace profit {
+
+/// A point in a discrete 2-dimensional surface
+class Point : public discrete_2d_coordinate
+{
+public:
+	using discrete_2d_coordinate::discrete_2d_coordinate;
+};
+
+/// A point in a continuous 2-dimensional surface
+class ContPoint : public continuous_2d_coordinate<ContPoint>
+{
+public:
+	using continuous_2d_coordinate<ContPoint>::continuous_2d_coordinate;
+};
+
+}  // namespace profit
+
+#endif /* PROFIT_POINT_H */

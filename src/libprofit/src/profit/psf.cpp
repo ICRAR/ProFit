@@ -66,10 +66,10 @@ void PsfProfile::evaluate(Image &image, const Mask & /*mask*/, const PixelScale 
 	double scale = pow(10, -0.4*(this->mag - magzero));
 
 	/* Making the code more readable */
-	double scale_x = pixel_scale.first;
-	double scale_y = pixel_scale.second;
-	double psf_scale_x = model.psf_scale.first;
-	double psf_scale_y = model.psf_scale.second;
+	double scale_x = pixel_scale.x;
+	double scale_y = pixel_scale.y;
+	double psf_scale_x = model.psf_scale.x;
+	double psf_scale_y = model.psf_scale.y;
 	unsigned int width = image.getWidth();
 	unsigned int height = image.getHeight();
 	unsigned int psf_width = model.psf.getWidth();

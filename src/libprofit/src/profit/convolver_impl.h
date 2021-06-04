@@ -187,4 +187,13 @@ private:
 
 #endif // PROFIT_OPENCL
 
+/**
+ * A convolver that doesn't convolve, useful for testing.
+ */
+class NullConvolver : public Convolver
+{
+public:
+	Image convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop = true, Point &offset_out = NO_OFFSET) override;
+};
+
 }
