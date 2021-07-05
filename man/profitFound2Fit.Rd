@@ -16,10 +16,10 @@ Functions to easily take users from image pixel data all the way to fully fitted
 \usage{
 profitFound2Fit(image, sigma = NULL, loc = NULL, segim = NULL, Ncomp = 2,
   cutbox = dim(image), psf = NULL, magdiff = 2.5, magzero = 0, loc_use = FALSE,
-  loc_fit =  TRUE, sing_nser = 2, bulge_nser = 4, disk_nser = 1, sing_nser_fit = TRUE,
-  bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE, star_con = 2,
-  star_con_fit = TRUE, star_circ = TRUE, offset = NULL, rough = FALSE, tightcrop = TRUE,
-  deblend_extra = TRUE, fit_extra = FALSE, ...)
+  loc_fit =  TRUE, mag_fit = TRUE, sing_nser = 2, bulge_nser = 4, disk_nser = 1,
+  sing_nser_fit = TRUE, bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE,
+  star_con = 2, star_con_fit = TRUE, star_circ = TRUE, offset = NULL, rough = FALSE,
+  tightcrop = TRUE, deblend_extra = TRUE, fit_extra = FALSE, ...)
 
 profitDoFit(image, sigma = NULL, loc = NULL, Ncomp = 2, cutbox = dim(image), psf,
   magdiff = 2.5, magzero = 0, psf_dim = c(51,51), rough = FALSE, plot = FALSE,
@@ -38,7 +38,8 @@ profitMultiBandFound2Fit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = 
   magzero = rep(0,length(image_list)), sing_nser = 2, bulge_nser = 4, disk_nser = 1,
   sing_nser_fit = TRUE, bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE,
   star_rough = TRUE, fit_rough = FALSE, psf_dim = c(51, 51), star_circ = TRUE,
-  wave = NULL, smooth.parm = NULL, ...)
+  wave = NULL, smooth.parm = NULL, parm_ProSpect = NULL, data_ProSpect = NULL,
+  logged_ProSpect = NULL, intervals_ProSpect = NULL, ...)
   
 profitMultiBandDoFit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL, 
   parm_global = c("sersic.xcen1", "sersic.ycen1", "sersic.re1", "sersic.ang2",
@@ -82,7 +83,7 @@ List; optional, a list a numeric matrices (one sky per target band). This list s
 List; optional, a list a numeric matrices (one sky per target band). This list should exactly match the length of \option{image_list}, \option{sky_list}, \option{psf_list}, \option{magzero} if these are supplied. If not present \code{profoundProFound} will be run to estimate the per band sky.
 }
   \item{parm_global}{
-Vector; optional, a vector specifying the positions or names of parameters that should be considered global. These are still optimised over, but the optimised values are shared across all bands. This is usually appropriate for parameters related to xcen, ycen, axrat and ang, since these should be common between images in most cases. The default case is reasonably sensible for a two component fitting problem (the default).
+Vector; optional, a vector specifying the positions or names of parameters that should be considered global. These are still optimised over, but the optimised values are shared across all bands. This is usually appropriate for parameters related to xcen, ycen, axrat and ang, since these should be common between images in most cases. The default case is reasonably sensible for a two component fitting problem (the default). For convenience, if NULL then all parameters are treated as global.
 }
   \item{psf_list}{
 List; optional, a list of numeric matrices (one PSF per target band). This list should exactly match the length of \option{sky_list}, \option{skyRMS_list}, \option{image_list}, \option{magzero} if these are supplied. If not present \code{profitAllStarDoFit} will be run to estimate the per band PSF.
@@ -98,6 +99,9 @@ Logical; optional, should the provided \option{loc} be used to represent the sta
 }
   \item{loc_fit}{
 Logical; optional, should the [X,Y] location of optimised as part of the fitting process (TRUE) or left at the starting position (FALSE). What the starting position means will change depending on the setting of \option{loc_use}.
+}
+  \item{mag_fit}{
+Logical; optional, should the magnitudes optimised as part of the fitting process (TRUE) or left at the starting position (FALSE). This is only really here for \code{ProSpect} SED magnitude modelling in \code{profitMultiBandFound2Fit}, so should generally not be adjusted by users manually.
 }
   \item{sing_nser}{
 Numeric scalar; optional, start value (or fixed value if \option{sing_nser_fit} = FALSE) of the single Sersic profile index. Only relevant for \option{Ncomp} = 1 fits.
@@ -137,6 +141,18 @@ Numeric vector; optional. This is only relevant if you are providing smoothing f
 }
   \item{smooth.parm}{
 List; optional. List containing named per band features (e.g. 'mag1', 'mag2', 're1', 're2') that you wish to smooth over to stop sharp discontinuities as a function of wavelength. For most purposes setting each of these to \code{\link{smooth.spline}} usually works pretty well, e.g. smooth.parm = list(mag1 = smooth.spline, re1 = smooth.spline). 
+}
+  \item{parm_ProSpect}{
+Numeric list or vector; the arguments to pass into \code{ProSpect} for fitting. The naming convention is the \code{ProSpect} argument '_N' where 'N' is the component number (1 for bulge, 2 for disk).
+}
+  \item{data_ProSpect}{
+List; extra arguments (usually in the form of data) to pass into \code{ProSpect} for fitting. This will often be things like \option{massfunc} and \option{speclib}.
+}
+  \item{logged_ProSpect}{
+Logical vector; optional; match length of \option{parm_ProSpect}, and elements should say which values should be raised to the power 10 when fitting. This is useful since scale parameters are better fit in log space, so \option{logged_ProSpect}=TRUE for those elements. If missing assumes all parameters are to be fit in linear space.
+}
+  \item{intervals_ProSpect}{
+List, optional; has elements \option{lo} and \option{hi} which if provided must be the same length as \option{parm_ProSpect}. These specify the lower and upper limits in the same linear/log space as \option{parm_ProSpect}, i.e. set \option{lo} to -1 if you do not want to logged unit to go below 0.1. 
 }
   \item{offset}{
 Numeric vector; optional. Offset argument to be passed to \code{\link{profitSetupData}} (see description there).
@@ -188,7 +204,7 @@ For \code{*DoFit} functions dots are passed into the similarly titled \code{*Fou
 
 \code{profitMultiBandDoFit} is a high-level and simplified multi-band focussed version of \code{profitDoFit}. For many users who wish to fit across multiple bands of data this is probably the easiest entry point unless you really need to lower level control provided by \code{profitFound2Fit}.
 
-If you are doing more complex fitting (e.g. potentially using a different optimiser than \code{Highlander}, or wanting to make use of parameters priors) then you should probably use \code{profitFound2Fit} to create an intermediary version of the \option{Data} structure, which you can then edit and add to as required. 
+If you are doing more complex fitting (e.g. potentially using a different optimiser than \code{Highlander}, or wanting to make use of parameter priors) then you should probably use \code{profitFound2Fit} to create an intermediary version of the \option{Data} structure, which you can then edit and add to as required. 
 }
 \value{
 The output of \code{profitFound2Fit} and \code{profitAllStarFound2Fit} is:

@@ -7,10 +7,77 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     
     parm_in = parm
     
-    if(!is.null(Data$smooth.parm) & !is.null(Data$wave)){
+    if(!is.null(Data$smooth.parm) & !is.null(Data$wave) & is.null(Data$parm_ProSpect)){
       namevec = names(Data$smooth.parm)
       for(i in 1:length(Data$smooth.parm)){
         parm = .smooth_parm(parm=parm, Data$parm.names, extract=namevec[i], wave=Data$wave, func=Data$smooth.parm[[i]])
+      }
+    }
+    
+    #This is all the new ProFuse stuff. Roughly we:
+    #1) Find all the ProSpect related parms
+    #2) Strip those out
+    #3) Update the modellist with the computed magnitudes
+    #4) Proceed as before with the reduced parm vector.
+    
+    if(!is.null(Data$parm_ProSpect)){
+      if(!requireNamespace("ProSpect", quietly = TRUE)){stop('The ProSpect package is required to use SED fitting!')}
+      
+      args_names = names(Data$parm_ProSpect)
+      args_loc = match(args_names, Data$parm.names)
+      parm_ProSpect = parm[args_loc]
+      
+      #The below is pretty much as per ProSpectSEDlike
+      
+      if (!is.null(Data$intervals_ProSpect)) {
+        parm_ProSpect[parm_ProSpect < Data$intervals_ProSpect$lo] = Data$intervals_ProSpect$lo[parm_ProSpect < Data$intervals_ProSpect$lo]
+        parm_ProSpect[parm_ProSpect > Data$intervals_ProSpect$hi] = Data$intervals_ProSpect$hi[parm_ProSpect > Data$intervals_ProSpect$hi]
+      }
+      
+      if (!is.null(Data$logged_ProSpect)) {
+        if (length(Data$logged_ProSpect) == 1) {
+          if (Data$logged_ProSpect) {
+            parm_logged = 10 ^ parm_ProSpect
+          } else{
+            parm_logged = parm_ProSpect
+          }
+        } else{
+          parm_logged = parm_ProSpect
+          parm_logged[Data$logged_ProSpect] = 10 ^ parm_ProSpect[Data$logged_ProSpect]
+        }
+      } else{
+        parm_logged = parm_ProSpect
+      }
+      
+      parm[args_loc] = parm_logged
+
+      for(i in 1:Data$Ncomp){
+        args_names = names(Data$parm_ProSpect)
+        args_names = args_names[grepl(paste0('_',i), args_names)]
+        args_loc = match(args_names, Data$parm.names)
+        args_names = sub(paste0('_',i), '', args_names) #Strip the component identifier
+        args = parm[args_loc]
+        names(args) = args_names #Rename
+        parm = parm[-args_loc]
+        Data$parm.names = Data$parm.names[-args_loc]
+        args_list = as.list(args) #List
+        if(!is.null(Data$data_ProSpect)){
+          if(Data$Ncomp == 1){
+            args_list = c(args_list, Data$data_ProSpect)
+          }else{
+            data_names = names(Data$data_ProSpect)
+            data_loc = grepl(paste0('_',i), data_names)
+            data_list = Data$data_ProSpect[data_loc]
+            data_loc_global = ! (grepl('_1', data_names) | grepl('_2', data_names)) #Currently only works for up to 2 components, but this is all that is currently supported anyway
+            data_list = c(data_list, Data$data_ProSpect[data_loc_global])
+            names(data_list) = sub(paste0('_',i), '', names(data_list))
+            args_list = c(args_list, data_list)
+          }
+        }
+        outSED = ProSpect::Jansky2magAB(do.call(ProSpect::ProSpectSED, c(args_list, returnall=FALSE), quote=TRUE))
+        for(j in 1:Data$Nim){
+          Data[[j]]$modellist$sersic$mag[i] = outSED[j]
+        }
       }
     }
     
@@ -244,9 +311,26 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   stop('')
 }
 
-.smooth_parm=function(parm, parm.names, extract='mag1', wave, func=smooth.spline){
+.smooth_parm = function(parm, parm.names, extract='mag1', wave, func=smooth.spline){
   parm_loc = grep(extract,parm.names)
   
   parm[parm_loc] = func(log(wave),parm[parm_loc])$y
   return(parm)
 }
+
+# genSED=ProSpectSED(massfunc=massfunc_snorm_trunc,
+#                    mSFR=10^inpar[1],
+#                    mpeak=10^inpar[2],
+#                    mperiod=10^inpar[3],
+#                    mskew=inpar[4],
+#                    tau_birth=10^inpar[5], 
+#                    tau_screen=10^inpar[6], 
+#                    alpha_SF_birth=inpar[7], 
+#                    alpha_SF_screen=inpar[8],
+#                    z=0.1,
+#                    Z=Zfunc_massmap_lin,
+#                    filtout=filtout,
+#                    Dale=Dale_NormTot,
+#                    speclib=BC03lr,
+#                    agemax=agemax
+# )

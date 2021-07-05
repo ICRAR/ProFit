@@ -9,6 +9,7 @@ profitFound2Fit = function(image,
                            magzero = 0,
                            loc_use = FALSE,
                            loc_fit = TRUE,
+                           mag_fit = TRUE,
                            sing_nser = 2,
                            bulge_nser = 4,
                            disk_nser = 1,
@@ -24,6 +25,7 @@ profitFound2Fit = function(image,
                            tightcrop = TRUE,
                            deblend_extra = TRUE,
                            fit_extra = FALSE,
+                           
                            ...) {
   if(Ncomp >= 1 & is.null(psf)){stop('Need PSF for Ncomp >= 1')}
   if(Ncomp == 0.5){psf = NULL}
@@ -221,7 +223,7 @@ profitFound2Fit = function(image,
       moffat = list(
         xcen = loc_fit,
         ycen = loc_fit,
-        mag = TRUE,
+        mag = mag_fit,
         fwhm = TRUE,
         con = star_con_fit,
         ang = !star_circ,
@@ -234,7 +236,7 @@ profitFound2Fit = function(image,
       sersic = list(
         xcen = loc_fit,
         ycen = loc_fit,
-        mag = TRUE,
+        mag = mag_fit,
         re = TRUE,
         nser = sing_nser_fit,
         ang = TRUE,
@@ -246,7 +248,7 @@ profitFound2Fit = function(image,
     tofit = list(sersic = list(
       xcen = c(loc_fit, NA), #The NA couples the components together
       ycen = c(loc_fit, NA), #The NA couples the components together
-      mag = rep(TRUE, 2),
+      mag = rep(mag_fit, 2),
       re = rep(TRUE, 2),
       nser = c(bulge_nser_fit, disk_nser_fit),
       ang = c(!bulge_circ, TRUE),
@@ -258,7 +260,7 @@ profitFound2Fit = function(image,
       sersic = list(
         xcen = loc_fit,
         ycen = loc_fit,
-        mag = TRUE,
+        mag = mag_fit,
         re = TRUE,
         nser = disk_nser_fit,
         ang = TRUE,
@@ -267,7 +269,7 @@ profitFound2Fit = function(image,
       pointsource = list(
         xcen = FALSE,
         ycen = FALSE,
-        mag = TRUE
+        mag = mag_fit
       )
     )
     constraints = function(modellist) {

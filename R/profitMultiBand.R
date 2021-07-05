@@ -21,9 +21,13 @@ profitMultiBandFound2Fit = function(image_list,
                                     star_circ = TRUE,
                                     wave = NULL,
                                     smooth.parm = NULL,
+                                    parm_ProSpect = NULL,
+                                    data_ProSpect = NULL, #perhaps need a way to specify extra data going to bulge/disk. Naming or list?
+                                    logged_ProSpect = NULL,
+                                    intervals_ProSpect = NULL,
                                     ...){
-  
-  for(i in 1:length(image_list)){
+  Nim = length(image_list)
+  for(i in 1:Nim){
     if(is.null(sky_list[i][[1]]) | is.null(skyRMS_list[i][[1]])){
       message("Image ",i,": running initial ProFound")
       profound = ProFound::profoundProFound(image = image_list[i][[1]],
@@ -73,6 +77,7 @@ profitMultiBandFound2Fit = function(image_list,
                              Ncomp = Ncomp,
                              psf = matrix(1,1,1), #Doesn't matter what we pass in here
                              magzero = 0,
+                             mag_fit = is.null(parm_ProSpect),
                              sing_nser = sing_nser,
                              bulge_nser = bulge_nser,
                              disk_nser = disk_nser,
@@ -84,11 +89,15 @@ profitMultiBandFound2Fit = function(image_list,
                              fit_extra = FALSE
   )
   
+  if(!is.null(parm_ProSpect)){
+    F2Fstack$Data$tofit$sersic$mag[] = FALSE
+  }
+  
   mag_stack = ProFound::profoundFlux2Mag(flux=sum(multi_stack$image[F2Fstack$Data$region], na.rm=TRUE), magzero=0)
   
   Data_list = list()
   
-  for(i in 1:length(image_list)){
+  for(i in 1:Nim){
     gain = ProFound::profoundGainEst(image_list[[i]], objects=multi_stack_pro$objects, sky = 0)
     sigma = ProFound::profoundMakeSigma(
       image = image_list[[i]],
@@ -120,9 +129,10 @@ profitMultiBandFound2Fit = function(image_list,
   
   names(Data_list) = names(image_list)
   
+  #Check below for ProFuse- how this all works could be complicated... see also profitLikeModel and profitRemakeModelList
   if(is.null(parm_global)){
     parm = F2Fstack$Data$init
-    for(i in 1:length(image_list)){
+    for(i in 1:Nim){
       Data_list[[i]]$parmuse = 1:length(parm)
     }
   }else{
@@ -133,31 +143,44 @@ profitMultiBandFound2Fit = function(image_list,
     parm = parm_init[parm_global]
     Nparm = length(parm_init)
     parm_local = 1:Nparm
-    parm_local = parm_local[-parm_global]
-    for(i in 1:length(image_list)){
-      parm_temp = F2Fstack$Data$init[parm_local]
-      names(parm_temp) = paste0(names(parm_temp),'_',i)
-      parm = c(parm, parm_temp)
-      parmuse = 1:Nparm
-      parmuse[parm_global] = 1:length(parm_global)
-      parmuse[parm_local] = length(parm_global) + 1:length(parm_local) + (i-1)*length(parm_local)
-      Data_list[[i]]$parmuse = parmuse
+    parm_local = parm_local[-parm_global] #anything not global is local - check for ProFuse
+    for(i in 1:Nim){
+      if(length(parm_local) > 0){
+        parm_temp = F2Fstack$Data$init[parm_local] #extract local - check for ProFuse
+        names(parm_temp) = paste0(names(parm_temp),'_',i) #mod names for local by adding the band number - check for ProFuse
+        parm = c(parm, parm_temp) #create parent parm object (with all unique parm_local vector appended) - check for ProFuse
+        parmuse = 1:Nparm
+        parmuse[parm_global] = 1:length(parm_global)
+        parmuse[parm_local] = length(parm_global) + 1:length(parm_local) + (i-1)*length(parm_local) #define parmuse location in parent parm object - check for ProFuse
+        Data_list[[i]]$parmuse = parmuse
+      }else{
+        Data_list[[i]]$parmuse = 1:Nparm
+      }
     }
   }
   
-  for(i in 1:length(image_list)){
+#Ideas for ProFuse. Need to calculate the parmuse positions as per they will be after all the ProSpect related parameters are removed and the relevant per band magnitudes added and named. This probably means we need a parm_ProSpect object that exhaustively identifies all of these (and need to enforce them being at the end). Probably cannot make it any more flexible just to be safe. In principle then we just need remove these ProSpect related arguments and replace that part of the parm with the mag inside profitLikeModel, which we then pass into profitRemakeModelList to make the target model images.
+  
+  #Create mag offsets based on magzero points and average mag of the stack.
+  for(i in 1:Nim){
     mag_image = ProFound::profoundFlux2Mag(flux=sum(image_list[[i]][F2Fstack$Data$region], na.rm=TRUE), magzero=magzero[i])
     mag_diff = mag_stack - mag_image
     sel = grep(paste0('.*mag.*\\_',i), names(parm))
     parm[sel] = parm[sel] - mag_diff
   }
   
-  Data_list$init = parm
-  Data_list$parm.names = names(parm)
+  Data_list$init = c(parm, as.numeric(parm_ProSpect))
+  Data_list$parm.names = c(names(parm), names(parm_ProSpect))
   Data_list$mon.names = F2Fstack$Data$mon.names
-  Data_list$N = F2Fstack$Data$N
+  Data_list$Nim = Nim #Number of images
+  Data_list$Ncomp = Ncomp #Number of components
+  Data_list$N = F2Fstack$Data$N #This is the number of fitting pixels (cannot rename)
   Data_list$wave = wave
   Data_list$smooth.parm = smooth.parm
+  Data_list$parm_ProSpect = parm_ProSpect
+  Data_list$data_ProSpect = data_ProSpect
+  Data_list$logged_ProSpect = logged_ProSpect
+  Data_list$intervals_ProSpect = intervals_ProSpect
   
   return(Data_list)
 }
