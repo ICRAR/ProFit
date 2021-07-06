@@ -38,8 +38,8 @@ profitMultiBandFound2Fit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = 
   magzero = rep(0,length(image_list)), sing_nser = 2, bulge_nser = 4, disk_nser = 1,
   sing_nser_fit = TRUE, bulge_nser_fit = FALSE, disk_nser_fit = FALSE, bulge_circ =  TRUE,
   star_rough = TRUE, fit_rough = FALSE, psf_dim = c(51, 51), star_circ = TRUE,
-  wave = NULL, smooth.parm = NULL, parm_ProSpect = NULL, data_ProSpect = NULL,
-  logged_ProSpect = NULL, intervals_ProSpect = NULL, ...)
+  tightcrop = TRUE, wave = NULL, smooth.parm = NULL, parm_ProSpect = NULL,
+  data_ProSpect = NULL, logged_ProSpect = NULL, intervals_ProSpect = NULL, ...)
   
 profitMultiBandDoFit(image_list, sky_list = NULL, skyRMS_list = NULL, loc = NULL, 
   parm_global = c("sersic.xcen1", "sersic.ycen1", "sersic.re1", "sersic.ang2",

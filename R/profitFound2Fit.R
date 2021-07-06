@@ -149,8 +149,8 @@ profitFound2Fit = function(image,
       ycen = mini_profound$segstats[loc_tar, 'ycen'] - ylo + 1
     }
   }else{
-    xlo = 1
-    ylo = 1
+    xlo = 1L
+    ylo = 1L
     xcen = mini_profound$segstats[loc_tar, 'xcen']
     ycen = mini_profound$segstats[loc_tar, 'ycen']
   }

@@ -19,6 +19,7 @@ profitMultiBandFound2Fit = function(image_list,
                                     fit_rough = FALSE,
                                     psf_dim = c(51, 51),
                                     star_circ = TRUE,
+                                    tightcrop = TRUE,
                                     wave = NULL,
                                     smooth.parm = NULL,
                                     parm_ProSpect = NULL,
@@ -89,6 +90,34 @@ profitMultiBandFound2Fit = function(image_list,
                              fit_extra = FALSE
   )
   
+  if(tightcrop){
+    regionlim = which(F2Fstack$Data$region, arr.ind=TRUE)
+    
+    xlo = min(regionlim[,1])
+    xhi = max(regionlim[,1])
+    ylo = min(regionlim[,2])
+    yhi = max(regionlim[,2])
+    
+    F2Fstack$Data$modellist$sersic$xcen = F2Fstack$Data$modellist$sersic$xcen - xlo + 1
+    F2Fstack$Data$modellist$sersic$ycen = F2Fstack$Data$modellist$sersic$ycen - ylo + 1
+    
+    xcenloc = grep('xcen', F2Fstack$Data$parm.names)
+    if(length(xcenloc) > 0){
+      F2Fstack$Data$init[xcenloc] = F2Fstack$Data$init[xcenloc] - xlo + 1
+    }
+    
+    ycenloc = grep('ycen', F2Fstack$Data$parm.names)
+    if(length(ycenloc) > 0){
+      F2Fstack$Data$init[ycenloc] = F2Fstack$Data$init[ycenloc] - xlo + 1
+    }
+    
+  }else{
+    xlo = 1L
+    ylo = 1L
+    xhi = dim(multi_stack$image)[1]
+    yhi = dim(multi_stack$image)[2]
+  }
+  
   if(!is.null(parm_ProSpect)){
     F2Fstack$Data$tofit$sersic$mag[] = FALSE
   }
@@ -110,10 +139,10 @@ profitMultiBandFound2Fit = function(image_list,
     
     message("Image ",i,": running SetupData")
     Data_list[[i]] = profitSetupData(
-      image = image_list[[i]],
-      region = F2Fstack$Data$region,
-      sigma = sigma,
-      segim = F2Fstack$Data$segim,
+      image = image_list[[i]][xlo:xhi,ylo:yhi],
+      region = F2Fstack$Data$region[xlo:xhi,ylo:yhi],
+      sigma = sigma[xlo:xhi,ylo:yhi],
+      segim = F2Fstack$Data$segim[xlo:xhi,ylo:yhi],
       psf = psf_list[[i]],
       modellist = F2Fstack$Data$modellist,
       tofit = F2Fstack$Data$tofit,
