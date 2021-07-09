@@ -198,8 +198,8 @@ profitMultiBandFound2Fit = function(image_list,
     parm[sel] = parm[sel] - mag_diff
   }
   
-  Data_list$init = c(parm, as.numeric(parm_ProSpect))
-  Data_list$parm.names = c(names(parm), names(parm_ProSpect))
+  Data_list$init = c(parm, unlist(parm_ProSpect))
+  Data_list$parm.names = names(Data_list$init)
   Data_list$mon.names = F2Fstack$Data$mon.names
   Data_list$Nim = Nim #Number of images
   Data_list$Ncomp = Ncomp #Number of components

@@ -52,6 +52,11 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
         angsel = grep('ang',names(parmin))
         parmin[angsel] = parmin[angsel] + offset[3]
       }
+      
+      if(!is.na(offset[4])){
+        sizesel = grep('re',names(parmin)) | grep('fwhm',names(parmin))
+        parmin[sizesel] = parmin[sizesel] * offset[4]
+      }
     }
     
     if(!is.null(tolog)){
