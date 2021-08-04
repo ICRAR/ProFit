@@ -52,6 +52,11 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
         angsel = grep('ang',names(parmin))
         parmin[angsel] = parmin[angsel] + offset[3]
       }
+      
+      if(!is.na(offset[4])){
+        sizesel = grep('re',names(parmin)) | grep('fwhm',names(parmin))
+        parmin[sizesel] = parmin[sizesel] * offset[4]
+      }
     }
     
     if(!is.null(tolog)){
@@ -123,7 +128,7 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   parmmod = unlist(modellistnew)
   parmmod[tounlogIDs] = log10(parmmod[tounlogIDs])
 
-  # Specify the new parm to be parsed back to the external optimisation function
+  # Specify the new parm to be passed back to the external optimisation function
   if(is.null(parmuse)){
     parmout = parmmod[fitIDs]
   }else{

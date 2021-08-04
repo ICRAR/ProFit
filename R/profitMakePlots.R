@@ -3,7 +3,7 @@
 #used in the corresponding image plot. The "axis.pos" argument
 #defines the side of the axis. The "add.axis" argument defines
 #whether the axis is added (default: TRUE)or not (FALSE).
-.profitImageScale <- function(z, zlim, col = heat.colors(12),
+.profitImageScale = function(z, zlim, col = heat.colors(12),
   breaks, axis.pos=1, axis.padj=0, add.axis=TRUE, axis.tck = 0, ...){
   if(!missing(breaks)){
     if(length(breaks) != (length(col)+1)){stop("must have one more break than colour")}
@@ -36,7 +36,7 @@
   if(add.axis) {axis(axis.pos, padj=axis.padj, tck=axis.tck)}
 }
 
-profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE, maxsigma=5,
+profitMakePlots = function(image, modelimage, region, sigma, errischisq = FALSE, maxsigma=5,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), 
   errcmap = rev(c("#B00000",colorRampPalette(brewer.pal(9,'RdYlBu'))(100)[2:99],"#0000B0")),
   plotchisq=FALSE, dofs, skewtparm = NULL) {
@@ -75,10 +75,10 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     }
     
     diff=residual[region]/error[region]
-    maghist(diff[!is.na(diff)],main='',breaks=100,xlab='Sigma offset / Cnts',labels=c(TRUE,FALSE))
+    maghist(diff[!is.na(diff)],main='',breaks=100,xlab=expression(chi),labels=c(TRUE,FALSE)) 
     #magaxis(1,xlab='Sigma offset / Cnts')
     abline(v=0,lty=2,col='red')
-    legend('topleft',legend='(Data-Model)/Sigma')
+    #legend('topleft',legend='(Data-Model)/Sigma')
   }
   else
   {
@@ -193,7 +193,7 @@ profitMakePlots <- function(image, modelimage, region, sigma, errischisq = FALSE
     }
     abline(v=0,lty=2,col='red')
     legend("bottomleft",legend=labs,col=cols,lty=ltys)
-    legend("topright",legend=bquote(chi[nu]^2*.(sprintf("=%.2f",chisq))),lty=NULL)
+    legend("top",legend=bquote(chi[nu]^2*.(sprintf("=%.2f",chisq))),lty=NULL)
   }
   par(mar=parmar)
 }
