@@ -103,7 +103,7 @@ profitMakeModel = function(modellist,
 	    # Copy the individual values
 	    # If for a given property the user specifies a single value, but
 	    # other properties for this profile list (specifically the "xcen" property)
-	    # have more values in it, we assume that she really meant for the same
+	    # have more values in it, we assume that they really meant for the same
 	    # single value to be used for all profiles.
 	    profiles[[cname]] = list()
 	    for( name in names(modellist[[cname]]) ) {

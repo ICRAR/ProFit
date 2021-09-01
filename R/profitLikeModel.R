@@ -68,7 +68,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
             data_names = names(Data$data_ProSpect)
             data_loc = grepl(paste0('_',i), data_names)
             data_list = Data$data_ProSpect[data_loc]
-            data_loc_global = ! (grepl('_1', data_names) | grepl('_2', data_names)) #Currently only works for up to 2 components, but this is all that is currently supported anyway
+            data_loc_global = ! (grepl('_1', data_names) | grepl('_2', data_names) | grepl('_3', data_names)) #Currently only works for up to 3 components, but this is all that is currently supported anyway
             data_list = c(data_list, Data$data_ProSpect[data_loc_global])
             names(data_list) = sub(paste0('_',i), '', names(data_list))
             args_list = c(args_list, data_list)
