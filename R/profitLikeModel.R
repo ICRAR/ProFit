@@ -62,6 +62,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         Data$parm.names = Data$parm.names[-args_loc]
         args_list = as.list(args) #List
         if(!is.null(Data$data_ProSpect)){
+          #Below means we assume global options are those without "_X" except then X=i (so then it is local to that component)
           if(Data$Ncomp == 1){
             args_list = c(args_list, Data$data_ProSpect)
           }else{
