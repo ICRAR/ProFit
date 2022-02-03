@@ -5,6 +5,8 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
     
+  # This is multiband mode.
+    
     parm_in = parm
     
     if(!is.null(Data$smooth.parm) & !is.null(Data$wave) & is.null(Data$parm_ProSpect)){
@@ -91,18 +93,46 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     temp = {}
     for(i in 1:length(Data)){
       if(inherits(Data[[i]], 'profit.data')){
-        out = profitLikeModel(
-          parm = parm,
-          Data = Data[[i]],
-          makeplots = makeplots,
-          whichcomponents = whichcomponents,
-          rough = rough,
-          cmap = cmap,
-          errcmap = errcmap,
-          plotchisq = plotchisq,
-          maxsigma = maxsigma,
-          model = model
-        )
+        if(is.null(Data[[i]]$doprofit) | isTRUE(Data[[i]]$doprofit)){
+          # Here we run the normal resolved ProFit source mode where we compare the image and model at the pixel level to get the LL.
+          out = profitLikeModel(
+            parm = parm,
+            Data = Data[[i]],
+            makeplots = makeplots,
+            whichcomponents = whichcomponents,
+            rough = rough,
+            cmap = cmap,
+            errcmap = errcmap,
+            plotchisq = plotchisq,
+            maxsigma = maxsigma,
+            model = model
+          )
+        }else{
+          # Here we compute LL for unresolved data via comparing just the ProSpect SED photometry versus the raw aperture photometry.
+          # Won't work well for very confused data though. The idea is this is how we reasonably add in UV and MIR/FIR flux constraints.
+          # THE BELOW STILL NEEDS SOME CAREFUL CHECKING AS OF 2/2/22
+          
+          # The model sum needs to computed for each model, adding together the various flux components correctly in linear flux space.
+          
+          model_sum = 0
+          for(j in 1:length(Data[[i]]$modellist)){
+            for(k in 1:length(Data[[i]]$modellist[[j]][[1]])){
+              model_sum = model_sum + 10^(-0.4*Data[[i]]$modellist[[j]]$mag[k])  
+            }
+          }
+          
+          # The below object_flux and object_var are pre-computed in profuseMultiBandFound2Fit (v0.2.7) at ~L237
+          cutsig = (model_sum - Data[[i]]$object_flux) / Data[[i]]$object_fluxerr
+          
+          LL = sum(dnorm(x = cutsig, log = TRUE), na.rm = TRUE)
+          #LL = -(abs(model_sum - Data[[i]]$object_flux) / Data[[i]]$object_var)/2 #to be LL scaled
+          
+          if(Data[[1]]$algo.func=='LA' | Data[[1]]$algo.func=='LD'){
+            out = list(LP=LL, Dev = -2*LL, Monitor = 0)
+          }else{
+            out = LL
+          }
+        }
         if(makeplots){
           legend('topright', names(Data)[i])
         }
@@ -265,7 +295,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       cutmod=cutmod*scale
       cutim=cutim*scale
     }
-    LL=-sum(cutmod-cutim*log(cutmod))
+    LL = -sum(cutmod-cutim*log(cutmod))
   } else {
     stop(paste0("Error: unknown likelihood function: '",like.func,"'"))
   }
