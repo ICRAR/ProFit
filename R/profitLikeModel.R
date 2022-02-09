@@ -93,7 +93,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     temp = {}
     for(i in 1:length(Data)){
       if(inherits(Data[[i]], 'profit.data')){
-        if(is.null(Data[[i]]$doprofit) | isTRUE(Data[[i]]$doprofit)){
+        if(!isFALSE(Data[[i]]$doprofit)){
           # Here we run the normal resolved ProFit source mode where we compare the image and model at the pixel level to get the LL.
           out = profitLikeModel(
             parm = parm,
@@ -107,6 +107,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
             maxsigma = maxsigma,
             model = model
           )
+          if(makeplots){
+            legend('topright', names(Data)[i])
+          }
         }else{
           # Here we compute LL for unresolved data via comparing just the ProSpect SED photometry versus the raw aperture photometry.
           # Won't work well for very confused data though. The idea is this is how we reasonably add in UV and MIR/FIR flux constraints.
@@ -117,24 +120,21 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           model_sum = 0
           for(j in 1:length(Data[[i]]$modellist)){
             for(k in 1:length(Data[[i]]$modellist[[j]][[1]])){
-              model_sum = model_sum + 10^(-0.4*Data[[i]]$modellist[[j]]$mag[k])  
+              model_sum = model_sum + 10^(-0.4*(Data[[i]]$modellist[[j]]$mag[k] - 8.9))
             }
           }
           
           # The below object_flux and object_var are pre-computed in profuseMultiBandFound2Fit (v0.2.7) at ~L237
           cutsig = (model_sum - Data[[i]]$object_flux) / Data[[i]]$object_fluxerr
           
-          LL = sum(dnorm(x = cutsig, log = TRUE), na.rm = TRUE)
+          LL = dnorm(x = cutsig, log = TRUE)
           #LL = -(abs(model_sum - Data[[i]]$object_flux) / Data[[i]]$object_var)/2 #to be LL scaled
           
           if(Data[[1]]$algo.func=='LA' | Data[[1]]$algo.func=='LD'){
-            out = list(LP=LL, Dev = -2*LL, Monitor = 0)
+            out = list(LP=LL, Dev = -2*LL, Monitor = c(LL, LL, 0))
           }else{
             out = LL
           }
-        }
-        if(makeplots){
-          legend('topright', names(Data)[i])
         }
         if(i==1){out$parm = parm_in}
         temp = c(temp, list(out))
@@ -152,6 +152,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       output$Monitor = 0
       output$yhat=1
       for(i in 1:length(temp)){
+        if(isTRUE(Data$debug)){
+          print(temp[[i]])
+        }
         output$LP = output$LP + temp[[i]]$LP
         output$Dev = output$Dev + temp[[i]]$Dev
         output$Monitor = output$Monitor + temp[[i]]$Monitor
