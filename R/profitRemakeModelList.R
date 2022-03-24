@@ -136,5 +136,10 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
     parmout[parmuse] = parmmod[fitIDs]
   }
   
+  if(!is.null(offset)){
+    parmout[xsel] = parmout[xsel] - offset[1]
+    parmout[ysel] = parmout[ysel] - offset[2]
+  }
+  
   return(list(parm=parmout, modellist=modellistnew))
 }

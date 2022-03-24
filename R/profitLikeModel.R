@@ -5,11 +5,12 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
     
-  # This is multiband mode.
+  # This is MultiBand and MultiImage mode. Most of what is here is to deal with the complexities of MultiBand mode. MultiImage mode is actually pretty simple.
     
     parm_in = parm
     
     if(!is.null(Data$smooth.parm) & !is.null(Data$wave) & is.null(Data$parm_ProSpect)){
+      #This is the smoothed parameter MultiBand mode. Don't really use this now we have full ProSpect mode.
       namevec = names(Data$smooth.parm)
       for(i in 1:length(Data$smooth.parm)){
         parm = .smooth_parm(parm=parm, Data$parm.names, extract=namevec[i], wave=Data$wave, func=Data$smooth.parm[[i]])
@@ -23,6 +24,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     #4) Proceed as before with the reduced parm vector.
     
     if(!is.null(Data$parm_ProSpect)){
+      #This is ProSpect MultiBand mode.
       if(!requireNamespace("ProSpect", quietly = TRUE)){stop('The ProSpect package is required to use SED fitting!')}
       
       args_names = names(Data$parm_ProSpect)
@@ -64,7 +66,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         Data$parm.names = Data$parm.names[-args_loc]
         args_list = as.list(args) #List
         if(!is.null(Data$data_ProSpect)){
-          #Below means we assume global options are those without "_X" except then X=i (so then it is local to that component)
+          # Below means we assume global options are those without "_X" except then X=i (so then it is local to that component)
           if(Data$Ncomp == 1){
             args_list = c(args_list, Data$data_ProSpect)
           }else{
@@ -92,9 +94,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     
     temp = {}
     for(i in 1:length(Data)){
+      # The below executes both MultiImage (same band, lots of exposures) and MultiBand mode, since by this point the structures are the same, and the mags have been updated as needed by ProSpect for the MultiBand to work.
       if(inherits(Data[[i]], 'profit.data')){
         if(!isFALSE(Data[[i]]$doprofit)){
-          # Here we run the normal resolved ProFit source mode where we compare the image and model at the pixel level to get the LL.
+          # Here we run profitLikeModel, where we compare the image and model at the pixel level to get the LL.
+          # Now this might seem a bit recursive, but the sub objects in the list are the per Band/Image profit.data structures, so we miss out the IF condition we are currently in and skip to line 170-ish.
           out = profitLikeModel(
             parm = parm,
             Data = Data[[i]],
@@ -162,6 +166,8 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     }
     return(output)
   }
+  
+  # Below is what we execute for a normal single image profit.data instance. This is classic ProFit, and the sub component of MultiBand and MultiImage modes.
   
   priorsum = 0
   
