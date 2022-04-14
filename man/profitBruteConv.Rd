@@ -60,7 +60,7 @@ model = list(
 	)
 )
 
-model.image=profitMakeModel(model=model, dim=c(200,200))$z
+model.image=profitMakeModel(modellist=model, dim=c(200,200))$z
 
 # Without convolution:
 

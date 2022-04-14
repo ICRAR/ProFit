@@ -9,12 +9,12 @@ Create an astronomical image containing model galaxies or point sources, with or
 }
 \usage{
 profitMakeModel(modellist, magzero = 0, psf = NULL, dim = c(100, 100),
-whichcomponents = list(sersic = "all", moffat = "all", ferrer = "all", ferrers = "all", 
-coresersic = "all", king = "all", brokenexp = "all", pointsource = "all"), rough = FALSE,
-acc = 0.1, finesample = 1L, returnfine = FALSE, returncrop = TRUE, calcregion,
-docalcregion = FALSE, adjust_calcregion = TRUE, magmu = FALSE, remax, rescaleflux = FALSE,
-convopt = NULL, psfdim = c(25, 25), openclenv = NULL, omp_threads = NULL, plot = FALSE,
-...)
+  model_image_buff = matrix(0, 1, 1), whichcomponents = list(sersic = "all",
+  moffat = "all", ferrer = "all", ferrers = "all", coresersic = "all", king = "all",
+  brokenexp = "all", pointsource = "all"), rough = FALSE, acc = 0.1, finesample = 1L,
+  returnfine = FALSE, returncrop = TRUE, calcregion, docalcregion = FALSE,
+  adjust_calcregion = TRUE, magmu = FALSE, remax, rescaleflux = FALSE, convopt = NULL,
+  psfdim = c(25, 25), openclenv = NULL, omp_threads = NULL, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,6 +29,9 @@ The PSF matrix to use for the model. This will both be used to convolve the radi
 }
   \item{dim}{
 The desired dimensions of the 2D image matrix. This should be a two element vector which specifies c(width,height) in the plotted image. This becomes c(rows,columns) in the matrix itself (see Details below).
+}
+  \item{model_image_buff}{
+Matrix; an in memory buffer model to use to stop repeated memory creation between iterations (for single image generation this probably does not matter).
 }
   \item{whichcomponents}{
 A list specifying which component of each profile type should be used to create the model image. This is useful if you want to visualise the appearance of e.g. Sersic components 1 and 2 separately. The default entry list=(profilename1="all",...) will show the total model with all components added. If a given profile has no entry in the list, the default is "all", i.e. one must explicitly exclude components rather than including them, and an empty list will exclude nothing; the default value just lists available profile names explicitly.
