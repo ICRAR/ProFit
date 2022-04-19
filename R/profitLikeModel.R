@@ -219,7 +219,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       priorsum=Data$priors(modellistnew,Data$modellist)
     }
     
-    model = .profitLikeModelEvaluation(Data, modellistnew, rough=rough, whichcomponents=whichcomponents, model_buff_image=Data$model_buff_image)
+    model = .profitLikeModelEvaluation(Data, modellistnew, rough=rough, whichcomponents=whichcomponents, model_image_buff=Data$model_buff_image)
   } else {
     stopifnot(is.list(model) && !is.null(model$z))
     stopifnot(identical(dim(Data$image),dim(model$z)))
