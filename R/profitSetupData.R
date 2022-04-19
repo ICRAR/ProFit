@@ -335,5 +335,10 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   if(!is.null(calcregion)){
     profit.data$usecalcregion = TRUE
   }
+
+  # Dummy evaluation with a single "null" profile to get an image buffer we can then reuse
+  # across model evaluations
+  profit.data$model_image_buff = .profitLikeModelEvaluation(profit.data, list(null=list(convolve=c(F))))
+
   return(invisible(profit.data))
 }
