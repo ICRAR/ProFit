@@ -206,6 +206,11 @@ void list_to_psf(SEXP psf_list, shared_ptr<Profile> p, unsigned int idx) {
 	_read_real(p, psf_list, "mag",   idx);
 }
 
+static
+void list_to_null(SEXP psf_list, shared_ptr<Profile> p, unsigned int idx) {
+	// no-op
+}
+
 
 static
 void _read_profiles(Model &model, SEXP profiles_list,
@@ -280,6 +285,10 @@ void _read_sky_profiles(Model &model, SEXP profiles_list) {
 static
 void _read_psf_profiles(Model &model, SEXP profiles_list) {
 	_read_profiles(model, profiles_list, "psf", "xcen", &list_to_psf);
+}
+
+void _read_null_profiles(Model &model, SEXP profiles_list) {
+	_read_profiles(model, profiles_list, "null", "convolve", &list_to_null);
 }
 
 
@@ -631,6 +640,7 @@ SEXP _R_profit_make_model(SEXP model_list, SEXP previous_image) {
 	_read_brokenexponential_profiles(m, profiles);
 	_read_sky_profiles(m, profiles);
 	_read_psf_profiles(m, profiles);
+	_read_null_profiles(m, profiles);
 	if( !m.has_profiles() ) {
 		Rf_error("No valid profiles found in profiles list\n");
 		return R_NilValue;
