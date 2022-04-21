@@ -11,10 +11,11 @@ Create an astronomical image containing model galaxies or point sources, with or
 profitMakeModel(modellist, magzero = 0, psf = NULL, dim = c(100, 100),
   model_image_buff = matrix(0, 1, 1), whichcomponents = list(sersic = "all",
   moffat = "all", ferrer = "all", ferrers = "all", coresersic = "all", king = "all",
-  brokenexp = "all", pointsource = "all"), rough = FALSE, acc = 0.1, finesample = 1L,
-  returnfine = FALSE, returncrop = TRUE, calcregion, docalcregion = FALSE,
-  adjust_calcregion = TRUE, magmu = FALSE, remax, rescaleflux = FALSE, convopt = NULL,
-  psfdim = c(25, 25), openclenv = NULL, omp_threads = NULL, plot = FALSE, ...)
+  brokenexp = "all", pointsource = "all", null = "all"), rough = FALSE, acc = 0.1,
+  finesample = 1L, returnfine = FALSE, returncrop = TRUE, calcregion,
+  docalcregion = FALSE, adjust_calcregion = TRUE, magmu = FALSE, remax,
+  rescaleflux = FALSE, convopt = NULL, psfdim = c(25, 25), openclenv = NULL,
+  omp_threads = NULL, plot = FALSE, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
