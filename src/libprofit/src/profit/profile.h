@@ -42,6 +42,7 @@ namespace profit
 
 /* Forward declaration */
 class Model;
+class PixelScale;
 
 /// Statistics for profile evaluations
 class PROFIT_API ProfileStats {
@@ -98,7 +99,7 @@ public:
 	/**
 	 * Destructor
 	 */
-	virtual ~Profile() = 0;
+	virtual ~Profile() = default;
 
 	/**
 	 * Performs the initial profile validation, making sure that all parameters

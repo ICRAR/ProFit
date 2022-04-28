@@ -178,7 +178,7 @@ Data=profitSetupData(image=image, sigma=sigma, segim=segim, psf=psf,
 modellist=modellist, tofit=tofit, tolog=tolog, priors=priors, intervals=intervals,
 magzero=0, algo.func='optim', verbose=TRUE)
 
-modelimage=profitMakeModel(Data$mode,dim=Data$imagedim)
+modelimage=profitMakeModel(Data$modellist, dim=Data$imagedim)
 profitMakePlots(Data$image, modelimage$z, Data$region, Data$sigma)
 
 #The pixel scale of VST/KiDS is 0.2 asec/pix and the SBlim=26 mag/asec^2 in r-band.

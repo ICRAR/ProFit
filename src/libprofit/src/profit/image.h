@@ -31,186 +31,17 @@
 #include <algorithm>
 #include <ostream>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 #include "profit/common.h"
+#include "profit/coordinates.h"
+#include "profit/point.h"
 
 namespace profit {
 
-/** An (x, y) pair in a 2-dimensional discrete surface
- *
- * Comparison between these objects can be done with the <, <=, ==, !=, > and >=
- * operators, but users should not that there is no way to order values based
- * on these operators (that is, objects of this type are by themselves
- * non-sortable).
- */
-class PROFIT_API _2dcoordinate {
-
-public:
-
-	_2dcoordinate() : x(0), y(0) {}
-	_2dcoordinate(unsigned int x, unsigned int y) : x(x), y(y) {}
-	_2dcoordinate(const _2dcoordinate &other) : x(other.x), y(other.y) {}
-	_2dcoordinate(_2dcoordinate &&other) : x(other.x), y(other.y) { other.x = 0; other.y = 0; }
-	~_2dcoordinate() = default;
-
-	unsigned int x;
-	unsigned int y;
-
-	/// greater or equal comparison across both dimensions
-	bool operator>=(const _2dcoordinate &other) const
-	{
-		return x >= other.x && y >= other.y;
-	}
-
-	/// greater than comparison across both dimensions
-	bool operator>(const _2dcoordinate &other) const
-	{
-		return x > other.x && y > other.y;
-	}
-
-	/// less or equal comparison across both dimensions
-	bool operator<=(const _2dcoordinate &other) const
-	{
-		return x <= other.x && y <= other.y;
-	}
-
-	/// less than comparison across both dimensions
-	bool operator<(const _2dcoordinate &other) const
-	{
-		return x < other.x && y < other.y;
-	}
-
-	bool operator==(const _2dcoordinate &other) const {
-		return x == other.x && y == other.y;
-	}
-
-	bool operator!=(const _2dcoordinate &other) const {
-		return x != other.x || y != other.y;
-	}
-
-	explicit operator bool() const {
-		return x > 0 && y > 0;
-	}
-
-	_2dcoordinate &operator=(const _2dcoordinate &other) {
-		if (&other != this) {
-			x = other.x;
-			y = other.y;
-		}
-		return *this;
-	}
-
-	_2dcoordinate &operator=(_2dcoordinate &&other) {
-		x = other.x;
-		y = other.y;
-		other.x = 0;
-		other.y = 0;
-		return *this;
-	}
-
-	_2dcoordinate &operator+=(const _2dcoordinate &other) {
-		x += other.x;
-		y += other.y;
-		return *this;
-	}
-
-	_2dcoordinate &operator+=(unsigned int n) {
-		x += n;
-		y += n;
-		return *this;
-	}
-
-	_2dcoordinate operator+(const _2dcoordinate &other) const {
-		_2dcoordinate sum(*this);
-		sum += other;
-		return sum;
-	}
-
-	_2dcoordinate operator+(unsigned int n) const {
-		_2dcoordinate sum(*this);
-		sum += n;
-		return sum;
-	}
-
-	_2dcoordinate &operator-=(const _2dcoordinate &other) {
-		x -= other.x;
-		y -= other.y;
-		return *this;
-	}
-
-	_2dcoordinate operator-(const _2dcoordinate &other) const {
-		_2dcoordinate sum(*this);
-		sum -= other;
-		return sum;
-	}
-
-	_2dcoordinate &operator*=(unsigned int f) {
-		x *= f;
-		y *= f;
-		return *this;
-	}
-
-	_2dcoordinate operator*(unsigned int f) const {
-		_2dcoordinate mul(*this);
-		mul *= f;
-		return mul;
-	}
-
-	_2dcoordinate &operator/=(unsigned int f) {
-		x /= f;
-		y /= f;
-		return *this;
-	}
-
-	_2dcoordinate operator/(unsigned int f) const {
-		_2dcoordinate div(*this);
-		div /= f;
-		return div;
-	}
-
-	_2dcoordinate &operator%=(unsigned int i) {
-		x %= i;
-		y %= i;
-		return *this;
-	}
-
-	_2dcoordinate operator%(unsigned int i) const {
-		_2dcoordinate mod(*this);
-		mod %= i;
-		return mod;
-	}
-
-};
-
-template <typename CharT>
-std::basic_ostream<CharT> &operator<<(std::basic_ostream<CharT> &os, const _2dcoordinate &coord)
-{
-	os << '[' << coord.x << ", " << coord.y << ']';
-	return os;
-}
-
-inline
-_2dcoordinate operator-(int x, const _2dcoordinate &other) {
-	return _2dcoordinate(x, x) - other;
-}
-
-inline
-_2dcoordinate operator-(const _2dcoordinate &other, int x) {
-	return other - _2dcoordinate(x, x);
-}
-
-/// Element-wise max() function for _2dcoordinate objects
-inline _2dcoordinate max(const _2dcoordinate a, const _2dcoordinate b)
-{
-	return _2dcoordinate {std::max(a.x, b.x), std::max(a.x, b.x)};
-}
-
-/// @typedef A point in a 2-dimensional surface
-typedef _2dcoordinate Point;
-
-/// @typedef A 2-dimensional dimension definition
-typedef _2dcoordinate Dimensions;
+/// @typedef A discrete 2-dimensional dimension definition
+using Dimensions = discrete_2d_coordinate;
 
 /// A pair of points
 typedef std::pair<Point, Point> PointPair;
@@ -256,14 +87,40 @@ std::basic_ostream<CharT> &operator<<(std::basic_ostream<CharT> &os, const Box &
 }
 
 ///
-/// Non-templated code common to 2D surface classes
+/// Non-templated code common to 2D surface classes, holding only the dimensions
+/// of the surface but not its data.
 ///
+/// Note that when surface_base is moved, its dimensions are explicitly set to
+/// (0, 0) so the moved-from image acts like an empty image. We still want
 class surface_base {
 
 public:
 
+	/// Default constructor, creates an empty surface_base
 	surface_base() = default;
 
+	/// Copy constructor
+	surface_base(const surface_base &other) = default;
+
+	/// Move constructor, sets the moved-from surface_base as empty
+	surface_base(surface_base &&other) :
+		dimensions(std::move(other.dimensions))
+	{
+		other.dimensions = {0, 0};
+	}
+
+	/// Copy assignment operator
+	surface_base &operator=(const surface_base &other) = default;
+
+	/// Move assignment operator, sets the moved-from surface_base as empty
+	surface_base &operator=(surface_base &&other)
+	{
+		dimensions = std::move(other.dimensions);
+		other.dimensions = {0, 0};
+		return *this;
+	}
+
+	/// Constructs a surface_base with the given dimensions
 	explicit surface_base(Dimensions dimensions) :
 		dimensions(dimensions)
 	{
@@ -338,6 +195,29 @@ private:
 
 };
 
+namespace detail {
+
+template <typename T>
+struct is_bool : public std::true_type {};
+
+template <>
+struct is_bool<bool> : public std::false_type {};
+
+template <typename T>
+struct iterator_type
+{
+	using iterator = T *;
+	using const_iterator = const T *;
+};
+
+template <>
+struct iterator_type<bool>
+{
+	using iterator = std::vector<bool>::iterator;
+	using const_iterator = std::vector<bool>::const_iterator;
+};
+}
+
 /**
  * Base class for 2D-organized data
  */
@@ -350,40 +230,48 @@ public:
 	typedef typename std::vector<T>::reference reference;
 	typedef typename std::vector<T>::const_reference const_reference;
 	typedef typename std::vector<T>::size_type size_type;
-	typedef typename std::vector<T>::iterator iterator;
-	typedef typename std::vector<T>::const_iterator const_iterator;
+	using iterator = typename detail::iterator_type<T>::iterator;
+	using const_iterator = typename detail::iterator_type<T>::const_iterator;
 
 	surface() = default;
 
 	explicit surface(Dimensions dimensions) :
 		surface_base(dimensions),
-		_data(dimensions.x * dimensions.y)
+		_managed_data(dimensions.x * dimensions.y)
 	{
 		// no-op
 	}
 
 	surface(const std::vector<T> &data, Dimensions dimensions) :
 		surface_base(dimensions),
-		_data(data.begin(), data.end())
+		_managed_data(data.begin(), data.end())
 	{
 		check_size();
 	}
 
 	surface(std::vector<T> &&data, Dimensions dimensions) :
 		surface_base(dimensions),
-		_data(std::move(data))
+		_managed_data(std::move(data))
 	{
-		if (dimensions.x * dimensions.y != this->_data.size()) {
-			data = std::move(this->_data);
+		if (dimensions.x * dimensions.y != this->_managed_data.size()) {
+			data = std::move(this->_managed_data);
 			throw std::invalid_argument("data.size() != weight * height");
 		}
 	}
 
+	template <typename Void=std::enable_if<!detail::is_bool<T>::value>>
+	surface(T *data, Dimensions dimensions) :
+		surface_base(dimensions),
+		_external_data(data)
+	{
+	}
+
 	/**
-	 * Assigns zero to all elements of this Image.
+	 * Assigns zero to all elements of this surface.
 	 */
 	void zero() {
-		_data.assign(_data.size(), 0);
+		auto *_data = data();
+		std::fill(_data, _data + size(), static_cast<T>(0));
 	}
 
 	/**
@@ -418,6 +306,7 @@ public:
 	{
 		auto dimensions = extended.getDimensions();
 		_extension_is_possible(dimensions, start);
+		auto _data = data();
 		for(unsigned int j = 0; j < getHeight(); j++) {
 			for(unsigned int i = 0; i < getWidth(); i++) {
 				extended[(i+start.x) + (j+start.y)*dimensions.x] = _data[i + j*getWidth()];
@@ -439,6 +328,7 @@ public:
 	{
 		_crop_is_possible(dimensions, start);
 		D crop(dimensions);
+		auto _data = data();
 		for(unsigned int j = 0; j < dimensions.y; j++) {
 			for(unsigned int i = 0; i < dimensions.x; i++) {
 				crop[i + j * dimensions.x] = _data[(i + start.x) + (j + start.y) * getWidth()];
@@ -473,6 +363,7 @@ public:
 	{
 		Point lb = getDimensions();
 		Point ub;
+		auto _data = data();
 		bool only_zeros = true;
 		for(unsigned int j = 0; j < getHeight(); j++) {
 			for(unsigned int i = 0; i < getWidth(); i++) {
@@ -503,65 +394,92 @@ public:
 	/// Comparison operator
 	bool operator==(const surface &other) const {
 		return surface_base::operator==(other) &&
-		       _data == other._data;
+		       _managed_data == other._managed_data &&
+		       _external_data == other._external_data;
 	}
 
 	/// subscript operator
 	reference operator[](const size_type idx)
 	{
-		return _data[idx];
+		return data()[idx];
 	}
 
 	/// subscript operator, const
 	const_reference operator[](const size_type idx) const
 	{
-		return _data[idx];
+		return data()[idx];
 	}
 
 	/// [] operator that works with a Point
 	reference operator[](const Point &p)
 	{
-		return _data[p.x + p.y * getWidth()];
+		return data()[p.x + p.y * getWidth()];
 	}
 
 	const_reference operator[](const Point &p) const
 	{
-		return _data[p.x + p.y * getWidth()];
+		return data()[p.x + p.y * getWidth()];
 	}
 
 	/// iterator to beginning of data
-	iterator begin() { return _data.begin(); }
-	const_iterator begin() const { return _data.begin(); }
-	const_iterator cbegin() const { return _data.cbegin(); }
+	iterator begin() { return data(); }
+	const_iterator begin() const { return data(); }
+	const_iterator cbegin() const { return data(); }
 
 	/// iterator to end of data
-	iterator end() { return _data.end(); }
-	const_iterator end() const { return _data.end(); }
-	const_iterator cend() const { return _data.cend(); }
+	iterator end() { return data() + size(); }
+	const_iterator end() const { return data() + size(); }
+	const_iterator cend() const { return data() + size(); }
 
 	/// type casting to std::vector<T>
 	explicit operator std::vector<T>() const {
-		return std::vector<T>(_data);
+		return std::vector<T>(data(), data() + size());
+	}
+
+	iterator data()
+	{
+		return static_cast<D &>(*this).data_impl();
+	}
+
+	const_iterator data() const
+	{
+		return static_cast<const_iterator>(
+			const_cast<surface *>(this)->data());
 	}
 
 protected:
-	std::vector<T> &_get() {
-		return _data;
+	std::vector<T> &_get_managed_data() {
+		return _managed_data;
 	}
 
-	const std::vector<T> &_get() const {
-		return _data;
+	const std::vector<T> &_get_managed_data() const {
+		return _managed_data;
+	}
+
+	T *_get_external_data() {
+		return _external_data;
+	}
+
+	const T *_get_external_data() const {
+		return _external_data;
+	}
+
+	void _set_external_data(T *external_data)
+	{
+		_external_data = external_data;
 	}
 
 private:
-	std::vector<T> _data;
+	std::vector<T> _managed_data;
+	T *_external_data = nullptr;
 
 	void check_size()
 	{
-		if (getWidth() * getHeight() != _data.size()) {
+		if (getWidth() * getHeight() != _managed_data.size()) {
 			throw std::invalid_argument("data.size() != weight * height");
 		}
 	}
+
 };
 
 namespace detail {
@@ -661,6 +579,10 @@ public:
 	 */
 	Mask upsample(unsigned int factor) const;
 
+	iterator data_impl()
+	{
+		return _get_managed_data().begin();
+	}
 };
 
 /**
@@ -672,14 +594,20 @@ public:
 
 	// Constructors that look like those from _surface
 	Image() = default;
+	Image(const Image &other);
+	Image(Image &&other) = default;
 	Image(unsigned int width, unsigned int height);
 	Image(double value, Dimensions dimensions);
+	Image(double *values, Dimensions dimensions);
 	Image(double value, unsigned int width, unsigned int height);
 	explicit Image(Dimensions dimensions);
 	Image(const std::vector<double> &data, unsigned int width, unsigned int height);
 	Image(const std::vector<double> &data, Dimensions dimensions);
 	Image(std::vector<double> &&data, unsigned int width, unsigned int height);
 	Image(std::vector<double> &&data, Dimensions dimensions);
+
+	Image &operator=(const Image &other);
+	Image &operator=(Image &&other) = default;
 
 	/** Available image upsampling modes */
 	enum UpsamplingMode {
@@ -745,6 +673,23 @@ public:
 	Image upsample(unsigned int factor, UpsamplingMode mode = SCALE) const;
 
 	/**
+	 * Upsamples this image by the given factor. The resulting image is written
+	 * to @p target.
+	 *
+	 * The resulting image's dimensions will be the original image's times the
+	 * upsampling factor. If @p target doesn't have these dimensions an error is
+	 * raised. The particular upsampling method is determined by @p mode.
+	 *
+	 * @param target The target image where the result of the upsampling will be
+	 * written to.
+	 * @param factor The upsampling factor. Must be greater than 0. If equals to
+	 * 1, the upsampled image is equals to the original image.
+	 * @param mode The upsampling mode to use
+	 * @return An upsampled image, without interpolation.
+	 */
+	void upsample(Image &target, unsigned int factor, UpsamplingMode mode = SCALE) const;
+
+	/**
 	 * Downsamples this image by the given factor.
 	 *
 	 * The resulting image's dimensions will be the ceiling of this image's
@@ -757,6 +702,24 @@ public:
 	 * @return A downsampled image, without interpolation.
 	 */
 	Image downsample(unsigned int factor, DownsamplingMode = SUM) const;
+
+	/**
+	 * Downsamples this image by the given factor. The resulting image is written
+	 * to @p target.
+	 *
+	 * The resulting image's dimensions will be the ceiling of this image's
+	 * divided by the downsampling factor. If @p target doesn't have these
+	 * dimensions an error is raised. The particular downsampling method is
+	 * determined by @p mode.
+	 *
+	 * @param target The target image where the result of the downsampling will
+	 * be written to.
+	 * @param factor The downsampling factor. Must be greater than 0. If equals
+	 * to 1, the upsampled image is equals to the original image.
+	 * @param mode The downsampling mode to use
+	 * @return A downsampled image, without interpolation.
+	 */
+	void downsample(Image &downsampled, unsigned int factor, DownsamplingMode mode) const;
 
 	/**
 	 * Normalized this image; i.e., rescales its values so the sum of all its
@@ -777,8 +740,12 @@ public:
 	 *
 	 * @return The underlying data pointer
 	 */
-	value_type *data() {
-		return _get().data();
+	value_type *data_impl() {
+		auto external_data = _get_external_data();
+		if (external_data) {
+			return external_data;
+		}
+		return _get_managed_data().data();
 	}
 
 	/**
@@ -787,8 +754,10 @@ public:
 	 *
 	 * @return The underlying data pointer
 	 */
-	const value_type *data() const {
-		return _get().data();
+	const value_type *data_impl() const {
+		return const_cast<const value_type *>(
+		    const_cast<Image *>(this)->data_impl()
+		);
 	}
 
 	/// Addition assignment of another Image
@@ -817,11 +786,6 @@ public:
 	const Image operator&(const Mask &mask) const;
 
 };
-
-/// A two-element (horizontal and vertical) pixel scale.
-/// It indicates how much a pixel corresponds to in image coordinates.
-typedef std::pair<double, double> PixelScale;
-
 
 }  // namespace profit
 

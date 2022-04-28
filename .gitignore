@@ -16,6 +16,6 @@ src/libprofit/profit/config.h
 .cproject
 .project
 .settings
-src/libprofit/include/profit/config.h
-src/libprofit/include/profit/cl/*-double.h
-src/libprofit/include/profit/cl/*-float.h
+src/libprofit/src/profit/config.h
+src/libprofit/src/profit/cl/*-double.h
+src/libprofit/src/profit/cl/*-float.h

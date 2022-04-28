@@ -327,12 +327,18 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     verbose=verbose, 
     magmu=magmu,
     openclenv=openclenv, 
-    omp_threads=omp_threads
+    omp_threads=omp_threads,
+    model_image_buff=matrix(0, 1, 1)
   )
   class(profit.data)="profit.data"
   profit.data = profitDataSetOptionsFromBenchmarks(profit.data, benchmarks)
   if(!is.null(calcregion)){
     profit.data$usecalcregion = TRUE
   }
+
+  # Dummy evaluation with a single "null" profile to get an image buffer we can then reuse
+  # across model evaluations
+  profit.data$model_image_buff = .profitLikeModelEvaluation(profit.data, list(null=list(convolve=c(F), xcen=c(0))))$z
+
   return(invisible(profit.data))
 }

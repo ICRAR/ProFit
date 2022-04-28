@@ -1,6 +1,6 @@
 profitMakeModel = function(modellist,
-                           magzero=0, psf=NULL, dim=c(100,100),
-                           whichcomponents=list(sersic="all", moffat="all", ferrer="all", ferrers="all", coresersic="all", king="all", brokenexp="all", pointsource="all"),
+                           magzero=0, psf=NULL, dim=c(100,100), model_image_buff=matrix(0, 1, 1),
+                           whichcomponents=list(sersic="all", moffat="all", ferrer="all", ferrers="all", coresersic="all", king="all", brokenexp="all", pointsource="all", null="all"),
                            rough=FALSE, acc=0.1,
                            finesample=1L, returnfine=FALSE, returncrop=TRUE,
                            calcregion, docalcregion=FALSE, adjust_calcregion=TRUE,
@@ -36,7 +36,7 @@ profitMakeModel = function(modellist,
 	# Some defaults...
 	#rough = rough == TRUE
 	checkLogical(rough, len=1)
-	profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp")
+	profilenames = c("sersic","moffat","ferrer","ferrers","coresersic","king","brokenexp","null")
 	componentnames = c(profilenames,"pointsource")
 	for(wcname in componentnames) {
 		if(is.null(whichcomponents[[wcname]]) || identical(whichcomponents[[wcname]],"all")) {
@@ -280,7 +280,7 @@ profitMakeModel = function(modellist,
 	}
 
 	# Go, go, go!
-	result = .Call("R_profit_make_model", model)
+	result = .Call("R_profit_make_model", model, model_image_buff)
 	if( is.null(result) ) {
 		return(NULL)
 	}

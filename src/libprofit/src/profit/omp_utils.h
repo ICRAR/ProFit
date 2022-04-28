@@ -46,6 +46,16 @@ namespace profit {
 template <typename Callable>
 void omp_2d_for(int threads, unsigned int width, unsigned int height, Callable &&f)
 {
+	// Don't even try using OpenMP if serial execution was requested
+	// Setting up OpenMP incurs into some costs that can be avoided with this
+	if (threads <= 1) {
+		for (unsigned int j = 0; j < height; j++) {
+			for (unsigned int i = 0; i < width; i++) {
+				f(i, j);
+			}
+		}
+		return;
+	}
 #if _OPENMP >= 200805 // OpenMP 3.0
 #pragma omp parallel for collapse(2) schedule(dynamic, 10) if(threads > 1) num_threads(threads)
 	for (unsigned int j = 0; j < height; j++) {

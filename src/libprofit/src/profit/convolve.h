@@ -54,6 +54,9 @@ enum ConvolverType {
 
 	/// @copydoc FFTConvolver
 	FFT,
+
+	/// @copydoc NULLConvolver
+	NO_OP
 };
 
 /**

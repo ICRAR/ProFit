@@ -52,10 +52,10 @@ Point Model::NO_OFFSET;
 Model::Model(unsigned int width, unsigned int height) :
 	requested_dimensions(width, height),
 	finesampling(1),
-	scale(1, 1),
+	scale(),
 	magzero(0),
 	psf(),
-	psf_scale(1, 1),
+	psf_scale(),
 	mask(),
 	convolver(),
 	adjust_mask(true),
@@ -63,7 +63,7 @@ Model::Model(unsigned int width, unsigned int height) :
 	dry_run(false),
 	return_finesampled(true),
 	opencl_env(),
-	omp_threads(0),
+	omp_threads(1),
 	profiles()
 {
 	// no-op
@@ -72,10 +72,10 @@ Model::Model(unsigned int width, unsigned int height) :
 Model::Model(Dimensions dimensions) :
 	requested_dimensions(dimensions),
 	finesampling(1),
-	scale(1, 1),
+	scale(),
 	magzero(0),
 	psf(),
-	psf_scale(1, 1),
+	psf_scale(),
 	mask(),
 	convolver(),
 	adjust_mask(true),
@@ -83,7 +83,7 @@ Model::Model(Dimensions dimensions) :
 	dry_run(false),
 	return_finesampled(true),
 	opencl_env(),
-	omp_threads(0),
+	omp_threads(1),
 	profiles()
 {
 }
@@ -189,10 +189,10 @@ Model::input_analysis Model::analyze_inputs() const
 	if (!requested_dimensions) {
 		throw invalid_parameter( "Model's requested dimensions are 0");
 	}
-	else if (scale.first <= 0) {
+	else if (scale.x <= 0) {
 		throw invalid_parameter("Model's scale_x cannot be negative or zero");
 	}
-	else if (scale.second <= 0) {
+	else if (scale.y <= 0) {
 		throw invalid_parameter("Model's scale_y cannot be negative or zero");
 	}
 	// When adjust_mask=false we check the mask's dimensionality later
@@ -256,24 +256,42 @@ void Model::adjust(Mask &mask, const Dimensions &dims, const Image &psf,
 	}
 }
 
+Dimensions Model::get_drawing_dimensions() const
+{
+	return analyze_inputs().drawing_dims;
+}
+
 Image Model::evaluate(Point &offset_out)
 {
+	Image image;
+	evaluate(image, offset_out);
+	return image;
+}
+
+void Model::evaluate(Image &image, Point &offset_out)
+{
 	auto analysis = analyze_inputs();
+
+	if (image.getDimensions() == analysis.drawing_dims) {
+		image.zero();
+	}
+	else {
+		image = Image{analysis.drawing_dims};
+	}
 
 	/* so long folks! */
 	if (dry_run) {
 		inform_offset({0, 0}, offset_out);
-		return Image{analysis.drawing_dims};
+		return;
 	}
 
 	// Adjust mask before passing it down to profiles
 	Point offset;
-	Image image;
 	Mask adjusted_mask;
 	if (adjust_mask && analysis.mask_needs_adjustment) {
 		adjusted_mask = mask;
 		adjust(adjusted_mask, psf, finesampling, analysis);
-		image = produce_image(adjusted_mask, analysis, offset);
+		produce_image(image, adjusted_mask, analysis, offset);
 	}
 	else {
 		if (!adjust_mask && mask.getDimensions() != analysis.drawing_dims) {
@@ -282,7 +300,7 @@ Image Model::evaluate(Point &offset_out)
 			   << mask.getDimensions() << " != " << analysis.drawing_dims;
 			throw invalid_parameter(os.str());
 		}
-		image = produce_image(mask, analysis, offset);
+		produce_image(image, mask, analysis, offset);
 	}
 
 	// Remove PSF padding if one was added, and downsample if necessary
@@ -316,29 +334,32 @@ Image Model::evaluate(Point &offset_out)
 	}
 
 	inform_offset(offset, offset_out);
-	return image;
+	return;
 }
 
-Image Model::produce_image(const Mask &mask, const input_analysis &analysis,
+void Model::produce_image(Image &model_image, const Mask &mask, const input_analysis &analysis,
     Point &offset)
 {
+	assert(model_image.getDimensions() == analysis.drawing_dims);
+
 	// Avoiding memory allocation if no convolution is needed
-	Image model_image{analysis.drawing_dims};
 	Image to_convolve;
 	if (analysis.convolution_required) {
 		to_convolve = Image{analysis.drawing_dims};
 	}
 
+	auto profile_pixel_scale = scale;
+	if (finesampling > 1) {
+		profile_pixel_scale /= finesampling;
+	}
 	for(auto &profile: this->profiles) {
 		profile->adjust_for_finesampling(finesampling);
 		if (profile->do_convolve()) {
-			profile->evaluate(to_convolve, mask,
-				{scale.first / finesampling, scale.second / finesampling},
+			profile->evaluate(to_convolve, mask, profile_pixel_scale,
 				analysis.psf_padding, magzero);
 		}
 		else {
-			profile->evaluate(model_image, mask,
-				{scale.first / finesampling, scale.second / finesampling},
+			profile->evaluate(model_image, mask, profile_pixel_scale,
 				analysis.psf_padding, magzero);
 		}
 	}
@@ -356,7 +377,6 @@ Image Model::produce_image(const Mask &mask, const input_analysis &analysis,
 	}
 
 	/* Done! Good job :-) */
-	return model_image;
 }
 
 std::map<std::string, std::shared_ptr<ProfileStats>> Model::get_stats() const {
