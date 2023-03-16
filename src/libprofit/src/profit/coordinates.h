@@ -191,7 +191,10 @@ class discrete_2d_coordinate
   : public _2d_coordinate<unsigned int, discrete_2d_coordinate>
 {
 public:
-	using _2d_coordinate::_2d_coordinate;
+	discrete_2d_coordinate() = default;
+	discrete_2d_coordinate(unsigned int x, unsigned int y)
+	  : _2d_coordinate(x, y)
+	{}
 
 	template <typename T, typename Derived>
 	discrete_2d_coordinate(const _2d_coordinate<T, Derived> &other)
