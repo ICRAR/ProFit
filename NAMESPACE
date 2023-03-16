@@ -1,7 +1,7 @@
 useDynLib(ProFit)
 exportPattern("^[[:alpha:]]+")
-#import("fftw")
-import("FITSio")
+
+import("Rfits")
 import("magicaxis")
 import("celestial")
 import("stats")

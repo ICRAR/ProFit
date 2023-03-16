@@ -400,14 +400,14 @@ print(ExampleIDs)
 
 useID=ExampleIDs[1]
 
-image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
-package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
-package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
-package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
-package="ProFit"))$imDat
+image = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'fitim.fits'),
+  package="ProFit"))$imDat
+sigma = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'sigma.fits'),
+  package="ProFit"))$imDat
+segim = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'segim.fits'),
+  package="ProFit"))$imDat
+psf = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'psfim.fits'),
+  package="ProFit"))$imDat
 
 # Very rough model (not meant to look too good yet):
 

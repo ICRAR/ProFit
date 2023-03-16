@@ -13,12 +13,12 @@
 \tabular{ll}{
 Package: \tab ProFit\cr
 Type: \tab Package\cr
-Version: \tab 2.3.0\cr
-Date: \tab 2022-04-14\cr
+Version: \tab 2.5.0\cr
+Date: \tab 2023-03-16\cr
 License: \tab LGPL-3\cr
-Depends: \tab R (>= 3.0), FITSio, magicaxis (>= 2.0.3)\cr
+Depends: \tab R (>= 3.0), Rfits (>= 1.8.0), magicaxis (>= 2.0.3)\cr
 Imports: \tab cubature, RColorBrewer, LaplacesDemon, methods, celestial (>= 1.4.1), checkmate\cr
-Suggests: \tab fftw, knitr, rmarkdown, ProFound (>= 1.15.0), sn, Highlander (>= 0.1.7), Rfits\cr
+Suggests: \tab fftw, knitr, rmarkdown, ProFound (>= 1.15.0), sn, Highlander (>= 0.1.7), ProSpect\cr
 }
 }
 
@@ -77,21 +77,21 @@ datasource='KiDS'
 # contents of the directory containing the example FITS files:
 
 data('ExampleInit')
-ExampleFiles=list.files(system.file("extdata",datasource,package="ProFit"))
-ExampleIDs=unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
+ExampleFiles = list.files(system.file("extdata",datasource,package="ProFit"))
+ExampleIDs = unlist(strsplit(ExampleFiles[grep('fitim',ExampleFiles)],'fitim.fits'))
 print(ExampleIDs)
 
 # There are 10 example galaxies included. Here we run example 1:
 
 useID=ExampleIDs[1]
 
-image = readFITS(system.file("extdata", paste(datasource,'/',useID,'fitim.fits',sep=''),
+image = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'fitim.fits'),
 package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", paste(datasource,'/',useID,'sigma.fits',sep=''),
+sigma = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'sigma.fits'),
 package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", paste(datasource,'/',useID,'segim.fits',sep=''),
+segim = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'segim.fits'),
 package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", paste(datasource,'/',useID,'psfim.fits',sep=''),
+psf = Rfits_read_image(system.file("extdata", paste0(datasource,'/',useID,'psfim.fits'),
 package="ProFit"))$imDat
 
 # Very rough model (not meant to look too good yet):

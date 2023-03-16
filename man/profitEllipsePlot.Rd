@@ -69,10 +69,14 @@ Projecting data back to 1D profiles is a knowingly imperfect process, but it can
 \examples{
 # Here we use galaxy G266033:
 
-image = readFITS(system.file("extdata", 'KiDS/G266033fitim.fits',package="ProFit"))$imDat
-sigma = readFITS(system.file("extdata", 'KiDS/G266033sigma.fits',package="ProFit"))$imDat
-segim = readFITS(system.file("extdata", 'KiDS/G266033segim.fits',package="ProFit"))$imDat
-psf = readFITS(system.file("extdata", 'KiDS/G266033psfim.fits',package="ProFit"))$imDat
+image = Rfits_read_image(system.file("extdata", 'KiDS/G266033fitim.fits',
+  package="ProFit"))$imDat
+sigma = Rfits_read_image(system.file("extdata", 'KiDS/G266033sigma.fits',
+  package="ProFit"))$imDat
+segim = Rfits_read_image(system.file("extdata", 'KiDS/G266033segim.fits',
+  package="ProFit"))$imDat
+psf = Rfits_read_image(system.file("extdata", 'KiDS/G266033psfim.fits',
+  package="ProFit"))$imDat
 
 #The rough best-fit model for G266033 (KiDS)
 

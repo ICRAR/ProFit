@@ -38,9 +38,10 @@ Numeric scalar/vector; the pixel scale, where pixscale=asec/pix (e.g. 0.4 for SD
 These functions are here to prevent silly mistakes, but the conversion is almost trivial.
 }
 \value{
-  \item{profitFlux2Mag}{Returns the magnitude, where \option{mag} = -2.5 * log10(\option{flux}) + \option{magzero})}
+  \item{profitFlux2Mag}{Returns the magnitude, where \option{mag} = -2.5 * log10(\option{flux}) + \option{magzero}}
   \item{profitMag2Flux}{Returns the flux, where \option{flux} = 10^(-0.4 * (\option{mag} - \option{magzero}))}
-  HERE!!!
+  \item{profitFlux2SB}{Returns the surface brightness in mag/sq-asec, where \option{SB} = -2.5 * log10(\option{flux}) + \option{magzero} + 5 * log10(\option{pixscale}))}
+  \item{profitSB2Flux}{Returns the flux, where \option{flux} = 10^(-0.4 * (\option{SB} - 5 * log10(\option{pixscale}) - \option{magzero}))}
 }
 \author{
 Aaron Robotham

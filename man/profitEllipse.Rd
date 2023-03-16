@@ -8,7 +8,7 @@ Measure Isophotal Flux for Pseudo-Ellipses
 In the world of galaxy fitting, projected 1D flux intensity (or surface brightness) plots are popular. This function implements the low level functionality of deprojecting image pixels given a set of geometrical parameters. In simple terms this means ellipses are expanded back up to circles. We use the term pseudo-ellipse since we can also account for boxiness distortion (if desired).
 }
 \usage{
-profitEllipse(x, y, flux, xcen = 0, ycen = 0, ang = 0, axrat = 1, box = 0)
+profitEllipse(x, y, flux, xcen = 0, ycen = 0, ang = 0, axrat = 1, box = 0 , order = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -36,12 +36,15 @@ Scalar; axial ratio of the Sersic profile defined as minor-axis/major-axis, i.e.
   \item{box}{
 Scalar; the boxiness of the Sersic profile that traces contours of iso-flux, defined such that r[mod]=(x^(2+box)+y^(2+box))^(1/(2+box)). When box=0 the iso-flux contours will be normal ellipses, but modifications between -1<box<1 will produce visually boxy distortions. Negative values have a pin-cushion effect, whereas positive values have a barrel effect (the major and minor axes staying fixed in all cases).
 }
+  \item{order}{
+Logical; should the results be ordered by the effective radius (small to large)?
+}
 }
 \details{
 This function mostly exists for usage by the higher level \code{\link{profitEllipsePlot}} function. However, the outputs might well of interest if users want to create their own bespoke 1D plotting outputs.
 }
 \value{
-A two column matrix containing columns rad (the effective projected major axis radius for the pixel) and flux (the un-corrected flux for this pixel).
+A 4 column matrix containing columns: 'rad' (the effective projected major axis radius for the pixel); 'flux' (the un-corrected flux for this pixel); 'xmod' (the effective x position post ellipticity distortions); 'ymod' (the effective y position post ellipticity distortions).
 }
 \references{
 As noted above, the pixel flux is not corrected for distortion. This is rarely an issue, but for highly elliptical galaxies where the gradient changes radically through the pixel along the minor versus major axis the isophotal contour will be biased. In practice this bias will be the same as for the model, so pixel to pixel comparisons are still fairly valid. If this level of inconsistency annoys you, then you almost certainly should not be attempting to make deprojected 1D plots of PSF convolved bulge-disk systems. This is because once a pure elliptical disk has been convolved with a PSF it is not strictly possible to project this to circular annuli (i.e. the pseudo major-axis output we desire) using elliptical isophotes. C'est la vie.
@@ -80,14 +83,15 @@ model=list(
 )
 
 data('ExampleInit')
-image = readFITS(system.file("extdata", 'KiDS/G266033fitim.fits',package="ProFit"))$imDat
+image = Rfits_read_image(system.file("extdata", 'KiDS/G266033fitim.fits',
+  package="ProFit"))$imDat
 
 temp=profitEllipse(x=image, xcen=model$sersic$xcen[2], ycen=model$sersic$ycen[2], ang=
   model$sersic$ang[2], axrat=model$sersic$axrat[2], box=model$sersic$box[2])
 
 #A rough deprojected ellipse plot:
 
-magplot(temp, type='l', log='y', xlim=c(0,50), ylim=c(1e-12,2e-9), xlab='Pixels',
+magplot(temp[,1:2], type='l', log='y', xlim=c(0,50), ylim=c(1e-12,2e-9), xlab='Pixels',
  ylab='Pixel Flux')
 
 #Notice in the example that the core looks noisier, this is because we are deprojecting
@@ -96,7 +100,7 @@ magplot(temp, type='l', log='y', xlim=c(0,50), ylim=c(1e-12,2e-9), xlab='Pixels'
 temp2=profitEllipse(x=image, xcen=model$sersic$xcen[1], ycen=model$sersic$ycen[1], ang=
   model$sersic$ang[1], axrat=model$sersic$axrat[1], box=model$sersic$box[1])
   
-magplot(temp2, type='l', log='y', xlim=c(0,50), ylim=c(1e-12,2e-9), xlab='Pixels',
+magplot(temp2[,1:2], type='l', log='y', xlim=c(0,50), ylim=c(1e-12,2e-9), xlab='Pixels',
  ylab='Pixel Flux')
 
 #The inner region (<5 pixels) is better deprojected using the bulge parameters.

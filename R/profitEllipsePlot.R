@@ -1,27 +1,29 @@
-profitEllipse=function(x, y, flux, xcen=0, ycen=0, ang=0, axrat=1, box=0){
+profitEllipse = function(x, y, flux=NULL, xcen=0, ycen=0, ang=0, axrat=1, box=0, order=TRUE){
   if(is.matrix(x)){
-    z=x
+    z = x
     x = seq(0.5, dim(z)[1] - 0.5)
     y = seq(0.5, dim(z)[2] - 0.5)
-    temp=expand.grid(x,y)
-    x=temp[,1]
-    y=temp[,2]
-    flux=as.numeric(z)
+    temp = expand.grid(x,y)
+    x = temp[,1]
+    y = temp[,2]
+    flux = as.numeric(z)
   }
   if(!is.numeric(box)) box = 0
-  rad=sqrt((x-xcen)^2+(y-ycen)^2)
-  angrad=-ang*pi/180
-  angmod=atan2((x-xcen),(y-ycen))-angrad
-  xmod=rad*sin(angmod)
-  ymod=rad*cos(angmod)
-  xmod=xmod/axrat
-  radmod=(abs(xmod)^(2+box)+abs(ymod)^(2+box))^(1/(2+box))
-  output=cbind(rad=radmod, flux=flux)
-  output=output[order(radmod),]
+  rad = sqrt((x-xcen)^2+(y-ycen)^2)
+  angrad = -ang*pi/180
+  angmod = atan2((x-xcen),(y-ycen))-angrad
+  xmod = rad*sin(angmod)
+  ymod = rad*cos(angmod)
+  xmod = xmod/axrat
+  radmod = (abs(xmod)^(2+box)+abs(ymod)^(2+box))^(1/(2+box))
+  output = cbind(rad=radmod, flux=flux, xmod=xmod, ymod=ymod)
+  if(order){
+    output = output[order(radmod),]
+  }
   return(output)
 }
 
-profitEllipsePlot=function(Data, modellist, bulgeloc=1, diskloc=2, pixscale=1, FWHM=1, SBlim=26, df=100, raw=FALSE){
+profitEllipsePlot = function(Data, modellist, bulgeloc=1, diskloc=2, pixscale=1, FWHM=1, SBlim=26, df=100, raw=FALSE){
   if(missing(Data)){stop('Data object of class profit.data must be provided!')}
   if(class(Data)!="profit.data"){stop("Data must be of class profit.data, as output by profitSetupData!")}
   if(missing(modellist)){modellist=Data$modellist}
