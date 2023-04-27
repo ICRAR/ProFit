@@ -24,7 +24,7 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
     parmuse = Data$parmuse
   }
   
-  fitIDs=which(unlist(tofit))
+  fitIDs = which(unlist(tofit))
   if(length(fitIDs)>=1){
     
     if(is.null(parmuse)){
@@ -128,17 +128,17 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   parmmod = unlist(modellistnew)
   parmmod[tounlogIDs] = log10(parmmod[tounlogIDs])
 
+  if(!is.null(offset)){
+    parmmod[xsel] = parmmod[xsel] - offset[1]
+    parmmod[ysel] = parmmod[ysel] - offset[2]
+  }
+  
   # Specify the new parm to be passed back to the external optimisation function
   if(is.null(parmuse)){
     parmout = parmmod[fitIDs]
   }else{
     parmout = parm
     parmout[parmuse] = parmmod[fitIDs]
-  }
-  
-  if(!is.null(offset)){
-    parmout[xsel] = parmout[xsel] - offset[1]
-    parmout[ysel] = parmout[ysel] - offset[2]
   }
   
   return(list(parm=parmout, modellist=modellistnew))
