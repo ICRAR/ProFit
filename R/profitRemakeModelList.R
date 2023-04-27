@@ -128,9 +128,15 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   parmmod = unlist(modellistnew)
   parmmod[tounlogIDs] = log10(parmmod[tounlogIDs])
 
-  if(!is.null(offset)){
+  if (!is.null(offset)) {
     parmmod[xsel] = parmmod[xsel] - offset[1]
     parmmod[ysel] = parmmod[ysel] - offset[2]
+    if (!is.na(offset[3])) {
+      parmmod[angsel] = parmmod[angsel] - offset[3]
+    }
+    if (!is.na(offset[4])) {
+      parmmod[sizesel] = parmmod[sizesel] / offset[4]
+    }
   }
   
   # Specify the new parm to be passed back to the external optimisation function
