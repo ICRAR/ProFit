@@ -55,6 +55,8 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       }
     }
     
+    args_loc = NULL
+    
     #This is all the new ProFuse stuff. Roughly we:
     #1) Find all the ProSpect related parms
     #2) Strip those out
@@ -178,7 +180,12 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
             out = LL
           }
         }
-        if(i==1){out$parm = parm_in}
+        if(i==1){
+          if(!is.null(args_loc)){
+            parm_in[-args_loc] = out$parm
+            out$parm = parm_in
+          }
+        }
         temp = c(temp, list(out))
       }
     }
