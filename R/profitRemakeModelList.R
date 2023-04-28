@@ -130,6 +130,11 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   # Unlist and extract the tolog elements and log where required
   parmmod = unlist(modellistnew)
   
+  # Re-inherit values in case the parent values changed due to intervals or constraints
+  for (i in inheritIDs) {
+    parmmod[i] = parmmod[i - 1]
+  }
+  
   # Apply offset before unlogging to avoid problems with offset[4]
   if(!is.null(offset)){
     parmmod[xsel] = parmmod[xsel] - offset[1]
