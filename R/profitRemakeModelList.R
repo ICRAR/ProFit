@@ -41,6 +41,16 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
       parmin[fitIDs] = parm[parmuse]
     }
     
+    if(!is.null(tolog)){
+      if(length(tolog)>0){
+        tounlogIDs = which(unlist(tolog) & unlist(tofit))
+        parmin[tounlogIDs] = 10^parmin[tounlogIDs]
+      }
+    }else{
+      tounlogIDs = {}
+    }
+    
+    # Apply offsets after unlogging to avoid problems with pixel size offset
     if(!is.null(offset)){
       xsel = grep('xcen',names(parmin))
       parmin[xsel] = parmin[xsel] + offset[1]
@@ -59,14 +69,7 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
       }
     }
     
-    if(!is.null(tolog)){
-      if(length(tolog)>0){
-        tounlogIDs = which(unlist(tolog) & unlist(tofit))
-        parmin[tounlogIDs] = 10^parmin[tounlogIDs]
-      }
-    }else{
-      tounlogIDs = {}
-    }
+    
     # Inherit values for NA flags
     inheritIDs = which(is.na(unlist(tofit)))
     for(i in inheritIDs){
@@ -128,13 +131,15 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   parmmod = unlist(modellistnew)
   
   # Apply offset before unlogging to avoid problems with offset[4]
-  if (!is.null(offset)){
+  if(!is.null(offset)){
     parmmod[xsel] = parmmod[xsel] - offset[1]
     parmmod[ysel] = parmmod[ysel] - offset[2]
-    if (!is.na(offset[3])){
+    
+    if(!is.na(offset[3])){
       parmmod[angsel] = parmmod[angsel] - offset[3]
     }
-    if (!is.na(offset[4])){
+    
+    if(!is.na(offset[4])){
       parmmod[sizesel] = parmmod[sizesel] / offset[4]
     }
   }
