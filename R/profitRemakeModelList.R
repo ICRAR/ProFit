@@ -64,7 +64,7 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
       }
       
       if(!is.na(offset[4])){
-        sizesel = grep("\\.re|\\.fwhm|\\.rb|\\.rout|\\.rc|\\.rt", names(parmin))
+        sizesel = grep("\\.re|\\.fwhm|\\.rb|\\.rout|\\.rc|\\.rt|xcen|ycen", names(parmin))
         parmin[sizesel] = parmin[sizesel] * offset[4]
       }
     }
