@@ -134,6 +134,9 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   for (i in inheritIDs) {
     parmmod[i] = parmmod[i - 1]
   }
+  # And make sure the inherited values are propagated to modellistnew as well
+  # (although the solution here is a bit circular and maybe not ideal)
+  modellistnew = relist(parmmod, modellistnew)
   
   # Apply offset before unlogging to avoid problems with offset[4]
   if(!is.null(offset)){
