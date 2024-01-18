@@ -18,4 +18,7 @@ BugReports: https://github.com/ICRAR/ProFit/issues
 Depends: R (>= 3.0), Rfits (>= 1.8.0), magicaxis (>= 2.0.3)
 Imports: cubature, RColorBrewer, LaplacesDemon, methods, celestial (>= 1.4.1), checkmate
 Suggests: fftw, knitr, rmarkdown, ProFound (>= 1.15.0), sn, Highlander (>= 0.1.7), ProSpect
+Remotes:
+  asgr/magicaxis@06eb2e0e98f303ebe2033923ec183be7afd0736a,
+  kateharborne/Rfits@master
 VignetteBuilder: knitr
