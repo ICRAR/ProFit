@@ -97,13 +97,13 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
       for(i in 1:Data$Ncomp){
         args_names = names(Data$parm_ProSpect)
-        args_names = args_names[grepl(paste0('_',i), args_names)]
-        args_loc = match(args_names, Data$parm.names)
-        args_names = sub(paste0('_',i), '', args_names) #Strip the component identifier
-        args = parm[args_loc]
-        names(args) = args_names #Rename
-        parm = parm[-args_loc]
-        Data$parm.names = Data$parm.names[-args_loc]
+        args_names_comp = args_names[grepl(paste0('_',i), args_names)]
+        args_loc_comp = match(args_names_comp, Data$parm.names)
+        args_names_comp = sub(paste0('_',i), '', args_names_comp) #Strip the component identifier
+        args = parm[args_loc_comp]
+        names(args) = args_names_comp #Rename
+        parm = parm[-args_loc_comp]
+        Data$parm.names = Data$parm.names[-args_loc_comp]
         args_list = as.list(args) #List
         if(!is.null(Data$data_ProSpect)){
           # Below means we assume global options are those without "_X" except then X=i (so then it is local to that component)
