@@ -24,7 +24,7 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
     parmuse = Data$parmuse
   }
   
-  fitIDs=which(unlist(tofit))
+  fitIDs = which(unlist(tofit))
   if(length(fitIDs)>=1){
     
     if(is.null(parmuse)){
@@ -41,6 +41,16 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
       parmin[fitIDs] = parm[parmuse]
     }
     
+    if(!is.null(tolog)){
+      if(length(tolog)>0){
+        tounlogIDs = which(unlist(tolog) & unlist(tofit))
+        parmin[tounlogIDs] = 10^parmin[tounlogIDs]
+      }
+    }else{
+      tounlogIDs = {}
+    }
+    
+    # Apply offsets after unlogging to avoid problems with pixel size offset
     if(!is.null(offset)){
       xsel = grep('xcen',names(parmin))
       parmin[xsel] = parmin[xsel] + offset[1]
@@ -54,19 +64,12 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
       }
       
       if(!is.na(offset[4])){
-        sizesel = grep('re',names(parmin)) | grep('fwhm',names(parmin))
+        sizesel = grep("\\.re|\\.fwhm|\\.rb|\\.rout|\\.rc|\\.rt|xcen|ycen", names(parmin))
         parmin[sizesel] = parmin[sizesel] * offset[4]
       }
     }
     
-    if(!is.null(tolog)){
-      if(length(tolog)>0){
-        tounlogIDs = which(unlist(tolog) & unlist(tofit))
-        parmin[tounlogIDs] = 10^parmin[tounlogIDs]
-      }
-    }else{
-      tounlogIDs = {}
-    }
+    
     # Inherit values for NA flags
     inheritIDs = which(is.na(unlist(tofit)))
     for(i in inheritIDs){
@@ -126,19 +129,38 @@ profitRemakeModellist = function(parm, modellist, tofit, tolog=NULL, intervals=N
   
   # Unlist and extract the tolog elements and log where required
   parmmod = unlist(modellistnew)
+  
+  # Re-inherit values in case the parent values changed due to intervals or constraints
+  for (i in inheritIDs) {
+    parmmod[i] = parmmod[i - 1]
+  }
+  # And make sure the inherited values are propagated to modellistnew as well
+  # (although the solution here is a bit circular and maybe not ideal)
+  modellistnew = relist(parmmod, modellistnew)
+  
+  # Apply offset before unlogging to avoid problems with offset[4]
+  if(!is.null(offset)){
+    parmmod[xsel] = parmmod[xsel] - offset[1]
+    parmmod[ysel] = parmmod[ysel] - offset[2]
+    
+    if(!is.na(offset[3])){
+      parmmod[angsel] = parmmod[angsel] - offset[3]
+    }
+    
+    if(!is.na(offset[4])){
+      parmmod[sizesel] = parmmod[sizesel] / offset[4]
+    }
+  }
+  
   parmmod[tounlogIDs] = log10(parmmod[tounlogIDs])
 
+  
   # Specify the new parm to be passed back to the external optimisation function
   if(is.null(parmuse)){
     parmout = parmmod[fitIDs]
   }else{
     parmout = parm
     parmout[parmuse] = parmmod[fitIDs]
-  }
-  
-  if(!is.null(offset)){
-    parmout[xsel] = parmout[xsel] - offset[1]
-    parmout[ysel] = parmout[ysel] - offset[2]
   }
   
   return(list(parm=parmout, modellist=modellistnew))
