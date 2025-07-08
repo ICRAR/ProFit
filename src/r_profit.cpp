@@ -305,7 +305,7 @@ SEXP _R_profit_openclenv_info() {
 	} catch (const std::exception &e) {
 		ostringstream os;
 		os << "Error while querying OpenCL environment: " << e.what();
-		Rf_error(os.str().c_str());
+		Rf_error("%s\n", os.str().c_str());
 		return R_NilValue;
 	}
 
@@ -405,12 +405,12 @@ SEXP _R_profit_openclenv(SEXP plat_idx, SEXP dev_idx, SEXP use_dbl) {
 	} catch (const opencl_error &e) {
 		ostringstream os;
 		os << "Error while creating OpenCL environment for plat/dev/double " << platform_idx << "/" << device_idx << "/" << use_double << ": " << e.what();
-		Rf_error(os.str().c_str());
+		Rf_error("%s\n", os.str().c_str());
 		return R_NilValue;
 	} catch (const invalid_parameter &e) {
 		ostringstream os;
 		os << "Error while creating OpenCL environment, invalid parameter: " << e.what();
-		Rf_error(os.str().c_str());
+		Rf_error("%s\n", os.str().c_str());
 		return R_NilValue;
 	}
 
@@ -530,7 +530,7 @@ SEXP _R_profit_make_convolver(SEXP type, SEXP image_dimensions, SEXP psf,
 	try {
 		wrapper->convolver = create_convolver(CHAR(STRING_ELT(type, 0)), conv_prefs);
 	} catch (std::exception &e) {
-		Rf_error(e.what());
+		Rf_error("%s\n", e.what());
 		return R_NilValue;
 	}
 
@@ -655,7 +655,7 @@ SEXP _R_profit_make_model(SEXP model_list, SEXP previous_image) {
 	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while calculating model: " << e.what() << endl;
-		Rf_error(ss.str().c_str());
+		Rf_error("%s\n", ss.str().c_str());
 		return R_NilValue;
 	}
 
@@ -717,7 +717,7 @@ SEXP _R_profit_downsample(SEXP img, SEXP factor)
 	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while downsampling image: " << e.what() << endl;
-		Rf_error(ss.str().c_str());
+		Rf_error("%s", ss.str().c_str());
 		return R_NilValue;
 	}
 
@@ -745,7 +745,7 @@ SEXP _R_profit_upsample(SEXP img, SEXP factor)
 	} catch (const std::exception &e) {
 		stringstream ss;
 		ss << "Error while downsampling image: " << e.what() << endl;
-		Rf_error(ss.str().c_str());
+		Rf_error("%s\n", ss.str().c_str());
 		upsampled = R_NilValue;
 	}
 
@@ -886,7 +886,7 @@ extern "C" {
 		if (!success) {
 			std::ostringstream os;
 			os << "Error when initializing libprofit: " << profit::init_diagnose();
-			Rf_error(os.str().c_str());
+			Rf_error("%s\n", os.str().c_str());
 		}
 
 		/* Using registered symbols only from now on */
@@ -900,7 +900,7 @@ extern "C" {
 		if (!diagnose.empty()) {
 			std::ostringstream os;
 			os << "Warning when finishing libprofit: " << diagnose;
-			Rf_warning(os.str().c_str());
+			Rf_warning("%s\n", os.str().c_str());
 		}
 	}
 
