@@ -50,8 +50,8 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
   if(haspsf)
   {
     modelimg = profitMakeModel(modellist, dim=imgdim, finesample=finesample, psf=psf,
-      returnfine = TRUE, returncrop = FALSE, openclenv=openclenv_int, omp_threads=omp_threads)
-    imgdim = dim(modelimg$z)/finesample
+      returnfine = TRUE, returncrop = FALSE, openclenv=openclenv_int, omp_threads=omp_threads)$z
+    imgdim = dim(modelimg)/finesample
   }
   benches=list()
   if((length(benchintmethods) > 1) && nbenchint > 0)
@@ -81,7 +81,7 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
   if(haspsf)
   {
     dimregion = dim(calcregion)
-    dimmodel = dim(modelimg$z)
+    dimmodel = dim(modelimg)
     dimdiff = (dimmodel - dimregion)/2
     if(any(dimdiff>0))
     {
@@ -93,7 +93,7 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
     
     if(nbenchconv > 0)
     {
-      benches$benchconv = profitBenchmark(image = modelimg$z, psf=psf,
+      benches$benchconv = profitBenchmark(image = modelimg, psf=psf,
         nbench = nbenchconv, calcregion = benchregion, 
         reusepsffft = !fitpsf, methods = benchconvmethods,
         openclenvs = benchopenclenvs, omp_threads = omp_threads)

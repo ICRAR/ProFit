@@ -107,7 +107,7 @@ model = list(
 	)
 )
 
-model.image=profitMakeModel(model=model, dim=c(200,200))$z
+model.image=profitMakeModel(model, dim=c(200,200))$z
 
 psf=profitMakeGaussianPSF()
 
