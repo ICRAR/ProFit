@@ -120,13 +120,19 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           }
         }
         outSED = ProSpect::Jansky2magAB(do.call(ProSpect::ProSpectSED, c(args_list, returnall=FALSE), quote=TRUE))
-        if(length(Data[[1]]$modellist[[1]][[1]]) == Data$Ncomp){
+        if(length(Data[[1]]$modellist) == 1L){
           for(j in 1:Data$Nim){
             Data[[j]]$modellist[[1]]$mag[i] = outSED[j]
           }
-        }else if(Data$Ncomp == 2){ #to catch PSF bulge + Sersic fits
-          for(j in 1:Data$Nim){
-            Data[[j]]$modellist[[i]]$mag = outSED[j]
+        }else{ #to catch PSF bulge + Sersic fits
+          if(i == 1L){
+            #send mag to PSF
+            Data[[j]]$modellist[[1]]$mag = outSED[j]
+          }else{
+            #send mag to various Sersic profiles
+            for(j in 1:Data$Nim){
+              Data[[j]]$modellist[[2]]$mag[(i - 1L)] = outSED[j]
+            }
           }
         }
       }
