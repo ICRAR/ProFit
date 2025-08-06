@@ -127,7 +127,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         }else{ #to catch PSF bulge + Sersic fits
           if(i == 1L){
             #send mag to PSF
-            Data[[j]]$modellist[[1]]$mag = outSED[j]
+            for(j in 1:Data$Nim){
+              Data[[j]]$modellist[[1]]$mag = outSED[j]
+            }
           }else{
             #send mag to various Sersic profiles
             for(j in 1:Data$Nim){
