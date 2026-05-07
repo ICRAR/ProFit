@@ -75,7 +75,7 @@
 #elif defined __clang__
 # pragma clang diagnostic ignored "-Wmissing-braces"
 #endif
-#include "profit/cl/cl2.hpp"
+#include "profit/cl/opencl.hpp"
 
 namespace profit
 {
