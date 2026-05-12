@@ -6,3 +6,5 @@ vignettes/rsconnect
 rsconnect
 ^src/libprofit/src/.*\.o$
 .github
+^\.positai$
+^\.claude$

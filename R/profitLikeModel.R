@@ -74,8 +74,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       #The below is pretty much as per ProSpectSEDlike
       
       if (!is.null(Data$intervals_ProSpect)) {
-        parm_ProSpect[parm_ProSpect < Data$intervals_ProSpect$lo] = Data$intervals_ProSpect$lo[parm_ProSpect < Data$intervals_ProSpect$lo]
-        parm_ProSpect[parm_ProSpect > Data$intervals_ProSpect$hi] = Data$intervals_ProSpect$hi[parm_ProSpect > Data$intervals_ProSpect$hi]
+        parm_ProSpect = pmin(
+          pmax(parm_ProSpect, Data$intervals_ProSpect$lo),
+          Data$intervals_ProSpect$hi
+        )
+        
       }
       
       if (!is.null(Data$logged_ProSpect)) {
