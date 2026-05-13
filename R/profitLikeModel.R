@@ -22,17 +22,16 @@
     openclenv=Data$openclenv
     if(identical(openclenv,new("externalptr"))) openclenv = NULL
 
+    makemodel_args = list(
+      modellist=modellist, magzero=Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
+      rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt,
+      openclenv=openclenv, omp_threads=Data$omp_threads, adjust_calcregion=FALSE
+    )
     if(Data$usecalcregion){
-      model = profitMakeModel(modellist=modellist, magzero = Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
-        rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
-        magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=openclenv, omp_threads=Data$omp_threads,
-        adjust_calcregion = FALSE, ...)
-    }else{
-      model = profitMakeModel(modellist=modellist, magzero = Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
-        rough=rough,
-        magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=openclenv, omp_threads=Data$omp_threads,
-        adjust_calcregion = FALSE, ...)
+      makemodel_args$calcregion = Data$calcregion
+      makemodel_args$docalcregion = Data$usecalcregion
     }
+    model = ParmOff(profitMakeModel, .args=makemodel_args, ...)
     return(model)
 }
 
@@ -101,27 +100,16 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         args_names = names(Data$parm_ProSpect)
         args_names_comp = args_names[grepl(paste0('_',i), args_names)]
         args_loc_comp = match(args_names_comp, Data$parm.names)
-        args_names_comp = sub(paste0('_',i), '', args_names_comp) #Strip the component identifier
-        args = parm[args_loc_comp]
-        names(args) = args_names_comp #Rename
+        args_list = as.list(parm[args_loc_comp])
+        names(args_list) = args_names_comp # names retain _i suffix; ParmOff .strip removes it below
         parm = parm[-args_loc_comp]
         Data$parm.names = Data$parm.names[-args_loc_comp]
-        args_list = as.list(args) #List
         if(!is.null(Data$data_ProSpect)){
-          # Below means we assume global options are those without "_X" except then X=i (so then it is local to that component)
-          if(Data$Ncomp == 1){
-            args_list = c(args_list, Data$data_ProSpect)
-          }else{
-            data_names = names(Data$data_ProSpect)
-            data_loc = grepl(paste0('_',i), data_names)
-            data_list = Data$data_ProSpect[data_loc]
-            data_loc_global = ! (grepl('_1', data_names) | grepl('_2', data_names) | grepl('_3', data_names)) #Currently only works for up to 3 components, but this is all that is currently supported anyway
-            data_list = c(data_list, Data$data_ProSpect[data_loc_global])
-            names(data_list) = sub(paste0('_',i), '', names(data_list))
-            args_list = c(args_list, data_list)
-          }
+          # All data_ProSpect entries are included; ParmOff's formal-matching drops wrong-component
+          # entries (e.g. argname_2 after stripping _1 becomes argname_2, which is not a ProSpectSED formal)
+          args_list = c(args_list, Data$data_ProSpect)
         }
-        outSED = ProSpect::Jansky2magAB(do.call(ProSpect::ProSpectSED, c(args_list, returnall=FALSE), quote=TRUE))
+        outSED = ProSpect::Jansky2magAB(ParmOff(ProSpect::ProSpectSED, .args=c(args_list, list(returnall=FALSE)), .strip=paste0('_',i)))
         if(length(Data[[1]]$modellist) == 1L){
           for(j in 1:Data$Nim){
             Data[[j]]$modellist[[1]]$mag[i] = outSED[j]
