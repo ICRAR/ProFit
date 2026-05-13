@@ -97,6 +97,15 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       }
       
       parm[args_loc] = parm_logged
+      
+      if('scat_scale' %in% Data$parm.names){
+        sel = which('scat_scale' == Data$parm.names)
+        scat_scale = parm[sel]
+        parm = parm[-sel]
+        Data$parm.names = Data$parm.names[-sel]
+      }else{
+        scat_scale = 1
+      }
 
       for(i in 1:Data$Ncomp){
         args_names = names(Data$parm_ProSpect)
@@ -276,7 +285,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   }
   skewtparm = Data$skewtparm
   if(isnorm){
-    LL=sum(dnorm(cutsig, log=TRUE))
+    LL=sum(dnorm(cutsig, 0, scat_scale, log=TRUE), na.rm=TRUE)
   } else if(ischisq) {
     ndata = length(cutim)
     if(!exists("chisq")) chisq = sum(cutsig^2)
