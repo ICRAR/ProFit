@@ -78,7 +78,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           pmax(parm_ProSpect, Data$intervals_ProSpect$lo),
           Data$intervals_ProSpect$hi
         )
-        
       }
       
       if (!is.null(Data$logged_ProSpect)) {
@@ -97,15 +96,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       }
       
       parm[args_loc] = parm_logged
-      
-      if('scat_scale' %in% Data$parm.names){
-        sel = which('scat_scale' == Data$parm.names)
-        scat_scale = parm[sel]
-        parm = parm[-sel]
-        Data$parm.names = Data$parm.names[-sel]
-      }else{
-        scat_scale = 1
-      }
 
       for(i in 1:Data$Ncomp){
         args_names = names(Data$parm_ProSpect)
@@ -285,7 +275,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   }
   skewtparm = Data$skewtparm
   if(isnorm){
-    LL=sum(dnorm(cutsig, 0, scat_scale, log=TRUE), na.rm=TRUE)
+    LL=sum(dnorm(cutsig, log=TRUE))
   } else if(ischisq) {
     ndata = length(cutim)
     if(!exists("chisq")) chisq = sum(cutsig^2)
@@ -297,7 +287,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
     LL=sum(dt(cutsig,dof,log=TRUE))
   } else if(isst) {
-    dstlike <- function(parm,Data) { 
+    dstlike = function(parm,Data) { 
       LP = sum(sn::dst(Data$chi, dp=parm, log=TRUE))
       return(list(LP=LP,Dev=-2*LP,Monitor=numeric(0),yhat=1,parm=parm))
     }
