@@ -49,14 +49,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
     parm_in = parm
 
-    if('scat_scale' %in% Data$parm.names){
-      scat_scale = parm_in[Data$parm.names == 'scat_scale']
-    }else if('log_scat_scale' %in% parm_in){
-      scat_scale = 10^parm_in[Data$parm.names == 'log_scat_scale']
-    }else{
-      scat_scale = 1
-    }
-
     if(!is.null(Data$smooth.parm) & !is.null(Data$wave) & is.null(Data$parm_ProSpect)){
       #This is the smoothed parameter MultiBand mode. Don't really use this now we have full ProSpect mode.
       namevec = names(Data$smooth.parm)
@@ -235,10 +227,24 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
   priorsum = 0
 
+  if('scat_scale' %in% Data$parm.names){
+    sel = which(Data$parm.names == 'scat_scale')
+    scat_scale = parm[sel]
+    parm = parm[-sel]
+    Data$parm.names = Data$parm.names[-sel]
+  }else if('log_scat_scale' %in% Data$parm.names){
+    sel = which(Data$parm.names == 'log_scat_scale')
+    scat_scale = 10^parm[sel]
+    parm = parm[-sel]
+    Data$parm.names = Data$parm.names[-sel]
+  }else{
+    scat_scale = 1
+  }
+
   if(is.null(model)){
-    remakeout=profitRemakeModellist(parm=parm, Data=Data)
-    modellistnew=remakeout$modellist
-    parm=remakeout$parm
+    remakeout = profitRemakeModellist(parm=parm, Data=Data)
+    modellistnew = remakeout$modellist
+    parm = remakeout$parm
 
     # Calculate priors with the new versus old modellist
     if(length(Data$priors)>0){
@@ -282,7 +288,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     #dof=interval(dof,0,Inf)
     dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
   }
+
   skewtparm = Data$skewtparm
+
   if(isnorm){
     LL=sum(dnorm(cutsig, mean=0, sd=scat_scale, log=TRUE))
   } else if(ischisq) {
