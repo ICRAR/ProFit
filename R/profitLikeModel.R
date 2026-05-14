@@ -68,36 +68,23 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       
       args_names = names(Data$parm_ProSpect)
       args_loc = match(args_names, Data$parm.names)
-      parm_ProSpect = parm[args_loc]
       
-      #The below is pretty much as per ProSpectSEDlike
+      # Build named lower/upper bound lists keyed by param name (with _i suffix) for use in loop
+      lower_ProSpect = if(!is.null(Data$intervals_ProSpect))
+        as.list(setNames(Data$intervals_ProSpect$lo, args_names)) else NULL
+      upper_ProSpect = if(!is.null(Data$intervals_ProSpect))
+        as.list(setNames(Data$intervals_ProSpect$hi, args_names)) else NULL
       
-      if (!is.null(Data$intervals_ProSpect)) {
-        parm_ProSpect = pmin(
-          pmax(parm_ProSpect, Data$intervals_ProSpect$lo),
-          Data$intervals_ProSpect$hi
-        )
-      }
-      
-      if (!is.null(Data$logged_ProSpect)) {
+      # Build character vector of logged param names (with _i suffix) for use in loop
+      all_logged_names = if (!is.null(Data$logged_ProSpect)) {
         if (length(Data$logged_ProSpect) == 1) {
-          if (Data$logged_ProSpect) {
-            parm_logged = 10 ^ parm_ProSpect
-          } else{
-            parm_logged = parm_ProSpect
-          }
-        } else{
-          parm_logged = parm_ProSpect
-          parm_logged[Data$logged_ProSpect] = 10 ^ parm_ProSpect[Data$logged_ProSpect]
+          if(Data$logged_ProSpect) args_names else character(0)
+        } else {
+          args_names[Data$logged_ProSpect]
         }
-      } else{
-        parm_logged = parm_ProSpect
-      }
-      
-      parm[args_loc] = parm_logged
+      } else character(0)
 
       for(i in 1:Data$Ncomp){
-        args_names = names(Data$parm_ProSpect)
         args_names_comp = args_names[grepl(paste0('_',i), args_names)]
         args_loc_comp = match(args_names_comp, Data$parm.names)
         args_list = as.list(parm[args_loc_comp])
@@ -109,7 +96,28 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           # entries (e.g. argname_2 after stripping _1 becomes argname_2, which is not a ProSpectSED formal)
           args_list = c(args_list, Data$data_ProSpect)
         }
-        outSED = ProSpect::Jansky2magAB(ParmOff(ProSpect::ProSpectSED, .args=c(args_list, list(returnall=FALSE)), .strip=paste0('_',i)))
+        
+        # Filter bounds and logged names to this component, strip _i suffix for ParmOff
+        strip_i = paste0('_', i)
+        lower_i = NULL
+        upper_i = NULL
+        if(!is.null(lower_ProSpect)) {
+          sel = grepl(strip_i, names(lower_ProSpect))
+          if(any(sel)) {
+            stripped_names = sub(strip_i, '', names(lower_ProSpect)[sel])
+            lower_i = setNames(lower_ProSpect[sel], stripped_names)
+            upper_i = setNames(upper_ProSpect[sel], stripped_names)
+          }
+        }
+        logged_i = sub(strip_i, '', all_logged_names[grepl(strip_i, all_logged_names)])
+        
+        outSED = ProSpect::Jansky2magAB(ParmOff(ProSpect::ProSpectSED,
+          .args = c(args_list, list(returnall=FALSE)),
+          .strip = strip_i,
+          .lower = lower_i,
+          .upper = upper_i,
+          .logged = logged_i
+        ))
         if(length(Data[[1]]$modellist) == 1L){
           for(j in 1:Data$Nim){
             Data[[j]]$modellist[[1]]$mag[i] = outSED[j]
