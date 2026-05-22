@@ -103,7 +103,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       } else character(0)
 
       for(i in 1:Data$Ncomp){
-        args_names_comp = args_names[grepl(paste0('_',i), args_names)]
+        suffix_i = paste0('_', i)
+        suffix_i_re = paste0(suffix_i, '$')
+        args_names_comp = args_names[grepl(suffix_i_re, args_names)]
         args_loc_comp = match(args_names_comp, Data$parm.names)
         args_list = as.list(parm[args_loc_comp])
         names(args_list) = args_names_comp # names retain _i suffix; ParmOff .strip removes it below
@@ -114,24 +116,22 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           # entries (e.g. argname_2 after stripping _1 becomes argname_2, which is not a ProSpectSED formal)
           args_list = c(args_list, Data$data_ProSpect)
         }
-
         # Filter bounds and logged names to this component, strip _i suffix for ParmOff
-        strip_i = paste0('_', i)
         lower_i = NULL
         upper_i = NULL
         if(!is.null(lower_ProSpect)) {
-          sel = grepl(strip_i, names(lower_ProSpect))
+          sel = grepl(suffix_i_re, names(lower_ProSpect))
           if(any(sel)) {
-            stripped_names = sub(strip_i, '', names(lower_ProSpect)[sel])
+            stripped_names = sub(suffix_i_re, '', names(lower_ProSpect)[sel])
             lower_i = setNames(lower_ProSpect[sel], stripped_names)
             upper_i = setNames(upper_ProSpect[sel], stripped_names)
           }
         }
-        logged_i = sub(strip_i, '', all_logged_names[grepl(strip_i, all_logged_names)])
+        logged_i = sub(suffix_i_re, '', all_logged_names[grepl(suffix_i_re, all_logged_names)])
 
         outSED = ProSpect::Jansky2magAB(ParmOff(ProSpect::ProSpectSED,
           .args = args_list,
-          .strip = strip_i,
+          .strip = suffix_i_re,
           .lower = lower_i,
           .upper = upper_i,
           .logged = logged_i,
