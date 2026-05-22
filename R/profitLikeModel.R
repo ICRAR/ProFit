@@ -57,6 +57,20 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       }
     }
 
+    if('scat_scale' %in% Data$parm.names){
+      sel = which(Data$parm.names == 'scat_scale')
+      scat_scale = parm[sel]
+      parm = parm[-sel]
+      Data$parm.names = Data$parm.names[-sel]
+    }else if('log_scat_scale' %in% Data$parm.names){
+      sel = which(Data$parm.names == 'log_scat_scale')
+      scat_scale = 10^parm[sel]
+      parm = parm[-sel]
+      Data$parm.names = Data$parm.names[-sel]
+    }else{
+      scat_scale = 1
+    }
+    
     args_loc = NULL
 
     #This is all the new ProFuse stuff. Roughly we:
@@ -226,20 +240,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   # Below is what we execute for a normal single image profit.data instance. This is classic ProFit, and the sub component of MultiBand and MultiImage modes.
 
   priorsum = 0
-
-  if('scat_scale' %in% Data$parm.names){
-    sel = which(Data$parm.names == 'scat_scale')
-    scat_scale = parm[sel]
-    parm = parm[-sel]
-    Data$parm.names = Data$parm.names[-sel]
-  }else if('log_scat_scale' %in% Data$parm.names){
-    sel = which(Data$parm.names == 'log_scat_scale')
-    scat_scale = 10^parm[sel]
-    parm = parm[-sel]
-    Data$parm.names = Data$parm.names[-sel]
-  }else{
-    scat_scale = 1
-  }
 
   if(is.null(model)){
     remakeout = profitRemakeModellist(parm=parm, Data=Data)
