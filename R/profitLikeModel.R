@@ -47,12 +47,12 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     sel = which(Data$parm.names == 'scat_scale')
     scat_scale = parm[sel]
     parm = parm[-sel]
-    Data$parm.names = Data$parm.names[-sel]
+    #Data$parm.names = Data$parm.names[-sel]
   }else if('log_scat_scale' %in% Data$parm.names){
     sel = which(Data$parm.names == 'log_scat_scale')
     scat_scale = 10^parm[sel]
     parm = parm[-sel]
-    Data$parm.names = Data$parm.names[-sel]
+    #Data$parm.names = Data$parm.names[-sel]
   }else{
     scat_scale = 1
   }
@@ -103,9 +103,8 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       } else character(0)
 
       for(i in 1:Data$Ncomp){
-        suffix_i = paste0('_', i)
-        suffix_i_re = paste0(suffix_i, '$')
-        args_names_comp = args_names[grepl(suffix_i_re, args_names)]
+        suffix_i = paste0('_', i, '$')
+        args_names_comp = args_names[grepl(suffix_i, args_names)]
         args_loc_comp = match(args_names_comp, Data$parm.names)
         args_list = as.list(parm[args_loc_comp])
         names(args_list) = args_names_comp # names retain _i suffix; ParmOff .strip removes it below
@@ -120,23 +119,24 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         lower_i = NULL
         upper_i = NULL
         if(!is.null(lower_ProSpect)) {
-          sel = grepl(suffix_i_re, names(lower_ProSpect))
+          sel = grepl(suffix_i, names(lower_ProSpect))
           if(any(sel)) {
-            stripped_names = sub(suffix_i_re, '', names(lower_ProSpect)[sel])
+            stripped_names = sub(suffix_i, '', names(lower_ProSpect)[sel])
             lower_i = setNames(lower_ProSpect[sel], stripped_names)
             upper_i = setNames(upper_ProSpect[sel], stripped_names)
           }
         }
-        logged_i = sub(suffix_i_re, '', all_logged_names[grepl(suffix_i_re, all_logged_names)])
+        logged_i = sub(suffix_i, '', all_logged_names[grepl(suffix_i, all_logged_names)])
 
         outSED = ProSpect::Jansky2magAB(ParmOff(ProSpect::ProSpectSED,
           .args = args_list,
-          .strip = suffix_i_re,
+          .strip = suffix_i,
           .lower = lower_i,
           .upper = upper_i,
           .logged = logged_i,
           .check = FALSE, #keep things fast
-          returnall = FALSE #pass via dots
+          .rem_args = c('scat_scale', 'log_scat_scale'),
+          returnall = FALSE, #pass via dots
         ))
         if(length(Data[[1]]$modellist) == 1L){
           for(j in 1:Data$Nim){
@@ -247,9 +247,15 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     modellistnew = remakeout$modellist
     parm = remakeout$parm
 
+    if('scat_scale' %in% Data$parm.names){
+      parm = c(parm, scat_scale)
+    }else if('log_scat_scale' %in% Data$parm.names){
+      parm = c(parm, log10(scat_scale))
+    }
+    
     # Calculate priors with the new versus old modellist
     if(length(Data$priors)>0){
-      priorsum=Data$priors(modellistnew,Data$modellist)
+      priorsum = Data$priors(modellistnew,Data$modellist)
     }
 
     model = .profitLikeModelEvaluation(Data, modellistnew, rough=rough, whichcomponents=whichcomponents, model_image_buff=Data$model_buff_image)

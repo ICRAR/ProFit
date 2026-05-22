@@ -351,7 +351,7 @@ First make sure that the `cmaeshpc` package is installed:
 
 ```{r, eval=FALSE}
 library(devtools)
-install_github('taranu/cmaeshpc')
+install_github('asgr/cmaeshpc')
 ```
 
 It is recommended to use narrower priors than the very broad ones specified above to speed up convergence:
