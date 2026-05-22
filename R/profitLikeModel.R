@@ -43,6 +43,21 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), errcmap=cmap, plotchisq=FALSE, maxsigma=5,
   model=NULL) {
 
+  if('scat_scale' %in% Data$parm.names){
+    sel = which(Data$parm.names == 'scat_scale')
+    scat_scale = parm[sel]
+    parm = parm[-sel]
+    Data$parm.names = Data$parm.names[-sel]
+  }else if('log_scat_scale' %in% Data$parm.names){
+    sel = which(Data$parm.names == 'log_scat_scale')
+    scat_scale = 10^parm[sel]
+    parm = parm[-sel]
+    Data$parm.names = Data$parm.names[-sel]
+  }else{
+    scat_scale = 1
+  }
+  scat_scale = max(scat_scale, .Machine$double.eps, na.rm=TRUE)
+
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
 
   # This is MultiBand and MultiImage mode. Most of what is here is to deal with the complexities of MultiBand mode. MultiImage mode is actually pretty simple.
@@ -57,20 +72,6 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       }
     }
 
-    if('scat_scale' %in% Data$parm.names){
-      sel = which(Data$parm.names == 'scat_scale')
-      scat_scale = parm[sel]
-      parm = parm[-sel]
-      Data$parm.names = Data$parm.names[-sel]
-    }else if('log_scat_scale' %in% Data$parm.names){
-      sel = which(Data$parm.names == 'log_scat_scale')
-      scat_scale = 10^parm[sel]
-      parm = parm[-sel]
-      Data$parm.names = Data$parm.names[-sel]
-    }else{
-      scat_scale = 1
-    }
-    
     args_loc = NULL
 
     #This is all the new ProFuse stuff. Roughly we:
