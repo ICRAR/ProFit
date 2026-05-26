@@ -22,31 +22,48 @@
     openclenv=Data$openclenv
     if(identical(openclenv,new("externalptr"))) openclenv = NULL
 
+    makemodel_args = list(
+      modellist=modellist, magzero=Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
+      rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt,
+      openclenv=openclenv, omp_threads=Data$omp_threads, adjust_calcregion=FALSE
+    )
     if(Data$usecalcregion){
-      model = profitMakeModel(modellist=modellist, magzero = Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
-        rough=rough, calcregion=Data$calcregion, docalcregion=Data$usecalcregion,
-        magmu=Data$magmu,finesample=finesample, convopt=Data$convopt, openclenv=openclenv, omp_threads=Data$omp_threads,
-        adjust_calcregion = FALSE, ...)
-    }else{
-      model = profitMakeModel(modellist=modellist, magzero = Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
-        rough=rough,
-        magmu=Data$magmu, finesample=finesample, convopt=Data$convopt, openclenv=openclenv, omp_threads=Data$omp_threads,
-        adjust_calcregion = FALSE, ...)
+      makemodel_args$calcregion = Data$calcregion
+      makemodel_args$docalcregion = Data$usecalcregion
     }
+    model = ParmOff(profitMakeModel,
+                    .args=makemodel_args,
+                    .check = FALSE, #keep things fast
+                    ...)
     return(model)
 }
 
-profitLikeModel=function(parm, Data, makeplots=FALSE, 
+profitLikeModel=function(parm, Data, makeplots=FALSE,
   whichcomponents=list(sersic="all",moffat="all",ferrer="all",pointsource="all"), rough=FALSE,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), errcmap=cmap, plotchisq=FALSE, maxsigma=5,
   model=NULL) {
-  
+
+  if('scat_scale' %in% Data$parm.names){
+    sel = which(Data$parm.names == 'scat_scale')
+    scat_scale = parm[sel]
+    parm = parm[-sel]
+    #Data$parm.names = Data$parm.names[-sel]
+  }else if('log_scat_scale' %in% Data$parm.names){
+    sel = which(Data$parm.names == 'log_scat_scale')
+    scat_scale = 10^parm[sel]
+    parm = parm[-sel]
+    #Data$parm.names = Data$parm.names[-sel]
+  }else{
+    scat_scale = 1
+  }
+  scat_scale = max(scat_scale, .Machine$double.eps, na.rm=TRUE)
+
   if(inherits(Data, 'list') & inherits(Data[[1]], 'profit.data')){
-    
+
   # This is MultiBand and MultiImage mode. Most of what is here is to deal with the complexities of MultiBand mode. MultiImage mode is actually pretty simple.
-    
+
     parm_in = parm
-    
+
     if(!is.null(Data$smooth.parm) & !is.null(Data$wave) & is.null(Data$parm_ProSpect)){
       #This is the smoothed parameter MultiBand mode. Don't really use this now we have full ProSpect mode.
       namevec = names(Data$smooth.parm)
@@ -54,74 +71,73 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         parm = .smooth_parm(parm=parm, Data$parm.names, extract=namevec[i], wave=Data$wave, func=Data$smooth.parm[[i]])
       }
     }
-    
+
     args_loc = NULL
-    
+
     #This is all the new ProFuse stuff. Roughly we:
     #1) Find all the ProSpect related parms
     #2) Strip those out
     #3) Update the modellist with the computed magnitudes
     #4) Proceed as before with the reduced parm vector.
-    
+
     if(!is.null(Data$parm_ProSpect)){
       #This is ProSpect MultiBand mode.
       if(!requireNamespace("ProSpect", quietly = TRUE)){stop('The ProSpect package is required to use SED fitting!')}
-      
+
       args_names = names(Data$parm_ProSpect)
       args_loc = match(args_names, Data$parm.names)
-      parm_ProSpect = parm[args_loc]
-      
-      #The below is pretty much as per ProSpectSEDlike
-      
-      if (!is.null(Data$intervals_ProSpect)) {
-        parm_ProSpect = pmin(
-          pmax(parm_ProSpect, Data$intervals_ProSpect$lo),
-          Data$intervals_ProSpect$hi
-        )
-      }
-      
-      if (!is.null(Data$logged_ProSpect)) {
+
+      # Build named lower/upper bound lists keyed by param name (with _i suffix) for use in loop
+      lower_ProSpect = if(!is.null(Data$intervals_ProSpect))
+        as.list(setNames(Data$intervals_ProSpect$lo, args_names)) else NULL
+      upper_ProSpect = if(!is.null(Data$intervals_ProSpect))
+        as.list(setNames(Data$intervals_ProSpect$hi, args_names)) else NULL
+
+      # Build character vector of logged param names (with _i suffix) for use in loop
+      all_logged_names = if (!is.null(Data$logged_ProSpect)) {
         if (length(Data$logged_ProSpect) == 1) {
-          if (Data$logged_ProSpect) {
-            parm_logged = 10 ^ parm_ProSpect
-          } else{
-            parm_logged = parm_ProSpect
-          }
-        } else{
-          parm_logged = parm_ProSpect
-          parm_logged[Data$logged_ProSpect] = 10 ^ parm_ProSpect[Data$logged_ProSpect]
+          if(Data$logged_ProSpect) args_names else character(0)
+        } else {
+          args_names[Data$logged_ProSpect]
         }
-      } else{
-        parm_logged = parm_ProSpect
-      }
-      
-      parm[args_loc] = parm_logged
+      } else character(0)
 
       for(i in 1:Data$Ncomp){
-        args_names = names(Data$parm_ProSpect)
-        args_names_comp = args_names[grepl(paste0('_',i), args_names)]
+        suffix_i = paste0('_', i, '$')
+        args_names_comp = args_names[grepl(suffix_i, args_names)]
         args_loc_comp = match(args_names_comp, Data$parm.names)
-        args_names_comp = sub(paste0('_',i), '', args_names_comp) #Strip the component identifier
-        args = parm[args_loc_comp]
-        names(args) = args_names_comp #Rename
+        args_list = as.list(parm[args_loc_comp])
+        names(args_list) = args_names_comp # names retain _i suffix; ParmOff .strip removes it below
         parm = parm[-args_loc_comp]
         Data$parm.names = Data$parm.names[-args_loc_comp]
-        args_list = as.list(args) #List
         if(!is.null(Data$data_ProSpect)){
-          # Below means we assume global options are those without "_X" except then X=i (so then it is local to that component)
-          if(Data$Ncomp == 1){
-            args_list = c(args_list, Data$data_ProSpect)
-          }else{
-            data_names = names(Data$data_ProSpect)
-            data_loc = grepl(paste0('_',i), data_names)
-            data_list = Data$data_ProSpect[data_loc]
-            data_loc_global = ! (grepl('_1', data_names) | grepl('_2', data_names) | grepl('_3', data_names)) #Currently only works for up to 3 components, but this is all that is currently supported anyway
-            data_list = c(data_list, Data$data_ProSpect[data_loc_global])
-            names(data_list) = sub(paste0('_',i), '', names(data_list))
-            args_list = c(args_list, data_list)
+          # All data_ProSpect entries are included; ParmOff's formal-matching drops wrong-component
+          # entries (e.g. argname_2 after stripping _1 becomes argname_2, which is not a ProSpectSED formal)
+          args_list = c(args_list, Data$data_ProSpect)
+        }
+        # Filter bounds and logged names to this component, strip _i suffix for ParmOff
+        lower_i = NULL
+        upper_i = NULL
+        if(!is.null(lower_ProSpect)) {
+          sel = grepl(suffix_i, names(lower_ProSpect))
+          if(any(sel)) {
+            stripped_names = sub(suffix_i, '', names(lower_ProSpect)[sel])
+            lower_i = setNames(lower_ProSpect[sel], stripped_names)
+            upper_i = setNames(upper_ProSpect[sel], stripped_names)
           }
         }
-        outSED = ProSpect::Jansky2magAB(do.call(ProSpect::ProSpectSED, c(args_list, returnall=FALSE), quote=TRUE))
+        logged_i = sub(suffix_i, '', all_logged_names[grepl(suffix_i, all_logged_names)])
+
+        outSED = ProSpect::Jansky2magAB(ParmOff(ProSpect::ProSpectSED,
+          .args = args_list,
+          .strip = suffix_i,
+          .lower = lower_i,
+          .upper = upper_i,
+          .logged = logged_i,
+          .check = FALSE, #keep things fast
+          .rem_args = c('scat_scale', 'log_scat_scale'),
+          returnall = FALSE, #pass via dots
+        ))
         if(length(Data[[1]]$modellist) == 1L){
           for(j in 1:Data$Nim){
             Data[[j]]$modellist[[1]]$mag[i] = outSED[j]
@@ -141,7 +157,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         }
       }
     }
-    
+
     temp = {}
     for(i in 1:length(Data)){
       # The below executes both MultiImage (same band, lots of exposures) and MultiBand mode, since by this point the structures are the same, and the mags have been updated as needed by ProSpect for the MultiBand to work.
@@ -168,22 +184,22 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
           # Here we compute LL for unresolved data via comparing just the ProSpect SED photometry versus the raw aperture photometry.
           # Won't work well for very confused data though. The idea is this is how we reasonably add in UV and MIR/FIR flux constraints.
           # THE BELOW STILL NEEDS SOME CAREFUL CHECKING AS OF 2/2/22
-          
+
           # The model sum needs to computed for each model, adding together the various flux components correctly in linear flux space.
-          
+
           model_sum = 0
           for(j in 1:length(Data[[i]]$modellist)){
             for(k in 1:length(Data[[i]]$modellist[[j]][[1]])){
               model_sum = model_sum + 10^(-0.4*(Data[[i]]$modellist[[j]]$mag[k] - 8.9))
             }
           }
-          
+
           # The below object_flux and object_var are pre-computed in profuseMultiBandFound2Fit (v0.2.7) at ~L237
           cutsig = (model_sum - Data[[i]]$object_flux) / Data[[i]]$object_fluxerr
-          
-          LL = dnorm(x = cutsig, log = TRUE)
+
+          LL = dnorm(x = cutsig, mean=0, sd=scat_scale, log = TRUE)
           #LL = -(abs(model_sum - Data[[i]]$object_flux) / Data[[i]]$object_var)/2 #to be LL scaled
-          
+
           if(Data[[1]]$algo.func=='LA' | Data[[1]]$algo.func=='LD'){
             out = list(LP=LL, Dev = -2*LL, Monitor = c(LL, LL, 0))
           }else{
@@ -199,11 +215,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
         temp = c(temp, list(out))
       }
     }
-    
+
     if(Data[[1]]$algo.func=='optim' | Data[[1]]$algo.func=='CMA'){
       output = sum(unlist(temp))
     }
-    
+
     if(Data[[1]]$algo.func=='LA' | Data[[1]]$algo.func=='LD'){
       output = temp[[1]]
       output$LP = 0
@@ -221,21 +237,27 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     }
     return(output)
   }
-  
+
   # Below is what we execute for a normal single image profit.data instance. This is classic ProFit, and the sub component of MultiBand and MultiImage modes.
-  
+
   priorsum = 0
-  
+
   if(is.null(model)){
-    remakeout=profitRemakeModellist(parm=parm, Data=Data)
-    modellistnew=remakeout$modellist
-    parm=remakeout$parm
+    remakeout = profitRemakeModellist(parm=parm, Data=Data)
+    modellistnew = remakeout$modellist
+    parm = remakeout$parm
+
+    if('scat_scale' %in% Data$parm.names){
+      parm = c(parm, scat_scale)
+    }else if('log_scat_scale' %in% Data$parm.names){
+      parm = c(parm, log10(scat_scale))
+    }
     
     # Calculate priors with the new versus old modellist
     if(length(Data$priors)>0){
-      priorsum=Data$priors(modellistnew,Data$modellist)
+      priorsum = Data$priors(modellistnew,Data$modellist)
     }
-    
+
     model = .profitLikeModelEvaluation(Data, modellistnew, rough=rough, whichcomponents=whichcomponents, model_image_buff=Data$model_buff_image)
   } else {
     stopifnot(is.list(model) && !is.null(model$z))
@@ -245,7 +267,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
   if(!is.null(Data$region_which)) {
     cutim = Data$image[Data$region_which]
-    cutsig = Data$sigma[Data$region_which] 
+    cutsig = Data$sigma[Data$region_which]
     cutmod = model$z[Data$region_which]
   }else{
     cutim = Data$image
@@ -255,7 +277,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
   #Force like.func to be lower case:
   like.func = profitParseLikefunc(Data$like.func)
-  
+
   #Various allowed likelihoods:
   isnorm = like.func == "norm"
   ischisq = like.func == "chisq"
@@ -273,9 +295,11 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     #dof=interval(dof,0,Inf)
     dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
   }
+
   skewtparm = Data$skewtparm
+
   if(isnorm){
-    LL=sum(dnorm(cutsig, log=TRUE))
+    LL=sum(dnorm(cutsig, mean=0, sd=scat_scale, log=TRUE))
   } else if(ischisq) {
     ndata = length(cutim)
     if(!exists("chisq")) chisq = sum(cutsig^2)
@@ -287,7 +311,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     dof=max(1, min(Inf, dof, na.rm = TRUE), na.rm = TRUE)
     LL=sum(dt(cutsig,dof,log=TRUE))
   } else if(isst) {
-    dstlike = function(parm,Data) { 
+    dstlike = function(parm,Data) {
       LP = sum(sn::dst(Data$chi, dp=parm, log=TRUE))
       return(list(LP=LP,Dev=-2*LP,Monitor=numeric(0),yhat=1,parm=parm))
     }
@@ -332,7 +356,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   } else {
     stop(paste0("Error: unknown likelihood function: '",like.func,"'"))
   }
-  
+
   if(makeplots){
     skylevel = 0
     if(!is.null(modellistnew$sky) && !is.null(modellistnew$sky$bg) &&
@@ -340,7 +364,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     profitMakePlots(Data$image-skylevel, model$z-skylevel, Data$region, Data$sigma, cmap=cmap,
       errcmap=errcmap,plotchisq=plotchisq, maxsigma=maxsigma, skewtparm=skewtparm)
   }
-  
+
   LP=as.numeric(LL+priorsum)
   if(Data$verbose) {
     toprint = parm
@@ -352,17 +376,17 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     }
     print(toprint,digits = 5)
   }
-  
+
   if(Data$algo.func=='check') {
     out = list(model=model,psf=Data$psf)
     if(fitst) out$skewtparm = skewtparm
     return(out)
   }
-  
+
   if(Data$algo.func=='optim' | Data$algo.func=='CMA'){
     return(LP)
   }
-  
+
   if(Data$algo.func=='LA' | Data$algo.func=='LD'){
     Monitor=c(LL=LL,LP=LP)
     if("time" %in% Data$mon.names){
@@ -383,7 +407,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
 .smooth_parm = function(parm, parm.names, extract='mag1', wave, func=smooth.spline){
   parm_loc = grep(extract,parm.names)
-  
+
   parm[parm_loc] = func(log(wave),parm[parm_loc])$y
   return(parm)
 }
@@ -393,9 +417,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 #                    mpeak=10^inpar[2],
 #                    mperiod=10^inpar[3],
 #                    mskew=inpar[4],
-#                    tau_birth=10^inpar[5], 
-#                    tau_screen=10^inpar[6], 
-#                    alpha_SF_birth=inpar[7], 
+#                    tau_birth=10^inpar[5],
+#                    tau_screen=10^inpar[6],
+#                    alpha_SF_birth=inpar[7],
 #                    alpha_SF_screen=inpar[8],
 #                    z=0.1,
 #                    Z=Zfunc_massmap_lin,

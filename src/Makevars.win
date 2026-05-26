@@ -1,5 +1,3 @@
-CXX_STD = CXX11
-
 PKG_CPPFLAGS = -Ilibprofit/src -Dprofit_EXPORTS
 PKG_LIBS =
 
