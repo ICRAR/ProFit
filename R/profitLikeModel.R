@@ -46,12 +46,16 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   if('scat_scale' %in% Data$parm.names){
     sel = which(Data$parm.names == 'scat_scale')
     scat_scale = parm[sel]
-    parm = parm[-sel]
+    if(!is.null(Data$parmuse)){
+      Data$parmuse = Data$parmuse[!Data$parmuse %in% sel]
+    }
     #Data$parm.names = Data$parm.names[-sel]
   }else if('log_scat_scale' %in% Data$parm.names){
     sel = which(Data$parm.names == 'log_scat_scale')
     scat_scale = 10^parm[sel]
-    parm = parm[-sel]
+    if(!is.null(Data$parmuse)){
+      Data$parmuse = Data$parmuse[!Data$parmuse %in% sel]
+    }
     #Data$parm.names = Data$parm.names[-sel]
   }else{
     scat_scale = 1
@@ -242,16 +246,14 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
 
   priorsum = 0
 
+  #check this with log_scat_scale = TRUE etc (30/06/2026): seems to be working fine (01/07/2026)
+  
   if(is.null(model)){
-    remakeout = profitRemakeModellist(parm=parm, Data=Data)
+    #Below is to give special treatment to the scat_scale case, since profitRemakeModellist cannot take that argument
+    sel = which(!names(parm) %in% c('scat_scale', 'log_scat_scale'))
+    remakeout = profitRemakeModellist(parm=parm[sel], Data=Data)
     modellistnew = remakeout$modellist
-    parm = remakeout$parm
-
-    if('scat_scale' %in% Data$parm.names){
-      parm = c(parm, scat_scale)
-    }else if('log_scat_scale' %in% Data$parm.names){
-      parm = c(parm, log10(scat_scale))
-    }
+    parm[sel] = remakeout$parm
     
     # Calculate priors with the new versus old modellist
     if(length(Data$priors)>0){
@@ -411,20 +413,3 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   parm[parm_loc] = func(log(wave),parm[parm_loc])$y
   return(parm)
 }
-
-# genSED=ProSpectSED(massfunc=massfunc_snorm_trunc,
-#                    mSFR=10^inpar[1],
-#                    mpeak=10^inpar[2],
-#                    mperiod=10^inpar[3],
-#                    mskew=inpar[4],
-#                    tau_birth=10^inpar[5],
-#                    tau_screen=10^inpar[6],
-#                    alpha_SF_birth=inpar[7],
-#                    alpha_SF_screen=inpar[8],
-#                    z=0.1,
-#                    Z=Zfunc_massmap_lin,
-#                    filtout=filtout,
-#                    Dale=Dale_NormTot,
-#                    speclib=BC03lr,
-#                    agemax=agemax
-# )

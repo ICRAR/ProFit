@@ -151,7 +151,7 @@ profitDataSetOptionsFromBenchmarks <- function(Data, benchmarks)
 profitSetupData=function(image, region, sigma, segim, mask, modellist,
   tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), offset=NULL,
   rough=FALSE, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
-  like.func="norm", magmu=FALSE, verbose=FALSE, omp_threads = NULL,
+  like.func="norm", magmu=FALSE, log_scat_scale=FALSE, verbose=FALSE, omp_threads = NULL,
   openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
   nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
   benchintmethods="brute", benchconvmethods = c("brute","fftw"),
@@ -290,7 +290,13 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   init[unlist(tolog)]=log10(init[unlist(tolog)])
   init=init[which(unlist(tofit))]
   
-  parm.names=names(init)
+  if(log_scat_scale){
+    init = c(init, 0)
+    names(init)[length(init)] = 'log_scat_scale'
+  }
+  
+  parm.names = names(init)
+  
   mon.names=c("LL","LP","time")
   if(profitParseLikefunc(like.func) == "t") mon.names=c(mon.names,"dof")
   
