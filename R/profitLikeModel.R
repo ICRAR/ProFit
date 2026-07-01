@@ -43,6 +43,10 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   cmap = rev(colorRampPalette(brewer.pal(9,'RdYlBu'))(100)), errcmap=cmap, plotchisq=FALSE, maxsigma=5,
   model=NULL) {
 
+  if('scat_scale' %in% Data$parm.names & 'log_scat_scale' %in% Data$parm.names){
+    stop('Ambiguity: scat_scale and log_scat_scale both in parm.names!')  
+  }
+  
   if('scat_scale' %in% Data$parm.names){
     sel = which(Data$parm.names == 'scat_scale')
     scat_scale = parm[sel]
