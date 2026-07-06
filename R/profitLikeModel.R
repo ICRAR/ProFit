@@ -44,9 +44,9 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   model=NULL) {
 
   if('scat_scale' %in% Data$parm.names & 'log_scat_scale' %in% Data$parm.names){
-    stop('Ambiguity: scat_scale and log_scat_scale both in parm.names!')  
+    stop('Ambiguity: scat_scale and log_scat_scale both in parm.names!')
   }
-  
+
   if('scat_scale' %in% Data$parm.names){
     sel = which(Data$parm.names == 'scat_scale')
     scat_scale = parm[sel]
@@ -251,14 +251,14 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   priorsum = 0
 
   #check this with log_scat_scale = TRUE etc (30/06/2026): seems to be working fine (01/07/2026)
-  
+
   if(is.null(model)){
     #Below is to give special treatment to the scat_scale case, since profitRemakeModellist cannot take that argument
-    sel = which(!names(parm) %in% c('scat_scale', 'log_scat_scale'))
+    sel = which(!Data$parm.names %in% c('scat_scale', 'log_scat_scale'))
     remakeout = profitRemakeModellist(parm=parm[sel], Data=Data)
     modellistnew = remakeout$modellist
     parm[sel] = remakeout$parm
-    
+
     # Calculate priors with the new versus old modellist
     if(length(Data$priors)>0){
       priorsum = Data$priors(modellistnew,Data$modellist)
