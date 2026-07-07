@@ -53,14 +53,12 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
     if(!is.null(Data$parmuse)){
       Data$parmuse = Data$parmuse[!Data$parmuse %in% sel]
     }
-    #Data$parm.names = Data$parm.names[-sel]
   }else if('log_scat_scale' %in% Data$parm.names){
     sel = which(Data$parm.names == 'log_scat_scale')
     scat_scale = 10^parm[sel]
     if(!is.null(Data$parmuse)){
       Data$parmuse = Data$parmuse[!Data$parmuse %in% sel]
     }
-    #Data$parm.names = Data$parm.names[-sel]
   }else{
     scat_scale = 1
   }
