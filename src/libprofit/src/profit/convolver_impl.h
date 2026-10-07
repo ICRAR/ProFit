@@ -90,15 +90,14 @@ private:
  *  res = iFFT(FFT(im1) * FFT(im2))
  *
  * To do this, this convolver creates extended versions of the input images.
- * The size of the new images is 4 times that of the source image, which is
- * assumed to be larger than the kernel. The extended version of the source
- * image contains the original image at (0,0), while the extended version of the
- * kernel image contains the original kernel centered at the original image's
- * new mapping (i.e., ``((src_width-krn_width)/2, (src_height-krn_height)/2)``).
- * After convolution the result is cropped back (if required) to the original image's
- * dimensions starting at the center of the original image's mapping on the
- * extended image (i.e., ``(src_width/2, src_height/2)`` minus one if the
- * original dimensions are odd).
+ * The size of the new images is ``src + krn - 1`` on each axis, which is the
+ * minimum required for the circular product of the two extended images to equal
+ * their linear convolution. The extended version of the source image contains
+ * the original image at (0,0), as does the extended version of the kernel image.
+ * After convolution the result is cropped back (if required) to the original
+ * image's dimensions starting at the kernel's centre (i.e.,
+ * ``krn_width - 1 - krn_width/2``, and likewise for the height), which is where
+ * the linear convolution's (0, 0) pixel lands given this placement.
  *
  * This convolver has been implemented in such a way that no memory allocation
  * happens during convolution (other than the final Image's allocation) to
@@ -119,6 +118,10 @@ protected:
 private:
 
 	void resize(const Dimensions &src_dims, const Dimensions &krn_dims);
+
+	/// The dimensions the source and kernel images are extended to before
+	/// transforming them
+	static Dimensions extended_dims(const Dimensions &src_dims, const Dimensions &krn_dims);
 
 	Point offset_after_convolution(const Dimensions &src_dims, const Dimensions &krn_dims) const;
 

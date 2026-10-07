@@ -183,7 +183,7 @@ inline Derived operator-(const _2d_coordinate<T, Derived> &other, T x)
 template <typename T, typename Derived>
 inline Derived max(const _2d_coordinate<T, Derived> a, const _2d_coordinate<T, Derived> b)
 {
-	return Derived{std::max(a.x, b.x), std::max(a.x, b.x)};
+	return Derived{std::max(a.x, b.x), std::max(a.y, b.y)};
 }
 
 /// A 2-d coordinate in a discrete surface starting at (0, 0)

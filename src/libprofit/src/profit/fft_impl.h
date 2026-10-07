@@ -38,6 +38,7 @@
 
 #include "profit/common.h"
 #include "profit/fft.h"
+#include "profit/image.h"
 
 namespace profit {
 
@@ -61,33 +62,37 @@ public:
 };
 
 /**
- * An FFT transformer that turns real numbers into complex numbers and back.
+ * An FFT transformer that turns 2D real data into complex data and back.
  *
- * Instances of this class are able to perform forward FFT transformation
- * from a collection of double values into its corresponding complex series and
- * back using hermitian redundancy. The forward and backward transformations
- * occur in an internal buffer, but they allow users to pass collections of the
- * corresponding type to store the output of the operation, thus avoiding
- * dynamic memory allocation.
+ * Instances of this class are able to perform forward FFT transformations from
+ * a 2D image of doubles into its corresponding complex series and back using
+ * hermitian redundancy. Transforms use genuine two-dimensional plans rather
+ * than a single one-dimensional plan over the flattened data, which is what
+ * allows FFTW's multi-threading support to parallelise them effectively.
+ *
+ * The forward and backward transformations occur in an internal buffer, but
+ * they allow users to pass a container of the corresponding type to store the
+ * output of the operation, thus avoiding dynamic memory allocation during the
+ * transformation itself.
  */
 class FFTRealTransformer {
 
 public:
 
 	/**
-	 * Creates a new transformer that will work with images and vectors of size
-	 * @p size, using effort @p effort and @p omp_threads threads.
+	 * Creates a new transformer that will work with 2D data of the given
+	 * @p dimensions, using effort @p effort and @p omp_threads threads.
 	 *
-	 * @param size The size of the data to be transformed
+	 * @param dimensions The dimensions of the 2D data to be transformed
 	 * @param effort The kind of effort that should be put into creating this plan
 	 * @param omp_threads The number of threads to use to execute the plan
 	 */
-	FFTRealTransformer(unsigned int size, effort_t effort, unsigned int omp_threads);
+	FFTRealTransformer(const Dimensions &dimensions, effort_t effort, unsigned int omp_threads);
 
 	/**
-	 * Creates a new transformer that will work with images and vectors of yet
-	 * unknown size. The new transformer will create plans using effort @p
-	 * effort and @p omp_threads threads.
+	 * Creates a new transformer that will work with 2D data of yet unknown
+	 * dimensions. The new transformer will create plans using effort @p effort
+	 * and @p omp_threads threads.
 	 *
 	 * @param effort The kind of effort that should be put into creating this plan
 	 * @param omp_threads The number of threads to use to execute the plan
@@ -95,11 +100,14 @@ public:
 	FFTRealTransformer(effort_t effort, unsigned int omp_threads);
 
 	/**
-	 * Prepares this object to be able to process inputs of size @p size
-	 * @param input_size The new input size. Old plans and buffers are discarded
-	 * and replaced with new ones fitting this size
+	 * Prepares this object to be able to process 2D data of the given
+	 * @p dimensions. Old plans and buffers are discarded and replaced with new
+	 * ones fitting these dimensions. Does nothing when the dimensions are the
+	 * ones this transformer is already sized for.
+	 *
+	 * @param dimensions The new dimensions. Neither may be 0
 	 */
-	void resize(unsigned int input_size);
+	void resize(const Dimensions &dimensions);
 
 	/**
 	 * Transforms a container of numbers into their Fourier Transform. The
@@ -124,16 +132,16 @@ public:
 	template <typename T>
 	void backward(const std::vector<std::complex<double>> &input, T &output) const;
 
-	unsigned int get_size() {
-		return size;
-	}
-
+	/**
+	 * Returns the number of elements in the hermitian (i.e., non-redundant)
+	 * representation of a transformation's output
+	 */
 	unsigned int get_hermitian_size() {
 		return hermitian_size;
 	}
 
 private:
-	unsigned int size;
+	Dimensions dimensions;
 	unsigned int hermitian_size;
 	effort_t effort;
 	std::unique_ptr<double, fftw_deleter<double>> real_buf;
@@ -141,7 +149,7 @@ private:
 	std::unique_ptr<fftw_plan_s, fftw_plan_destroyer> forward_plan;
 	std::unique_ptr<fftw_plan_s, fftw_plan_destroyer> backward_plan;
 
-	void resize_impl(unsigned int input_size);
+	void resize_impl(const Dimensions &dimensions);
 };
 
 /// The global mutex used to serialize FFTW operations other than fftw_execute

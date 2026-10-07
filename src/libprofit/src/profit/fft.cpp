@@ -41,7 +41,7 @@ namespace profit {
 std::mutex fftw_mutex;
 
 template <typename T>
-void check_size(const T &data, unsigned int size)
+void check_size(const T &data, std::size_t size)
 {
 	if (data.size() != size) {
 		std::ostringstream os;
@@ -79,8 +79,8 @@ T *_fftw_buf(std::size_t size)
 }
 
 
-FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsigned int omp_threads) :
-	size(0), hermitian_size(0), effort(effort),
+FFTRealTransformer::FFTRealTransformer(const Dimensions &dimensions, effort_t effort, unsigned int omp_threads) :
+	dimensions(), hermitian_size(0), effort(effort),
 	real_buf(nullptr), complex_buf(nullptr),
 	forward_plan(nullptr),
 	backward_plan(nullptr)
@@ -89,11 +89,11 @@ FFTRealTransformer::FFTRealTransformer(unsigned int size, effort_t effort, unsig
 #ifdef PROFIT_FFTW_OPENMP
 	fftw_plan_with_nthreads(omp_threads);
 #endif /* PROFIT_FFTW_OPENMP */
-	resize_impl(size);
+	resize_impl(dimensions);
 }
 
 FFTRealTransformer::FFTRealTransformer(effort_t effort, unsigned int omp_threads) :
-	size(0), hermitian_size(0), effort(effort),
+	dimensions(), hermitian_size(0), effort(effort),
 	real_buf(nullptr), complex_buf(nullptr),
 	forward_plan(nullptr),
 	backward_plan(nullptr)
@@ -104,30 +104,35 @@ FFTRealTransformer::FFTRealTransformer(effort_t effort, unsigned int omp_threads
 #endif /* PROFIT_FFTW_OPENMP */
 }
 
-void FFTRealTransformer::resize(unsigned int input_size)
+void FFTRealTransformer::resize(const Dimensions &dimensions)
 {
 	std::lock_guard<std::mutex> guard(fftw_mutex);
-	resize_impl(input_size);
+	resize_impl(dimensions);
 }
 
-void FFTRealTransformer::resize_impl(unsigned int input_size)
+void FFTRealTransformer::resize_impl(const Dimensions &new_dimensions)
 {
-	if (input_size == 0) {
+	if (new_dimensions.x == 0 || new_dimensions.y == 0) {
 		throw invalid_parameter("cannot resize fft transformer to size 0");
 	}
-	if (size == input_size) {
+	if (dimensions == new_dimensions) {
 		return;
 	}
-	size = input_size;
-	hermitian_size = input_size / 2 + 1;
-	real_buf.reset(_fftw_buf<double>(size));
+	dimensions = new_dimensions;
+
+	// These transforms operate on a real (hermitian) Image, so only the last
+	// dimension gets truncated to half its length plus one
+	long rows = dimensions.y;
+	long columns = dimensions.x;
+	hermitian_size = dimensions.y * (dimensions.x / 2 + 1);
+	real_buf.reset(_fftw_buf<double>(dimensions.x * dimensions.y));
 	complex_buf.reset(_fftw_buf<fftw_complex>(hermitian_size));
 	int fftw_effort = get_fftw_effort(effort);
-	auto fwd_plan = fftw_plan_dft_r2c_1d(size, real_buf.get(), complex_buf.get(), FFTW_DESTROY_INPUT | fftw_effort);
+	auto fwd_plan = fftw_plan_dft_r2c_2d(rows, columns, real_buf.get(), complex_buf.get(), FFTW_DESTROY_INPUT | fftw_effort);
 	if (!fwd_plan) {
 		throw fft_error("Error creating forward plan");
 	}
-	auto bwd_plan = fftw_plan_dft_c2r_1d(size, complex_buf.get(), real_buf.get(), FFTW_DESTROY_INPUT | fftw_effort);
+	auto bwd_plan = fftw_plan_dft_c2r_2d(rows, columns, complex_buf.get(), real_buf.get(), FFTW_DESTROY_INPUT | fftw_effort);
 	if (!bwd_plan) {
 		throw fft_error("Error creating backward plan");
 	}
@@ -138,7 +143,7 @@ void FFTRealTransformer::resize_impl(unsigned int input_size)
 template <typename T>
 void FFTRealTransformer::forward(const T &input, std::vector<std::complex<double>> &output) const
 {
-	check_size(input, size);
+	check_size(input, dimensions.x * dimensions.y);
 	check_size(output, hermitian_size);
 	std::copy(input.begin(), input.end(), real_buf.get());
 	fftw_execute(forward_plan.get());
@@ -151,10 +156,10 @@ template <typename T>
 void FFTRealTransformer::backward(const std::vector<std::complex<double>> &input, T &output) const
 {
 	check_size(input, hermitian_size);
-	check_size(output, size);
+	check_size(output, dimensions.x * dimensions.y);
 	std::memcpy(complex_buf.get(), input.data(), sizeof(fftw_complex) * hermitian_size);
 	fftw_execute(backward_plan.get());
-	std::copy(real_buf.get(), real_buf.get() + size, output.begin());
+	std::copy(real_buf.get(), real_buf.get() + dimensions.x * dimensions.y, output.begin());
 }
 
 // Specializations for the Image type

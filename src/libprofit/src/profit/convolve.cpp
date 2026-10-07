@@ -231,6 +231,26 @@ Image AssociativeBruteForceConvolver<SIMD>::convolve_impl(const Image &src, cons
 }
 
 #ifdef PROFIT_FFTW
+
+Dimensions FFTConvolver::extended_dims(const Dimensions &src_dims, const Dimensions &krn_dims)
+{
+	if (!src_dims || !krn_dims) {
+		return {};
+	}
+	// A linear convolution of the two needs exactly src + krn - 1 samples per axis
+	// before the circular product starts wrapping around. Anything larger is
+	// equally correct, so this is the smallest extension we can get away with.
+	//
+	// Note that padding the further up to an "FFT-friendly" size (one whose only
+	// prime factors are 2, 3 and 5) can make these transforms faster still, but it
+	// must not be done here: Model::evaluate derives its crop=false bookkeeping
+	// from padding(), which in turn assumes that growing the source by the PSF
+	// padding grows the extended image by at least as much. Rounding up breaks that
+	// assumption, as the rounded sizes of two nearby dimensions can coincide.
+	return {src_dims.x + krn_dims.x - 1,
+	        src_dims.y + krn_dims.y - 1};
+}
+
 FFTConvolver::FFTConvolver(const Dimensions &src_dims, const Dimensions &krn_dims,
                            effort_t effort, unsigned int plan_omp_threads,
                            bool reuse_krn_fft) :
@@ -244,7 +264,7 @@ FFTConvolver::FFTConvolver(const Dimensions &src_dims, const Dimensions &krn_dim
 
 void FFTConvolver::resize(const Dimensions &src_dims, const Dimensions &krn_dims)
 {
-	auto ext_dims = max(src_dims, krn_dims) * 2;
+	auto ext_dims = extended_dims(src_dims, krn_dims);
 	if (ext_dims.x == 0 || ext_dims.y == 0) {
 		return;
 	}
@@ -252,7 +272,7 @@ void FFTConvolver::resize(const Dimensions &src_dims, const Dimensions &krn_dims
 		ext_src.zero();
 		return;
 	}
-	fft_transformer->resize(ext_dims.x * ext_dims.y);
+	fft_transformer->resize(ext_dims);
 	src_fft.resize(fft_transformer->get_hermitian_size());
 	krn_fft.resize(fft_transformer->get_hermitian_size());
 	ext_src = Image(ext_dims);
@@ -262,22 +282,20 @@ void FFTConvolver::resize(const Dimensions &src_dims, const Dimensions &krn_dims
 
 PointPair FFTConvolver::padding(const Dimensions &src_dims, const Dimensions &krn_dims) const
 {
-	auto ext_dims = max(src_dims, krn_dims) * 2;
+	auto ext_dims = extended_dims(src_dims, krn_dims);
 	auto offset = offset_after_convolution(src_dims, krn_dims);
-	return {offset, ext_dims - ext_dims / 2 - offset};
+	// The result starts at `offset` and spans src_dims, whatever is left over on
+	// the high end is padding as well
+	return {offset, ext_dims - offset - src_dims};
 }
 
-Point FFTConvolver::offset_after_convolution(const Dimensions &src_dims, const Dimensions &krn_dims) const
+Point FFTConvolver::offset_after_convolution(const Dimensions &/*src_dims*/, const Dimensions &krn_dims) const
 {
-	// even image and odd kernel requires slight adjustment
-	auto offset = Point{src_dims / 2};
-	if (src_dims.x % 2 == 0 || krn_dims.x % 2 == 0) {
-		offset.x -= 1;
-	}
-	if (src_dims.y % 2 == 0 || krn_dims.y % 2 == 0) {
-		offset.y -= 1;
-	}
-	return offset;
+	// With both the source and the kernel placed at the origin of the extended
+	// image, the circular product holds the linear convolution of the two, whose
+	// pixel (0, 0) ends up at the kernel's centre. Note this matches the
+	// krn_width/2 used by the brute force convolvers only for odd-sized kernels.
+	return {krn_dims.x - 1 - krn_dims.x / 2, krn_dims.y - 1 - krn_dims.y / 2};
 }
 
 Image FFTConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool crop, Point &offset_out)
@@ -292,8 +310,7 @@ Image FFTConvolver::convolve_impl(const Image &src, const Image &krn, const Mask
 	// Forward FFTs
 	fft_transformer->forward(ext_src, src_fft);
 	if (!reuse_krn_fft || !krn_fft_initialized) {
-		auto krn_start = (src_dims - krn_dims) / 2;
-		krn.extend(ext_krn, krn_start);
+		krn.extend(ext_krn);
 		fft_transformer->forward(ext_krn, krn_fft);
 		krn_fft_initialized = true;
 	}

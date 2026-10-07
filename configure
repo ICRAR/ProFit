@@ -1,5 +1,18 @@
 #!/bin/sh
 
+# Prints the value of an R CMD config variable, or nothing if R doesn't know
+# about it. Note that R CMD config writes its "no information for variable"
+# complaint to *stdout* rather than stderr, so we cannot simply redirect stderr
+# and must filter that message out ourselves; leaving it in would end up being
+# pasted into the compiler command line below.
+get_r_config() {
+	r_config=`"${R_HOME}/bin/R" CMD config $1 2> /dev/null`
+	case "$r_config" in
+		ERROR:*) r_config="" ;;
+	esac
+	echo "$r_config"
+}
+
 detect_system() {
 	# R_HOME and stuff
 	if test -z "${R_HOME}"; then
@@ -11,6 +24,14 @@ detect_system() {
 	CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 	LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 	OS=`uname`
+
+	# R might have OpenMP support already switched on (either because the user
+	# set it up in their Makevars, or because R itself was configured with it).
+	# On macOS for example clang only accepts "-Xclang -fopenmp", which is not
+	# one of the flags we try below, so without looking at R's own flags OpenMP
+	# would go undetected even though the compiler supports it.
+	CPPFLAGS=`get_r_config CPPFLAGS`
+	SHLIB_OPENMP_CXXFLAGS=`get_r_config SHLIB_OPENMP_CXXFLAGS`
 }
 
 has_cl_headers() {
@@ -150,10 +171,16 @@ int main() {
 }
 OMP
 
-	for flag in "" "-fopenmp" "-fopenmp=libomp" "-openmp" "-xopenmp" "-mp"; do
-		$CC $CFLAGS $flag -c $tmpdir/openmp.c -o $tmpdir/openmp.o 2> /dev/null
+	# We pass along the flags R is already using (CPPFLAGS, and the OpenMP flags
+	# R itself would use when building a shared library). This is what makes
+	# OpenMP detectable on platforms like macOS, where clang rejects "-fopenmp"
+	# but accepts "-Xclang -fopenmp" (which is how R passes it through).
+	omp_test_flags="$CFLAGS $CPPFLAGS $SHLIB_OPENMP_CXXFLAGS"
+
+	for flag in "" "-fopenmp" "-Xclang -fopenmp" "-fopenmp=libomp" "-openmp" "-xopenmp" "-mp"; do
+		$CC $omp_test_flags $flag -c $tmpdir/openmp.c -o $tmpdir/openmp.o 2> /dev/null
 		if [ $? -eq 0 ]; then
-			$CC $LDFLAGS $flag $tmpdir/openmp.o -o $tmpdir/openmp 2> /dev/null
+			$CC $LDFLAGS $SHLIB_OPENMP_CXXFLAGS $flag $tmpdir/openmp.o -o $tmpdir/openmp 2> /dev/null
 			if [ $? -eq 0 ]; then
 				echo $flag
 				return
@@ -378,22 +405,29 @@ else
 	elif [ "$omp_flag" = "CANNOT_LINK" ]; then
 		echo ""
 		echo "################################################################################"
-		echo " Using the OpenMP compilation flag '$flag' your compiler is able to *compile*"
+		echo " Using the OpenMP compilation flag '$omp_flag' your compiler is able to *compile*"
 		echo " code using OpenMP, but it still fails to *link* (i.e., produce a library or an"
 		echo " executable)."
 		echo " This possibly indicates either a faulty installation of your compiler, of your"
 		echo " OpenMP library, or a missing dependency for the OpenMP library."
 		echo ""
-		echo " Since we cannot use '$flag' to provide a working compilation process, we will"
+		echo " Since we cannot use '$omp_flag' to provide a working compilation process, we will"
 		echo " compile ProFit without OpenMP support"
 		echo "################################################################################"
 		echo ""
-		break
 	else
 		echo "- Compiling with OpenMP support"
 		PROFIT_OPENMP=yes
-		omp_cflags="$omp_flag"
-		omp_libflags="$omp_flag"
+		# It is possible for the test to pass without needing any flag of our
+		# own, because R's flags already bring OpenMP in (see detect_system).
+		# In that case we must use those R flags, as otherwise the build would
+		# not have OpenMP enabled even though we are about to claim it is.
+		if [ -n "$omp_flag" ]; then
+			omp_cflags="$omp_flag"
+		else
+			omp_cflags="$SHLIB_OPENMP_CXXFLAGS"
+		fi
+		omp_libflags="$omp_cflags"
 	fi
 
 fi
