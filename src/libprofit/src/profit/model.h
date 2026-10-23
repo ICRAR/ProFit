@@ -165,8 +165,17 @@ public:
 	 * @see set_psf(const Image &psf)
 	 */
 	void set_psf(Image &&psf) {
-		this->psf = std::move(psf);
-		this->psf.normalize();
+		// The given image might be wrapping memory we do not own; when libprofit
+		// is used from R the psf is typically an Image over the caller's own
+		// matrix. Normalising such an image in place would write the scaling back
+		// into the caller's data, silently modifying the psf the user passed in,
+		// and because that psf is normally reused this also makes otherwise
+		// identical model evaluations differ as it converges to being normalised.
+		// So take a copy (which owns its storage) and normalise that instead. The
+		// psf is small, and this happens once per model evaluation.
+		Image owned_psf(psf);
+		owned_psf.normalize();
+		this->psf = std::move(owned_psf);
 	}
 
 	/**
