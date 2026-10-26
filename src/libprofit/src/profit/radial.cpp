@@ -81,8 +81,19 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 	std::vector<std::tuple<double, double>> subsample_points;
 	double x = x0;
 
-	std::vector<unsigned int> idxs(resolution * resolution);
 	if( recurse ) {
+		/*
+		 * This is called once per subsampled pixel per recursion level, so
+		 * avoid a heap allocation per call: only reserve for the worst case,
+		 * which shrinks to the number of points that actually need refining.
+		 *
+		 * delta_y_prof does not depend on the sample point either, so it is
+		 * computed once here rather than at every iteration of the inner loop.
+		 */
+		subsample_points.reserve(resolution * resolution);
+		const double delta_y_prof = std::abs(-xbin * _sin_ang_over_axrat +
+		                                     ybin * _cos_ang_over_axrat);
+
 		for (unsigned int i = 0; i < resolution; i++) {
 			x += half_xbin;
 			double y = y0;
@@ -92,8 +103,7 @@ double RadialProfile::subsample_pixel(double x0, double x1, double y0, double y1
 				this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
 				double subval = this->evaluate_at(x_prof, y_prof);
 
-				double delta_y_prof = -xbin * _sin_ang_over_axrat + ybin * _cos_ang_over_axrat;
-				double testval = this->evaluate_at(abs(x_prof), abs(y_prof) + abs(delta_y_prof));
+				double testval = this->evaluate_at(abs(x_prof), abs(y_prof) + delta_y_prof);
 				if (abs(testval - subval) > acc * subval) {
 					subsample_points.emplace_back(std::make_tuple(x, y));
 				}
@@ -310,8 +320,8 @@ void RadialProfile::evaluate_cpu(Image &image, const Mask &mask, const PixelScal
 		double x_prof;
 		double y_prof;
 		double r_prof;
-		double y = half_ybin + j * scale.x;
-		double x = half_xbin + i * scale.y;
+		double y = half_ybin + j * scale.y;
+		double x = half_xbin + i * scale.x;
 		this->_image_to_profile_coordinates(x, y, x_prof, y_prof);
 
 		/*

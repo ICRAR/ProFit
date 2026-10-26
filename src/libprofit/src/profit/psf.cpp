@@ -77,8 +77,8 @@ void PsfProfile::evaluate(Image &image, const Mask & /*mask*/, const PixelScale 
 
 	/* Where we start/end applying the psf into the target image */
 	double origin_x = this->xcen + offset.x * scale_x - psf_width * psf_scale_x / 2;
-	double end_x    = this->xcen + offset.y * scale_y + psf_width * psf_scale_x / 2;
-	double origin_y = this->ycen + offset.x * scale_x - psf_height * psf_scale_y / 2;
+	double end_x    = this->xcen + offset.x * scale_x + psf_width * psf_scale_x / 2;
+	double origin_y = this->ycen + offset.y * scale_y - psf_height * psf_scale_y / 2;
 	double end_y    = this->ycen + offset.y * scale_y + psf_height * psf_scale_y / 2;
 
 	/*
@@ -103,8 +103,8 @@ void PsfProfile::evaluate(Image &image, const Mask & /*mask*/, const PixelScale 
 			 * We now find out the range of psf pixels that cover the same space
 			 */
 			int psf_pix_x0 = bind(floor((x - origin_x) / psf_scale_x), psf_width - 1);
-			int psf_pix_x1 = bind(floor((x - origin_x + scale_x) / psf_scale_x), psf_height - 1);
-			int psf_pix_y0 = bind(floor((y - origin_y) / psf_scale_y), psf_width - 1);
+			int psf_pix_x1 = bind(floor((x - origin_x + scale_x) / psf_scale_x), psf_width - 1);
+			int psf_pix_y0 = bind(floor((y - origin_y) / psf_scale_y), psf_height - 1);
 			int psf_pix_y1 = bind(floor((y - origin_y + scale_y) / psf_scale_y), psf_height - 1);
 
 			/* Accumulate the proportional values from the PSF */

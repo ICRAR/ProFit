@@ -12,9 +12,9 @@ profitSetupData(image, region, sigma, segim, mask, modellist, tofit, tolog, prio
 intervals, constraints, psf = NULL, psfdim = dim(psf), offset = NULL, rough = FALSE,
 finesample = 1L, psffinesampled = FALSE, magzero = 0, algo.func = 'LA',
 like.func = "norm", magmu = FALSE, log_scat_scale = FALSE, verbose = FALSE,
-omp_threads = NULL, openclenv = NULL, openclenv_int = openclenv,
+omp_threads = NULL, scale = c(1, 1), openclenv = NULL, openclenv_int = openclenv,
 openclenv_conv = openclenv, nbenchmark = 0L, nbenchint = nbenchmark,
-nbenchconv = nbenchmark, benchintmethods = "brute", benchconvmethods = c("brute","fftw"),
+nbenchconv = nbenchmark, benchintmethods = "brute", benchconvmethods = NULL,
 benchprecisions = "double", benchconvprecisions = benchprecisions,
 benchintprecisions = benchprecisions,
 benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE), printbenchmark = FALSE,
@@ -91,8 +91,11 @@ Logical; do we want an extra hyper-parameter that allows the intrinsic scatter o
   \item{verbose}{
 Logical; if TRUE then the value of parameters currently being assessed will be printed to screen. Useful for prototyping, but typically this produces a lot of screen output and can slow down the fitting process.
 }
+  \item{scale}{
+A two element vector giving the pixel scale along the x and y axes respectively. Default c(1,1), which is what all the usual ProFit usage assumes. Set this when fitting images whose pixels are not square in the coordinate system the model parameters are expressed in; the model flux is scaled by the pixel area so total flux is preserved.
+}
   \item{omp_threads}{
-An integer indicating the number of threads to use to evaluate radial profiles. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
+An integer indicating the number of threads to use to evaluate radial profiles and to carry out the convolution. If not given only one thread is used. \option{openclenv} has precedence over this option, so if both are given then OpenCL evaluation takes place.
 }
   \item{openclenv}{
 If NULL (default) then the CPU is used to compute the profile. If \option{openclenv} is a legal pointer to a graphics card of class externalptr then that card will be used to make a GPU based model. This object can be obtained from the \code{\link{profitOpenCLEnv}} function directly. If \option{openclenv}='get' then the OpenCL environment is obtained from running \code{\link{profitOpenCLEnv}} with default values (which are usually reasonable).
@@ -116,7 +119,7 @@ Integer; the number of times to benchmark the speed of the available convolution
   List of strings specifying which profile integration methods to benchmark. See \code{profitBenchmark} for details.
 }
   \item{benchconvmethods}{
-  List of strings specifying which convolution methods to benchmark. See \code{profitBenchmark} for details.
+  List of strings specifying which convolution methods to benchmark. See \code{profitBenchmark} for details. If NULL (default) no benchmarking takes place and a convolver is chosen from the PSF size alone (FFTW for PSFs of at least 15x15 pixels, brute force below that). If given, the first entry is used as the convolver. Note this only applies when \option{nbenchconv} is 0; when \option{nbenchconv} > 0 the methods are benchmarked and the fastest is used.
 }
   \item{benchprecisions}{
   List of floating point precisions to benchmark. Available options are "single" and "double". Defaults to "double", which should be used unless you are certain that single-precision roundoff errors are not important.

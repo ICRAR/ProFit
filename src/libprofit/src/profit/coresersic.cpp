@@ -54,8 +54,10 @@ double CoreSersicProfile::evaluate_at(double x, double y) const
 	using std::pow;
 
 	double r = boxy_r(x, y);
+	// _rb_to_a, _re_to_a_inv and _one_over_nser_a do not depend on x/y and are
+	// computed once in initial_calculations()
 	return pow(1 + pow(r/rb,-a), b/a) *
-	       exp(-_bn * pow((pow(r, a) + pow(rb, a))/pow(re,a), 1/(nser*a)));
+	       exp(-_bn * pow((pow(r, a) + _rb_to_a) * _re_to_a_inv, _one_over_nser_a));
 }
 
 void CoreSersicProfile::validate() {
@@ -113,6 +115,11 @@ void CoreSersicProfile::initial_calculations() {
 
 	/* Common calculations first */
 	RadialProfile::initial_calculations();
+
+	/* Cache the position-independent parts of evaluate_at() */
+	this->_rb_to_a = std::pow(rb, a);
+	this->_re_to_a_inv = 1.0 / std::pow(re, a);
+	this->_one_over_nser_a = 1.0 / (nser * a);
 
 }
 

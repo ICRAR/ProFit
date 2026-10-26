@@ -6,8 +6,12 @@ profitMakeModel = function(modellist,
                            calcregion, docalcregion=FALSE, adjust_calcregion=TRUE,
                            magmu=FALSE, remax, rescaleflux=FALSE,
                            convopt=NULL, psfdim=c(25,25),
-                           openclenv=NULL, omp_threads=NULL, plot=FALSE, ...) {
+                           openclenv=NULL, omp_threads=NULL, plot=FALSE,
+                           scale_x=1, scale_y=1, ...) {
   checkInteger(finesample,lower=1L)
+  checkNumeric(scale_x, len=1, lower=0, finite=TRUE)
+  checkNumeric(scale_y, len=1, lower=0, finite=TRUE)
+  if(scale_x <= 0 || scale_y <= 0) stop("scale_x and scale_y must both be > 0")
 
 	if (length(dim) == 1) {
 		dim = rep(dim,2)
@@ -251,8 +255,8 @@ profitMakeModel = function(modellist,
 		finesampling = as.integer(finesample),
 		returnfine = returnfine,
 		crop = returncrop,
-		scale_x = 1,
-		scale_y = 1,
+		scale_x = scale_x,
+		scale_y = scale_y,
 		profiles = profiles,
 		psf = psf
 	)

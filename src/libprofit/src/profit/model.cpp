@@ -320,7 +320,10 @@ void Model::evaluate(Image &image, Point &offset_out)
 			crop_offset += offset_diff;
 			offset -= offset_diff;
 		}
-		image = image.crop(crop_dims, crop_offset);
+		// Crop in place so that a caller-provided buffer (e.g. the one
+		// profitSetupData preallocates) can still be written to and returned
+		// without a reallocation.
+		image.crop_in_place(crop_dims, crop_offset);
 	}
 
 	if (finesampling > 1 && !return_finesampled) {

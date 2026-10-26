@@ -25,7 +25,8 @@
     makemodel_args = list(
       modellist=modellist, magzero=Data$magzero, psf=psf, dim=dim(Data$image), psfdim=psfdim,
       rough=rough, magmu=Data$magmu, finesample=finesample, convopt=Data$convopt,
-      openclenv=openclenv, omp_threads=Data$omp_threads, adjust_calcregion=FALSE
+      openclenv=openclenv, omp_threads=Data$omp_threads, adjust_calcregion=FALSE,
+      scale_x=Data$scale[1], scale_y=Data$scale[2]
     )
     if(Data$usecalcregion){
       makemodel_args$calcregion = Data$calcregion
@@ -262,7 +263,7 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
       priorsum = Data$priors(modellistnew,Data$modellist)
     }
 
-    model = .profitLikeModelEvaluation(Data, modellistnew, rough=rough, whichcomponents=whichcomponents, model_image_buff=Data$model_buff_image)
+    model = .profitLikeModelEvaluation(Data, modellistnew, rough=rough, whichcomponents=whichcomponents, model_image_buff=Data$model_image_buff)
   } else {
     stopifnot(is.list(model) && !is.null(model$z))
     stopifnot(identical(dim(Data$image),dim(model$z)))
@@ -303,7 +304,19 @@ profitLikeModel=function(parm, Data, makeplots=FALSE,
   skewtparm = Data$skewtparm
 
   if(isnorm){
-    LL=sum(dnorm(cutsig, mean=0, sd=scat_scale, log=TRUE))
+    # Closed form of sum(dnorm(cutsig, mean=0, sd=scat_scale, log=TRUE)).
+    # This matches dnorm() to machine precision but avoids its per-element
+    # argument checks, which at megapixel sizes are most of the likelihood
+    # stage. The scat_scale != 1 case needs the full form: cutsig is already
+    # (data - model) / sigma, so the scatter enters both the squared term and
+    # the normalisation.
+    if(scat_scale == 1) {
+      LL = -0.5*sum(cutsig*cutsig) - length(cutsig)*0.5*log(2*pi)
+    } else {
+      cutscaled = cutsig/scat_scale
+      LL = -0.5*sum(cutscaled*cutscaled) -
+        length(cutscaled)*(0.5*log(2*pi) + log(scat_scale))
+    }
   } else if(ischisq) {
     ndata = length(cutim)
     if(!exists("chisq")) chisq = sum(cutsig^2)

@@ -48,10 +48,12 @@ Used only if \option{type} is \code{"fft"} and ProFit has FFTW support.
 }
 
   \item{omp_threads}{
-Specifies the number of OpenMP threads to use to execute
-the underlying FFTW plans.
-Used only if \option{type} is \code{"fft"} and ProFit has FFTW support,
-OpenMP support, and the underlying FFTW library has OpenMP support.
+Specifies the number of OpenMP threads to use when convolving.
+For \option{type} \code{"brute"} this is the number of threads used to
+evaluate output pixels; for \option{type} \code{"fft"} it is the number of
+threads used to execute the underlying FFTW plans (which requires ProFit,
+OpenMP and the FFTW library all to have OpenMP support).
+If NULL (default) only one thread is used.
 }
 
   \item{openclenv}{

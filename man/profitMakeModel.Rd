@@ -15,7 +15,7 @@ profitMakeModel(modellist, magzero = 0, psf = NULL, dim = c(100, 100),
   finesample = 1L, returnfine = FALSE, returncrop = TRUE, calcregion,
   docalcregion = FALSE, adjust_calcregion = TRUE, magmu = FALSE, remax,
   rescaleflux = FALSE, convopt = NULL, psfdim = c(25, 25), openclenv = NULL,
-  omp_threads = NULL, plot = FALSE, ...)
+  omp_threads = NULL, plot = FALSE, scale_x = 1, scale_y = 1, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -87,6 +87,12 @@ The size of the PSF image to be constructed if a psf modellist is being provided
 }
   \item{plot}{
 Logical; should a \code{\link{magimage}} plot of the output be generated?
+}
+  \item{scale_x}{
+The width of a single image pixel in image coordinates, i.e. the pixel scale along the x axis. Default is 1, which is what all the usual ProFit usage assumes. Setting \option{scale_x} different from \option{scale_y} produces an image sampled on a rectangular rather than square pixel grid; the total flux of the model is preserved (it is multiplied by the pixel area).
+}
+  \item{scale_y}{
+The height of a single image pixel in image coordinates. See \option{scale_x}.
 }
   \item{\dots}{
 Further arguments to be passed to \code{\link{magimage}}. Only relevant is \option{plot}=TRUE.

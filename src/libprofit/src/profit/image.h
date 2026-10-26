@@ -159,6 +159,10 @@ public:
 
 protected:
 
+	void set_dimensions(Dimensions new_dimensions) {
+		dimensions = new_dimensions;
+	}
+
 	void _extension_is_possible(const Dimensions &new_size, const Point &start) const {
 		if (new_size.x < dimensions.x) {
 			throw std::invalid_argument("new_width should be >= width");
@@ -335,6 +339,35 @@ public:
 			}
 		}
 		return crop;
+	}
+
+	/**
+	 * Crops this surface in place, keeping the area that starts at @p start and
+	 * has dimensions @p dimensions.
+	 *
+	 * Unlike crop() this does not allocate a new surface: the retained rows are
+	 * moved to the front of the existing storage and the dimensions are
+	 * updated. This is what makes it possible to reuse a caller-provided image
+	 * buffer across evaluations even though the drawing dimensions differ from
+	 * the requested ones by the PSF padding.
+	 *
+	 * @param dimensions The dimensions of the cropped area. Must be less or
+	 *        equal than the dimensions of this surface.
+	 * @param start The start of the cropped area relative to this surface.
+	 */
+	void crop_in_place(Dimensions dimensions, Point start = Point())
+	{
+		_crop_is_possible(dimensions, start);
+		auto _data = data();
+		auto old_width = getWidth();
+		for(unsigned int j = 0; j < dimensions.y; j++) {
+			auto *src_row = _data + (j + start.y) * old_width + start.x;
+			auto *dst_row = _data + j * dimensions.x;
+			// The source row is never before the destination row, so copying
+			// forwards does not clobber data we still need.
+			std::copy(src_row, src_row + dimensions.x, dst_row);
+		}
+		set_dimensions(dimensions);
 	}
 
 	/**

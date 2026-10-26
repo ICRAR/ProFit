@@ -662,10 +662,16 @@ SEXP _R_profit_make_model(SEXP model_list, SEXP previous_image) {
 	/* Copy the image into a matrix, pack together with the offset, and bye */
 	SEXP r_image = nullptr;
 	int protections = 0;
-	if (image.data() == original_data) {
+	bool same_dims = (Rf_nrows(previous_image) == (int)image.getWidth() &&
+	                  Rf_ncols(previous_image) == (int)image.getHeight());
+	if (image.data() == original_data && same_dims) {
 		// Lucky! The model didn't need to re-allocate, so we can simply
 		// return the original R matrix that was given to us, as its contents
-		// have been directly altered in place
+		// have been directly altered in place.
+		// The dimensions have to agree as well: the image is cropped in place,
+		// so a caller-provided buffer keeps its storage but shrinks to the
+		// requested dimensions, and returning it unreshaped would hand R a
+		// matrix with the wrong number of rows and columns.
 		r_image = previous_image;
 	}
 	else {

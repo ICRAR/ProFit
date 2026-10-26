@@ -12,7 +12,7 @@ profitDataBenchmark(modellist, calcregion, imgdim,
   finesample=1L, psf=NULL, fitpsf=FALSE, omp_threads=NULL, openclenv=NULL,
   openclenv_int=openclenv, openclenv_conv=openclenv,
   nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
-  benchintmethods=c("brute"), benchconvmethods = c("brute","fftw"),
+  benchintmethods=c("brute"), benchconvmethods = NULL,
   benchprecisions="double", benchconvprecisions=benchprecisions,
   benchintprecisions=benchprecisions,
   benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
@@ -63,7 +63,7 @@ Matrix; optional. An empirical point spread function (PSF) image matrix that Pro
   List of strings specifying which profile integration methods to benchmark. See \code{\link{profitBenchmark}} for details.
 }
   \item{benchconvmethods}{
-  List of strings specifying which convolution methods to benchmark. See \code{\link{profitBenchmark}} for details.
+  List of strings specifying which convolution methods to benchmark. See \code{\link{profitBenchmark}} for details. If NULL (default) no benchmarking takes place and a convolver is chosen from the PSF size alone; if given, the first entry is used. Only relevant when \option{nbenchconv} is 0.
 }
   \item{benchprecisions}{
   List of floating point precisions to benchmark. Available options are "single" and "double". Defaults to "double", which should be used unless you are certain that single-precision roundoff errors are not important.

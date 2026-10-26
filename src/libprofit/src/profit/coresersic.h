@@ -111,6 +111,14 @@ private:
 	/* internally calculated when the profile is evaluated */
 	double _bn;
 
+	/*
+	 * Position-independent pieces of the profile expression. evaluate_at() is
+	 * called for every sample, so they are cached rather than recomputed there.
+	 */
+	double _rb_to_a;
+	double _re_to_a_inv;
+	double _one_over_nser_a;
+
 	double integrate_at(double r) const;
 
 #ifdef PROFIT_OPENCL

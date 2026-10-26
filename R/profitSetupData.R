@@ -36,7 +36,7 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
   finesample=1L, psf=NULL, fitpsf=FALSE, omp_threads=NULL, openclenv=NULL,
   openclenv_int=openclenv, openclenv_conv=openclenv,
   nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
-  benchintmethods=c("brute"), benchconvmethods = c("brute","fftw"),
+  benchintmethods=c("brute"), benchconvmethods = NULL,
   benchprecisions="double", benchconvprecisions=benchprecisions,
   benchintprecisions=benchprecisions,
   benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
@@ -116,12 +116,13 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
       if(is.character(benchconvmethods) && length(benchconvmethods) > 0)
       {
         convmethod = benchconvmethods[1]
+      } else if(!is.null(openclenv_conv)) {
+        convmethod = "opencl"
       } else {
-        if(is.null(openclenv_conv)) convmethod = "brute"
-        else convmethod = "opencl"
+        convmethod = .profitAutoConvolver(convpsf)
       }
       convopt$convolver = profitMakeConvolver(convmethod,dim(modelimg),psf = convpsf,
-        openclenv=openclenv_conv)
+        omp_threads=omp_threads, openclenv=openclenv_conv)
     }
   }
   rv = list(
@@ -129,6 +130,30 @@ profitDataBenchmark <- function(modellist, calcregion, imgdim,
     openclenv = openclenv_int)
   class(rv)="profit.data.benchmark"
   return(rv)
+}
+
+# Choose between brute force and FFTW convolution without timing anything.
+#
+# FFTW only wins once the kernel is big enough for the O(N^2) brute-force inner
+# loop to dominate the FFT's O(N log N) cost, and the crossover is set by the
+# PSF area rather than by the image size: convolution work per output pixel
+# scales with PSF area either way, so the image dimensions cancel out.
+#
+# Measured on a 200-1500 px image with PSFs from 9x9 to 51x51, a cutoff at a
+# 15x15 PSF area (~2x faster overall than always using brute force) never loses
+# more than 23% and typically gains 1.5-20x. Below that cutoff FFTW is often
+# several times slower, mostly because the extended FFT dimensions
+# (src + psf - 1 per axis) are not rounded up to "nice" sizes -- Model::evaluate
+# derives its crop=false bookkeeping from them, so they cannot be. A 13x13 or
+# 11x11 PSF is faster with brute force; a 25x25 or larger one is much faster
+# with FFTW.
+#
+# This is a rule of thumb on purpose. For a decision that actually matters,
+# pass nbenchconv > 0 to profitSetupData() (which benchmarks and picks the
+# winner), or set benchconvmethods explicitly to force a method.
+.profitAutoConvolver = function(psf, cutoff=225)
+{
+  if("fftw" %in% profitAvailableConvolvers() && prod(dim(psf)) >= cutoff) "fftw" else "brute"
 }
 
 profitDataSetOptionsFromBenchmarks <- function(Data, benchmarks)
@@ -152,9 +177,10 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
   tofit, tolog, priors, intervals, constraints, psf=NULL, psfdim=dim(psf), offset=NULL,
   rough=FALSE, finesample=1L, psffinesampled=FALSE, magzero=0, algo.func='LA',
   like.func="norm", magmu=FALSE, log_scat_scale=FALSE, verbose=FALSE, omp_threads = NULL,
+  scale=c(1,1),
   openclenv=NULL, openclenv_int=openclenv, openclenv_conv=openclenv,
   nbenchmark=0L, nbenchint=nbenchmark, nbenchconv=nbenchmark,
-  benchintmethods="brute", benchconvmethods = c("brute","fftw"),
+  benchintmethods="brute", benchconvmethods = NULL,
   benchprecisions="double", benchconvprecisions=benchprecisions,
   benchintprecisions=benchprecisions,
   benchopenclenvs = profitGetOpenCLEnvs(make.envs = TRUE),
@@ -332,6 +358,7 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     imagedim=imagedim, 
     verbose=verbose, 
     magmu=magmu,
+    scale=scale,
     openclenv=openclenv, 
     omp_threads=omp_threads,
     model_image_buff=matrix(0, 1, 1)
@@ -342,9 +369,19 @@ profitSetupData=function(image, region, sigma, segim, mask, modellist,
     profit.data$usecalcregion = TRUE
   }
 
-  # Dummy evaluation with a single "null" profile to get an image buffer we can then reuse
-  # across model evaluations
-  profit.data$model_image_buff = .profitLikeModelEvaluation(profit.data, list(null=list(convolve=c(F), xcen=c(0))))$z
+  # Preallocate the image buffer that profitLikeModel reuses across evaluations.
+  #
+  # The buffer has to be the *drawing* size the C++ side works at, which is the
+  # requested dimensions plus PSF padding (and finesampling). That is exactly the
+  # size of the adjusted calcregion, since both come from the same expansion
+  # logic in Model::analyze_expansion_requirements; using dim(image) here would
+  # give a buffer that is never reused.
+  if(!is.null(calcregion)){
+    buffdim = dim(calcregion)
+  } else {
+    buffdim = dim(image) * finesample
+  }
+  profit.data$model_image_buff = matrix(0, buffdim[1], buffdim[2])
 
   return(invisible(profit.data))
 }

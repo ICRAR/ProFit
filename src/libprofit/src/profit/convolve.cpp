@@ -94,8 +94,16 @@ Image Convolver::mask_and_crop(Image &img, const Mask &mask, bool crop, const Di
 		return img;
 	}
 
-	// Return cropped, after applying the mask
-	return img.crop(orig_dims, ext_offset) & mask;
+	// Return cropped, after applying the mask.
+	//
+	// The cropping copy is unavoidable -- it is the result being returned -- but
+	// operator& would make a second full-size copy of it. Masking in place
+	// halves the allocation traffic here. Note img itself is not modified: for
+	// the FFT convolver it is a member that is reused across evaluations, and
+	// cropping it in place would force it to be reallocated every time.
+	Image cropped = img.crop(orig_dims, ext_offset);
+	cropped &= mask;
+	return cropped;
 }
 
 Image BruteForceConvolver::convolve_impl(const Image &src, const Image &krn, const Mask &mask, bool  /*crop*/, Point & /*offset_out*/)
